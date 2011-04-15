@@ -54,7 +54,10 @@ setGeneric (
  )
 
 
-
+setGeneric (
+ name= "getNestsParms",
+ def=function(object,...){standardGeneric("getNestsParms")}
+ )
 
 
 ## Create some methods for the Antitrust Class

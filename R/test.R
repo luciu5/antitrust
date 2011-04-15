@@ -8,7 +8,26 @@ source("pclinear.R")
 source("pcloglog.R")
 source("linear.R")
 source("loglog.R")
+source("ces.R")
+source("cesNests.R")
 setwd(currentdir)
+
+
+testMethods <- function(object){
+
+    print(object)           # return predicted price change
+    print(summary(object))         # summarize merger simulation
+
+    print(elast(object,TRUE)  )    # returns premerger elasticities
+    print(elast(object,FALSE) )    # returns postmerger elasticities
+
+    print(diversion(object,TRUE))  # returns premerger diversion ratios
+    print(diversion(object,FALSE)) # returns postmeger diversion ratios
+
+    print(cmcr(object))            # returns the compensating marginal cost reduction
+
+
+}
 
 
 ## Simulate a merger between two single-product firms in a
@@ -22,7 +41,7 @@ setwd(currentdir)
 n <- 3 #number of firms in market
 price    <- c(2.9,3.4,2.2)
 quantity <- c(650,998,1801)
-
+nests <- c("a","b","a")
 
 slopes <- matrix(
 c(-2.3,	  0.18,	0.28,
@@ -42,7 +61,7 @@ shares=quantity/sum(quantity)
 ## default is diversion according to revenue share
 result1 <- pcloglog(price,quantity,margin,shares=shares,ownerPre=owner.pre,ownerPost=owner.post)
 
-summary(result1)
+testMethods(result1)
 
 ## User-supplied diversions (this will give the same answer as above)
 
@@ -53,12 +72,20 @@ diag(d)=1
 
 result2 <- loglog(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
 
-summary(result2)
+testMethods(result2)
 
 
 ## same as above, but with linear demand
 result3 <- pclinear(price,quantity,margin,shares=shares,ownerPre=owner.pre,ownerPost=owner.post)
-summary(result3)
+testMethods(result3)
 
 result4 <- linear(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
-summary(result4)
+testMethods(result4)
+
+## ces demand
+result5 <- ces(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+testMethods(result5)
+
+## Nested ces demand
+result6 <- ces.nests(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post,nests=nests)
+testMethods(result6)

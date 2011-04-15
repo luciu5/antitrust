@@ -32,7 +32,7 @@ setClass(
              nprods <- length(object@shares)
 
              if(!(object@knownElastIndex %in% seq(1,nprods)) ){
-                 stop("'knownElastIndex' values must be between 1 and the length of 'shares'")}
+                 stop("'knownElastIndex' value must be between 1 and the length of 'shares'")}
              if(nprods != length(object@mcDelta)){
                  stop("'mcDelta' must have the same length as 'shares'")}
              if(nprods != length(object@priceDeltaStart)){
@@ -92,7 +92,7 @@ setMethod(
  signature= "PCAIDS",
  definition=function(object,...){
 
-     require(BB) #needed to solve nonlinear system of firm FOC
+     require(nleqslv) #needed to solve nonlinear system of firm FOC
 
      ## Calculate premerger margins
      marginPre <- calcMargins(object,TRUE)
@@ -118,9 +118,9 @@ setMethod(
 
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- BBsolve(object@priceDeltaStart,FOC,object=object,...)
+     minResult <- nleqslv(object@priceDeltaStart,FOC,object=object,...)
 
-     deltaPrice <- (exp(minResult$par)-1)
+     deltaPrice <- (exp(minResult$x)-1)
      names(deltaPrice) <- object@labels
 
      return(deltaPrice)

@@ -79,6 +79,8 @@ setMethod(
 
  FOC <- function(price,object){
 
+     require(nleqslv)
+
      quantity <- exp(intercept) * apply(price^slopes,1,prod) # log(price) can produce errors.
                                                              # this transformation avoidsusing logs
     #quantity <- exp(as.vector(intercept+slopes %*% log(price)))
@@ -91,7 +93,7 @@ setMethod(
      return(as.vector(thisFOC))
  }
 
- price <- BBsolve(object@priceStart,FOC,object=object,...)$par
+ price <- nleqslv(object@priceStart,FOC,object=object,...)$x
 
  return(price)
 
@@ -171,7 +173,7 @@ pcloglog <- function(prices,quantities,margins,
                      labels=paste("Prod",1:length(prices),sep=""),...
                      ){
 
-    require(BB)
+
 
      result <- new("PCLogLog",prices=prices, quantities=quantities,margins=margins,
                    shares=shares,mc=prices*(1-margins),mcDelta=mcDelta, priceStart=priceStart,

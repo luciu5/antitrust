@@ -76,7 +76,7 @@ loglog <- function(prices,quantities,margins,diversions,
                      ){
 
 
-    require(BB)
+
 
     shares=rep(NA,length(prices)) #not used with "LogLog",but required by "PCLogLog" class
 

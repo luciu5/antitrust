@@ -1,4 +1,4 @@
-source("pclinear.R")
+##source("pclinear.R")
 
 
 setClass(
@@ -6,9 +6,10 @@ setClass(
          contains="PCLinear",
 
          representation=representation(
-         priceStart = "vector",
-         shareInside= "numeric",
-         totExp     = "numeric"
+         priceStart    = "vector",
+         shareInside   = "numeric",
+         totExp        = "numeric",
+         normIndex     = "numeric"
          ),
 
          prototype=prototype(
@@ -39,12 +40,12 @@ setMethod(
               ## Uncover Demand Coefficents
 
 
-              ownerPre   <-  object@ownerPre
-              shares     <-  object@shares
-              margins    <-  object@margins
-              prices     <-  object@prices
-              quantities <-  object@quantities
-              idx        <-  1 #normalize mean value of first product to 1
+              ownerPre     <-  object@ownerPre
+              shares       <-  object@shares
+              margins      <-  object@margins
+              prices       <-  object@prices
+              quantities   <-  object@quantities
+              idx          <-  object@normIndex
               shareInside  <-  object@shareInside
 
               ## uncover Numeraire Coefficients
@@ -78,7 +79,7 @@ setMethod(
               minGamma <- optimize(minD,c(1,1e12))$minimum
 
 
-              meanval <- log(shares) - log(shares[idx]) - (1- minGamma)* (log(prices) - log(prices[idx]))
+              meanval <- log(shares) - log(shares[idx]) + (minGamma - 1) * (log(prices) - log(prices[idx]))
               meanval <- exp(meanval)
 
               names(meanval)   <- object@labels
@@ -98,7 +99,7 @@ setMethod(
  signature= "CES",
  definition=function(object,preMerger=TRUE,...){
 
-     require(BB) #needed to solve nonlinear system of firm FOC
+     require(nleqslv) #needed to solve nonlinear system of firm FOC
 
      if(preMerger){
          mcDelta <- rep(0,length(object@mcDelta))
@@ -127,15 +128,15 @@ setMethod(
          elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
          diag(elast) <- -1*gamma - diag(elast)
 
-         thisFOC <- shares + (elast * owner) %*% (margins * shares)
+         thisFOC <- shares + as.vector((elast * owner) %*% (margins * shares))
 
-         return(as.vector(thisFOC))
+         return(thisFOC)
      }
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- BBsolve(object@priceStart,FOC,...)
+     minResult <- nleqslv(object@priceStart,FOC,...)
 
-     priceEst        <- minResult$par
+     priceEst        <- minResult$x
      names(priceEst) <- object@labels
 
      return(priceEst)
@@ -291,6 +292,7 @@ setMethod(
 
 ces <- function(prices,quantities,margins,
                 ownerPre,ownerPost,
+                normIndex=1,
                 mcDelta=rep(0,length(prices)),
                 shareInside = NULL,
                 priceStart = prices,
@@ -306,6 +308,7 @@ ces <- function(prices,quantities,margins,
 
     ## Create CES  container to store relevant data
     result <- new("CES",prices=prices, quantities=quantities,margins=margins,
+                  normIndex=normIndex,
                   shares=shares,mc=prices*(1-margins),mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,

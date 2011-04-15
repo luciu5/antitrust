@@ -7,7 +7,7 @@ setClass(
          representation=
          representation(
                         margins="vector",
-                        nests="vector",
+                        nests="factor",
                         nestsParms="vector"),
 
          validity=function(object){
@@ -21,36 +21,33 @@ setClass(
                  stop("'margins' length must equal the number of products")}
 
 
-             if(nprods != length(nests)){
+             if(nprods != length(object@nests)){
                  stop("'nests' length must equal the number of products")}
 
 
              ## Test to see if enough margin info has been supplied to identify all nesting parameters
              nNestParm <- nlevels(object@nests)
              nNestParm <- nNestParm*(nNestParm -1)/2 #calculate the number of nesting parameters
+             nMargins  <- length(object@margins[!is.na(object@margins)])
 
-
-             maxNests <- floor((sqrt(8*nprods+1) + 1)/2) # compute the maximum number of nests that may be used
-                                                         # given available margins
+             maxNests <- floor((sqrt(8 * nMargins + 1) + 1)/2) # compute the maximum number of nests that may be used
+                                                               # given available margins
 
              if(!is.vector(object@nestsParms) || nNestParm != length(object@nestsParms)){
-                 stop(paste("'nestsParmStart' must be a vector whose length equals",nNestParm))}
+                 stop(paste("'nestsParmStart' must be a vector of length",nNestParm))}
 
-             if(nNestParm > length(object@margins[!is.na(object@margins)])){
+             if(nNestParm > nMargins){
                  stop(paste(
                             "Impossible to calibrate nest parameters with the number of margins supplied.\n",
                             "The maximum number of nests supported by the supplied margin information is"
-                            ,maxNests,"."))
+                            , maxNests,"."))
              }
          }
 
          )
 
 
-setGeneric (
- name= "getNestsParms",
- def=function(object,...){standardGeneric("getNestsParms")}
- )
+
 
 
 setMethod(
@@ -142,7 +139,7 @@ setMethod(
                   return(measure)
               }
 
-              minNests <- optim(object@nestsParms,minD,method = "BFGS")$par
+              minNests <- optim(object@nestsParms,minD,method ="L-BFGS-B",lower=0,upper=1)$par
 
               B <- calcB(minNests)
 
@@ -189,7 +186,8 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,ownerPre,ownerPos
                          labels=paste("Prod",1:length(shares),sep=""),
                          ...){
 
-    nests <- factor(nests)
+    if(is.factor(nests)){nests <- nests[,drop=TRUE] }
+    else{nests <- factor(nests)}
 
     if(is.null(nestsParmStart)){
         nNests <- nlevels(nests)
