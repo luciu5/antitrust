@@ -3,11 +3,11 @@
 
 setClass(
          Class = "LogLog",
-         contains="PCLogLog",
+         contains="Linear",
          representation=representation(
-         priceStart = "vector",
-         diversion = "matrix"
+         priceStart = "vector"
          ),
+
           validity=function(object){
 
              ## Sanity Checks
@@ -16,18 +16,8 @@ setClass(
              nprods <- length(object@prices)
 
              if(nprods != length(object@priceStart)){
-                 stop("'priceStart' must have the same length as 'quantities'")}
-
-             if(nprods != nrow(object@diversion) ||
-                nprods != ncol(object@diversion)){
-                 stop("'diversions' must be a square matrix whose dimension is the same as length 'price'")
-             }
-
-             if(!all(diag(object@diversion) == 1)){ stop("'diversion' diagonal elements must all equal 1")}
-             if(any(abs(object@diversion) > 1)){ stop("'diversion' elements must be between -1 and 1")}
-         }
-
- )
+                 stop("'priceStart' must have the same length as 'prices'")}
+ })
 
 
 setMethod(
@@ -65,10 +55,90 @@ setMethod(
           )
 
 
+setMethod(
+ f= "calcPrices",
+ signature= "LogLog",
+ definition=function(object,preMerger=TRUE,...){
+ if(preMerger){
+     mcDelta <- rep(0,length(object@mcDelta))
+     owner <- object@ownerPre
+ }
+ else{
+     mcDelta <- object@mcDelta
+     owner <- object@ownerPost
+ }
+
+ slopes    <- object@slopes[,-1]
+ intercept <- object@slopes[,1]
 
 
 
-loglog <- function(prices,quantities,margins,diversions,
+
+ FOC <- function(price,object){
+
+     require(nleqslv)
+
+     quantity <- exp(intercept) * apply(price^slopes,1,prod) # log(price) can produce errors.
+                                                             # this transformation avoidsusing logs
+    #quantity <- exp(as.vector(intercept+slopes %*% log(price)))
+
+     margin   <- 1 - (object@mc * (1 + mcDelta)) / price
+     share  <- price*quantity/sum(price*quantity)
+
+     thisFOC <- share + (t(slopes) * owner ) %*% (margin * share)
+
+     return(as.vector(thisFOC))
+ }
+
+ price <- nleqslv(object@priceStart,FOC,object=object,...)$x
+
+ return(price)
+
+}
+ )
+
+
+setMethod(
+ f= "calcQuantities",
+ signature= "LogLog",
+ definition=function(object,preMerger=TRUE,...){
+
+
+     if(preMerger){ prices <- object@pricePre}
+     else{          prices <- object@pricePost}
+
+      slopes    <- object@slopes[,-1]
+      intercept <- object@slopes[,1]
+
+     quantities <- exp(as.vector(intercept+slopes %*% log(prices)))
+     names(quantities) <- object@labels
+
+     return(quantities)
+
+}
+ )
+
+
+
+
+setMethod(
+ f= "elast",
+ signature= "LogLog",
+ definition=function(object,margin=TRUE){
+
+      elast    <- object@slopes[,-1]
+
+      dimnames(elast) <- list(object@labels,object@labels)
+
+      return(elast)
+
+}
+ )
+
+
+
+
+loglog <- function(prices,quantities,margins,diversions=NULL,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
                      priceStart=prices,
@@ -78,7 +148,14 @@ loglog <- function(prices,quantities,margins,diversions,
 
 
 
-    shares=rep(NA,length(prices)) #not used with "LogLog",but required by "PCLogLog" class
+    shares=quantities/sum(quantities)
+
+
+    if(is.null(diversions)){
+        diversions <-  tcrossprod(1/(1-shares),shares)
+        diag(diversion) <- 1
+    }
+
 
     result <- new("LogLog",prices=prices, quantities=quantities,margins=margins,
                   shares=shares,mc=prices*(1-margins),mcDelta=mcDelta, priceStart=priceStart,

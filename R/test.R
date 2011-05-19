@@ -10,13 +10,16 @@ source("linear.R")
 source("loglog.R")
 source("ces.R")
 source("cesNests.R")
+source("logit.R")
+source("pcaids.R")
+source("pcaidsNests.R")
 setwd(currentdir)
 
 
 testMethods <- function(object){
 
     print(object)           # return predicted price change
-    print(summary(object))         # summarize merger simulation
+    summary(object)         # summarize merger simulation
 
     print(elast(object,TRUE)  )    # returns premerger elasticities
     print(elast(object,FALSE) )    # returns postmerger elasticities
@@ -59,9 +62,8 @@ owner.post[1,2] <- owner.post[2,1] <- 1
 
 shares=quantity/sum(quantity)
 ## default is diversion according to revenue share
-result1 <- pcloglog(price,quantity,margin,shares=shares,ownerPre=owner.pre,ownerPost=owner.post)
-
-testMethods(result1)
+##result1 <- pcloglog(price,quantity,margin,shares=shares,ownerPre=owner.pre,ownerPost=owner.post)
+##testMethods(result1)
 
 ## User-supplied diversions (this will give the same answer as above)
 
@@ -76,8 +78,8 @@ testMethods(result2)
 
 
 ## same as above, but with linear demand
-result3 <- pclinear(price,quantity,margin,shares=shares,ownerPre=owner.pre,ownerPost=owner.post)
-testMethods(result3)
+##result3 <- pclinear(price,quantity,margin,shares=shares,ownerPre=owner.pre,ownerPost=owner.post)
+##testMethods(result3)
 
 result4 <- linear(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result4)
@@ -89,3 +91,21 @@ testMethods(result5)
 ## Nested ces demand
 result6 <- ces.nests(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post,nests=nests)
 testMethods(result6)
+
+
+knownElast=-3
+mktElast=-1
+
+## PCAIDS demand
+result8 <- pcaids(shares,knownElast,mktElast,ownerPre=owner.pre,ownerPost=owner.post)
+testMethods(result8)
+
+
+
+
+price <- c(1,.9,.9,.9,0)
+shares <- c(.808,.0822,.0402,.00374,.0658)
+
+## logit demand
+result7 <- logit(price,shares,margin,ownerPre=owner.pre,ownerPost=owner.post)
+testMethods(result7)

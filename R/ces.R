@@ -3,9 +3,10 @@
 
 setClass(
          Class   = "CES",
-         contains="PCLinear",
+         contains="Logit",
 
          representation=representation(
+
          priceStart    = "vector",
          shareInside   = "numeric",
          totExp        = "numeric",
@@ -21,15 +22,21 @@ setClass(
              ## Sanity Checks
 
 
-             nprods <- length(object@shares)
+             nprods <- length(object@prices)
+
 
 
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'shares'")}
 
+             if(length(object@shareInside)>0 &&
+                !(object@shareInside >0 &&
+                  object@shareInside <1)
+                ){
+                 stop("'shareInside' must either equal NULL or be between 0 and 1")
          }
 
-         )
+         })
 
 
 setMethod(
@@ -176,6 +183,8 @@ setMethod(
 
      if(is.null(alpha)) stop("'shareInside' must be provided in order to calculate Compensating Variation")
 
+     ## totExp is implicitly premerger prices and quantities for all inside goods. Should
+     ## this be changed to be a function of 'preMerger'?
      quantities        <- calcShares(object,preMerger)*totExp / (1 + alpha)
      names(quantities) <- object@labels
      return(quantities)
@@ -243,9 +252,6 @@ setMethod(
               meanval     <- object@slopes$meanval
               shareInside <- object@shareInside
               totExp      <- object@totExp
-              price       <- object@prices
-              quantities  <- object@quantities
-
 
 
               tempPre  <- sum(meanval * object@pricePre^(1-gamma))
@@ -267,26 +273,32 @@ setMethod(
      alpha       <- object@slopes$alpha
 
      if(is.null(alpha)){
+         outPre <-   calcShares(object,TRUE) *100
+         outPost <-  calcShares(object,FALSE) *100
+     }
+
+     else{
+         outPre <-   calcQuantities(object,TRUE) *100
+         outPost <-  calcQuantities(object,FALSE) *100
+     }
+
          pricePre  <- object@pricePre
          pricePost <- object@pricePost
          priceDelta <- (pricePost - pricePre)/pricePre *100
-         sharesPre <-   calcShares(object,TRUE) *100
-         sharesPost <-  calcShares(object,FALSE) *100
-         sharesDelta <- (sharesPost - sharesPre)/sharesPre *100
+
+         outDelta <- (outPost - outPre)/outPre *100
 
          results <- data.frame(pricePre=pricePre,pricePost=pricePost,
-                               priceDelta=priceDelta,sharesPre=sharesPre,
-                               sharesPost=sharesPost,sharesDelta=sharesDelta)
+                               priceDelta=priceDelta,outputPre=outPre,
+                               outputPost=outPost,outputDelta=outDelta)
 
          rownames(results) <- object@labels
 
          cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
          print(round(results,2))
-     }
-     else{   callNextMethod(object)}
 
-}
- )
+
+ })
 
 
 

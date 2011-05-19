@@ -82,10 +82,7 @@ setMethod(
       )
 
 
-setGeneric (
- name= "calcPriceDelta",
- def=function(object,...){standardGeneric("calcPriceDelta")}
- )
+
 
 setMethod(
  f= "calcPriceDelta",
@@ -186,47 +183,6 @@ setMethod(
  )
 
 
-setMethod(
- f= "diversion",
- signature= "PCAIDS",
- definition=function(object,preMerger=TRUE){
-
-    elasticity <- elast(object,preMerger)
-    shares <-  calcShares(object,preMerger)
-
-    diversion <- -1 * t(elasticity) / diag(elasticity)
-    diag(diversion) <- 1
-    diversion <- diversion * tcrossprod(1/shares,shares)
-
-    return(diversion)
-}
- )
-
-
-
-
-
-
-
-
-#setMethod(
-# f= "deltaCS",
-# signature= "PCAIDS",
-# definition=function(object){
-
-
-#    deltaLogPrice <-  log(object@priceDelta + 1)
-#    sharesPre <- calcShares(object,TRUE)
-#    sharesPost <- calcShares(object,FALSE)
-#    deltaShares <- sharesPost - sharesPre
-
-#     deltaCS <- .5 * (deltaLogPrice * 100) * (deltaShares * 100)
-#     names(deltaCS) <- object@labels
-
-#     return(deltaCS)
-
-#}
-# )
 
 
 
@@ -277,30 +233,27 @@ setMethod(
  definition=function(object){
 
 
-     sharesPre   <-  calcShares(object,TRUE)
-     sharesPost  <-  calcShares(object,FALSE)
-     sharesDelta <- (sharesPost - sharesPre)/sharesPre * 100
 
-     results <- data.frame(
-                           priceDelta=object@priceDelta * 100,sharesPre=sharesPre,
-                           sharesPost=sharesPost,sharesDelta=sharesDelta)
-
-     rownames(results) <- object@labels
-
-     cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
-     print(round(results,2))
-
-    ## cat("\n\nPercent Change in Consumer Surplus:\n\n")
-    ## print(round(deltaCS(object),2))
-
-}
- )
+         outPre  <-  calcShares(object,TRUE) * 100
+         outPost <-  calcShares(object,FALSE) * 100
 
 
 
+         outDelta <- (outPost/outPre - 1) * 100
+
+         priceDelta   <-  object@priceDelta * 100
 
 
+         results <- data.frame(priceDelta=priceDelta,outputPre=outPre,
+                               outputPost=outPost,outputDelta=outDelta)
 
+         rownames(results) <- object@labels
+
+         cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
+         print(round(results,2))
+
+
+     })
 
 
 

@@ -2,8 +2,8 @@
 
 
 setClass(
-         Class   = "CESNests",
-         contains="CES",
+         Class   = "LogitNests",
+         contains="Logit",
 
          representation=representation(
          nests="factor",
@@ -24,7 +24,7 @@ setClass(
              nMargins  <- length(object@margins[!is.na(object@margins)])
              maxNests  <- nMargins - 1
 
-             if(nNestParm==1) stop("'ces.nests' cannot be used for non-nested problems. Use 'ces' instead")
+             if(nNestParm==1) stop("'logit.nests' cannot be used for non-nested problems. Use 'logit' instead")
 
              if(nprods != length(object@nests)){
                  stop("'nests' length must equal the number of products")}
@@ -49,7 +49,7 @@ setClass(
 
 setMethod(
           f= "calcSlopes",
-          signature= "CESNests",
+          signature= "LogitNests",
           definition=function(object){
 
               ## Uncover Demand Coefficents
@@ -61,13 +61,8 @@ setMethod(
               prices       <-  object@prices
               quantities   <-  object@quantities
               idx          <-  object@normIndex
-              shareInside  <-  object@shareInside
               nests        <- object@nests
               parmsStart   <- object@parmsStart
-
-              ## uncover Numeraire Coefficients
-              if(length(shareInside)>0) {alpha <- 1/shareInside -1}
-              else{alpha <- NULL}
 
 
 
@@ -76,9 +71,9 @@ setMethod(
 
               nprods <- length(shares)
 
-              sharesNests <- tapply(prices * quantities,nests,sum)[nests]
+              sharesNests <- tapply(quantities,nests,sum)[nests]
 
-              sharesNests <- (prices * quantities) / sharesNests
+              sharesNests <- quantities / sharesNests
 
 
 
@@ -143,7 +138,7 @@ setMethod(
 
 setMethod(
  f= "calcPrices",
- signature= "CESNests",
+ signature= "LogitNests",
  definition=function(object,preMerger=TRUE,...){
 
      require(nleqslv) #needed to solve nonlinear system of firm FOC
@@ -208,7 +203,7 @@ setMethod(
 
 setMethod(
  f= "calcShares",
- signature= "CESNests",
+ signature= "LogitNests",
  definition=function(object,preMerger=TRUE){
 
      if(preMerger){ prices <- object@pricePre}
@@ -239,7 +234,7 @@ setMethod(
 
 setMethod(
  f= "elast",
- signature= "CESNests",
+ signature= "LogitNests",
  definition=function(object,preMerger=TRUE){
 
      if(preMerger){ prices <- object@pricePre}
@@ -279,7 +274,7 @@ setMethod(
 
 setMethod(
           f= "CV",
-          signature= "CESNests",
+          signature= "LogitNests",
           definition=function(object){
 
               alpha       <- object@slopes$alpha
@@ -320,7 +315,7 @@ setMethod(
 
 setMethod(
  f= "summary",
- signature= "CESNests",
+ signature= "LogitNests",
  definition=function(object){
 
      alpha       <- object@slopes$alpha
@@ -380,8 +375,8 @@ ces.nests <- function(prices,quantities,margins,
         parmsStart <- cumsum(runif(nNests+1,1,1.5)) # parameter values are assumed to be greater than 1
                             }
 
-    ## Create CESNests  container to store relevant data
-    result <- new("CESNests",prices=prices, quantities=quantities,margins=margins,
+    ## Create LogitNests  container to store relevant data
+    result <- new("LogitNests",prices=prices, quantities=quantities,margins=margins,
                   shares=shares,mc=prices*(1-margins),mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,

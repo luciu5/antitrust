@@ -1,6 +1,8 @@
-setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
-source("Classes.R")
-source("Methods.R")
+##DEPRECATED: replaced by linear.R
+
+##setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
+##source("Classes.R")
+##source("Methods.R")
 
 
 
@@ -104,10 +106,7 @@ setMethod(
 }
  )
 
-setGeneric (
- name= "calcQuantities",
- def=function(object,...){standardGeneric("calcQuantities")}
- )
+
 
 setMethod(
  f= "calcQuantities",
@@ -152,119 +151,6 @@ setMethod(
 
 }
  )
-
-
-
-setMethod(
- f= "diversion",
- signature= "PCLinear",
- definition=function(object,preMerger=TRUE){
-
-    elasticity <- elast(object,preMerger)
-    quantities <-  calcQuantities(object,preMerger)
-
-    diversion <- -1 * t(elasticity) / diag(elasticity)
-    diag(diversion) <- 1
-    diversion <- diversion * tcrossprod(1/quantities,quantities)
-
-    return(diversion)
-}
- )
-
-
-
-
-setMethod(
- f= "cmcr",
- signature= "PCLinear",
- definition=function(object){
-
-    pricePre <- object@pricePre
-    pricePre <- tcrossprod(1/pricePre,pricePre)
-
-    elastPre <- elast(object,TRUE)
-    divPre <- diversion(object,TRUE)
-
-    Bpre =  -1 * divPre * pricePre * object@ownerPre;  diag(Bpre) = 1
-    Bpost = -1 * divPre * pricePre * object@ownerPost; diag(Bpost) = 1
-
-    marginPre <- -1 * as.vector(solve(Bpre)  %*% (1/diag(elastPre)))
-    marginPost <-     as.vector(solve(Bpost) %*%  Bpre %*% marginPre)
-
-    cmcr <- (marginPost - marginPre)/(1 - marginPre)
-    names(cmcr) <- object@labels
-
-    return(cmcr * 100)
-}
- )
-
-
-
-#setMethod(
-# f= "deltaCS",
-# signature= "PCLinear",
-# definition=function(object){
-
-#     pricePre    <- object@pricePre
-#     quantityPre <-  calcQuantities(object,TRUE)
-
-#     pricePost    <- object@pricePost
-#     quantityPost <- calcQuantities(object,FALSE)
-
-#     deltaCS <- .5*(quantityPre - quantityPost)*(pricePre-pricePost)
-#     names(deltaCS) <- object@labels
-
-#     return(deltaCS)
-
-#}
-# )
-
-setMethod(
- f= "show",
- signature= "PCLinear",
- definition=function(object){
-
-     pricePre  <- object@pricePre
-     pricePost <- object@pricePost
-
-     priceDelta <- (pricePost - pricePre)/pricePre
-     names(priceDelta) <- object@labels
-     print(priceDelta*100)
-
-}
- )
-
-setGeneric (
- name= "summary",
- def=function(object){standardGeneric("summary")}
- )
-
-setMethod(
- f= "summary",
- signature= "PCLinear",
- definition=function(object){
-
-     pricePre  <- object@pricePre
-     pricePost <- object@pricePost
-     priceDelta <- (pricePost - pricePre)/pricePre *100
-     quantityPre <-   calcQuantities(object,TRUE)
-     quantityPost <-  calcQuantities(object,FALSE)
-     quantityDelta <- (quantityPost - quantityPre)/quantityPre *100
-
-     results <- data.frame(pricePre=pricePre,pricePost=pricePost,
-                           priceDelta=priceDelta,quantityPre=quantityPre,
-                           quantityPost=quantityPost,quantityDelta=quantityDelta)
-
-     rownames(results) <- object@labels
-
-     cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
-     print(round(results,2))
-     #cat("\n\nChange in Consumer Surplus:\n\n")
-     #print(round(deltaCS(object),2))
-
-}
- )
-
 
 
 

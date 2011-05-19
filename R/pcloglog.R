@@ -1,4 +1,6 @@
-#source("pclinear.R")
+## DEPRECATED: replaced by loglog.R
+
+##source("pclinear.R")
 
 
 setClass(
@@ -137,30 +139,6 @@ setMethod(
 
 }
  )
-
-
-
-
-#setMethod(
-# f= "deltaCS",
-# signature= "PCLogLog",
-# definition=function(object){
-
-#     pricePre    <- object@pricePre
-#     quantityPre <- calcQuantities(object,TRUE)
-
-#     pricePost    <- object@pricePost
-#     quantityPost <- calcQuantities(object,FALSE)
-
-#     deltaCS <- .5*(log(quantityPre / quantityPost))*(log(pricePre / pricePost))
-#     names(deltaCS) <- object@labels
-
-#     return(deltaCS)
-
-#}
-# )
-
-
 
 
 
