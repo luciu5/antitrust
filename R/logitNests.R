@@ -1,4 +1,4 @@
-##source("ces.R")
+##source("logit.R")
 
 
 setClass(
@@ -71,63 +71,54 @@ setMethod(
 
               nprods <- length(shares)
 
-              sharesNests <- tapply(quantities,nests,sum)[nests]
+              sharesIn <- tapply(quantities,nests,sum)[nests]
 
-              sharesNests <- quantities / sharesNests
+              sharesIn <- quantities / sharesIn
 
-
+              revenues <- prices * shares
 
               nMargins <-  length(margins[!is.na(margins)])
 
               ## Minimize the distance between observed and predicted margins
               minD <- function(theta){
 
-                  gamma <- theta[1]
+                  alpha <- theta[1]
                   sigma <- theta[-1]
 
-
-
-                  elast <- diag(sigma - gamma)
-
+                  elast <- diag((1/sigma-1)*alpha)
                   elast <- elast[nests,nests]
-                  elast <- elast * matrix(sharesNests,ncol=nprods,nrow=nprods)
-                  elast <- elast + (gamma-1) * matrix(shares,ncol=nprods,nrow=nprods)
+                  elast <- elast * matrix(sharesIn*prices,ncol=nprods,nrow=nprods)
+                  elast <- -1*(elast + alpha * matrix(shares*prices,ncol=nprods,nrow=nprods))
+                  diag(elast) <- diag(elast) + (1/sigma[nests])*alpha*prices
 
-                  diag(elast) <- diag(elast) - sigma[nests]
-
-                  marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% shares) / shares
+                  marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues
 
                   measure <- sqrt(sum((margins - marginsCand)^2,na.rm=TRUE))/sqrt(nMargins)
 
                   return(measure)
               }
 
-              ## Constrain optimizer to look for solutions where sigma_i > gamma > 1 for all i
-              constrA <- diag(nlevels(nests) + 1)
-              constrA[-1,1] <- -1
+              ## Constrain optimizer to look for solutions where alpha<0, 1 > sigma > 0
+              lowerB <- upperB <- rep(0,length(parmsStart))
+              lowerB[1] <- -Inf
 
-              constrB <- rep(0,nlevels(nests) + 1)
-              constrB[1] <- -1
+              upperB[-1] <- 1
 
-              minTheta <- constrOptim(parmsStart,minD,grad=NULL,ui=constrA,ci=constrB)$par
-              names(minTheta) <- c("Gamma",levels(nests))
+              minTheta <- optim(parmsStart,minD,method="L-BFGS-B",lower= lowerB,upper=upperB)$par
+              names(minTheta) <- c("Alpha",levels(nests))
 
-              minGamma <- minTheta[1]
+              minAlpha <- minTheta[1]
               minSigma <- minTheta[-1]
               minSigma <- minSigma[nests]
 
-              meanval <- log(shares) - log(shares[idx]) + (minGamma - 1) * (log(prices) - log(prices[idx]))
+              meanval <- log(shares) - log(shares[idx]) - minAlpha*(prices - prices[idx])
 
-              meanval <- meanval - (minSigma-minGamma)/(minSigma-1)*log(sharesNests) +
-                         (minSigma[idx]-minGamma)/(minSigma[idx]-1)*log(sharesNests[idx])
-
-              meanval <- exp( (minSigma-1)/(minGamma-1) * meanval )
-
+              meanval <- meanval + (minSigma-1)*log(sharesIn) -
+                         (minSigma[idx]-1)*log(sharesIn[idx])
 
               names(meanval)   <- object@labels
 
-              object@slopes    <- list(alpha=alpha,gamma=minGamma,sigma=minTheta[-1],meanval=meanval)
-              object@totExp    <- (1 + alpha) * sum(prices*quantities)
+              object@slopes    <- list(alpha=minAlpha,sigma=minTheta[-1],meanval=meanval)
 
               return(object)
           }
@@ -157,7 +148,7 @@ setMethod(
      nprods <- length(object@shares)
      nests  <- object@nests
 
-     gamma    <- object@slopes$gamma
+     alpha    <- object@slopes$alpha
      sigma    <- object@slopes$sigma
      meanval  <- object@slopes$meanval
 
@@ -167,25 +158,23 @@ setMethod(
 
          margins      <- 1 - (object@mc * (1 + mcDelta)) / priceCand
 
-
-         sharesIn     <- meanval*priceCand^(1-sigma[nests])
-         sharesAcross <- tapply(sharesIn,nests,sum)
-         sharesIn     <- sharesIn / sharesAcross[nests]
-         sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
-         sharesAcross <- sharesAcross / sum(sharesAcross)
+         sharesIn     <- exp((meanval+alpha*priceCand)/sigma[nests])
+         inclusiveValue <- log(tapply(sharesIn,nests,sum))
+         sharesIn     <- sharesIn/sum(sharesIn)
+         sharesAcross <-   exp(sigma*inclusiveValue)
+         sharesAcross <- sharesAcross/sum(sharesAcross)
 
          shares       <- sharesIn * sharesAcross[nests]
 
-
-
-         elast <- diag(sigma - gamma)
-
+         elast <- diag((1/sigma-1)*alpha)
          elast <- elast[nests,nests]
-         elast <- elast * matrix(sharesIn,ncol=nprods,nrow=nprods)
-         elast <- elast + (gamma-1) * matrix(shares,ncol=nprods,nrow=nprods)
-         diag(elast) <- diag(elast) - sigma[nests]
+         elast <- elast * matrix(sharesIn*priceCand,ncol=nprods,nrow=nprods)
+         elast <- -1*(elast + alpha * matrix(shares*priceCand,ncol=nprods,nrow=nprods))
+         diag(elast) <- diag(elast) + (1/sigma[nests])*alpha*priceCand
 
-         thisFOC <- shares + as.vector((elast * owner) %*% (margins * shares))
+         revenues <-  shares * priceCand
+
+         thisFOC <- revenues + as.vector((elast * owner) %*% (margins * revenues))
          return(thisFOC)
      }
 
@@ -210,16 +199,16 @@ setMethod(
      else{          prices <- object@pricePost}
 
      nests     <- object@nests
-     gamma    <- object@slopes$gamma
+     alpha    <- object@slopes$alpha
      sigma    <- object@slopes$sigma
      meanval  <- object@slopes$meanval
 
 
-     sharesIn     <- meanval*prices^(1-sigma[nests])
-     sharesAcross <- tapply(sharesIn,nests,sum)
-     sharesIn     <- sharesIn / sharesAcross[nests]
-     sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
-     sharesAcross <- sharesAcross / sum(sharesAcross)
+     sharesIn     <- exp((meanval+alpha*prices)/sigma[nests])
+     inclusiveValue <- log(tapply(sharesIn,nests,sum))
+     sharesIn     <- sharesIn/sum(sharesIn)
+     sharesAcross <-   exp(sigma*inclusiveValue)
+     sharesAcross <- sharesAcross/sum(sharesAcross)
 
      shares       <- sharesIn * sharesAcross[nests]
 
@@ -241,25 +230,25 @@ setMethod(
      else{          prices <- object@pricePost}
 
      nests    <- object@nests
-     gamma    <- object@slopes$gamma
+     alpha    <- object@slopes$alpha
      sigma    <- object@slopes$sigma
      meanval  <- object@slopes$meanval
 
-     sharesIn     <- meanval*prices^(1-sigma[nests])
-     sharesAcross <- tapply(sharesIn,nests,sum)
-     sharesIn     <- sharesIn / sharesAcross[nests]
-     sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
-     sharesAcross <- sharesAcross / sum(sharesAcross)
+     sharesIn     <- exp((meanval+alpha*prices)/sigma[nests])
+     inclusiveValue <- log(tapply(sharesIn,nests,sum))
+     sharesIn     <- sharesIn/sum(sharesIn)
+     sharesAcross <-   exp(sigma*inclusiveValue)
+     sharesAcross <- sharesAcross/sum(sharesAcross)
 
      shares       <- sharesIn * sharesAcross[nests]
 
      nprods <-  length(shares)
 
-     elast <- diag(sigma - gamma)
+     elast <- diag((1/sigma-1)*alpha)
      elast <- elast[nests,nests]
-     elast <- elast * matrix(sharesIn,ncol=nprods,nrow=nprods,byrow=TRUE)
-     elast <- elast + (gamma-1) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
-     diag(elast) <- diag(elast) - sigma[nests]
+     elast <- elast * matrix(sharesIn*prices,ncol=nprods,nrow=nprods,byrow=TRUE)
+     elast <- -1*(elast + alpha * matrix(shares*prices,ncol=nprods,nrow=nprods,byrow=TRUE))
+     diag(elast) <- diag(elast) + (1/sigma[nests])*alpha*prices
 
      dimnames(elast) <- list(object@labels,object@labels)
 
@@ -277,31 +266,19 @@ setMethod(
           signature= "LogitNests",
           definition=function(object){
 
-              alpha       <- object@slopes$alpha
-
-              if(is.null(alpha)) stop("'shareInside' must be provided in order to calculate Compensating Variation")
-
-
               nests       <- object@nests
-              gamma       <- object@slopes$gamma
+              alpha       <- object@slopes$alpha
               sigma       <- object@slopes$sigma
               meanval     <- object@slopes$meanval
-              shareInside <- object@shareInside
-              totExp      <- object@totExp
-              price       <- object@prices
-              quantities  <- object@quantities
 
 
 
-              tempPre  <- log( sum( tapply(meanval * object@pricePre^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)) ) )
-              tempPre  <- (gamma/(gamma-1)) * log( sum( tapply( meanval^((1-gamma)/(1-sigma[nests])) * object@pricePre^(-gamma),nests,sum)^((gamma-1)/gamma)) ) - tempPre
-
-              tempPost  <- log( sum( tapply(meanval * object@pricePost^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)) ) )
-              tempPost  <- (gamma/(gamma-1)) * log( sum( tapply( meanval^((1-gamma)/(1-sigma[nests])) * object@pricePost^(-gamma),nests,sum)^((gamma-1)/gamma)) ) - tempPost
+              tempPre  <- sum( tapply(exp((meanval + object@pricePre*alpha)  / sigma[nests]),nests,sum) ^ sigma )
+              tempPost <- sum( tapply(exp((meanval + object@pricePost*alpha) / sigma[nests]),nests,sum) ^ sigma )
 
 
 
-              CV <- exp(log(totExp) + (tempPre - tempPost)/(1+alpha)) - totExp
+              CV <- log(tempPre/tempPost)
 
               names(CV) <- NULL
 
@@ -310,50 +287,31 @@ setMethod(
  })
 
 
-
-
-
 setMethod(
  f= "summary",
  signature= "LogitNests",
  definition=function(object){
 
-     alpha       <- object@slopes$alpha
-
-     if(is.null(alpha)){
-         pricePre  <- object@pricePre
-         pricePost <- object@pricePost
-         priceDelta <- (pricePost - pricePre)/pricePre *100
-         sharesPre <-   calcShares(object,TRUE) *100
-         sharesPost <-  calcShares(object,FALSE) *100
-         sharesDelta <- (sharesPost - sharesPre)/sharesPre *100
-
-         results <- data.frame(pricePre=pricePre,pricePost=pricePost,
-                               priceDelta=priceDelta,sharesPre=sharesPre,
-                               sharesPost=sharesPost,sharesDelta=sharesDelta)
-
-         rownames(results) <- object@labels
-
-         cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
-         print(round(results,2))
-     }
-     else{   callNextMethod(object)}
+     callNextMethod(object)
 
      cat("\nNesting Parameter Estimates:\n\n")
      print(round(object@slopes$sigma,2))
 
      cat("\n\n")
-}
- )
 
 
 
-ces.nests <- function(prices,quantities,margins,
+ }
+
+
+)
+
+
+logit.nests <- function(prices,quantities,margins,
                       ownerPre,ownerPost,
                       nests=rep(1,length(shares)),
                       normIndex=1,
                       mcDelta=rep(0,length(prices)),
-                      shareInside = NULL,
                       priceStart = prices,
                       parmsStart=NULL,
                       labels=paste("Prod",1:length(prices),sep=""),
@@ -362,9 +320,8 @@ ces.nests <- function(prices,quantities,margins,
 
 
 
-    revenues <- prices*quantities
-    shares=(revenues)/sum(revenues) #Revenue based shares
-    if(is.null(shareInside)){shareInside <- numeric()}
+    shares=(quantities)/sum(quantities) #quantity based shares
+
 
     if(is.factor(nests)){nests <- nests[,drop=TRUE] }
     else{nests <- factor(nests)}
@@ -372,7 +329,8 @@ ces.nests <- function(prices,quantities,margins,
 
     if(is.null(parmsStart)){
         nNests <- nlevels(nests)
-        parmsStart <- cumsum(runif(nNests+1,1,1.5)) # parameter values are assumed to be greater than 1
+        parmsStart <- runif(nNests+1) # nesting parameter values are assumed to be greater than 1
+        parmsStart[1] <- -1* parmsStart[1] # price coefficient is assumed to be negative
                             }
 
     ## Create LogitNests  container to store relevant data
@@ -384,7 +342,7 @@ ces.nests <- function(prices,quantities,margins,
                   normIndex=normIndex,
                   parmsStart=parmsStart,
                   priceStart=priceStart,
-                  shareInside=shareInside,labels=labels)
+                  labels=labels)
 
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)

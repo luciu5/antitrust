@@ -1,5 +1,5 @@
 rm(list=ls())
-
+require(nleqslv)
 currentdir <- getwd()
 setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
 source("Classes.R")
@@ -8,9 +8,10 @@ source("pclinear.R")
 source("pcloglog.R")
 source("linear.R")
 source("loglog.R")
+source("logit.R")
+source("logitNests.R")
 source("ces.R")
 source("cesNests.R")
-source("logit.R")
 source("pcaids.R")
 source("pcaidsNests.R")
 setwd(currentdir)
@@ -28,6 +29,7 @@ testMethods <- function(object){
     print(diversion(object,FALSE)) # returns postmeger diversion ratios
 
     print(cmcr(object))            # returns the compensating marginal cost reduction
+    print(CV(object))            # returns the compensating variation
 
 
 }
@@ -84,28 +86,57 @@ testMethods(result2)
 result4 <- linear(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result4)
 
+##Beer calibration and simulation results from Epstein/Rubenfeld 2004, pg 80+
+n <- 4 #number of firms in market
+prodNames <- c("BUD","OLD STYLE","MILLER","MILLER-LITE","OTHER-LITE","OTHER-REG")
+ownerPre <-c("BUD","OLD STYLE","MILLER","MILLER","OTHER-LITE","OTHER-REG")
+ownerPost <-c("BUD","BUD","MILLER","MILLER","OTHER-LITE","OTHER-REG")
+nests <- c("R","R","R","L","L","R")
+
+price    <- c(.0441,.0328,.0409,.0396,.0387,.0497)
+shares.quantity <- c(.066,.172,.253,.187,.099,.223)
+shares.revenue <- c(.071,.137,.251,.179,.093,.269)
+margins.logit <- c(.3830,.5515,.5421,.5557,.4453,.3769)
+#margins.pcaids <- c(.4,.4179,.5208,.5208,.4059,.4589) #pcaids margins
+margins.pcaids <- c(.4,.4232,.4997,.6787,.5725,.4787) #pcaids nests margins
+
+names(price) <-
+    names(shares.quantity) <-
+    names(shares.revenue) <-
+    names(margins.logit) <-
+    names(margins.pcaids) <-
+    prodNames
+
+
 ## ces demand
-result5 <- ces(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+result5 <- ces(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost)
 testMethods(result5)
 
 ## Nested ces demand
-result6 <- ces.nests(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post,nests=nests)
+result6 <- ces.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
 testMethods(result6)
 
 
-knownElast=-3
+knownElast=-2.5
 mktElast=-1
 
+
 ## PCAIDS demand
-result8 <- pcaids(shares,knownElast,mktElast,ownerPre=owner.pre,ownerPost=owner.post)
+## Confirmed Against Epstein/Rubenfeld 2004 Beer example
+result7 <- pcaids(shares.revenue,knownElast,mktElast,knownElastIndex=1,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+testMethods(result7)
+
+## Nested PCAIDS demand
+## Confirmed Against Epstein/Rubenfeld 2004 Beer example
+result8 <- pcaids.nests(shares.revenue,margins.pcaids,knownElast,mktElast,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
 testMethods(result8)
 
-
-
-
-price <- c(1,.9,.9,.9,0)
-shares <- c(.808,.0822,.0402,.00374,.0658)
-
 ## logit demand
-result7 <- logit(price,shares,margin,ownerPre=owner.pre,ownerPost=owner.post)
-testMethods(result7)
+result9 <- logit(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost)
+testMethods(result9)
+
+
+
+## Nested logit demand
+result10 <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
+testMethods(result10)

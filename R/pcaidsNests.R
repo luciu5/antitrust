@@ -55,6 +55,7 @@ setMethod(
           signature= "PCAIDSNests",
           definition=function(object){
 
+              nests <- object@nests
 
               nNests <- nlevels(nests)
 

@@ -162,7 +162,25 @@ setMethod(
 }
  )
 
+setMethod(
+ f= "CV",
+ signature= "Linear",
+ definition=function(object){
 
+     slopes    <- object@slopes[,-1]
+
+      if(!isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[lower.tri(slopes)]))){
+                  stop("price coefficient matrix must be symmetric in order to calculate compensating variation")
+              }
+
+     intercept <- object@slopes[,1]
+     pricePre  <- object@pricePre
+     pricePost <- object@pricePost
+
+     result <- sum(intercept*(pricePre-PricePost)) + .5 * as.vector(pricePre%*%slopes%*%pricePre - pricePost%*%slopes%*%pricePost)
+
+     return(result)
+ })
 
 
 linear <- function(prices,quantities,margins, diversions=NULL,

@@ -3,8 +3,6 @@
 #source("Methods.R")
 
 
-## Check if Consumer Surplus Calculation is correct
-
 
 setClass(
          Class = "PCAIDS",
@@ -214,7 +212,39 @@ setMethod(
  )
 
 
+setMethod(
+          f= "CV",
+          signature= "PCAIDS",
+          definition=function(object,prices=NULL){
 
+              ## computes compensating variation using the closed-form solution found in LaFrance 2004, equation 10
+
+              if(is.null(prices) ||
+                 length(prices) != length(object@shares) ||
+                 any(prices<=0 || is.na(prices)) ){
+                  stop("'prices' must be a vector of positive numbers whose length equals 'shares'")}
+
+
+              slopes <- object@slopes
+
+              ## The following test should be never be flagged (it is true by construction in PCAIDS)
+               if(!isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[lower.tri(slopes)]))){
+                  stop("log-price coefficient matrix must be symmetric in order to calculate compensating variation")
+              }
+
+
+              shares <- object@shares
+              priceDelta <- 1+object@priceDelta
+              intercept <- as.vector(shares - slopes %*% log(prices))
+              pricePost <-  prices*priceDelta
+
+              ePre <-   sum(intercept * log(prices))    + .5 * as.vector(log(prices)    %*% slopes %*% log(prices) )
+              ePost <-  sum(intercept * log(pricePost)) + .5 * as.vector(log(pricePost) %*% slopes %*% log(pricePost) )
+
+              return( exp(ePre) - exp(ePost)  )
+
+          }
+          )
 
 setMethod(
  f= "show",

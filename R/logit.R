@@ -32,7 +32,7 @@ setClass(
 
              nprods <- length(object@shares)
 
-             if( nprods != length(object@quantitites) ||
+             if( nprods != length(object@quantities) ||
                  nprods != length(object@margins) ||
                  nprods != length(object@prices)){
                  stop("'prices', 'margins', 'quantities', and 'shares' must all be vectors with the same length")}
@@ -90,7 +90,7 @@ setMethod(
               minAlpha <- optimize(minD,c(-1e12,0))$minimum
 
 
-              meanval <- log(shares) - log(shares[idx]) + minAlpha * (prices - prices[idx])
+              meanval <- log(shares) - log(shares[idx]) - minAlpha * (prices - prices[idx])
 
               names(meanval)   <- object@labels
 
@@ -236,12 +236,9 @@ logit <- function(prices,shares,margins,
                 ){
 
 
-    quantities <- shares ## quantities isn't needed for Logit
-
-
-
     ## Create Logit  container to store relevant data
-    result <- new("Logit",prices=prices, shares=shares, margins=margins,
+    result <- new("Logit",prices=prices, shares=shares, quantities=shares,## quantities isn't needed for Logit
+                  margins=margins,
                   normIndex=normIndex,
                   mc=prices*(1-margins),mcDelta=mcDelta,
                   ownerPre=ownerPre,

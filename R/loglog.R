@@ -83,9 +83,9 @@ setMethod(
     #quantity <- exp(as.vector(intercept+slopes %*% log(price)))
 
      margin   <- 1 - (object@mc * (1 + mcDelta)) / price
-     share  <- price*quantity/sum(price*quantity)
+     revenue  <- price*quantity
 
-     thisFOC <- share + (t(slopes) * owner ) %*% (margin * share)
+     thisFOC <- revenue + (t(slopes) * owner ) %*% (margin * revenue)
 
      return(as.vector(thisFOC))
  }
