@@ -27,7 +27,8 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
 
 \arguments{
   Let k denote the number of products produced by all firms.
-  \item{shares}{A length k vector of product market shares}
+  \item{shares}{A length k vector of product market shares. All shares must
+  be between 0 and 1.}
   \item{knownElast}{A negative number equal to the pre-merger own-price
     elasticity for any of the k products}
   \item{mktElast}{A negative number equal to the industry pre-merger
@@ -39,7 +40,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
    \item{margins}{A length k vector of product margins. NA values permitted.}
-  \item{knownElastIndex}{An integer equal to the position number of the
+  \item{knownElastIndex}{An integer equal to the position of the
     'knownElast' product in the 'shares' vector. Default is 1, which
     assumes that the own-price elasticity of the first product is
     known. }
@@ -53,7 +54,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   initial guess of the proportional change in price caused by the
   merger. The default is to draw k random elements from a [0,1] uniform distribution.}
   \item{labels}{A k-length vector of labels}
-  \item{...}{Additional options to feed to the \code{\link[BB]{BBsolve}}
+  \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
   optimizer used solve the model}
 
 }
@@ -64,14 +65,15 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   product, and the industry-wide own-price elasticity, 'pcaids' is able to
   recover the slopes in a Proportionally Calibrated Almost Ideal Demand
   System (PCAIDS) and then use these slopes to simulate a merger between
-  two firms.
+  two firms under the assumption that all firms in the market are
+  playing a differentiated Bertrand pricing game.
 
   'pcaids.nests' extends 'pcaids' by allowing products
   to be grouped into nests. Although products within the same nest still
   have the independence of irrelevant alternatives (IIA) property,
   products in different nests do not.
 
- The model assumes that the share diversion between nests is symmetric
+ 'pcaids.nests'  assumes that the share diversion between nests is symmetric
  (i.e for 2 nests A and B, the diversion from A to B is the same as B to
  A). Therefore, if there are $w$ nests, $2\le w \le k$, then the model
  must estimate $w(w-1)/2$ distinct nesting parameters. To accomplish
@@ -86,19 +88,41 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
  of the nesting parameters may be obtained from calling either the 'summary' or
  'getNestsParms' functions.
 
-  The elements of 'shares' should be between 0 and 1.
 
-  'ownerPre' and 'ownerPost' values will typically be equal to either 0
-  (element [i,j] is not commonly owned) or 1 (element [i,j] is commonly
-  owned), though these matrices may take on any value between 0 and 1 to
-  account for partial ownership.
+
 }
 
-\value{An object of class "PCAIDS" or its child "PCAIDSNests"}
+\value{'pcaids' returns an instance of class "PCAIDS", a child class of
+  "Antitrust". 'pcaids.nests' returns an instance of "PCAIDSNests", a
+  child class of "PCAIDS".
 
+ For all classes, the 'print' function produces the predicted percentage price change
+  due to the merger. The 'summary' function provides a more detailed
+  analysis of the merger simulation.
 
+  An object of class 'PCAIDS' is a class instance containing the
+  following slots:
 
+  \item{knownElast}{See above.}
+  \item{knownElastIndex}{See above.}
+  \item{mktElast}{See above.}
+  \item{priceDeltaStart}{See above.}
+  \item{priceDelta}{See above.}
+  \item{shares}{See above.}
+  \item{mcDelta}{See above}
+  \item{slopes} {a k x k matrix of linear demand slope coefficients}
+  \item{ownerPre}{See above.}
+  \item{ownerPost}{See above.}
+  \item{labels}{See above.}
 
+   An object of class 'PCAIDSNests' contains all of the above slots as
+   well as
+
+  \item{margins}{See above.}
+  \item{nests}{See above.}
+  \item{nestsParms}{See above.}
+
+}
 
 
 \seealso{}
@@ -133,7 +157,7 @@ ownerPost <- c("A","A","C")
 
 result <- pcaids(shares,knownElast,mktElast,ownerPre,ownerPost)
 
-print(result)           # return predcited price change
+print(result)           # return predicted price change
 summary(result)         # summarize merger simulation
 
 elast(result,TRUE)      # returns premerger elasticities

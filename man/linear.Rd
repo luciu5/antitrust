@@ -29,18 +29,19 @@
 
 \arguments{
   Let k denote the number of products produced by all firms.
-  \item{prices}{A length k vector of product prices}
-  \item{quantities}{A length k vector of product quantities}
-  \item{margins}{A length k vector of product margins}
+  \item{prices}{A length k vector product prices.}
+  \item{quantities}{A length k vector of product quantities.}
+  \item{margins}{A length k vector of product margins. All margins must
+  be between 0 and 1.}
   \item{diversion}{A k x k matrix of diversion ratios with diagonal
   elements equal to 1. Default is NULL, in which case diversion
   according to quantity share is assumed.}
   \item{ownerPre}{{EITHER a vector of length k whose values
       indicate which firm produced a product pre-merger OR
-      a k x k matrix of pre-merger ownership shares}
+      a k x k matrix of pre-merger ownership shares.}
   \item{ownerPost}{EITHER a vector of length k whose values
     indicate which firm produced a product after the merger OR
-    a k x k matrix of post-merger ownership shares}
+    a k x k matrix of post-merger ownership shares.}
   \item{mcDelta}{A vector of length k where each element equals the
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
@@ -48,7 +49,9 @@
  \item{priceStart}{A length k vector of prices used as the initial guess
   in the nonlinear equation solver. Default is 'prices'.}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
-  '#' is a number between 1 and the length of 'prices'}
+  '#' is a number between 1 and the length of 'prices'.}
+ \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
+  optimizer used solve the model.}
 }
 
 
@@ -57,12 +60,15 @@
   in a market, 'linear' is able to
   recover the slopes and intercepts in a Linear Demand
   System and then use these demand parameters to simulate a merger between
-  two firms. Likewise, 'loglog' uses the same information to uncover the
-  slopes and intercepts in a Log-Log demand system, and then uses these
-  demand parameters to simulate a merger.
+  two firms under the assumption that the firms are playing a
+  differentiated Bertrand pricing game.
 
-  The elements of 'prices' and 'quantities' must be positive, and the
-  elements of 'margins', and 'mcDelta'  must be between 0 and 1.
+  Similarly, 'loglog' uses the same information to uncover the
+  slopes and intercepts in a Log-Log demand system, and then uses these
+  demand parameters to simulate a merger two firms under the
+  assumption that the firms are playing a
+  differentiated Bertrand pricing game.
+
 
   'diversion' either equal NULL or a square matrix whose elements are be between
   -1 and 1. If 'diversion' equals NULL, then diversion according to quantity share is assumed. If
@@ -85,8 +91,8 @@
 
 }
 
-\value{'linear' returns an object  of class 'Linear' a child class of
-  'Antitrust'. 'loglog' returns an object of
+\value{'linear' returns an instance  of class 'Linear' a child class of
+  'Antitrust'. 'loglog' returns an instance of
   class 'LogLog', which is a child class of 'Linear'
 
   For all classes, the 'print' function produces the predicted percentage price change
@@ -96,18 +102,24 @@
   An object of class 'Linear' is a class instance containing the
   following slots:
 
-  mc:        a length-k vector of  estimated marginal cost
-  mcDelta:   see above
-  slopes:    a k x k matrix of linear demand slope coefficients
-  intercept: a length-k vector of linear demand intercepts
-  ownerPre : see above
-  ownerPost: see above
-  labels   : see above
-  diversion: see above
+  \item{prices}{See above.}
+  \item{quantities}{See above.}
+  \item{margins}{See above.}
+  \item{mc}{a length-k vector of  estimated marginal cost}
+  \item{pricePre}{Simulated pre-merger price}
+  \item{pricePost}{Simulated post-merger price}
+  \item{diversion}{diversion matrix}
+  \item{shares}{See above.}
+  \item{mcDelta}{See above.}
+  \item{slopes} {a k x (k+1) matrix of linear demand intercepts and slope coefficients}
+  \item{ownerPre}{See above.}
+  \item{ownerPost}{See above.}
+  \item{labels}{See above.}
+  \item{diversion}{See above.}
 
  An object of class 'LogLog' contains all of the above slots as well as
 
-  priceStart: see above
+  \item{priceStart}{See above.}
 }
 
 
@@ -116,13 +128,10 @@
 
 
 \seealso{
-  'elast' for calculating a k x k matrix of price elasticities
-  'deltaCS' for calculating a length-k vector of changes in consumer
-  surplus
-  'cmcr' for calculating the compensating marginal cost reduction
+
   }
 
-\author{Charles Taragin <email: charles.Taragin@usdoj.gov>}
+\author{Charles Taragin <email: charles.taragin@usdoj.gov>}
 
 \references{}
 
@@ -158,18 +167,18 @@ owner.post[1,2] <- owner.post[2,1] <- 1
 
 
 
-result <- pclinear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+result.linear <- linear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
 
-print(result)           # return predicted price change
-summary(result)         # summarize merger simulation
+print(result.linear)           # return predicted price change
+summary(result.linear)         # summarize merger simulation
 
-elast(result,TRUE)      # returns premerger elasticities
-elast(result,FALSE)     # returns postmerger elasticities
+elast(result.linear,TRUE)      # returns premerger elasticities
+elast(result.linear,FALSE)     # returns postmerger elasticities
 
-diversion(result,TRUE)  # returns premerger diversion ratios
-diversion(result,FALSE) # returns postmeger diversion ratios
+diversion(result.linear,TRUE)  # returns premerger diversion ratios
+diversion(result.linear,FALSE) # returns postmeger diversion ratios
 
-cmcr(result)            # returns the compensating marginal cost reduction
+cmcr(result.linear)            # returns the compensating marginal cost reduction
 
 
 
@@ -177,8 +186,18 @@ cmcr(result)            # returns the compensating marginal cost reduction
 ## Same as above, but with log-log instead of linear demand
 
 
-result <- pcloglog(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
-print(result)
+result.log <- loglog(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+
+print(result.log)
+summary(result.log)         # summarize merger simulation
+
+elast(result.log,TRUE)      # returns premerger elasticities
+elast(result.log,FALSE)     # returns postmerger elasticities
+
+diversion(result.log,TRUE)  # returns premerger diversion ratios
+diversion(result.log,FALSE) # returns postmeger diversion ratios
+
+cmcr(result.log)            # returns the compensating marginal cost reduction
 
 
 

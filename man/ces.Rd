@@ -5,7 +5,8 @@
 
 \description{Calibrates consumer demand using (Nested) Constant Elasticity of
   Substitution (CES) and then simulates the price effect of a merger between two firms
-  under the assumption that all firms in the market are playing a differentiated products Bertrand game.}
+  under the assumption that all firms in the market are playing a
+  differentiated products Bertrand pricing game.}
 
 \usage{ces(prices,quantities,margins,
                 ownerPre,ownerPost,
@@ -40,10 +41,10 @@ ces.nests(prices,quantities,margins,
     product belongs to.}
    \item{ownerPre}{{EITHER a vector of length k whose values
       indicate which firm produced a product pre-merger OR
-      a k x k matrix of pre-merger ownership shares}
+      a k x k matrix of pre-merger ownership shares.}
   \item{ownerPost}{EITHER a vector of length k whose values
     indicate which firm produced a product after the merger OR
-    a k x k matrix of post-merger ownership shares}
+    a k x k matrix of post-merger ownership shares.}
   \item{shareInside}{The proportion that a typical consumer spends on
      all products included in the 'prices' vector. Only needed to calculate
      compensating variation and equilibrium quantities (but not shares).
@@ -68,7 +69,9 @@ ces.nests(prices,quantities,margins,
   product margins from any firm, 'ces' is able to
   recover the price coefficient and product mean valuations in a
   Constant Elasticity of Substitution demand model. 'ces' then uses these
-  calibrated parameters to simulate a merger between two firms.
+  calibrated parameters to simulate a merger between two firms under the
+  assumption that that all firms in the market are playing a
+  differentiated products Bertrand pricing game.
 
   'ces.nests' is identical to 'ces' except that it includes the 'nests'
   argument which may be used to assign products to different
@@ -83,8 +86,43 @@ ces.nests(prices,quantities,margins,
 
 }
 
-\value{An object of class "CES" or "CESNests". "CESNests" is a child
-  class of "CES", which is a child class of "Logit".}
+\value{'ces' returns an instance  of class "CES", a child class of
+  "Logit".  'ces.nests' returns an instance of class "CESNests", a child
+  class of "CES".
+
+
+  For all classes, the 'print' function produces the predicted percentage price change
+  due to the merger. The 'summary' function provides a more detailed
+  analysis of the merger simulation.
+
+  An object of class 'CES' is a class instance containing the
+  following slots:
+
+  \item{priceStart}{See above.}
+  \item{totExp}{See above.}
+  \item{normIndex}{See above.}
+  \item{prices}{See above.}
+  \item{quantities}{See above.}
+  \item{margins}{See above.}
+  \item{pricesPre}{See above.}
+  \item{pricesPost}{See above.}
+  \item{shareInside}{See above.}
+  \item{shares}{See above.}
+  \item{mcDelta}{See above}
+  \item{slopes} {a list containing the coefficient on the numeraire
+  ('alpha'),  the coefficient on price ('gamma'), and the vector of mean
+  valuations ('meanval')}
+  \item{ownerPre}{See above.}
+  \item{ownerPost}{See above.}
+  \item{labels}{See above.}
+
+  An object of class 'PCAIDSNests' contains all of the above slots as
+  well as
+
+  \item{nests}{See above.}
+  \item{parmsStart}{See above.}
+
+}
 
 
 
@@ -100,41 +138,40 @@ ces.nests(prices,quantities,margins,
 
 \examples{
 
-## Simulate a merger between two single-product firms A and B in a
-## three-firm market (A, B, C). This example assumes that the merger is between
-## the firms A and B.
+
+## Calibration and simulation results from a merger between Budweiser and
+## Old Style.
+## Source: Epstein/Rubenfeld 2004, pg 80
+
+prodNames <- c("BUD","OLD STYLE","MILLER","MILLER-LITE","OTHER-LITE","OTHER-REG")
+ownerPre <-c("BUD","OLD STYLE","MILLER","MILLER","OTHER-LITE","OTHER-REG")
+ownerPost <-c("BUD","BUD","MILLER","MILLER","OTHER-LITE","OTHER-REG")
+nests <- c("R","R","R","L","L","R")
+
+price    <- c(.0441,.0328,.0409,.0396,.0387,.0497)
+shares   <- c(.071,.137,.251,.179,.093,.269)
+margins  <- c(.3830,.5515,.5421,.5557,.4453,.3769)
+
+names(price) <-
+    names(shares) <-
+    names(margins) <-
+    prodNames
+
+result.ces <- ces(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost)
+
+print(result.ces)           # return predicted price change
+summary(result.ces)         # summarize merger simulation
+
+elast(result.ces,TRUE)      # returns premerger elasticities
+elast(result.ces,FALSE)     # returns postmerger elasticities
+
+diversion(result.ces,TRUE)  # return premerger diversion ratios
+diversion(result.ces,FALSE) # return postmerger diversion ratios
 
 
-price    <- c(2.9,3.4,2.2)
-quantity <- c(650,998,1801)
-margin   <- c(1/2.3,NA,NA)
+cmcr(result.ces)            #calculate compensating marginal cost reduction
 
-## Define ownership using a vector of firm identities
-ownerPre <- c("A","B","C")
-ownerPost <- c("A","A","C")
-
-## Alternatively, ownership could be defined using matrices
-#ownerPre=diag(1,length(shares))
-#ownerPost=ownerPre
-#ownerPost[1,2] <- ownerPost[2,1] <- 1
-
-
-
-result <-  ces(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
-
-print(result)           # return predcited price change
-summary(result)         # summarize merger simulation
-
-elast(result,TRUE)      # returns premerger elasticities
-elast(result,FALSE)     # returns postmerger elasticities
-
-diversion(result,TRUE)  # return premerger diversion ratios
-diversion(result,FALSE) # return postmerger diversion ratios
-
-
-cmcr(result)            #calculate compensating marginal cost reduction
-
-
+CV(result.ces)              #calculate representative agent compensating variation
 
 
 

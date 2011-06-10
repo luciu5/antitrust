@@ -4,7 +4,8 @@
 \title{(Nested) Logit Demand Calibration and Merger Simulation}
 
 \description{Calibrates consumer demand using (Nested) Logit and then simulates the price effect of a merger between two firms
-  under the assumption that all firms in the market are playing a differentiated products Bertrand game.}
+  under the assumption that all firms in the market are playing a
+  differentiated products Bertrand pricing game.}
 
 \usage{logit(prices,shares,margins,
                 ownerPre,ownerPost,
@@ -31,6 +32,8 @@ logit.nests(prices,quantities,margins,
 
 \arguments{
   \item{prices}{A length k vector of product prices.}
+  \item{shares}{A length k vector of product shares. Values must be
+  between 0 and 1.}
   \item{quantities}{A length k vector of product quantities.}
   \item{margins}{A length k vector of product margins, some of which may
     equal NA.}
@@ -38,10 +41,10 @@ logit.nests(prices,quantities,margins,
     product belongs to.}
    \item{ownerPre}{{EITHER a vector of length k whose values
       indicate which firm produced a product pre-merger OR
-      a k x k matrix of pre-merger ownership shares}
+      a k x k matrix of pre-merger ownership shares.}
   \item{ownerPost}{EITHER a vector of length k whose values
     indicate which firm produced a product after the merger OR
-    a k x k matrix of post-merger ownership shares}
+    a k x k matrix of post-merger ownership shares.}
   \item{shareInside}{The share of customers that purchase any of the
   products included in the 'prices' vector. Default of 1 assumes
   that no other products are purchased.}
@@ -56,6 +59,8 @@ logit.nests(prices,quantities,margins,
     equilibrium price. Default is the 'prices' vector.}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
     '#' is a number between 1 and the length of 'prices'.}
+  \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
+  optimizer used solve the model}
 
 }
 
@@ -67,7 +72,7 @@ logit.nests(prices,quantities,margins,
   Logit demand model. 'logit' then uses these
   calibrated parameters to simulate a merger between two firms.
 
-  'Logit.nests' is identical to 'ces' except that it includes the 'nests'
+  'logit.nests' is identical to 'logit' except that it includes the 'nests'
   argument which may be used to assign products to different
   nests. Nests are useful becuase they allow for richer substitution
   patterns between products. Products within the same nest are assumed
@@ -88,54 +93,51 @@ logit.nests(prices,quantities,margins,
 
 
 
-\seealso{}
+\seealso{\code{\link{ces}}}
 
-\author{Charles Taragin <email: charles.Taragin@usdoj.gov>}
+\author{Charles Taragin <email: charles.taragin@usdoj.gov>}
 
 \references{}
 
 
 \examples{
 
-## Simulate a merger between two single-product firms A and B in a
-## three-firm market (A, B, C). This example assumes that the merger is between
-## the firms A and B.
+## Calibration and simulation results from a merger between Budweiser and
+## Old Style.
+## Source: Epstein/Rubenfeld 2004, pg 80
 
 
-price    <- c(2.9,3.4,2.2)
-quantity <- c(650,998,1801)
-margin   <- c(1/2.3,NA,NA)
+prodNames <- c("BUD","OLD STYLE","MILLER","MILLER-LITE","OTHER-LITE","OTHER-REG")
+ownerPre <-c("BUD","OLD STYLE","MILLER","MILLER","OTHER-LITE","OTHER-REG")
+ownerPost <-c("BUD","BUD","MILLER","MILLER","OTHER-LITE","OTHER-REG")
+nests <- c("Reg","Reg","Reg","Light","Light","Reg")
 
-## Define ownership using a vector of firm identities
-ownerPre <- c("A","B","C")
-ownerPost <- c("A","A","C")
+price    <- c(.0441,.0328,.0409,.0396,.0387,.0497)
+shares   <- c(.066,.172,.253,.187,.099,.223)
+margins <- c(.3830,.5515,.5421,.5557,.4453,.3769)
 
-## Alternatively, ownership could be defined using matrices
-#ownerPre=diag(1,length(shares))
-#ownerPost=ownerPre
-#ownerPost[1,2] <- ownerPost[2,1] <- 1
+names(price) <-
+    names(shares) <-
+    names(margins) <-
+    prodNames
 
-
-
-result <-  ces(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
-
-print(result)           # return predcited price change
-summary(result)         # summarize merger simulation
-
-elast(result,TRUE)      # returns premerger elasticities
-elast(result,FALSE)     # returns postmerger elasticities
-
-diversion(result,TRUE)  # return premerger diversion ratios
-diversion(result,FALSE) # return postmerger diversion ratios
-
-
-cmcr(result)            #calculate compensating marginal cost reduction
+result.logit <- logit(price,shares,margins,ownerPre=ownerPre,ownerPost=ownerPost)
 
 
 
+print(result.logit)           # return predicted price change
+summary(result.logit)         # summarize merger simulation
+
+elast(result.logit,TRUE)      # returns premerger elasticities
+elast(result.logit,FALSE)     # returns postmerger elasticities
+
+diversion(result.logit,TRUE)  # return premerger diversion ratios
+diversion(result.logit,FALSE) # return postmerger diversion ratios
 
 
+cmcr(result.logit)            #calculate compensating marginal cost reduction
 
+CV(result.logit)              #calculate average compensating variation
 
 
 }
