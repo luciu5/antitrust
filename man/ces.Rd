@@ -8,7 +8,7 @@
   under the assumption that all firms in the market are playing a
   differentiated products Bertrand pricing game.}
 
-\usage{ces(prices,quantities,margins,
+\usage{ces(prices,shares,margins,
                 ownerPre,ownerPost,
                 shareInside = 1,
                 normIndex=1,
@@ -18,7 +18,7 @@
                 ...
                 )
 
-ces.nests(prices,quantities,margins,
+ces.nests(prices,shares,margins,
                 ownerPre,ownerPost,
                 nests=rep(1,length(shares)),
                 shareInside = 1,
@@ -34,7 +34,7 @@ ces.nests(prices,quantities,margins,
 
 \arguments{
   \item{prices}{A length k vector of product prices.}
-  \item{quantities}{A length k vector of product quantities.}
+  \item{shares}{A length k vector of product revenue shares.}
   \item{margins}{A length k vector of product margins, some of which may
     equal NA.}
   \item{nests}{A length k vector identifying the nest that each
@@ -47,7 +47,7 @@ ces.nests(prices,quantities,margins,
     a k x k matrix of post-merger ownership shares.}
   \item{shareInside}{The proportion that a typical consumer spends on
      all products included in the 'prices' vector. Only needed to calculate
-     compensating variation and equilibrium quantities (but not shares).
+     compensating variation.
      Default is 1, meaning that all of a consumer's
      income is spent on products within the market.}
   \item{normIndex}{An integer specifying the product index against which

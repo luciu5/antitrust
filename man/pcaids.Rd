@@ -27,7 +27,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
 
 \arguments{
   Let k denote the number of products produced by all firms.
-  \item{shares}{A length k vector of product market shares. All shares must
+  \item{shares}{A length k vector of product revenue shares. All shares must
   be between 0 and 1.}
   \item{knownElast}{A negative number equal to the pre-merger own-price
     elasticity for any of the k products}

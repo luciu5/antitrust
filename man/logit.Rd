@@ -16,7 +16,7 @@
                 ...
                 )
 
-logit.nests(prices,quantities,margins,
+logit.nests(prices,shares,margins,
                 ownerPre,ownerPost,
                 nests=rep(1,length(shares)),
                 shareInside = 1,
@@ -32,9 +32,8 @@ logit.nests(prices,quantities,margins,
 
 \arguments{
   \item{prices}{A length k vector of product prices.}
-  \item{shares}{A length k vector of product shares. Values must be
+  \item{shares}{A length k vector of product (quantity) shares. Values must be
   between 0 and 1.}
-  \item{quantities}{A length k vector of product quantities.}
   \item{margins}{A length k vector of product margins, some of which may
     equal NA.}
   \item{nests}{A length k vector identifying the nest that each
@@ -79,7 +78,7 @@ logit.nests(prices,quantities,margins,
   to be closer substitutes than products in different nests. The degree
   of substitutability between products located in different nests is
   controlled by the value of the nesting parameter sigma. The vector of
-  sigmas is calibrated from the prices, quantities, and margins supplied
+  sigmas is calibrated from the prices, shares, and margins supplied
   by the user.
 
 
