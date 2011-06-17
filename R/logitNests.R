@@ -18,6 +18,12 @@ setClass(
 
              ## Sanity Checks
 
+             if(
+                !(object@shareInside >0 &&
+                  object@shareInside <=1)
+                ){
+                 stop("'shareInside' must be between 0 and 1")
+             }
 
              nprods    <- length(object@prices)
              nNestParm <- nlevels(object@nests) #calculate the number of nesting parameters
@@ -28,9 +34,6 @@ setClass(
 
              if(nprods != length(object@nests)){
                  stop("'nests' length must equal the number of products")}
-
-             if(!(object@normIndex %in% seq(1,nprods)) ){
-                 stop("'normIndex' value must be between 1 and the length of 'prices'")}
 
 
              if(!is.vector(object@parmsStart) || nNestParm + 1 != length(object@parmsStart)){
@@ -59,8 +62,8 @@ setMethod(
               shares       <-  object@shares
               margins      <-  object@margins
               prices       <-  object@prices
-              quantities   <-  object@quantities
               idx          <-  object@normIndex
+
               nests        <- object@nests
               parmsStart   <- object@parmsStart
 
@@ -71,9 +74,9 @@ setMethod(
 
               nprods <- length(shares)
 
-              sharesIn <- tapply(quantities,nests,sum)[nests]
+              sharesIn <- tapply(shares,nests,sum)[nests]
 
-              sharesIn <- quantities / sharesIn
+              sharesIn <- shares / sharesIn
 
               revenues <- prices * shares
 
@@ -111,10 +114,24 @@ setMethod(
               minSigma <- minTheta[-1]
               minSigma <- minSigma[nests]
 
-              meanval <- log(shares) - log(shares[idx]) - minAlpha*(prices - prices[idx])
+              if(idx==0){
+                  idxShare <- 1 - object@shareInside
+                  idxShareIn <- 1
+                  idxPrice   <- 0
+                  idxSigma   <- 1
+              }
+              else{
+                  idxShare   <- shares[idx]
+                  idxShareIn <- sharesIn[idx]
+                  idxPrice   <- prices[idx]
+                  idxSigma   <- minSigma[idx]
+               }
+
+
+              meanval <- log(shares) - log(idxShare) - minAlpha*(prices - idxPrice)
 
               meanval <- meanval + (minSigma-1)*log(sharesIn) -
-                         (minSigma[idx]-1)*log(sharesIn[idx])
+                         (idxSigma-1)*log(idxShareIn[idx])
 
               names(meanval)   <- object@labels
 
@@ -151,7 +168,7 @@ setMethod(
      alpha    <- object@slopes$alpha
      sigma    <- object@slopes$sigma
      meanval  <- object@slopes$meanval
-
+     isOutside <- as.numeric(object@shareInside < 1)
 
      ##Define system of FOC as a function of prices
      FOC <- function(priceCand){
@@ -160,9 +177,9 @@ setMethod(
 
          sharesIn     <- exp((meanval+alpha*priceCand)/sigma[nests])
          inclusiveValue <- log(tapply(sharesIn,nests,sum))
-         sharesIn     <- sharesIn/sum(sharesIn)
+         sharesIn     <- sharesIn/(isOutside + sum(sharesIn))
          sharesAcross <-   exp(sigma*inclusiveValue)
-         sharesAcross <- sharesAcross/sum(sharesAcross)
+         sharesAcross <- sharesAcross/(isOutside + sum(sharesAcross))
 
          shares       <- sharesIn * sharesAcross[nests]
 
@@ -199,16 +216,16 @@ setMethod(
      else{          prices <- object@pricePost}
 
      nests     <- object@nests
-     alpha    <- object@slopes$alpha
-     sigma    <- object@slopes$sigma
-     meanval  <- object@slopes$meanval
-
+     alpha     <- object@slopes$alpha
+     sigma     <- object@slopes$sigma
+     meanval   <- object@slopes$meanval
+     isOutside <- as.numeric(object@shareInside < 1)
 
      sharesIn     <- exp((meanval+alpha*prices)/sigma[nests])
      inclusiveValue <- log(tapply(sharesIn,nests,sum))
-     sharesIn     <- sharesIn/sum(sharesIn)
+     sharesIn     <- sharesIn/(isOutside + sum(sharesIn))
      sharesAcross <-   exp(sigma*inclusiveValue)
-     sharesAcross <- sharesAcross/sum(sharesAcross)
+     sharesAcross <- sharesAcross/(isOutside + sum(sharesAcross))
 
      shares       <- sharesIn * sharesAcross[nests]
 
@@ -233,12 +250,13 @@ setMethod(
      alpha    <- object@slopes$alpha
      sigma    <- object@slopes$sigma
      meanval  <- object@slopes$meanval
+     isOutside <- as.numeric(object@shareInside < 1)
 
      sharesIn     <- exp((meanval+alpha*prices)/sigma[nests])
      inclusiveValue <- log(tapply(sharesIn,nests,sum))
-     sharesIn     <- sharesIn/sum(sharesIn)
+     sharesIn     <- sharesIn/(isOutside + sum(sharesIn))
      sharesAcross <-   exp(sigma*inclusiveValue)
-     sharesAcross <- sharesAcross/sum(sharesAcross)
+     sharesAcross <- sharesAcross/(isOutside + sum(sharesAcross))
 
      shares       <- sharesIn * sharesAcross[nests]
 
@@ -270,11 +288,11 @@ setMethod(
               alpha       <- object@slopes$alpha
               sigma       <- object@slopes$sigma
               meanval     <- object@slopes$meanval
+              isOutside   <- as.numeric(object@shareInside < 1)
 
 
-
-              tempPre  <- sum( tapply(exp((meanval + object@pricePre*alpha)  / sigma[nests]),nests,sum) ^ sigma )
-              tempPost <- sum( tapply(exp((meanval + object@pricePost*alpha) / sigma[nests]),nests,sum) ^ sigma )
+              tempPre  <- sum( tapply(exp((meanval + object@pricePre*alpha)  / sigma[nests]),nests,sum) ^ sigma ) + isOutside
+              tempPost <- sum( tapply(exp((meanval + object@pricePost*alpha) / sigma[nests]),nests,sum) ^ sigma ) + isOutside
 
 
 
@@ -307,21 +325,22 @@ setMethod(
 )
 
 
-logit.nests <- function(prices,quantities,margins,
-                      ownerPre,ownerPost,
-                      nests=rep(1,length(shares)),
-                      normIndex=1,
-                      mcDelta=rep(0,length(prices)),
-                      priceStart = prices,
-                      parmsStart=NULL,
-                      labels=paste("Prod",1:length(prices),sep=""),
-                      ...
-                      ){
+logit.nests <- function(prices,shares,margins,
+                        ownerPre,ownerPost,
+                        nests=rep(1,length(shares)),
+                        shareInside = 1,
+                        normIndex=ifelse(shareInside < 1,0,1),
+                        mcDelta=rep(0,length(prices)),
+                        priceStart = prices,
+                        parmsStart=NULL,
+                        labels=paste("Prod",1:length(prices),sep=""),
+                        ...
+                        ){
 
 
 
-    shares=(quantities)/sum(quantities) #quantity based shares
 
+    shares <- shares * shareInside
 
     if(is.factor(nests)){nests <- nests[,drop=TRUE] }
     else{nests <- factor(nests)}
@@ -334,14 +353,14 @@ logit.nests <- function(prices,quantities,margins,
                             }
 
     ## Create LogitNests  container to store relevant data
-    result <- new("LogitNests",prices=prices, quantities=quantities,margins=margins,
+    result <- new("LogitNests",prices=prices, margins=margins,
                   shares=shares,mc=prices*(1-margins),mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   nests=nests,
                   normIndex=normIndex,
                   parmsStart=parmsStart,
-                  priceStart=priceStart,
+                  priceStart=priceStart,shareInside=shareInside,
                   labels=labels)
 
     ## Convert ownership vectors to ownership matrices

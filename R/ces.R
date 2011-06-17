@@ -1,21 +1,6 @@
-##source("pclinear.R")
-
-
 setClass(
          Class   = "CES",
          contains="Logit",
-
-         representation=representation(
-
-         priceStart    = "vector",
-         shareInside   = "numeric",
-         totExp        = "numeric",
-         normIndex     = "numeric"
-         ),
-
-         prototype=prototype(
-         totExp      =  numeric()
-         ),
 
          validity=function(object){
 
@@ -24,17 +9,9 @@ setClass(
 
              nprods <- length(object@prices)
 
-
-
-             if(nprods != length(object@priceStart)){
-                 stop("'priceStart' must have the same length as 'shares'")}
-
-             if(length(object@shareInside)>0 &&
-                !(object@shareInside >0 &&
-                  object@shareInside <1)
-                ){
-                 stop("'shareInside' must either equal NULL or be between 0 and 1")
-         }
+             if(!(object@normIndex %in% 1:nprods)){
+                 stop("'normIndex' must take on a value between 1 and ",nprods)
+             }
 
          })
 
@@ -51,12 +28,11 @@ setMethod(
               shares       <-  object@shares
               margins      <-  object@margins
               prices       <-  object@prices
-              quantities   <-  object@quantities
               idx          <-  object@normIndex
               shareInside  <-  object@shareInside
 
               ## uncover Numeraire Coefficients
-              if(length(shareInside)>0) {alpha <- 1/shareInside -1}
+              if(shareInside < 1 ) {alpha <- 1/shareInside - 1}
               else{alpha <- NULL}
 
 
@@ -92,7 +68,7 @@ setMethod(
               names(meanval)   <- object@labels
 
               object@slopes    <- list(alpha=alpha,gamma=minGamma,meanval=meanval)
-              object@totExp    <- (1 + alpha) * sum(prices*quantities)
+
 
               return(object)
           }
@@ -173,24 +149,7 @@ setMethod(
 }
  )
 
-setMethod(
- f= "calcQuantities",
- signature= "CES",
- definition=function(object,preMerger=TRUE){
 
-     alpha       <- object@slopes$alpha
-     totExp      <-  object@totExp
-
-     if(is.null(alpha)) stop("'shareInside' must be provided in order to calculate Compensating Variation")
-
-     ## totExp is implicitly premerger prices and quantities for all inside goods. Should
-     ## this be changed to be a function of 'preMerger'?
-     quantities        <- calcShares(object,preMerger)*totExp / (1 + alpha)
-     names(quantities) <- object@labels
-     return(quantities)
- }
-
-)
 
 setMethod(
  f= "elast",
@@ -241,17 +200,19 @@ setMethod(
 setMethod(
           f= "CV",
           signature= "CES",
-          definition=function(object){
+          definition=function(object,revenueInside){
 
               alpha       <- object@slopes$alpha
 
-              if(is.null(alpha)) stop("'shareInside' must be provided in order to calculate Compensating Variation")
+              if(is.null(alpha)) stop("'shareInside' must be less than 1 to  calculate Compensating Variation")
+              if(missing(revenueInside) || isTRUE(revenueInside<0)) stop("'revenueInside' must be greater than 0 to  calculate Compensating Variation")
 
+              totExp    <- (1 + alpha) * revenueInside
 
               gamma       <- object@slopes$gamma
               meanval     <- object@slopes$meanval
               shareInside <- object@shareInside
-              totExp      <- object@totExp
+
 
 
               tempPre  <- sum(meanval * object@pricePre^(1-gamma))
@@ -265,63 +226,21 @@ setMethod(
 
 
 
-setMethod(
- f= "summary",
- signature= "CES",
- definition=function(object){
-
-     alpha       <- object@slopes$alpha
-
-     if(is.null(alpha)){
-         outPre <-   calcShares(object,TRUE) *100
-         outPost <-  calcShares(object,FALSE) *100
-     }
-
-     else{
-         outPre <-   calcQuantities(object,TRUE) *100
-         outPost <-  calcQuantities(object,FALSE) *100
-     }
-
-         pricePre  <- object@pricePre
-         pricePost <- object@pricePost
-         priceDelta <- (pricePost - pricePre)/pricePre *100
-
-         outDelta <- (outPost - outPre)/outPre *100
-
-         results <- data.frame(pricePre=pricePre,pricePost=pricePost,
-                               priceDelta=priceDelta,outputPre=outPre,
-                               outputPost=outPost,outputDelta=outDelta)
-
-         rownames(results) <- object@labels
-
-         cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
-         print(round(results,2))
-
-
- })
-
-
-
-ces <- function(prices,quantities,margins,
+ces <- function(prices,shares,margins,
                 ownerPre,ownerPost,
+                shareInside = 1,
                 normIndex=1,
                 mcDelta=rep(0,length(prices)),
-                shareInside = NULL,
                 priceStart = prices,
                 labels=paste("Prod",1:length(prices),sep=""),
                 ...
                 ){
 
 
-
-    revenues <- prices*quantities
-    shares=(revenues)/sum(revenues) #Revenue based shares
-    if(is.null(shareInside)){shareInside <- numeric()}
-
     ## Create CES  container to store relevant data
-    result <- new("CES",prices=prices, quantities=quantities,margins=margins,
+    result <- new("CES",prices=prices, shares=shares, margins=margins,
                   normIndex=normIndex,
-                  shares=shares,mc=prices*(1-margins),mcDelta=mcDelta,
+                  mc=prices*(1-margins),mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   priceStart=priceStart,

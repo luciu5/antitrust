@@ -7,21 +7,19 @@ setClass(
          representation=representation(
 
          prices           = "vector",
-         quantities       = "vector",
          margins          = "vector",
          mc               = "vector",
          pricePre         = "vector",
          pricePost        = "vector",
          priceStart       = "vector",
-         normIndex        = "numeric"
+         normIndex        = "numeric",
+         shareInside     = "numeric"
 
          ),
           prototype=prototype(
 
           pricePre      =  vector(),
           pricePost     =  vector()
-
-
 
         ),
 
@@ -32,19 +30,31 @@ setClass(
 
              nprods <- length(object@shares)
 
-             if( nprods != length(object@quantities) ||
+             if(
                  nprods != length(object@margins) ||
                  nprods != length(object@prices)){
-                 stop("'prices', 'margins', 'quantities', and 'shares' must all be vectors with the same length")}
+                 stop("'prices', 'margins' and 'shares' must all be vectors with the same length")}
 
              if(any(object@prices<0,na.rm=TRUE))             stop("'prices' values must be positive")
 
-             if(any(object@quantities<0,na.rm=TRUE))          stop("'quantities' values must be positive")
 
              if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
 
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'shares'")}
+
+              if(
+                !(object@shareInside >0 &&
+                  object@shareInside <=1)
+                ){
+                 stop("'shareInside' must be between 0 and 1")
+         }
+
+             if(!(object@normIndex %in% 0:nprods) ||
+                (object@shareInside==1 && object@normIndex==0)){
+                 stop("'normIndex' must take on a value between 1 and ",nprods, " if 'shares' sum to 1 , or '0' if the sum of shares is less than 1")
+             }
+
 
          })
 
@@ -63,6 +73,14 @@ setMethod(
               prices       <-  object@prices
               idx          <-  object@normIndex
 
+              if(idx==0){
+                  idxShare <- 1 - object@shareInside
+                  idxPrice <- 0
+              }
+              else{
+                  idxShare <- shares[idx]
+                  idxPrice <- prices[idx]
+               }
 
               ## Uncover price coefficient and mean valuation from margins and revenue shares
 
@@ -90,7 +108,7 @@ setMethod(
               minAlpha <- optimize(minD,c(-1e12,0))$minimum
 
 
-              meanval <- log(shares) - log(shares[idx]) - minAlpha * (prices - prices[idx])
+              meanval <- log(shares) - log(idxShare) - minAlpha * (prices - idxPrice)
 
               names(meanval)   <- object@labels
 
@@ -123,17 +141,19 @@ setMethod(
 
 
      nprods <- length(object@shares)
+     shareInside <- object@shareInside
 
      alpha    <- object@slopes$alpha
      meanval  <- object@slopes$meanval
 
+     isOutside   <- as.numeric(object@shareInside < 1)
 
      ##Define system of FOC as a function of prices
      FOC <- function(priceCand){
 
          margins <- 1 - (object@mc * (1 + mcDelta)) / priceCand
          shares <- exp(meanval + alpha*priceCand)
-         shares <- shares/sum(shares)
+         shares <- shares/(isOutside + sum(shares))
 
          elast <- -alpha * matrix(priceCand*shares,ncol=nprods,nrow=nprods)
          diag(elast) <- alpha*priceCand - diag(elast)
@@ -168,7 +188,7 @@ setMethod(
      meanval  <- object@slopes$meanval
 
      shares <- exp(meanval + alpha*prices)
-     shares <- shares/sum(shares)
+     shares <- shares/(as.numeric(object@shareInside<1) + sum(shares))
 
      names(shares) <- object@labels
 
@@ -228,7 +248,7 @@ setMethod(
 
 logit <- function(prices,shares,margins,
                 ownerPre,ownerPost,
-                normIndex=1,
+                normIndex=ifelse(sum(shares)<1,0,1),
                 mcDelta=rep(0,length(prices)),
                 priceStart = prices,
                 labels=paste("Prod",1:length(prices),sep=""),
@@ -237,13 +257,13 @@ logit <- function(prices,shares,margins,
 
 
     ## Create Logit  container to store relevant data
-    result <- new("Logit",prices=prices, shares=shares, quantities=shares,## quantities isn't needed for Logit
+    result <- new("Logit",prices=prices, shares=shares,
                   margins=margins,
                   normIndex=normIndex,
                   mc=prices*(1-margins),mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
-                  priceStart=priceStart,
+                  priceStart=priceStart,shareInside=sum(shares),
                   labels=labels)
 
     ## Convert ownership vectors to ownership matrices

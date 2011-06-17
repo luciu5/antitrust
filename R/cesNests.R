@@ -59,14 +59,13 @@ setMethod(
               shares       <-  object@shares
               margins      <-  object@margins
               prices       <-  object@prices
-              quantities   <-  object@quantities
               idx          <-  object@normIndex
               shareInside  <-  object@shareInside
               nests        <- object@nests
               parmsStart   <- object@parmsStart
 
               ## uncover Numeraire Coefficients
-              if(length(shareInside)>0) {alpha <- 1/shareInside -1}
+              if(shareInside<1) {alpha <- 1/shareInside -1}
               else{alpha <- NULL}
 
 
@@ -76,15 +75,16 @@ setMethod(
 
               nprods <- length(shares)
 
-              sharesNests <- tapply(prices * quantities,nests,sum)[nests]
+              sharesNests <- tapply(shares,nests,sum)[nests]
 
-              sharesNests <- (prices * quantities) / sharesNests
+              sharesNests <- shares / sharesNests
 
 
 
               nMargins <-  length(margins[!is.na(margins)])
 
-              ## Minimize the distance between observed and predicted margins
+              ## Estimate parameters by
+              ## Minimizing the distance between observed and predicted margins
               minD <- function(theta){
 
                   gamma <- theta[1]
@@ -132,7 +132,6 @@ setMethod(
               names(meanval)   <- object@labels
 
               object@slopes    <- list(alpha=alpha,gamma=minGamma,sigma=minTheta[-1],meanval=meanval)
-              object@totExp    <- (1 + alpha) * sum(prices*quantities)
 
               return(object)
           }
@@ -280,21 +279,19 @@ setMethod(
 setMethod(
           f= "CV",
           signature= "CESNests",
-          definition=function(object){
+          definition=function(object,revenueInside){
 
               alpha       <- object@slopes$alpha
 
               if(is.null(alpha)) stop("'shareInside' must be provided in order to calculate Compensating Variation")
-
+               if(missing(revenueInside) || isTRUE(revenueInside<0)) stop("'revenueInside' must be greater than 0 to  calculate Compensating Variation")
+              totExp    <- (1 + alpha) * revenueInside
 
               nests       <- object@nests
               gamma       <- object@slopes$gamma
               sigma       <- object@slopes$sigma
               meanval     <- object@slopes$meanval
               shareInside <- object@shareInside
-              totExp      <- object@totExp
-              price       <- object@prices
-              quantities  <- object@quantities
 
 
 
@@ -323,26 +320,7 @@ setMethod(
  signature= "CESNests",
  definition=function(object){
 
-     alpha       <- object@slopes$alpha
-
-     if(is.null(alpha)){
-         pricePre  <- object@pricePre
-         pricePost <- object@pricePost
-         priceDelta <- (pricePost - pricePre)/pricePre *100
-         sharesPre <-   calcShares(object,TRUE) *100
-         sharesPost <-  calcShares(object,FALSE) *100
-         sharesDelta <- (sharesPost - sharesPre)/sharesPre *100
-
-         results <- data.frame(pricePre=pricePre,pricePost=pricePost,
-                               priceDelta=priceDelta,sharesPre=sharesPre,
-                               sharesPost=sharesPost,sharesDelta=sharesDelta)
-
-         rownames(results) <- object@labels
-
-         cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
-         print(round(results,2))
-     }
-     else{   callNextMethod(object)}
+     callNextMethod(object)
 
      cat("\nNesting Parameter Estimates:\n\n")
      print(round(object@slopes$sigma,2))
@@ -353,12 +331,12 @@ setMethod(
 
 
 
-ces.nests <- function(prices,quantities,margins,
+ces.nests <- function(prices,shares,margins,
                       ownerPre,ownerPost,
                       nests=rep(1,length(shares)),
+                      shareInside = 1,
                       normIndex=1,
                       mcDelta=rep(0,length(prices)),
-                      shareInside = NULL,
                       priceStart = prices,
                       parmsStart=NULL,
                       labels=paste("Prod",1:length(prices),sep=""),
@@ -367,9 +345,6 @@ ces.nests <- function(prices,quantities,margins,
 
 
 
-    revenues <- prices*quantities
-    shares=(revenues)/sum(revenues) #Revenue based shares
-    if(is.null(shareInside)){shareInside <- numeric()}
 
     if(is.factor(nests)){nests <- nests[,drop=TRUE] }
     else{nests <- factor(nests)}
@@ -381,8 +356,8 @@ ces.nests <- function(prices,quantities,margins,
                             }
 
     ## Create CESNests  container to store relevant data
-    result <- new("CESNests",prices=prices, quantities=quantities,margins=margins,
-                  shares=shares,mc=prices*(1-margins),mcDelta=mcDelta,
+    result <- new("CESNests",prices=prices, shares=shares,margins=margins,
+                  mc=prices*(1-margins),mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   nests=nests,

@@ -28,6 +28,9 @@ setClass(
              if(any(object@shares < 0 | object@shares > 1,na.rm=TRUE)){
                  stop("'shares' values must be between 0 and 1")}
 
+             if(sum(object@shares) > 1){
+                 stop("The sum of 'shares' values must be less than or equal to 1")}
+
              nprods <- length(object@shares)
 
              ## if(any(object@mcDelta < 0 | object@mcDelta > 1,na.rm=TRUE)){
