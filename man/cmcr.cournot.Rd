@@ -11,9 +11,8 @@
 
 \arguments{
 
-  \item{share}{A vector of length 1 containing merging party quantity shares}
-  \item{IndustryElasticity}{A vector of length 1 containing industry
-  elasticity.}
+  \item{share}{A length-2 vector containing merging party quantity shares.}
+  \item{industryElasticity}{A length-1 containing the industry elasticity.}
 
 }
 
@@ -24,13 +23,18 @@
   in the products' average marginal costs that the merged firms must achieve in order to offset a
   price increase.}
 
-\references{Froeb1998}
+\references{
+ Froeb, Luke and Werden, Gregory (1998).
+``A robust test for consumer welfare enhancing mergers among sellers
+of a homogeneous product.''
+\emph{Economics Letters}, \bold{58}(3), pp. 367 - 369.
+}
 
 
 \author{Charles Taragin}
 
 
-\seealso{cmcr.bertrand for a differentiated products Bertrand version of this measure}
+\seealso{\code{\link{cmcr.bertrand}} for a differentiated products Bertrand version of this measure.}
 
 \examples{
 

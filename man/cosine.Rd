@@ -9,8 +9,8 @@
 
 \arguments{
   \item{x}{A vector or a matrix (e.g., a document-term matrix).}
-  \item{y}{Optional: a vector with compatible dimensions to ‘x’. If
-    `NULL', all column vectors of ‘x’ are correlated.}
+  \item{y}{Optional: a vector with compatible dimensions to 'x'. If
+    'NULL', all column vectors of 'x' are correlated.}
 }
 
 
@@ -20,7 +20,7 @@
 
 \seealso{\code{\link[lsa]{cosine}} from which this function was copied.}
 
-\author{Fridolin Wild <email: f.wild@open.ac.uk>}
+\author{Fridolin Wild \email{f.wild@open.ac.uk}}
 
 \examples{
 

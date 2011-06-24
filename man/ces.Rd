@@ -31,15 +31,15 @@ ces.nests(prices,shares,margins,
                 )
 
              }
-
 \arguments{
+  Let k denote the number of products produced by all firms.
   \item{prices}{A length k vector of product prices.}
   \item{shares}{A length k vector of product revenue shares.}
   \item{margins}{A length k vector of product margins, some of which may
     equal NA.}
   \item{nests}{A length k vector identifying the nest that each
     product belongs to.}
-   \item{ownerPre}{{EITHER a vector of length k whose values
+   \item{ownerPre}{EITHER a vector of length k whose values
       indicate which firm produced a product pre-merger OR
       a k x k matrix of pre-merger ownership shares.}
   \item{ownerPost}{EITHER a vector of length k whose values
@@ -58,89 +58,72 @@ ces.nests(prices,shares,margins,
     affect any products' marginal cost.}
   \item{priceStart}{A length k vector of starting values used to solve for
     equilibrium price. Default is the 'prices' vector.}
+   \item{parmsStart}{A vector of starting values used to solve for
+    price coefficient and nest parameters. If 'NULL' then the random
+    draws with the appropriate restrictions are employed.}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
     '#' is a number between 1 and the length of 'prices'.}
+  \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
+    optimizer used solve the model}
 
 }
 
 
 
-\details{Using product prices, quantities and (at least) all of the
-  product margins from any firm, 'ces' is able to
+\details{Using product prices, revenue shares and (at least) all of the
+  product margins from any firm, \code{ces} is able to
   recover the price coefficient and product mean valuations in a
-  Constant Elasticity of Substitution demand model. 'ces' then uses these
+  Constant Elasticity of Substitution demand model. \code{ces} then uses these
   calibrated parameters to simulate a merger between two firms under the
   assumption that that all firms in the market are playing a
   differentiated products Bertrand pricing game.
 
-  'ces.nests' is identical to 'ces' except that it includes the 'nests'
+  \code{ces.nests} is identical to \code{ces} except that it includes the 'nests'
   argument which may be used to assign products to different
   nests. Nests are useful becuase they allow for richer substitution
   patterns between products. Products within the same nest are assumed
   to be closer substitutes than products in different nests. The degree
   of substitutability between products located in different nests is
   controlled by the value of the nesting parameter sigma. The vector of
-  sigmas is calibrated from the prices, quantities, and margins supplied
+  sigmas is calibrated from the prices, revenue shares, and margins supplied
   by the user.
 
 
 }
 
-\value{'ces' returns an instance  of class "CES", a child class of
-  "Logit".  'ces.nests' returns an instance of class "CESNests", a child
-  class of "CES".
+\value{\code{ces} returns an instance of class \code{"\linkS4class{CES}"}.
+  \code{ces.nests} returns an instance of \code{"\linkS4class{CESNests}"}, a
+  child class of \code{"\linkS4class{CES}".}}
 
 
-  For all classes, the 'print' function produces the predicted percentage price change
-  due to the merger. The 'summary' function provides a more detailed
-  analysis of the merger simulation.
 
-  An object of class 'CES' is a class instance containing the
-  following slots:
 
-  \item{priceStart}{See above.}
-  \item{totExp}{See above.}
-  \item{normIndex}{See above.}
-  \item{prices}{See above.}
-  \item{quantities}{See above.}
-  \item{margins}{See above.}
-  \item{pricesPre}{See above.}
-  \item{pricesPost}{See above.}
-  \item{shareInside}{See above.}
-  \item{shares}{See above.}
-  \item{mcDelta}{See above}
-  \item{slopes} {a list containing the coefficient on the numeraire
-  ('alpha'),  the coefficient on price ('gamma'), and the vector of mean
-  valuations ('meanval')}
-  \item{ownerPre}{See above.}
-  \item{ownerPost}{See above.}
-  \item{labels}{See above.}
 
-  An object of class 'PCAIDSNests' contains all of the above slots as
-  well as
 
-  \item{nests}{See above.}
-  \item{parmsStart}{See above.}
 
+\seealso{\code{\link{logit}}}
+
+\author{Charles Taragin \email{charles.taragin@usdoj.gov}}
+
+\references{
+Anderson, P. S, Palma D, Andre, Thisse and Francois J (1992).
+\emph{Discrete choice theory of product differentiation}.
+The MIT Press, Cambridge, Mass.
+
+Sheu G (2011).
+``Price, Quality, and Variety: Measuring the Gains From Trade in Differentiated
+Products.''
+U.S Department of Justice.
 }
 
-
-
-
-
-
-\seealso{}
-
-\author{Charles Taragin <email: charles.Taragin@usdoj.gov>}
-
-\references{}
 
 
 \examples{
 
 
 ## Calibration and simulation results from a merger between Budweiser and
-## Old Style.
+## Old Style. Assume that typical consumer spends 1% of income on beer,
+## and that total beer expenditure in US is 1e9
 ## Source: Epstein/Rubenfeld 2004, pg 80
 
 prodNames <- c("BUD","OLD STYLE","MILLER","MILLER-LITE","OTHER-LITE","OTHER-REG")
@@ -157,7 +140,7 @@ names(price) <-
     names(margins) <-
     prodNames
 
-result.ces <- ces(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost)
+result.ces <- ces(price,shares,margins,ownerPre=ownerPre,ownerPost=ownerPost,shareInside=.01,labels=prodNames)
 
 print(result.ces)           # return predicted price change
 summary(result.ces)         # summarize merger simulation
@@ -171,7 +154,7 @@ diversion(result.ces,FALSE) # return postmerger diversion ratios
 
 cmcr(result.ces)            #calculate compensating marginal cost reduction
 
-CV(result.ces)              #calculate representative agent compensating variation
+CV(result.ces,1e9)              #calculate representative agent compensating variation
 
 
 

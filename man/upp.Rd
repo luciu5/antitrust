@@ -5,22 +5,25 @@
 \description{Calculate the upward pricing presure index for each pair of
   products.}
 
-\usage{upp(price, margin, diversion, ownerPre=NULL, efficiency=rep(0,length(price)), labels=paste("Prod",1:length(price),sep=""))}
+\usage{upp(price, margin, diversion,
+           ownerPre=NULL, efficiency=rep(0,length(price)),
+           labels=paste("Prod",1:length(price),sep=""))
+}
 
 
 \arguments{
-  Let k_1 denote the number of products produced by merging firm 1 and
-  k_2 denote the number of products produced by merging firm 2.
-  \item{price}{A vector of product prices with length k_1 + k_2}
-  \item{margin}{A vector of product margins with length k_1 + k_2}
-  \item{diversion}{A (k_1 + k_2) x (k_1 + k_2) matrix of diversion ratios
+  Let k denote the number of products produced by both merging parties.
+
+  \item{price}{A vector of product prices with length k}
+  \item{margin}{A vector of product margins with length k}
+  \item{diversion}{A k x k matrix of diversion ratios
     with diagonal elements equal to 1}
-  \item{efficiency}{A vector with length k_1 + k_2  equal to the
+  \item{efficiency}{A vector with length k  equal to the
   proportion of marginal cost efficiencies that a product will
   achieve. Default assumes no efficiencies}
-  \item{ownerPre}{EITHER a vector of length k_1 + k_2 whose values
+  \item{ownerPre}{EITHER a vector of length k whose values
     indicate which of the merging parties produced a product pre-merger OR
-    a (k_1 + k_2) x (k_1 + k_2) matrix whose elements (i,j) are NA if
+    a k x k matrix whose elements (i,j) are NA if
     products i and j are owned by the same firm and 1 otherwise. NULL
   creates a matrix with diagonal elements equal to NA and off-diagonal
   elements equal to 1}
@@ -44,13 +47,17 @@
 \value{A matrix whose values equal to the upwards pricing pressure
   index.}
 
-\references{Farrell2010a}
+\references{
+Farrell, Joseph and Shapiro, Carl (2010).
+``Antitrust Evaluation of Horizontal Mergers: An Economic Alternative
+to Market Definition.''
+}
 
 
-\author{Charles Taragin}
+\author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
 
-\seealso{mcreduce}
+\seealso{\code{\link{cmcr.bertrand}}}
 
 \examples{
 

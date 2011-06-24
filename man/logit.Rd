@@ -29,8 +29,8 @@ logit.nests(prices,shares,margins,
                 )
 
              }
-
 \arguments{
+  Let k denote the number of products produced by all firms.
   \item{prices}{A length k vector of product prices.}
   \item{shares}{A length k vector of product (quantity) shares. Values must be
   between 0 and 1.}
@@ -38,7 +38,7 @@ logit.nests(prices,shares,margins,
     equal NA.}
   \item{nests}{A length k vector identifying the nest that each
     product belongs to.}
-   \item{ownerPre}{{EITHER a vector of length k whose values
+   \item{ownerPre}{EITHER a vector of length k whose values
       indicate which firm produced a product pre-merger OR
       a k x k matrix of pre-merger ownership shares.}
   \item{ownerPost}{EITHER a vector of length k whose values
@@ -56,6 +56,9 @@ logit.nests(prices,shares,margins,
     affect any products' marginal cost.}
   \item{priceStart}{A length k vector of starting values used to solve for
     equilibrium price. Default is the 'prices' vector.}
+   \item{parmsStart}{A vector of starting values used to solve for
+    price coefficient and nest parameters. If 'NULL' then the random
+    draws with the appropriate restrictions are employed.}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
     '#' is a number between 1 and the length of 'prices'.}
   \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
@@ -66,12 +69,12 @@ logit.nests(prices,shares,margins,
 
 
 \details{Using product prices, shares and (at least) all of the
-  product margins from any firm, 'logit' is able to
+  product margins from any firm, \code{logit} is able to
   recover the price coefficient and product mean valuations in a
-  Logit demand model. 'logit' then uses these
+  Logit demand model. \code{logit} then uses these
   calibrated parameters to simulate a merger between two firms.
 
-  'logit.nests' is identical to 'logit' except that it includes the 'nests'
+  \code{logit.nests} is identical to \code{logit} except that it includes the 'nests'
   argument which may be used to assign products to different
   nests. Nests are useful becuase they allow for richer substitution
   patterns between products. Products within the same nest are assumed
@@ -84,8 +87,9 @@ logit.nests(prices,shares,margins,
 
 }
 
-\value{An object of class "Logit" or "LogitNests". "LogitNests" is a child
-  class of "CES", which is a child class of "Antitrust".}
+\value{\code{logit} returns an instance of class \code{"\linkS4class{Logit}"}.
+  \code{logit.nests} returns an instance of \code{"\linkS4class{LogitNests}"}, a
+  child class of \code{"\linkS4class{Logit}".}}
 
 
 
@@ -94,9 +98,24 @@ logit.nests(prices,shares,margins,
 
 \seealso{\code{\link{ces}}}
 
-\author{Charles Taragin <email: charles.taragin@usdoj.gov>}
+\author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\references{}
+\references{
+Anderson, P. S, Palma D, Andre, Thisse and Francois J (1992).
+\emph{Discrete choice theory of product differentiation}.
+The MIT Press, Cambridge, Mass.
+
+Werden, Gregory and Luke Froeb (1994)
+``The Effects of Mergers in
+Differentiated Products Industries: Structural Merger Policy and the
+Logit Model'',
+\emph{Journal of Law, Economics, \& Organization}, \bold{10}, pp. 407-426.
+
+Froeb, Luke, and Greg Werden (1996).
+``Computational Economics and Finance: Modeling and Analysis with Mathematica, Volume 2.''
+In Varian H (ed.), chapter Simulating Mergers among Noncooperative Oligopolists, pp. 177-95.
+Springer-Verlag, New York.
+}
 
 
 \examples{
@@ -120,7 +139,7 @@ names(price) <-
     names(margins) <-
     prodNames
 
-result.logit <- logit(price,shares,margins,ownerPre=ownerPre,ownerPost=ownerPost)
+result.logit <- logit(price,shares,margins,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 
 
 

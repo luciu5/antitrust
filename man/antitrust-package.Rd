@@ -13,14 +13,31 @@ Antitrust Library
 \tabular{ll}{
 Package: \tab antitrust\cr
 Type: \tab Package\cr
-Version: \tab 0.1\cr
+Version: \tab 0.7\cr
 Date: \tab 2011-01-05\cr
-License: \tab GPL-3\cr
+License: \tab GPL (>=2)\cr
 LazyLoad: \tab yes\cr
 }
-~~ An overview of how to use the package, including the most important ~~
-~~ functions ~~
 }
+
+
+\section{Getting Started}{
+  \enumerate{
+    \item Collect data on product prices, shares, margins and diversions
+    (optional).
+    \item If you have data on many/all products in the market consider
+    calibrating a demand system and simulating a merger with either
+    a \code{\link{pcaids}},\code{\link{logit}}, \code{\link{ces}}, or
+    \code{\link{linear}} demand system.
+    \item If you only have data on the merging parties' products, consider
+    using \code{\link{cmcr.bertrand}} or \code{\link{cmcr.cournot}} to
+    uncover the marginal cost reductions needed to offset a post-merger increase.
+
+  }
+
+}
+
+
 \author{
 Michael Sandfort and Charles Taragin
 
@@ -28,15 +45,8 @@ Maintainer: Charles Taragin <charles.taragin@usdoj.gov>
 
 }
 \references{
-~~ Literature or other references for background information ~~
 }
-~~ Optionally other standard keywords, one per line, from file KEYWORDS in ~~
-~~ the R documentation directory ~~
-\keyword{}
+
 \seealso{
-~~ Optional links to other man pages, e.g. ~~
-~~ \code{\link[<pkg>:<pkg>-package]{<pkg>}} ~~
 }
-\examples{
-~~ simple examples of the most important functions ~~
-}
+

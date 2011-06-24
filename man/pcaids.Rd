@@ -20,6 +20,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
               knownElastIndex=1,
               mcDelta=rep(0, length(shares)),
               priceDeltaStart=runif(length(shares)),
+              nestsParmStart = NULL,
               labels=paste("Prod",1:length(shares),sep=""),
               ...)
 
@@ -30,10 +31,10 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   \item{shares}{A length k vector of product revenue shares. All shares must
   be between 0 and 1.}
   \item{knownElast}{A negative number equal to the pre-merger own-price
-    elasticity for any of the k products}
+    elasticity for any of the k products.}
   \item{mktElast}{A negative number equal to the industry pre-merger
     price elasticity. Default is -1.}
-  \item{ownerPre}{{EITHER a vector of length k whose values
+  \item{ownerPre}{EITHER a vector of length k whose values
       indicate which firm produced a product before the merger OR a
       k x k matrix of pre-merger ownership shares.}
   \item{ownerPost}{EITHER a vector of length k whose values
@@ -52,32 +53,36 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   affect any products' marginal cost.}
   \item{priceDeltaStart}{A vector of length k who elements equal to an
   initial guess of the proportional change in price caused by the
-  merger. The default is to draw k random elements from a [0,1] uniform distribution.}
-  \item{labels}{A k-length vector of labels}
+  merger. The default is to draw k random elements from a [0,1] uniform
+  distribution.}
+\item{nestsParmStart}{A vector of starting values used to solve for
+  price coefficient and nest parameters. If 'NULL' then the random
+  draws with the appropriate restrictions are employed.}
+  \item{labels}{A k-length vector of labels.}
   \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
-  optimizer used solve the model}
+  optimizer used solve the model.}
 
 }
 
 
 
 \details{Using product market shares, the own-price elasticity of any single
-  product, and the industry-wide own-price elasticity, 'pcaids' is able to
+  product, and the industry-wide own-price elasticity, \code{pcaids} is able to
   recover the slopes in a Proportionally Calibrated Almost Ideal Demand
   System (PCAIDS) and then use these slopes to simulate a merger between
   two firms under the assumption that all firms in the market are
   playing a differentiated Bertrand pricing game.
 
-  'pcaids.nests' extends 'pcaids' by allowing products
+  \code{pcaids.nests} extends \code{pcaids} by allowing products
   to be grouped into nests. Although products within the same nest still
   have the independence of irrelevant alternatives (IIA) property,
   products in different nests do not.
 
- 'pcaids.nests'  assumes that the share diversion between nests is symmetric
+  \code{pcaids.nests}  assumes that the share diversion between nests is symmetric
  (i.e for 2 nests A and B, the diversion from A to B is the same as B to
- A). Therefore, if there are $w$ nests, $2\le w \le k$, then the model
- must estimate $w(w-1)/2$ distinct nesting parameters. To accomplish
- this, 'pcaids.nests' uses margin information to produce estimates of
+ A). Therefore, if there are w nests, \eqn{2\le w \le k}{2 <= w <=k}, then the model
+ must estimate \eqn{w(w-1)/2} distinct nesting parameters. To accomplish
+ this, \code{pcaids.nests} uses margin information to produce estimates of
  the nesting parameters. It is important to note that the number of
  supplied margins must be at least as great as the number of nesting
  parameters in order for PCAIDS to work.
@@ -92,44 +97,25 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
 
 }
 
-\value{'pcaids' returns an instance of class "PCAIDS", a child class of
-  "Antitrust". 'pcaids.nests' returns an instance of "PCAIDSNests", a
-  child class of "PCAIDS".
-
- For all classes, the 'print' function produces the predicted percentage price change
-  due to the merger. The 'summary' function provides a more detailed
-  analysis of the merger simulation.
-
-  An object of class 'PCAIDS' is a class instance containing the
-  following slots:
-
-  \item{knownElast}{See above.}
-  \item{knownElastIndex}{See above.}
-  \item{mktElast}{See above.}
-  \item{priceDeltaStart}{See above.}
-  \item{priceDelta}{See above.}
-  \item{shares}{See above.}
-  \item{mcDelta}{See above}
-  \item{slopes} {a k x k matrix of linear demand slope coefficients}
-  \item{ownerPre}{See above.}
-  \item{ownerPost}{See above.}
-  \item{labels}{See above.}
-
-   An object of class 'PCAIDSNests' contains all of the above slots as
-   well as
-
-  \item{margins}{See above.}
-  \item{nests}{See above.}
-  \item{nestsParms}{See above.}
-
+\value{\code{pcaids} returns an instance of class \code{"\linkS4class{PCAIDS}"}.
+  \code{pcaids.nests} returns an instance of \code{"\linkS4class{PCAIDSNests}"}, a
+  child class of \code{"\linkS4class{PCAIDS}".}
 }
 
 
-\seealso{}
 
-\author{Charles Taragin <email: charles.Taragin@usdoj.gov>}
 
-\references{}
+\author{Charles Taragin \email{charles.taragin@usdoj.gov}}
+
+\references{
+  Epstein, Roy and  Rubinfeld, Daniel (2004).
+``Merger Simulation with Brand-Level Margin Data: Extending PCAIDS
+with Nests.''
+\emph{The B.E. Journal of Economic Analysis \& Policy}, \bold{advances.4}(1), pp. 2.
+
+  Epstein, Roy and Rubinfeld, Daniel (2004).
+  ``Effects of Mergers Involving Differentiated Products.''
+}
 
 
 \examples{
@@ -155,7 +141,7 @@ ownerPost <- c("A","A","C")
 
 
 
-result <- pcaids(shares,knownElast,mktElast,ownerPre,ownerPost)
+result <- pcaids(shares,knownElast,mktElast,ownerPre,ownerPost,labels=ownerPre)
 
 print(result)           # return predicted price change
 summary(result)         # summarize merger simulation

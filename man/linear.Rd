@@ -2,7 +2,7 @@
 \alias{linear}
 \alias{loglog}
 
-\title{Linear and Log-Log Demand Calibration and Merger Simulation}
+\title{Linear and Log-Linear Demand Calibration and Merger Simulation}
 
 \description{Calibrates consumer demand using either a
   linear or log-log demand system and then simulates the prices effect of a merger between two firms
@@ -12,7 +12,7 @@
 
 
        linear(prices,quantities,margins,
-                     diversion=NULL,
+                     diversions=NULL,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
                      labels=paste("Prod",1:length(prices),sep="")
@@ -20,11 +20,13 @@
 
 
        loglog(prices,quantities,margins,
-                     diversion=NULL,
+                     diversions=NULL,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
                      priceStart=prices,
-                     labels=paste("Prod",1:length(prices),sep="")
+                     labels=paste("Prod",1:length(prices),sep=""),
+                     ...
+             )
 }
 
 \arguments{
@@ -33,16 +35,16 @@
   \item{quantities}{A length k vector of product quantities.}
   \item{margins}{A length k vector of product margins. All margins must
   be between 0 and 1.}
-  \item{diversion}{A k x k matrix of diversion ratios with diagonal
+  \item{diversions}{A k x k matrix of diversion ratios with diagonal
   elements equal to 1. Default is NULL, in which case diversion
   according to quantity share is assumed.}
-  \item{ownerPre}{{EITHER a vector of length k whose values
+  \item{ownerPre}{EITHER a vector of length k whose values
       indicate which firm produced a product pre-merger OR
       a k x k matrix of pre-merger ownership shares.}
   \item{ownerPost}{EITHER a vector of length k whose values
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
-  \item{mcDelta}{A vector of length k where each element equals the
+  \item{mcDelta}{A length k vector where each element equals the
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
   affect any products' marginal cost.}
@@ -57,13 +59,13 @@
 
 
 \details{Using price, quantity, margin, and diversion information for all products
-  in a market, 'linear' is able to
+  in a market, \code{linear} is able to
   recover the slopes and intercepts in a Linear Demand
   System and then use these demand parameters to simulate a merger between
   two firms under the assumption that the firms are playing a
   differentiated Bertrand pricing game.
 
-  Similarly, 'loglog' uses the same information to uncover the
+  Similarly,  \code{loglog} uses the same information to uncover the
   slopes and intercepts in a Log-Log demand system, and then uses these
   demand parameters to simulate a merger two firms under the
   assumption that the firms are playing a
@@ -91,36 +93,9 @@
 
 }
 
-\value{'linear' returns an instance  of class 'Linear' a child class of
-  'Antitrust'. 'loglog' returns an instance of
-  class 'LogLog', which is a child class of 'Linear'
-
-  For all classes, the 'print' function produces the predicted percentage price change
-  due to the merger. The 'summary' function provides a more detailed
-  analysis of the merger simulation.
-
-  An object of class 'Linear' is a class instance containing the
-  following slots:
-
-  \item{prices}{See above.}
-  \item{quantities}{See above.}
-  \item{margins}{See above.}
-  \item{mc}{a length-k vector of  estimated marginal cost}
-  \item{pricePre}{Simulated pre-merger price}
-  \item{pricePost}{Simulated post-merger price}
-  \item{diversion}{diversion matrix}
-  \item{shares}{See above.}
-  \item{mcDelta}{See above.}
-  \item{slopes} {a k x (k+1) matrix of linear demand intercepts and slope coefficients}
-  \item{ownerPre}{See above.}
-  \item{ownerPost}{See above.}
-  \item{labels}{See above.}
-  \item{diversion}{See above.}
-
- An object of class 'LogLog' contains all of the above slots as well as
-
-  \item{priceStart}{See above.}
-}
+\value{\code{linear} returns an instance of class \code{"\linkS4class{Linear}"}.
+  \code{loglog} returns an instance of \code{"\linkS4class{LogLog}"}, a
+  child class of \code{"\linkS4class{Linear}"}.}
 
 
 
@@ -128,12 +103,18 @@
 
 
 \seealso{
-
+\code{\link{pcaids}} for a demand system that employs shares rather than quantities.
   }
 
-\author{Charles Taragin <email: charles.taragin@usdoj.gov>}
+\author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\references{}
+\references{
+von Haefen, Roger (2002).
+``A Complete Characterization Of The Linear, Log-Linear, And Semi-Log
+Incomplete Demand System Models.''
+\emph{Journal of Agricultural and Resource Economics}, \bold{27}(02).
+\url{http://ideas.repec.org/a/ags/jlaare/31118.html}.
+}
 
 
 \examples{

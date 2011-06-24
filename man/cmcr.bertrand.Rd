@@ -4,24 +4,23 @@
 
 \description{Calculate the marginal cost reductions necessary to restore
   premerger prices in a merger involving firms playing a differentiated
-  product Bertrand pricing game.}
+  products Bertrand pricing game.}
 
 \usage{cmcr.bertrand(price, margin,  diversion, ownerPre, ownerPost=matrix(1,ncol=length(price), nrow=length(price)), labels=paste("Prod",1:length(price),sep=""))}
 
 
 \arguments{
-  Let k_1 denote the number of products produced by merging firm 1 and
-  k_2 denote the number of products produced by merging firm 2.
-  \item{price}{A vector of product prices with length k_1 + k_2}
-  \item{margin}{A vector of product margins with length k_1 + k_2}
-  \item{diversion}{A (k_1 + k_2) x (k_1 + k_2) matrix of diversion ratios
-    with diagonal elements equal to 1}
-  \item{ownerPre}{EITHER a vector of length k_1 + k_2 whose values
+  Let k denote the number of products produced by the merging parties.
+  \item{price}{A length-k vector of product prices.}
+  \item{margin}{A length-k vector of product margins.}
+  \item{diversion}{A k x k matrix of diversion ratios
+    with diagonal elements equal to 1.}
+  \item{ownerPre}{EITHER a vector of length k whose values
   indicate which of the merging parties produced a product pre-merger OR
-    a (k_1 + k_2) x (k_1 + k_2) matrix of pre-merger ownership shares}
-  \item{ownerPost}{A (k_1 + k_2) x (k_1 + k_2) matrix of post-merger
-  ownership shares. Default is a (k_1 + k_2) x (k_1 + k_2) matrix of 1s}
-  \item{labels}{Value vector labels}
+    a k x k matrix of pre-merger ownership shares.}
+  \item{ownerPost}{A k x k matrix of post-merger
+  ownership shares. Default is a k x k matrix of 1s.}
+  \item{labels}{A length-k vector of product labels.}
 }
 
 \details{All 'price' elements must be positive, all 'margin'
@@ -50,13 +49,19 @@
   marginal costs that the merged firms must achieve in order to offset a
   price increase.}
 
-\references{Werden1996}
+\references{
+  Werden, Gregory (1996).
+``A Robust Test for Consumer Welfare Enhancing Mergers Among Sellers
+of Differentiated Products.''
+\emph{The Journal of Industrial Economics}, \bold{44}(4), pp. pp. 409-413.}
 
 
-\author{Charles Taragin}
+\author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
 
-\seealso{upp}
+\seealso{\code{\link{upp}}. \code{\link{cmcr.cournot}} for a homogenous products Cournot
+  version of this measure.\code{\link{cmcr-methods}} for calculating
+  CMCR after calibrating a demand system and simulating a merger.}
 
 \examples{
 
