@@ -304,6 +304,18 @@ setMethod(
 
  })
 
+setMethod(
+          f= "getNestsParms",
+          signature= "LogitNests",
+          definition=function(object){
+
+              nestParms <- object@slopes$sigma
+
+
+              return(nestParms)
+
+          }
+          )
 
 setMethod(
  f= "summary",
@@ -312,11 +324,12 @@ setMethod(
 
      callNextMethod(object)
 
+     nestParms <- getNestsParms(object)
+
      cat("\nNesting Parameter Estimates:\n\n")
-     print(round(object@slopes$sigma,2))
+     print(round(nestParms,2))
 
      cat("\n\n")
-
 
 
  }

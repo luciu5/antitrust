@@ -153,7 +153,7 @@ loglog <- function(prices,quantities,margins,diversions=NULL,
 
     if(is.null(diversions)){
         diversions <-  tcrossprod(1/(1-shares),shares)
-        diag(diversion) <- 1
+        diag(diversions) <- 1
     }
 
 

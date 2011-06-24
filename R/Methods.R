@@ -62,6 +62,8 @@ setGeneric (
  def=function(object,...){standardGeneric("getNestsParms")}
  )
 
+setGeneric (name= "summary")
+
 
 ## Create some methods for the Antitrust Class
 setMethod(
@@ -96,23 +98,28 @@ setMethod(
      }
 
 
-         outDelta <- (outPost/outPre - 1) * 100
+     outDelta <- (outPost/outPre - 1) * 100
 
-         pricePre   <-  object@pricePre
-         pricePost  <-  object@pricePost
-         priceDelta <- (pricePost/pricePre - 1) * 100
+     pricePre   <-  object@pricePre
+     pricePost  <-  object@pricePost
+     priceDelta <- (pricePost/pricePre - 1) * 100
 
-         results <- data.frame(pricePre=pricePre,pricePost=pricePost,
-                               priceDelta=priceDelta,outputPre=outPre,
-                               outputPost=outPost,outputDelta=outDelta)
+     results <- data.frame(pricePre=pricePre,pricePost=pricePost,
+                           priceDelta=priceDelta,outputPre=outPre,
+                           outputPost=outPost,outputDelta=outDelta)
 
-         rownames(results) <- object@labels
+     rownames(results) <- object@labels
 
-         cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
-         print(round(results,2))
+     sharesPost <- calcShares(object,FALSE)
 
+     cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
+     print(round(results,2))
+     cat("\n\nShare-Weighted Price Change:",round(sum(sharesPost*priceDelta),2),sep="\t")
+     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*sharesPost),2),sep="\t")
+     cat("\n\n")
+     return(invisible(results))
 
-     })
+ })
 
 
 setMethod(

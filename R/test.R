@@ -4,8 +4,6 @@ currentdir <- getwd()
 setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
 source("Classes.R")
 source("Methods.R")
-##source("pclinear.R")
-##source("pcloglog.R")
 source("linear.R")
 source("loglog.R")
 source("logit.R")
@@ -109,11 +107,11 @@ names(price) <-
 
 
 ## ces demand
-result5 <- ces(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost)
+result5 <- ces(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 testMethods(result5)
 
 ## Nested ces demand
-result6 <- ces.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
+result6 <- ces.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
 testMethods(result6)
 
 

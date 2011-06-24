@@ -282,6 +282,12 @@ setMethod(
          cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
          print(round(results,2))
 
+     cat("\nMerger Simulation Results (Deltas are Percent Changes):\n\n")
+     print(round(results,2))
+     cat("\n\nShare-Weighted Price Change:",round(sum(outPost*priceDelta/100),2),sep="\t")
+     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*outPost/100),2),sep="\t")
+     cat("\n\n")
+         return(invisible(results))
 
      })
 

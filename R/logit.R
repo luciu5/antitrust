@@ -146,7 +146,7 @@ setMethod(
      alpha    <- object@slopes$alpha
      meanval  <- object@slopes$meanval
 
-     isOutside   <- as.numeric(object@shareInside < 1)
+     isOutside   <- as.numeric(shareInside < 1)
 
      ##Define system of FOC as a function of prices
      FOC <- function(priceCand){
