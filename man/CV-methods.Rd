@@ -5,6 +5,7 @@
 \alias{CV,CES-method}
 \alias{CV,CESNests-method}
 \alias{CV,Linear-method}
+\alias{CV,LogLog-method}
 \alias{CV,Logit-method}
 \alias{CV,LogitNests-method}
 \alias{CV,PCAIDS-method}

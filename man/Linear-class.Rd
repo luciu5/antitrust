@@ -4,6 +4,7 @@
 \alias{Linear-class}
 \alias{calcPrices,Linear-method}
 \alias{calcQuantities,Linear-method}
+\alias{calcShares,Linear-method}
 \alias{calcSlopes,Linear-method}
 %%\alias{CV,Linear-method}
 %%\alias{elast,Linear-method}
@@ -32,6 +33,8 @@ Objects can be created by using the constructor function \code{\link{linear}}.
     \item{\code{pricePost}:}{A length k vector of simulated post-merger prices.}
     \item{\code{diversion}:}{A k x k matrix of diversion ratios with diagonal
       elements equal to 1.}
+     \item{\code{symmetry}:}{If TRUE, requires the matrix of demand slope coefficients to be
+    consistent with utility maximization theory.}
 
   }
 }
@@ -51,6 +54,10 @@ Class \code{"\linkS4class{Antitrust}"}, directly.
     \item{calcQuantities}{\code{signature(object = "Linear", preMerger
 	= TRUE)}: Compute either pre-merger or post-merger equilibrium
       quantities under the assumptions that consumer demand is Linear and firms play a differentiated product
+      Bertrand Nash pricing game.}
+    \item{calcShares}{\code{signature(object = "Linear", preMerger
+	= TRUE)}: Compute either pre-merger or post-merger equilibrium
+      quantity shares under the assumptions that consumer demand is Linear and firms play a differentiated product
       Bertrand Nash pricing game.}
     \item{calcSlopes}{\code{signature(object = "Linear")}: Uncover
       slopes and intercept from a Linear demand system. Assumes that firms are currently at equilibrium  in a

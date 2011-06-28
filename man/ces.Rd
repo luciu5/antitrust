@@ -106,9 +106,13 @@ ces.nests(prices,shares,margins,
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
 \references{
-Anderson, P. S, Palma D, Andre, Thisse and Francois J (1992).
-\emph{Discrete choice theory of product differentiation}.
+Anderson, Simon, Palma, Andre, and Francois Thisse (1992).
+\emph{Discrete Choice Theory of Product Differentiation}.
 The MIT Press, Cambridge, Mass.
+
+
+Epstein, Roy and Rubinfeld, Daniel (2004).
+``Effects of Mergers Involving Differentiated Products.''
 
 Sheu G (2011).
 ``Price, Quality, and Variety: Measuring the Gains From Trade in Differentiated

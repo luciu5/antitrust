@@ -5,8 +5,11 @@
 %%\alias{cmcr,Antitrust-method}
 %%\alias{diversion,Antitrust-method}
 \alias{ownerToMatrix,Antitrust-method}
+\alias{hhi,Antitrust-method}
 \alias{show,Antitrust-method}
 \alias{summary,Antitrust-method}
+\alias{calcMargins,Antitrust-method}
+\alias{calcPriceDelta,Antitrust-method}
 
 \title{Class "Antitrust"}
 \description{
@@ -41,10 +44,21 @@ Objects can be created by calls of the form \code{new("Antitrust", ...)}.
   pre-merger ownership structure, while FALSE invokes the method using
   the post-merger ownership structure.
   \describe{
+    \item{calcMargins}{\code{signature(object = "Antitrust", preMerger
+	= TRUE)}: Compute either pre-merger or post-merger equilibrium
+      margins under the assumption that firms play a differentiated product
+      Bertrand Nash pricing game.}
+    \item{\code{\link{calcPriceDelta}}}{\code{signature(object =
+	"Antitrust")}: Calculates the proportional change in product
+      prices from a merger.}
     \item{\code{\link{cmcr}}}{\code{signature(object =
 	"Antitrust")}: Calculates compensated marginal cost reduction,
       the percentage decrease in the marginal costs of the merging
       parties' products needed to offset a post-merger price increase.}
+     \item{hhi}{\code{signature(object = "Antitrust", preMerger
+	= TRUE)}: Compute either the pre-merger or post-merger
+       Herfindahl–Hirschman Index (HHI) under the assumption that firms play a differentiated product
+      Bertrand Nash pricing game.}
     \item{\code{\link{diversion}}}{\code{signature(object = "Antitrust", preMerger
       = TRUE)}: Computes a k x k matrix of diversion ratios.}
     \item{ownerToMatrix}{\code{signature(object = "Antitrust", preMerger

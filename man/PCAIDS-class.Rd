@@ -37,7 +37,8 @@ Objects can be created by using the constructor function \code{\link{pcaids}}.
       initial guess of the proportional change in price caused by the
       merger.}
     \item{\code{priceDelta}:}{A length k vector containing the
-	simulated price effects from the merger.}
+      simulated price effects from the merger.}
+    \item{\code{diversion}:}{A k x k matrix  containing product diversions.}
   }
 }
 \section{Extends}{

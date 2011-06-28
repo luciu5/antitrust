@@ -5,6 +5,7 @@
 \alias{calcPrices,CESNests-method}
 \alias{calcShares,CESNests-method}
 \alias{calcSlopes,CESNests-method}
+\alias{getNestsParms,CESNests-method}
 %%\alias{CV,CESNests-method}
 %%\alias{elast,CESNests-method}
 \alias{summary,CESNests-method}
@@ -65,7 +66,7 @@ Class \code{"\linkS4class{Antitrust}"}, by class "CES", distance 3.
 	= TRUE)}: Computes a k x k matrix of own and cross-price
       elasticities.}
     \item{getNestsParms}{\code{signature(object = "PCAIDSNests")}:
-      Returns a matrix containing the calibrated nesting parameters. }
+      Returns a vector containing the calibrated nesting parameters. }
     \item{summary}{\code{signature(object = "CESNests")}: Summarizes
       the effect of the merger, including price and quantity changes,
       as well as nesting parameters. }

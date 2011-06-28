@@ -13,6 +13,7 @@
 
        linear(prices,quantities,margins,
                      diversions=NULL,
+                     symmetry=TRUE,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
                      labels=paste("Prod",1:length(prices),sep="")
@@ -34,13 +35,15 @@
   \item{prices}{A length k vector product prices.}
   \item{quantities}{A length k vector of product quantities.}
   \item{margins}{A length k vector of product margins. All margins must
-  be between 0 and 1.}
+    be between 0 and 1.}
   \item{diversions}{A k x k matrix of diversion ratios with diagonal
-  elements equal to 1. Default is NULL, in which case diversion
-  according to quantity share is assumed.}
+    elements equal to 1. Default is NULL, in which case diversion
+    according to quantity share is assumed.}
+  \item{symmetry}{If TRUE, requires the matrix of demand slope coefficients to be
+    consistent with utility maximization theory. Default is TRUE.}
   \item{ownerPre}{EITHER a vector of length k whose values
-      indicate which firm produced a product pre-merger OR
-      a k x k matrix of pre-merger ownership shares.}
+    indicate which firm produced a product pre-merger OR
+    a k x k matrix of pre-merger ownership shares.}
   \item{ownerPost}{EITHER a vector of length k whose values
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
@@ -161,27 +164,7 @@ diversion(result.linear,FALSE) # returns postmeger diversion ratios
 
 cmcr(result.linear)            # returns the compensating marginal cost reduction
 
-
-
-
-## Same as above, but with log-log instead of linear demand
-
-
-result.log <- loglog(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
-
-print(result.log)
-summary(result.log)         # summarize merger simulation
-
-elast(result.log,TRUE)      # returns premerger elasticities
-elast(result.log,FALSE)     # returns postmerger elasticities
-
-diversion(result.log,TRUE)  # returns premerger diversion ratios
-diversion(result.log,FALSE) # returns postmeger diversion ratios
-
-cmcr(result.log)            # returns the compensating marginal cost reduction
-
-
-
+CV(result.linear)              # returns compensating variation
 
 
 }

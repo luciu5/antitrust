@@ -7,6 +7,7 @@
   under the assumption that all firms in the market are playing a differentiated products Bertrand game.}
 
 \usage{pcaids(shares,knownElast,mktElast=-1,
+              diversions=NULL,
               ownerPre,ownerPost,
               knownElastIndex=1,
               mcDelta=rep(0, length(shares)),
@@ -34,6 +35,9 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
     elasticity for any of the k products.}
   \item{mktElast}{A negative number equal to the industry pre-merger
     price elasticity. Default is -1.}
+   \item{diversions}{A k x k matrix of diversion ratios with diagonal
+    elements equal to 1. Default is NULL, in which case diversion
+    according to revenue share is assumed.}
   \item{ownerPre}{EITHER a vector of length k whose values
       indicate which firm produced a product before the merger OR a
       k x k matrix of pre-merger ownership shares.}
@@ -73,10 +77,16 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   two firms under the assumption that all firms in the market are
   playing a differentiated Bertrand pricing game.
 
+  By default, \code{pcaids} assumes that diversion between the products
+  in the market occurs according to revenue share. This assumption may be relaxed
+  by setting 'diversions' equal to a k x k matrix of diversion
+  ratios. The diagonal of this matrix must equal 1.
+
   \code{pcaids.nests} extends \code{pcaids} by allowing products
   to be grouped into nests. Although products within the same nest still
   have the independence of irrelevant alternatives (IIA) property,
-  products in different nests do not.
+  products in different nests do not. Note that the 'diversions'
+  argument is absent from \code{pcaids.nests}.
 
   \code{pcaids.nests}  assumes that the share diversion between nests is symmetric
  (i.e for 2 nests A and B, the diversion from A to B is the same as B to
@@ -141,7 +151,7 @@ ownerPost <- c("A","A","C")
 
 
 
-result <- pcaids(shares,knownElast,mktElast,ownerPre,ownerPost,labels=ownerPre)
+result <- pcaids(shares,knownElast,mktElast,ownerPre=ownerPre,ownerPost=ownerPost,labels=ownerPre)
 
 print(result)           # return predicted price change
 summary(result)         # summarize merger simulation
@@ -155,7 +165,10 @@ diversion(result,FALSE) # return postmerger diversion ratios
 
 cmcr(result)            #calculate compensating marginal cost reduction
 
+##Suppose that you also know pre-merger prices
+price    <- c(2.9,3.4,2.2)
 
+CV(result,price)        #calculate compensating variation
 
 
 
