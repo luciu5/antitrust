@@ -91,28 +91,36 @@ setMethod(
                   elast <- diag((1/sigma-1)*alpha)
                   elast <- elast[nests,nests]
                   elast <- elast * matrix(sharesIn*prices,ncol=nprods,nrow=nprods)
-                  elast <- -1*(elast + alpha * matrix(shares*prices,ncol=nprods,nrow=nprods))
+                  elast <- -1*(elast + alpha * matrix(revenues,ncol=nprods,nrow=nprods))
                   diag(elast) <- diag(elast) + (1/sigma[nests])*alpha*prices
-
-                  marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues
+                  try(marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues,TRUE)
+                  if(!exists("marginsCand")){marginsCand <- 1e3}
 
                   measure <- sqrt(sum((margins - marginsCand)^2,na.rm=TRUE))/sqrt(nMargins)
 
                   return(measure)
               }
 
-              ## Constrain optimizer to look for solutions where alpha<0, 1 > sigma > 0
+              ## Constrain optimizer to look for solutions where alpha<0,  sigma > 0
               lowerB <- upperB <- rep(0,length(parmsStart))
               lowerB[1] <- -Inf
 
-              upperB[-1] <- 1
+              upperB[-1] <- Inf
 
-              minTheta <- optim(parmsStart,minD,method="L-BFGS-B",lower= lowerB,upper=upperB)$par
-              names(minTheta) <- c("Alpha",levels(nests))
+              minTheta <- optim(parmsStart,minD,method="L-BFGS-B",lower= lowerB,upper=upperB)
 
-              minAlpha <- minTheta[1]
-              minSigma <- minTheta[-1]
+              if(minTheta$convergence != 0){
+                  warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
+              }
+
+              names(minTheta$par) <- c("Alpha",levels(nests))
+
+              minAlpha <- minTheta$par[1]
+              minSigma <- minTheta$par[-1]
               minSigma <- minSigma[nests]
+
+              if(any(minSigma>1)){
+                  warning("Some nesting parameters are greater than 1. These parameter values may not be consistent with economic theory")}
 
               if(idx==0){
                   idxShare <- 1 - object@shareInside
@@ -135,7 +143,7 @@ setMethod(
 
               names(meanval)   <- object@labels
 
-              object@slopes    <- list(alpha=minAlpha,sigma=minTheta[-1],meanval=meanval)
+              object@slopes    <- list(alpha=minAlpha,sigma=minTheta$par[-1],meanval=meanval)
 
               return(object)
           }
@@ -177,19 +185,20 @@ setMethod(
 
          sharesIn     <- exp((meanval+alpha*priceCand)/sigma[nests])
          inclusiveValue <- log(tapply(sharesIn,nests,sum))
-         sharesIn     <- sharesIn/(isOutside + sum(sharesIn))
+         sharesIn     <- sharesIn/sum(sharesIn)
          sharesAcross <-   exp(sigma*inclusiveValue)
          sharesAcross <- sharesAcross/(isOutside + sum(sharesAcross))
 
          shares       <- sharesIn * sharesAcross[nests]
+         revenues <-  shares * priceCand
 
          elast <- diag((1/sigma-1)*alpha)
          elast <- elast[nests,nests]
          elast <- elast * matrix(sharesIn*priceCand,ncol=nprods,nrow=nprods)
-         elast <- -1*(elast + alpha * matrix(shares*priceCand,ncol=nprods,nrow=nprods))
+         elast <- -1*(elast + alpha * matrix(revenues,ncol=nprods,nrow=nprods))
          diag(elast) <- diag(elast) + (1/sigma[nests])*alpha*priceCand
 
-         revenues <-  shares * priceCand
+
 
          thisFOC <- revenues + as.vector((elast * owner) %*% (margins * revenues))
          return(thisFOC)
@@ -197,6 +206,8 @@ setMethod(
 
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart,FOC,...)
+
+     if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
 
      priceEst        <- minResult$x
      names(priceEst) <- object@labels

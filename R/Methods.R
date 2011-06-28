@@ -52,6 +52,12 @@ setGeneric (
  )
 
 setGeneric (
+ name= "hhi",
+ def=function(object,...){standardGeneric("hhi")}
+ )
+
+
+setGeneric (
  name= "cmcr",
  def=function(object,...){standardGeneric("cmcr")}
  )
@@ -66,8 +72,9 @@ setGeneric (name= "summary")
 
 
 ## Create some methods for the Antitrust Class
+
 setMethod(
- f= "show",
+ f= "calcPriceDelta",
  signature= "Antitrust",
  definition=function(object){
 
@@ -76,7 +83,59 @@ setMethod(
 
      priceDelta <- pricePost/pricePre - 1
      names(priceDelta) <- object@labels
-     print(priceDelta*100)
+
+     return(priceDelta)
+
+ }
+)
+
+
+setMethod(
+ f= "hhi",
+ signature= "Antitrust",
+ definition=function(object,preMerger=TRUE){
+
+     shares=calcShares(object,preMerger) *100
+
+     return(sum(shares^2))
+
+ }
+)
+
+setMethod(
+ f= "show",
+ signature= "Antitrust",
+ definition=function(object){
+
+    print(calcPriceDelta(object)*100)
+
+}
+ )
+
+
+setMethod(
+ f= "calcMargins",
+ signature= "Antitrust",
+ definition=function(object,preMerger=TRUE){
+
+     priceDelta <- calcPriceDelta(object)
+     shares     <- object@shares
+
+     elastPre <-  t(elast(object,TRUE))
+     marginPre <-  -1 * as.vector(solve(elastPre*object@ownerPre) %*% shares) / shares
+
+
+     if(preMerger){
+         names(marginPre) <- object@labels
+         return(marginPre)
+     }
+
+     else{
+
+         marginPost <- 1 - ((1 + object@mcDelta) * (1 - marginPre) / (priceDelta + 1) )
+         names(marginPost) <- object@labels
+         return(marginPost)
+     }
 
 }
  )

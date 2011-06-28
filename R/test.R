@@ -1,5 +1,6 @@
 rm(list=ls())
 require(nleqslv)
+require(Matrix)
 currentdir <- getwd()
 setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
 source("Classes.R")
@@ -15,7 +16,7 @@ source("pcaidsNests.R")
 setwd(currentdir)
 
 
-testMethods <- function(object){
+testMethods <- function(object,other){
 
     print(object)           # return predicted price change
     summary(object)         # summarize merger simulation
@@ -27,7 +28,11 @@ testMethods <- function(object){
     print(diversion(object,FALSE)) # returns postmeger diversion ratios
 
     print(cmcr(object))            # returns the compensating marginal cost reduction
-    print(CV(object))            # returns the compensating variation
+    if(missing(other)){
+        print(CV(object)) }
+    else{
+        print(CV(object,other))            # returns the compensating variation
+    }
 
 
 }
@@ -107,27 +112,28 @@ names(price) <-
 
 
 ## ces demand
-result5 <- ces(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
-testMethods(result5)
+result5 <- ces(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames,shareInside=.01)
+testMethods(result5,1e9)
 
 ## Nested ces demand
-result6 <- ces.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
-testMethods(result6)
+result6 <- ces.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,shareInside=.01)
+testMethods(result6,1e9)
 
 
 knownElast=-2.5
 mktElast=-1
-
+d=tcrossprod(1/(1-shares.revenue),shares.revenue)
+diag(d)=1
 
 ## PCAIDS demand
 ## Confirmed Against Epstein/Rubenfeld 2004 Beer example
-result7 <- pcaids(shares.revenue,knownElast,mktElast,knownElastIndex=1,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
-testMethods(result7)
+result7 <- pcaids(shares.revenue,knownElast,mktElast,knownElastIndex=1,diversions=d,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+testMethods(result7,price)
 
 ## Nested PCAIDS demand
 ## Confirmed Against Epstein/Rubenfeld 2004 Beer example
 result8 <- pcaids.nests(shares.revenue,margins.pcaids,knownElast,mktElast,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
-testMethods(result8)
+testMethods(result8,price)
 
 ## logit demand
 result9 <- logit(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost)

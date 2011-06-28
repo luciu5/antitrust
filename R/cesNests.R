@@ -114,11 +114,15 @@ setMethod(
               constrB <- rep(0,nlevels(nests) + 1)
               constrB[1] <- -1
 
-              minTheta <- constrOptim(parmsStart,minD,grad=NULL,ui=constrA,ci=constrB)$par
-              names(minTheta) <- c("Gamma",levels(nests))
+              minTheta <- constrOptim(parmsStart,minD,grad=NULL,ui=constrA,ci=constrB)
+              names(minTheta$par) <- c("Gamma",levels(nests))
 
-              minGamma <- minTheta[1]
-              minSigma <- minTheta[-1]
+              if(minTheta$convergence != 0){
+                  warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
+              }
+
+              minGamma <- minTheta$par[1]
+              minSigma <- minTheta$par[-1]
               minSigma <- minSigma[nests]
 
               meanval <- log(shares) - log(shares[idx]) + (minGamma - 1) * (log(prices) - log(prices[idx]))
@@ -131,7 +135,7 @@ setMethod(
 
               names(meanval)   <- object@labels
 
-              object@slopes    <- list(alpha=alpha,gamma=minGamma,sigma=minTheta[-1],meanval=meanval)
+              object@slopes    <- list(alpha=alpha,gamma=minGamma,sigma=minTheta$par[-1],meanval=meanval)
 
               return(object)
           }
@@ -195,6 +199,8 @@ setMethod(
 
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart,FOC,...)
+
+      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
 
      priceEst        <- minResult$x
      names(priceEst) <- object@labels

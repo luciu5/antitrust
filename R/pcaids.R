@@ -13,8 +13,8 @@ setClass(
          knownElastIndex = "numeric",
          mktElast        = "numeric",
          priceDeltaStart = "vector",
-         priceDelta      = "vector"
-
+         priceDelta      = "vector",
+         diversion       = "anyMatrix"
          ),
         prototype=prototype(
 
@@ -40,6 +40,13 @@ setClass(
              if(abs(object@knownElast) <= abs(object@mktElast)){
                  stop("'mktElast' must be less than 'knownElast' in absolute value")}
 
+             if(!all(diag(object@diversion) == 1)){ stop("'diversion' diagonal elements must all equal 1")}
+             if(any(abs(object@diversion) > 1)){ stop("'diversion' elements must be between -1 and 1")}
+
+             if(nprods != nrow(object@diversion) ||
+                nprods != ncol(object@diversion)){
+                 stop("'diversions' must be a square matrix")
+             }
 
          }
 
@@ -61,18 +68,24 @@ setMethod(
      ## Uncover linear demand slopes from shares, knownElast and mktElast
      ## Since demand is linear IN LOG PRICE, model assumes that slopes remain unchanged following merger
 
+     shares    <- object@shares
+     diversion <- object@diversion
+     labels    <- object@labels
 
+     diag(diversion) <- -1
+     diversion <- -1*t(diversion)
 
-     shareKnown <- object@shares[object@knownElastIndex]
+     idx        <- object@knownElastIndex
+     shareKnown <- shares[idx]
 
+     b <- rep(1,length(shares))
 
      bKnown <- shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
-     beta <- ((1-object@shares) / (1-shareKnown)) * (object@shares / shareKnown)
-     b <- beta * bKnown
-     B <- tcrossprod(-object@shares, 1/(1-object@shares))
-     diag(B) <- 1
-     B <- t(t(B) * b)
-     dimnames(B) <- list(object@labels,object@labels)
+
+     b[-idx] <- qr.solve(diversion[,-idx], -1*diversion[,idx])
+     b <- b * bKnown
+     B <- t(t(diversion) * b)
+     dimnames(B) <- list(labels,labels)
 
      return(B)
  }
@@ -115,6 +128,9 @@ setMethod(
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceDeltaStart,FOC,object=object,...)
 
+     if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
+
+
      deltaPrice <- (exp(minResult$x)-1)
      names(deltaPrice) <- object@labels
 
@@ -141,24 +157,6 @@ setMethod(
 
 
 
-setMethod(
- f= "calcMargins",
- signature= "PCAIDS",
- definition=function(object,preMerger=TRUE){
-
-     elastPre <-  t(elast(object,TRUE))
-     marginPre <-  -1 * as.vector(solve(elastPre*object@ownerPre) %*% object@shares) / object@shares
-
-     if(preMerger){return(marginPre)}
-
-     else{
-
-         marginPost <- 1 - ((1 + object@mcDelta) * (1 - marginPre) / (object@priceDelta + 1) )
-         return(marginPost)
-     }
-
-}
- )
 
 
 
@@ -228,7 +226,7 @@ setMethod(
               slopes <- object@slopes
 
               ## The following test should be never be flagged (it is true by construction in PCAIDS)
-               if(!isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[lower.tri(slopes)]))){
+               if(!isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[upper.tri(t(slopes))]))){
                   stop("log-price coefficient matrix must be symmetric in order to calculate compensating variation")
               }
 
@@ -241,10 +239,38 @@ setMethod(
               ePre <-   sum(intercept * log(prices))    + .5 * as.vector(log(prices)    %*% slopes %*% log(prices) )
               ePost <-  sum(intercept * log(pricePost)) + .5 * as.vector(log(pricePost) %*% slopes %*% log(pricePost) )
 
-              return( exp(ePre) - exp(ePost)  )
+              return( exp(ePost) - exp(ePre)  )
 
           }
           )
+
+
+setMethod(
+ f= "calcMargins",
+ signature= "PCAIDS",
+ definition=function(object,preMerger=TRUE){
+
+     priceDelta <- object@priceDelta
+     shares     <- object@shares
+
+     elastPre <-  t(elast(object,TRUE))
+     marginPre <-  -1 * as.vector(solve(elastPre*object@ownerPre) %*% shares) / shares
+
+     if(preMerger){
+         names(marginPre) <- object@labels
+         return(marginPre)}
+
+     else{
+
+         marginPost <- 1 - ((1 + object@mcDelta) * (1 - marginPre) / (priceDelta + 1) )
+         names(marginPost) <- object@labels
+         return(marginPost)
+     }
+
+}
+ )
+
+
 
 setMethod(
  f= "show",
@@ -293,7 +319,8 @@ setMethod(
 
 
 
-pcaids <- function(shares,knownElast,mktElast=-1,ownerPre,ownerPost,
+pcaids <- function(shares,knownElast,mktElast=-1,diversions=NULL,
+                   ownerPre,ownerPost,
                    knownElastIndex=1,
                    mcDelta=rep(0, length(shares)),
                    priceDeltaStart=runif(length(shares)),
@@ -302,10 +329,17 @@ pcaids <- function(shares,knownElast,mktElast=-1,ownerPre,ownerPost,
 
 
 
+    if(is.null(diversions)){
+        diversions <- tcrossprod(1/(1-shares),shares)
+        diag(diversions) <- 1
+    }
+
   ## Create PCAIDS container to store relevant data
     result <- new("PCAIDS",shares=shares,mcDelta=mcDelta
                   ,knownElast=knownElast,mktElast=mktElast,
-                  ownerPre=ownerPre,ownerPost=ownerPost,knownElastIndex=knownElastIndex,
+                  ownerPre=ownerPre,ownerPost=ownerPost,
+                  knownElastIndex=knownElastIndex,
+                  diversion=diversions,
                   priceDeltaStart=priceDeltaStart,labels=labels)
 
     ## Convert ownership vectors to ownership matrices

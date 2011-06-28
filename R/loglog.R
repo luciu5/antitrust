@@ -1,6 +1,3 @@
-#source("pcloglog.R")
-
-
 setClass(
          Class = "LogLog",
          contains="Linear",
@@ -90,9 +87,13 @@ setMethod(
      return(as.vector(thisFOC))
  }
 
- price <- nleqslv(object@priceStart,FOC,object=object,...)$x
+ minResult <- nleqslv(object@priceStart,FOC,object=object,...)
 
- return(price)
+ if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
+
+ priceEst        <- minResult$x
+ names(priceEst) <- object@labels
+ return(priceEst)
 
 }
  )
@@ -135,7 +136,12 @@ setMethod(
 }
  )
 
-
+setMethod(
+ f= "CV",
+ signature= "LogLog",
+ definition=function(object){
+     print("CV method not currently for 'LogLog' Class")
+ })
 
 
 loglog <- function(prices,quantities,margins,diversions=NULL,
@@ -159,7 +165,7 @@ loglog <- function(prices,quantities,margins,diversions=NULL,
 
     result <- new("LogLog",prices=prices, quantities=quantities,margins=margins,
                   shares=shares,mc=prices*(1-margins),mcDelta=mcDelta, priceStart=priceStart,
-                  ownerPre=ownerPre,diversion=diversions,
+                  ownerPre=ownerPre,diversion=diversions, symmetry=FALSE,
                   ownerPost=ownerPost, labels=labels)
 
 

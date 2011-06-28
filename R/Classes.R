@@ -1,4 +1,4 @@
-require(Matrix)
+
 
 setClassUnion("anyMatrix", c("matrix", "Matrix"))
 setClassUnion("matrixOrVector", c("matrix", "Matrix", "vector","factor"))

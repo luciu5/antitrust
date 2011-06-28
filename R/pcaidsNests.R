@@ -77,7 +77,7 @@ setMethod(
 
 
               ## Uncover linear demand slopes from shares, knownElast, mktElast, margins, and nesting structure
-              ## Since demand is linear IN LOG PRICE, model assumes that slopes remain unchanged following merger
+
 
 
               knownIndx  <- object@knownElastIndex
@@ -177,7 +177,8 @@ setMethod(
 )
 
 
-pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,ownerPre,ownerPost,
+pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
+                         ownerPre,ownerPost,
                          nests=rep(1,length(shares)),
                          knownElastIndex=1,
                          mcDelta=rep(0, length(shares)),
@@ -194,10 +195,14 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,ownerPre,ownerPos
         nestsParmStart <- runif(nNests*(nNests -1)/2)
                             }
 
+
+        diversions <- tcrossprod(1/(1-shares),shares);diag(diversions) <- 1 #'diversions' slot not used by pcaids.nests
+
+
     ## Create PCAIDS Nests  container to store relevant data
     result <- new("PCAIDSNests",shares=shares,margins=margins,mcDelta=mcDelta
                   ,knownElast=knownElast,mktElast=mktElast,nests=nests,
-                  nestsParms=nestsParmStart,
+                  nestsParms=nestsParmStart, diversion=diversions,
                   ownerPre=ownerPre,ownerPost=ownerPost,knownElastIndex=knownElastIndex,
                   priceDeltaStart=priceDeltaStart,labels=labels)
 

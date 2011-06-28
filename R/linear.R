@@ -8,8 +8,8 @@ setClass(
          mc               = "vector",
          pricePre         = "vector",
          pricePost        = "vector",
-         diversion        = "matrix",
-         symmetry        = "logical"
+         diversion        = "anyMatrix",
+         symmetry         = "logical"
          ),
           prototype=prototype(
 
@@ -76,11 +76,13 @@ setMethod(
       }
 
      else{
-         nMargins <-  length(margins[!is.na(margins)])
+         existMargins <- which(!is.na(margins))
+         nMargins <-  length(margins[existMargins])
          revenues <- prices*quantities
+         k <- existMargins[1] ## choose a diagonal demand parameter corresponding to a provided margin
 
           minD <- function(s){
-              beta <- -s*diversion[1,]/diversion[,1] ## wlog, assume that b11 is unknown
+              beta <- -s*diversion[k,]/diversion[,k]
               slopesCand <- matrix(beta,ncol=nprods,nrow=nprods,byrow=TRUE)
               slopesCand <- slopesCand*t(diversion)
               elast <- slopesCand * tcrossprod(1/quantities,prices)
@@ -109,7 +111,7 @@ setMethod(
 
      if(!symmetry &&
         !isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[lower.tri(slopes)]))){
-         warn("Matrix of demand slopes coefficients is not symmetric. Demand parameters may not be consistent with utility maximization theory.")}
+         warning("Matrix of demand slopes coefficients is not symmetric. Demand parameters may not be consistent with utility maximization theory.")}
 
      return(cbind(intercept,slopes))
 
@@ -211,7 +213,7 @@ setMethod(
 
      slopes    <- object@slopes[,-1]
 
-      if(!isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[lower.tri(slopes)]))){
+      if(!isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[upper.tri(t(slopes))]))){
                   stop("price coefficient matrix must be symmetric in order to calculate compensating variation. Suggest setting 'symmetry=TRUE'")
               }
 
