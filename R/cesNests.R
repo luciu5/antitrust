@@ -149,7 +149,7 @@ setMethod(
  signature= "CESNests",
  definition=function(object,preMerger=TRUE,...){
 
-     require(nleqslv) #needed to solve nonlinear system of firm FOC
+
 
      if(preMerger){
          mcDelta <- rep(0,length(object@mcDelta))
@@ -200,7 +200,7 @@ setMethod(
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart,FOC,...)
 
-      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
+      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
      priceEst        <- minResult$x
      names(priceEst) <- object@labels
@@ -350,6 +350,72 @@ setMethod(
 }
  )
 
+
+setMethod(
+ f= "calcPriceDeltaHypoMon",
+ signature= "CESNests",
+ definition=function(object,prodIndex,...){
+
+     nprods <- length(prodIndex)
+     nests  <- object@nests
+     pricePreOld <- object@pricePre
+     gamma    <- object@slopes$gamma
+     sigma    <- object@slopes$sigma
+     meanval  <- object@slopes$meanval
+
+
+     ##Define system of FOC as a function of priceDelta
+     FOC <- function(priceCand){
+
+
+         thisPrice <- pricePreOld
+         thisPrice[prodIndex] <- priceCand
+         nprods <- length(thisPrice)
+
+         margins <- 1 - object@mc / thisPrice
+
+         sharesIn     <- meanval*thisPrice^(1-sigma[nests])
+         sharesAcross <- tapply(sharesIn,nests,sum)
+         sharesIn     <- sharesIn / sharesAcross[nests]
+         sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
+         sharesAcross <- sharesAcross / sum(sharesAcross)
+
+         shares       <- sharesIn * sharesAcross[nests]
+
+
+         elast <- diag(sigma - gamma)
+
+         elast <- elast[nests,nests]
+         elast <- elast * matrix(sharesIn,ncol=nprods,nrow=nprods)
+         elast <- elast + (gamma-1) * matrix(shares,ncol=nprods,nrow=nprods)
+         diag(elast) <- diag(elast) - sigma[nests]
+         elast <- elast[prodIndex,prodIndex]
+
+         shares <-  shares[prodIndex]
+         margins <- margins[prodIndex]
+
+         thisFOC <- shares + as.vector(elast  %*% (margins * shares))
+
+
+         return(thisFOC)
+
+     }
+
+
+
+
+     ## Find price changes that set FOCs equal to 0
+     minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
+
+     if(minResult$termcd != 1){warning("'calcPriceDeltaHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+
+     priceDelta <- minResult$x/pricePreOld[prodIndex] - 1
+
+     names(priceDelta) <- object@labels[prodIndex]
+
+     return(priceDelta)
+
+ })
 
 
 ces.nests <- function(prices,shares,margins,

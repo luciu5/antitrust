@@ -40,6 +40,13 @@ setClass(
 
              if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
 
+             if(!(is.matrix(object@ownerPre) || is(object@ownerPre,"Matrix"))){
+                 ownerPre <- ownerToMatrix(object,TRUE)
+             }
+             else{ownerPre <- object@ownerPre}
+
+             if(all(is.na(ownerPre %*% object@margins))) stop("Insufficient margin information to calibrate demand parameters.")
+
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'shares'")}
 
@@ -127,7 +134,6 @@ setMethod(
  signature= "Logit",
  definition=function(object,preMerger=TRUE,...){
 
-     require(nleqslv) #needed to solve nonlinear system of firm FOC
 
      if(preMerger){
          mcDelta <- rep(0,length(object@mcDelta))
@@ -167,7 +173,7 @@ setMethod(
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart,FOC,...)
 
-      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
+      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
      priceEst        <- minResult$x
      names(priceEst) <- object@labels
@@ -244,6 +250,45 @@ setMethod(
 
  })
 
+
+
+setMethod(
+ f= "calcPriceDeltaHypoMon",
+ signature= "Logit",
+ definition=function(object,prodIndex){
+
+     nprods <- length(prodIndex)
+     mc       <- object@mc[prodIndex]
+     alpha    <- object@slopes$alpha
+     meanval  <- object@slopes$meanval
+     pricePre <- object@pricePre
+
+     isOutside   <- as.numeric(object@shareInside < 1)
+
+     calcMonopolySurplus <- function(priceCand){
+
+         pricePre[prodIndex] <- priceCand #keep prices of products not included in HM fixed at premerger levels
+         sharesCand <- exp(meanval + alpha*pricePre)
+         sharesCand <- sharesCand/(isOutside + sum(sharesCand))
+
+         surplus <- (priceCand-mc)*sharesCand[prodIndex]
+
+         return(sum(surplus))
+     }
+
+
+     maxResult <- optim(object@prices[prodIndex],calcMonopolySurplus,
+                              method = "L-BFGS-B",lower = 0,
+                              control=list(fnscale=-1))
+
+     pricesHM <- maxResult$par
+     priceDelta <- pricesHM/object@pricePre[prodIndex] - 1
+
+     names(priceDelta) <- object@labels[prodIndex]
+
+     return(priceDelta)
+
+ })
 
 
 

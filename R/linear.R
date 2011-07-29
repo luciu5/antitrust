@@ -87,7 +87,7 @@ setMethod(
               slopesCand <- slopesCand*t(diversion)
               elast <- slopesCand * tcrossprod(1/quantities,prices)
 
-              marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues
+              marginsCand <- -1 * as.vector(solve(t(elast * ownerPre)) %*% revenues) / revenues
 
               measure <- sqrt(sum((margins - marginsCand)^2,na.rm=TRUE))/sqrt(nMargins)
               return(measure)
@@ -96,7 +96,7 @@ setMethod(
 
          minSlope <- optimize(minD,c(-1e12,0))$minimum
 
-         slopes <-  -minSlope*diversion[1,]/diversion[,1]
+         slopes <-  -minSlope*diversion[k,]/diversion[,k]
          slopes <- matrix(slopes,ncol=nprods,nrow=nprods,byrow=TRUE)
          slopes <- slopes*t(diversion)
      }
@@ -113,6 +113,9 @@ setMethod(
         !isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[lower.tri(slopes)]))){
          warning("Matrix of demand slopes coefficients is not symmetric. Demand parameters may not be consistent with utility maximization theory.")}
 
+     if(any(intercept<0))   {warning(  "Some demand intercepts have been found to be negative")}
+     if(any(diag(slopes)>0)){warning(  "Some own-slope coefficients have been found to be positive")}
+
      return(cbind(intercept,slopes))
 
 
@@ -125,7 +128,9 @@ setMethod(
 setMethod(
  f= "calcPrices",
  signature= "Linear",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,...){
+
+
 
      if(preMerger){
          mcDelta <- rep(0,length(object@mcDelta))
@@ -139,10 +144,39 @@ setMethod(
 
      slopes    <- object@slopes[,-1]
      intercept <- object@slopes[,1]
+     mc <- object@mc
 
      prices <- solve( slopes +  t(slopes*owner))
-     prices <- prices %*% (crossprod(slopes * owner,object@mc * (1+mcDelta)) -  intercept)
+     prices <- prices %*% (crossprod(slopes * owner,mc * (1+mcDelta)) -  intercept)
      prices <- as.vector(prices)
+
+     quantities <- as.vector(intercept + slopes%*%prices)
+
+
+     if(any(quantities<0)){
+         warning("The linear demand model has predicted that some equilibrium levels of output are negative. Re-simulating with the constraint that all equilibrium levels of output are non-negative.")
+
+         FOC <- function(priceCand){
+
+             quantity <- intercept + slopes%*%priceCand
+             thisFOC  <- quantity + t(slopes*owner) %*% (priceCand - mc * (1+mcDelta))
+
+             return(as.vector(crossprod(thisFOC)))
+
+         }
+
+         ##Find starting value that always meets boundary conditions
+         startParm <- as.vector(solve(slopes) %*% (-intercept + 1))
+         minResult <- constrOptim(startParm,FOC,grad=NULL,ui=slopes,ci=-intercept,...)
+
+          if(minResult$convergence != 0){
+              warning("'calcPrices' solver may not have successfully converged. Returning unconstrained result. 'constrOptim' reports: '",minResult$message,"'")}
+
+          else{prices <- minResult$par}
+
+     }
+
+
      names(prices) <- object@labels
 
      return(prices)
@@ -226,11 +260,72 @@ setMethod(
      return(result)
  })
 
+setMethod(
+ f= "calcPriceDeltaHypoMon",
+ signature= "Linear",
+ definition=function(object,prodIndex){
+
+     nprods <- length(prodIndex)
+     intercept <- object@slopes[,1]
+     slopes <- object@slopes[,-1]
+     mc <- object@mc[prodIndex]
+     pricePre <- object@pricePre
+
+     calcMonopolySurplus <- function(priceCand){
+
+
+         pricePre[prodIndex] <- priceCand
+         quantityCand <- intercept + as.vector(slopes %*% pricePre)
+
+         surplus <- (priceCand-mc)*quantityCand[prodIndex]
+
+         return(sum(surplus))
+     }
+
+     ##Find starting value that always meets boundary conditions
+     ##Note: if nprods=1, need to use a more accurate optimizer.
+
+     if(nprods > 1){
+
+         if(det(slopes)!=0){startParm <- as.vector(solve(slopes) %*% (1 - intercept ))}
+         else{startParm <- rep(0,nprods)}
+
+
+
+         priceConstr <- pricePre
+         priceConstr[prodIndex] <- 0
+
+         maxResult <- constrOptim(startParm,calcMonopolySurplus,
+                                  grad=NULL,
+                                  ui=slopes[prodIndex,prodIndex],
+                                  ci=-intercept[prodIndex] - as.vector(slopes %*% priceConstr)[prodIndex],
+                                  control=list(fnscale=-1))
+
+         pricesHM <- maxResult$par
+     }
+
+
+     else{
+
+         upperB <- -(intercept[prodIndex] + sum(pricePre[-prodIndex]*slopes[prodIndex,-prodIndex]))/slopes[prodIndex,prodIndex]
+
+         maxResult <- optimize(calcMonopolySurplus,c(0,upperB),maximum = TRUE)
+         pricesHM <- maxResult$maximum
+      }
+
+     priceDelta <- pricesHM/pricePre[prodIndex] - 1
+
+     return(priceDelta)
+
+ })
+
+
 
 linear <- function(prices,quantities,margins, diversions=NULL, symmetry=TRUE,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
-                     labels=paste("Prod",1:length(prices),sep="")
+                     labels=paste("Prod",1:length(prices),sep=""),
+                   ...
                      ){
 
     shares <- quantities/sum(quantities)

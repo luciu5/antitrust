@@ -18,12 +18,6 @@ setClass(
 
              ## Sanity Checks
 
-             if(
-                !(object@shareInside >0 &&
-                  object@shareInside <=1)
-                ){
-                 stop("'shareInside' must be between 0 and 1")
-             }
 
              nprods    <- length(object@prices)
              nNestParm <- nlevels(object@nests) #calculate the number of nesting parameters
@@ -207,7 +201,7 @@ setMethod(
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart,FOC,...)
 
-     if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
+     if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
      priceEst        <- minResult$x
      names(priceEst) <- object@labels
@@ -347,6 +341,52 @@ setMethod(
 
 
 )
+
+
+setMethod(
+ f= "calcPriceDeltaHypoMon",
+ signature= "LogitNests",
+ definition=function(object,prodIndex){
+
+     nprods <- length(prodIndex)
+     mc       <- object@mc[prodIndex]
+     nests     <- object@nests
+     alpha     <- object@slopes$alpha
+     sigma     <- object@slopes$sigma
+     meanval  <- object@slopes$meanval
+     pricePre <- object@pricePre
+
+     isOutside   <- as.numeric(shareInside < 1)
+
+     calcMonopolySurplus <- function(priceCand){
+
+         pricePre[prodIndex] <- priceCand #keep prices of products not included in HM fixed at premerger levels
+
+         sharesIn     <- exp((meanval+alpha*pricePre)/sigma[nests])
+         inclusiveValue <- log(tapply(sharesIn,nests,sum))
+         sharesIn     <- sharesIn/(isOutside + sum(sharesIn))
+         sharesAcross <-   exp(sigma*inclusiveValue)
+         sharesAcross <- sharesAcross/(isOutside + sum(sharesAcross))
+
+         sharesCand       <- sharesIn * sharesAcross[nests]
+
+         surplus <- (priceCand-mc)*sharesCand[prodIndex]
+
+         return(sum(surplus))
+     }
+
+
+     minResult <- optim(object@prices[prodIndex],calcMonopolySurplus,
+                              method = "L-BFGS-B",lower = 0,
+                              control=list(fnscale=-1))
+
+     pricesHM <- minResult$par
+     priceDelta <- pricesHM/object@pricePre[prodIndex] - 1
+
+     return(priceDelta)
+
+ })
+
 
 
 logit.nests <- function(prices,shares,margins,
