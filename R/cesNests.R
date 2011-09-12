@@ -64,6 +64,10 @@ setMethod(
               nests        <- object@nests
               parmsStart   <- object@parmsStart
 
+              ##nestIdx      <- which(levels(nests)==nests[idx]) # find index of nest whose parameter will be normalized
+
+              ##if(shareInside==1){parmsStart <- parmsStart[-(nestIdx+1)]} # if inside shares all sum to 1, drop nest belonging to index
+
               ## uncover Numeraire Coefficients
               if(shareInside<1) {alpha <- 1/shareInside -1}
               else{alpha <- NULL}
@@ -87,10 +91,16 @@ setMethod(
               ## Minimizing the distance between observed and predicted margins
               minD <- function(theta){
 
-                  gamma <- theta[1]
-                  sigma <- theta[-1]
+                  gamma           <- theta[1]
 
+                  ##if(length(theta[-1]) < nlevels(nests)){
+                  ##    sigma           <- rep(gamma,length=nlevels(nests))
+                  ##    sigma[-nestIdx] <- theta[-1]
+                  ##}
 
+                  ##else{
+                      sigma <- theta[-1]
+                  ##}
 
                   elast <- diag(sigma - gamma)
 
@@ -108,22 +118,41 @@ setMethod(
               }
 
               ## Constrain optimizer to look for solutions where sigma_i > gamma > 1 for all i
-              constrA <- diag(nlevels(nests) + 1)
+              constrA <- diag(length(parmsStart))
               constrA[-1,1] <- -1
 
-              constrB <- rep(0,nlevels(nests) + 1)
+              constrB <- rep(0,length(parmsStart))
               constrB[1] <- -1
 
               minTheta <- constrOptim(parmsStart,minD,grad=NULL,ui=constrA,ci=constrB)
-              names(minTheta$par) <- c("Gamma",levels(nests))
+
 
               if(minTheta$convergence != 0){
                   warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
               }
 
+
+
+
+
               minGamma <- minTheta$par[1]
-              minSigma <- minTheta$par[-1]
-              minSigma <- minSigma[nests]
+              names(minGamma) <- "Gamma"
+
+             ##  if(length( minTheta$par[-1]) < nlevels(nests)){
+
+             ##     minSigma           <- rep(minGamma ,length=nlevels(nests))
+             ##     minSigma[-nestIdx] <- minTheta$par[-1]
+
+             ## }
+
+             ##  else{
+                  minSigma <- minTheta$par[-1]
+             ##     }
+
+
+              minSigmaOut        <- minSigma
+              minSigma           <- minSigma[nests]
+              names(minSigma)    <- as.character(nests)
 
               meanval <- log(shares) - log(shares[idx]) + (minGamma - 1) * (log(prices) - log(prices[idx]))
 
@@ -456,7 +485,7 @@ ces.nests <- function(prices,shares,margins,
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)
-
+    ##return(result)
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
 
