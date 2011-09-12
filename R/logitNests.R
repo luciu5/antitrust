@@ -61,7 +61,9 @@ setMethod(
               nests        <- object@nests
               parmsStart   <- object@parmsStart
 
+              nestIdx      <- which(levels(nests)==nests[idx]) # find index of nest whose parameter will be normalized to 1
 
+              if(idx > 0){parmsStart <- parmsStart[-(nestIdx+1)]} # if inside shares all sum to 1, drop nest belonging to index
 
               ## Uncover price coefficient and mean valuation from margins and revenue shares
 
@@ -76,11 +78,20 @@ setMethod(
 
               nMargins <-  length(margins[!is.na(margins)])
 
+
+
+
               ## Minimize the distance between observed and predicted margins
               minD <- function(theta){
 
                   alpha <- theta[1]
-                  sigma <- theta[-1]
+
+                  if(length(theta[-1]) < nlevels(nests)){
+                      sigma           <- rep(1,length=nlevels(nests))
+                      sigma[-nestIdx] <- theta[-1]
+                  }
+
+                  else{sigma <- theta[-1]}
 
                   elast <- diag((1/sigma-1)*alpha)
                   elast <- elast[nests,nests]
@@ -95,7 +106,7 @@ setMethod(
                   return(measure)
               }
 
-              ## Constrain optimizer to look for solutions where alpha<0,  sigma > 0
+              ## Constrained optimizer to look for solutions where alpha<0,  sigma > 0
               lowerB <- upperB <- rep(0,length(parmsStart))
               lowerB[1] <- -Inf
 
@@ -107,20 +118,38 @@ setMethod(
                   warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
               }
 
-              names(minTheta$par) <- c("Alpha",levels(nests))
 
-              minAlpha <- minTheta$par[1]
-              minSigma <- minTheta$par[-1]
-              minSigma <- minSigma[nests]
+
+              minAlpha           <- minTheta$par[1]
+              names(minAlpha)    <- "Alpha"
+
+              if(length( minTheta$par[-1]) < nlevels(nests)){
+
+                  minSigma           <- rep(1,length=nlevels(nests))
+                  minSigma[-nestIdx] <- minTheta$par[-1]
+
+              }
+
+              else{
+                  minSigma <- minTheta$par[-1]
+                  }
+
+
+              minSigmaOut        <- minSigma
+              minSigma           <- minSigma[nests]
+              names(minSigma)    <- as.character(nests)
+              names(minSigmaOut) <- levels(nests)
 
               if(any(minSigma>1)){
                   warning("Some nesting parameters are greater than 1. These parameter values may not be consistent with economic theory")}
+
 
               if(idx==0){
                   idxShare <- 1 - object@shareInside
                   idxShareIn <- 1
                   idxPrice   <- 0
                   idxSigma   <- 1
+
               }
               else{
                   idxShare   <- shares[idx]
@@ -129,15 +158,14 @@ setMethod(
                   idxSigma   <- minSigma[idx]
                }
 
-
               meanval <- log(shares) - log(idxShare) - minAlpha*(prices - idxPrice)
 
               meanval <- meanval + (minSigma-1)*log(sharesIn) -
-                         (idxSigma-1)*log(idxShareIn[idx])
+                         (idxSigma-1)*log(idxShareIn)
 
               names(meanval)   <- object@labels
 
-              object@slopes    <- list(alpha=minAlpha,sigma=minTheta$par[-1],meanval=meanval)
+              object@slopes    <- list(alpha=minAlpha,sigma=minSigmaOut,meanval=meanval)
 
               return(object)
           }
@@ -412,7 +440,7 @@ logit.nests <- function(prices,shares,margins,
 
     if(is.null(parmsStart)){
         nNests <- nlevels(nests)
-        parmsStart <- runif(nNests+1) # nesting parameter values are assumed to be greater than 1
+        parmsStart <- runif(nNests+1) # nesting parameter values are assumed to be between 0 and 1
         parmsStart[1] <- -1* parmsStart[1] # price coefficient is assumed to be negative
                             }
 
@@ -430,7 +458,7 @@ logit.nests <- function(prices,shares,margins,
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)
-
+    ##return(result)
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
 
