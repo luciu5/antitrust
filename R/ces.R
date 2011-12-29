@@ -82,6 +82,7 @@ setMethod(
  signature= "CES",
  definition=function(object,preMerger=TRUE,...){
 
+     require(nleqslv) #needed to solve nonlinear system of firm FOC
 
      if(preMerger){
          mcDelta <- rep(0,length(object@mcDelta))
@@ -118,7 +119,7 @@ setMethod(
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart,FOC,...)
 
-      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
 
 
      priceEst        <- minResult$x
@@ -226,54 +227,6 @@ setMethod(
 
  })
 
-setMethod(
- f= "calcPriceDeltaHypoMon",
- signature= "CES",
- definition=function(object,prodIndex,...){
-
-     nprods <- length(prodIndex)
-     pricePreOld <- object@pricePre
-     gamma    <- object@slopes$gamma
-     meanval  <- object@slopes$meanval
-
-
-     ##Define system of FOC as a function of priceDelta
-     FOC <- function(priceCand){
-
-         thisPrice <- pricePreOld
-         thisPrice[prodIndex] <- priceCand
-
-         margins <- 1 - object@mc / thisPrice
-         shares <- meanval*thisPrice^(1-gamma)
-         shares <- shares/sum(shares)
-
-         shares <- shares[prodIndex]
-
-         elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
-         diag(elast) <- -1*gamma - diag(elast)
-
-         thisFOC <- shares + as.vector(elast  %*% (margins[prodIndex] * shares))
-
-
-         return(thisFOC)
-
-     }
-
-
-
-
-     ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
-
-     if(minResult$termcd != 1){warning("'calcPriceDeltaHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
-
-     priceDelta <- minResult$x/pricePreOld[prodIndex] - 1
-
-     names(priceDelta) <- object@labels[prodIndex]
-
-     return(priceDelta)
-
- })
 
 
 ces <- function(prices,shares,margins,

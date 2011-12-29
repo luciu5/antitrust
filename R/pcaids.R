@@ -100,6 +100,7 @@ setMethod(
  signature= "PCAIDS",
  definition=function(object,...){
 
+     require(nleqslv) #needed to solve nonlinear system of firm FOC
 
      ## Calculate premerger margins
      marginPre <- calcMargins(object,TRUE)
@@ -127,7 +128,7 @@ setMethod(
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceDeltaStart,FOC,object=object,...)
 
-     if(minResult$termcd != 1){warning("'calcPriceDelta' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+     if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
 
 
      deltaPrice <- (exp(minResult$x)-1)
@@ -315,56 +316,6 @@ setMethod(
          return(invisible(results))
 
      })
-
-
-setMethod(
- f= "calcPriceDeltaHypoMon",
- signature= "PCAIDS",
- definition=function(object,prodIndex,...){
-
-     nprods <- length(prodIndex)
-     priceDeltaOld <- object@priceDelta
-     shares <- object@shares
-     mktElast <- object@mktElast
-     slopes <- object@slopes
-
-      ## Calculate premerger margins
-     marginPre <- calcMargins(object,TRUE)[prodIndex]
-
-
-     ##Define system of FOC as a function of priceDelta
-     FOC <- function(priceDelta){
-
-         priceCand <- priceDeltaOld
-         priceCand[prodIndex] <- priceDelta
-         shareCand <- shares +  as.vector(slopes %*% priceCand)
-
-         elastPost <- t(slopes/shareCand) + shareCand * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
-         diag(elastPost) <- diag(elastPost) - 1
-         elastPost <- elastPost[prodIndex,prodIndex]
-
-         marginPost <- 1 - (1 - marginPre) / exp(priceDelta)
-
-         shareCand <-  shareCand[prodIndex]
-         thisFOC <- shareCand + as.vector(elastPost %*% (shareCand*marginPost))
-         return(thisFOC)
-
-     }
-
-
-
-
-     ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceDeltaStart[prodIndex],FOC,...)
-
-     if(minResult$termcd != 1){warning("'calcPriceDeltaHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
-
-
-     deltaPrice <- (exp(minResult$x)-1)
-
-     return(deltaPrice)
-
- })
 
 
 
