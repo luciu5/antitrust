@@ -13,6 +13,7 @@ source("ces.R")
 source("cesNests.R")
 source("pcaids.R")
 source("pcaidsNests.R")
+source("sim.R")
 setwd(currentdir)
 
 
@@ -33,6 +34,9 @@ testMethods <- function(object,other){
     else{
         print(CV(object,other))            # returns the compensating variation
     }
+
+    print(defineMarkets(object)) # returns postmeger diversion ratios
+
 
 
 }
@@ -79,6 +83,7 @@ diag(d)=1
 
 result2 <- loglog(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
 
+sim2 <- sim(price,demand="LogLog",result2@slopes,ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result2)
 
 
@@ -87,6 +92,7 @@ testMethods(result2)
 ##testMethods(result3)
 
 result4 <- linear(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
+sim4 <- sim(price,demand="Linear",result4@slopes,ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result4)
 
 ##Beer calibration and simulation results from Epstein/Rubenfeld 2004, pg 80+
@@ -113,10 +119,18 @@ names(price) <-
 
 ## ces demand
 result5 <- ces(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames,shareInside=.01)
+demand.parm <- result5@slopes
+demand.parm$shareInside=.01
+demand.parm$normIndex=1
+sim5    <- sim(price,demand="CES",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost)
 testMethods(result5,1e9)
 
 ## Nested ces demand
 result6 <- ces.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,shareInside=.01)
+demand.parm <- result6@slopes
+demand.parm$shareInside=.01
+demand.parm$normIndex=1
+sim6    <- sim(price,demand="CESNests",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
 testMethods(result6,1e9)
 
 
@@ -132,15 +146,22 @@ testMethods(result7,price)
 
 ## Nested PCAIDS demand
 ## Confirmed Against Epstein/Rubenfeld 2004 Beer example
-result8 <- pcaids.nests(shares.revenue,margins.pcaids,knownElast,mktElast,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
+result8 <- pcaids.nests(shares.revenue,margins.pcaids,knownElast,mktElast,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
 testMethods(result8,price)
 
 ## logit demand
-result9 <- logit(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost)
+result9 <- logit(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+demand.parm <- result9@slopes
+demand.parm$shareInside=.01
+demand.parm$normIndex=1
+sim9    <- sim(price,demand="Logit",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 testMethods(result9)
 
 
 
 ## Nested logit demand
-result10 <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
+result10 <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
+demand.parm <- result10@slopes
+demand.parm$shareInside=.01
+sim10    <- sim(price,demand="LogitNests",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
 testMethods(result10)

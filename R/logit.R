@@ -19,7 +19,8 @@ setClass(
           prototype=prototype(
 
           pricePre      =  vector(),
-          pricePost     =  vector()
+          pricePost     =  vector(),
+          mc            =  vector()
 
         ),
 
@@ -29,6 +30,7 @@ setClass(
              ## Sanity Checks
 
              nprods <- length(object@shares)
+             sumShares <- sum(object@shares)
 
              if(
                  nprods != length(object@margins) ||
@@ -40,6 +42,13 @@ setClass(
 
              if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
 
+             if(!(is.matrix(object@ownerPre) || is(object@ownerPre,"Matrix"))){
+                 ownerPre <- ownerToMatrix(object,TRUE)
+             }
+             else{ownerPre <- object@ownerPre}
+
+             if(all(is.na(ownerPre %*% object@margins))) stop("Insufficient margin information to calibrate demand parameters.")
+
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'shares'")}
 
@@ -50,9 +59,19 @@ setClass(
                  stop("'shareInside' must be between 0 and 1")
          }
 
-             if(!(object@normIndex %in% 0:nprods) ||
-                (object@shareInside==1 && object@normIndex==0)){
-                 stop("'normIndex' must take on a value between 1 and ",nprods, " if 'shares' sum to 1 , or '0' if the sum of shares is less than 1")
+              if(
+                 !(all(object@shares >0) &&
+                   all(object@shares <=1))
+                 ){
+                 stop("elements of vector 'shares' must be between 0 and 1")
+         }
+
+             if(!(
+                  (sumShares == 1  && object@normIndex %in% 1:nprods) ||
+                   (sumShares < 1 && is.na(object@normIndex))
+                  )){
+                 stop("'normIndex' must take on a value between 1 and ",nprods,
+                      ". If 'shares' sum to 1 , or NA if the sum of shares is less than 1")
              }
 
 
@@ -73,7 +92,7 @@ setMethod(
               prices       <-  object@prices
               idx          <-  object@normIndex
 
-              if(idx==0){
+              if(is.na(idx)){
                   idxShare <- 1 - object@shareInside
                   idxPrice <- 0
               }
@@ -121,13 +140,31 @@ setMethod(
 
 
 
+## Create a function to recover marginal cost using
+## demand parameters and supplied prices
+setMethod(
+          f= "calcMC",
+          signature= "Logit",
+          definition= function(object){
+
+              object@pricePre <- object@prices
+
+
+              marginPre <- calcMargins(object,TRUE)
+
+              mc <- (1 - marginPre) * object@prices
+              names(mc) <- object@labels
+
+              return(mc)
+          }
+          )
+
 
 setMethod(
  f= "calcPrices",
  signature= "Logit",
  definition=function(object,preMerger=TRUE,...){
 
-     require(nleqslv) #needed to solve nonlinear system of firm FOC
 
      if(preMerger){
          mcDelta <- rep(0,length(object@mcDelta))
@@ -167,7 +204,7 @@ setMethod(
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart,FOC,...)
 
-      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
+      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
      priceEst        <- minResult$x
      names(priceEst) <- object@labels
@@ -246,11 +283,50 @@ setMethod(
 
 
 
+setMethod(
+ f= "calcPriceDeltaHypoMon",
+ signature= "Logit",
+ definition=function(object,prodIndex){
+
+     nprods <- length(prodIndex)
+     mc       <- object@mc[prodIndex]
+     alpha    <- object@slopes$alpha
+     meanval  <- object@slopes$meanval
+     pricePre <- object@pricePre
+
+     isOutside   <- as.numeric(object@shareInside < 1)
+
+     calcMonopolySurplus <- function(priceCand){
+
+         pricePre[prodIndex] <- priceCand #keep prices of products not included in HM fixed at premerger levels
+         sharesCand <- exp(meanval + alpha*pricePre)
+         sharesCand <- sharesCand/(isOutside + sum(sharesCand))
+
+         surplus <- (priceCand-mc)*sharesCand[prodIndex]
+
+         return(sum(surplus))
+     }
+
+
+     maxResult <- optim(object@prices[prodIndex],calcMonopolySurplus,
+                              method = "L-BFGS-B",lower = 0,
+                              control=list(fnscale=-1))
+
+     pricesHM <- maxResult$par
+     priceDelta <- pricesHM/object@pricePre[prodIndex] - 1
+
+     names(priceDelta) <- object@labels[prodIndex]
+
+     return(priceDelta)
+
+ })
+
+
 
 
 logit <- function(prices,shares,margins,
                 ownerPre,ownerPost,
-                normIndex=ifelse(sum(shares)<1,0,1),
+                normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
                 priceStart = prices,
                 labels=paste("Prod",1:length(prices),sep=""),
@@ -262,7 +338,6 @@ logit <- function(prices,shares,margins,
     result <- new("Logit",prices=prices, shares=shares,
                   margins=margins,
                   normIndex=normIndex,
-                  mc=prices*(1-margins),mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   priceStart=priceStart,shareInside=sum(shares),
@@ -274,6 +349,9 @@ logit <- function(prices,shares,margins,
 
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
+
+    ##Calculate constant marginal costs
+    result@mc <- calcMC(result)
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)

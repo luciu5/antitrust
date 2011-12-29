@@ -1,19 +1,7 @@
 setClass(
          Class   = "CES",
-         contains="Logit",
-
-         validity=function(object){
-
-             ## Sanity Checks
-
-
-             nprods <- length(object@prices)
-
-             if(!(object@normIndex %in% 1:nprods)){
-                 stop("'normIndex' must take on a value between 1 and ",nprods)
-             }
-
-         })
+         contains="Logit"
+       )
 
 
 setMethod(
@@ -35,6 +23,15 @@ setMethod(
               if(shareInside < 1 ) {alpha <- 1/shareInside - 1}
               else{alpha <- NULL}
 
+              ## if sum of shares is less than 1, add numeraire
+               if(is.na(idx)){
+                  idxShare <- 1 - sum(shares)
+                  idxPrice <- 1
+              }
+              else{
+                  idxShare <- shares[idx]
+                  idxPrice <- prices[idx]
+               }
 
 
               ## Uncover price coefficient and mean valuation from margins and revenue shares
@@ -62,7 +59,7 @@ setMethod(
               minGamma <- optimize(minD,c(1,1e12))$minimum
 
 
-              meanval <- log(shares) - log(shares[idx]) + (minGamma - 1) * (log(prices) - log(prices[idx]))
+              meanval <- log(shares) - log(idxShare) + (minGamma - 1) * (log(prices) - log(idxPrice))
               meanval <- exp(meanval)
 
               names(meanval)   <- object@labels
@@ -82,7 +79,6 @@ setMethod(
  signature= "CES",
  definition=function(object,preMerger=TRUE,...){
 
-     require(nleqslv) #needed to solve nonlinear system of firm FOC
 
      if(preMerger){
          mcDelta <- rep(0,length(object@mcDelta))
@@ -119,7 +115,7 @@ setMethod(
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart,FOC,...)
 
-      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
+      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
 
      priceEst        <- minResult$x
@@ -227,12 +223,60 @@ setMethod(
 
  })
 
+setMethod(
+ f= "calcPriceDeltaHypoMon",
+ signature= "CES",
+ definition=function(object,prodIndex,...){
+
+     nprods <- length(prodIndex)
+     pricePreOld <- object@pricePre
+     gamma    <- object@slopes$gamma
+     meanval  <- object@slopes$meanval
+
+
+     ##Define system of FOC as a function of priceDelta
+     FOC <- function(priceCand){
+
+         thisPrice <- pricePreOld
+         thisPrice[prodIndex] <- priceCand
+
+         margins <- 1 - object@mc / thisPrice
+         shares <- meanval*thisPrice^(1-gamma)
+         shares <- shares/sum(shares)
+
+         shares <- shares[prodIndex]
+
+         elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
+         diag(elast) <- -1*gamma - diag(elast)
+
+         thisFOC <- shares + as.vector(elast  %*% (margins[prodIndex] * shares))
+
+
+         return(thisFOC)
+
+     }
+
+
+
+
+     ## Find price changes that set FOCs equal to 0
+     minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
+
+     if(minResult$termcd != 1){warning("'calcPriceDeltaHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+
+     priceDelta <- minResult$x/pricePreOld[prodIndex] - 1
+
+     names(priceDelta) <- object@labels[prodIndex]
+
+     return(priceDelta)
+
+ })
 
 
 ces <- function(prices,shares,margins,
                 ownerPre,ownerPost,
                 shareInside = 1,
-                normIndex=1,
+                normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
                 priceStart = prices,
                 labels=paste("Prod",1:length(prices),sep=""),
@@ -240,10 +284,12 @@ ces <- function(prices,shares,margins,
                 ){
 
 
+
+
     ## Create CES  container to store relevant data
     result <- new("CES",prices=prices, shares=shares, margins=margins,
                   normIndex=normIndex,
-                  mc=prices*(1-margins),mcDelta=mcDelta,
+                  mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   priceStart=priceStart,
@@ -255,6 +301,9 @@ ces <- function(prices,shares,margins,
 
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
+
+    ##Calculate constant marginal costs
+    result@mc <- calcMC(result)
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)

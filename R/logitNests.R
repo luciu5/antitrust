@@ -61,11 +61,7 @@ setMethod(
               nests        <- object@nests
               parmsStart   <- object@parmsStart
 
-              nestIdx      <- which(levels(nests)==nests[idx]) # find index of nest whose parameter will be normalized to 1
-
-              if(idx > 0){parmsStart <- parmsStart[-(nestIdx+1)]} # if inside shares all sum to 1, drop nest belonging to index
-
-              ## Uncover price coefficient and mean valuation from margins and revenue shares
+               ## Uncover price coefficient and mean valuation from margins and revenue shares
 
 
               nprods <- length(shares)
@@ -79,6 +75,35 @@ setMethod(
               nMargins <-  length(margins[!is.na(margins)])
 
 
+              ## create index variables, contingent on whether an outside good is defined
+              if(is.na(idx)){
+                  idxShare <- 1 - object@shareInside
+                  idxShareIn <- 1
+                  idxPrice   <- 0
+
+
+              }
+
+              else{
+                  nestIdx      <- which(levels(nests)==nests[idx]) # find index of nest whose parameter will be normalized to 1
+
+                  ## if inside shares all sum to 1,
+                  ## AND the chosen nest contains more than one product,
+                  ## drop the nest belonging to index
+
+                  isSingletonNest <- length(nests[nests==levels(nests)[nestIdx]])==1
+
+                  if(!isSingletonNest){
+                      parmsStart   <- parmsStart[-(nestIdx+1)]
+                  }
+
+                  idxShare   <- shares[idx]
+                  idxShareIn <- sharesIn[idx]
+                  idxPrice   <- prices[idx]
+
+               }
+
+
 
 
               ## Minimize the distance between observed and predicted margins
@@ -86,18 +111,22 @@ setMethod(
 
                   alpha <- theta[1]
 
-                  if(length(theta[-1]) < nlevels(nests)){
+                  if(is.na(idx) || isSingletonNest){
+                      sigma <- theta[-1]
+                  }
+
+                  else{
                       sigma           <- rep(1,length=nlevels(nests))
                       sigma[-nestIdx] <- theta[-1]
                   }
 
-                  else{sigma <- theta[-1]}
 
                   elast <- diag((1/sigma-1)*alpha)
                   elast <- elast[nests,nests]
                   elast <- elast * matrix(sharesIn*prices,ncol=nprods,nrow=nprods)
                   elast <- -1*(elast + alpha * matrix(revenues,ncol=nprods,nrow=nprods))
                   diag(elast) <- diag(elast) + (1/sigma[nests])*alpha*prices
+
                   try(marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues,TRUE)
                   if(!exists("marginsCand")){marginsCand <- 1e3}
 
@@ -123,40 +152,25 @@ setMethod(
               minAlpha           <- minTheta$par[1]
               names(minAlpha)    <- "Alpha"
 
-              if(length( minTheta$par[-1]) < nlevels(nests)){
-
-                  minSigma           <- rep(1,length=nlevels(nests))
-                  minSigma[-nestIdx] <- minTheta$par[-1]
+              if(is.na(idx) || isSingletonNest){
+                  minSigma <- minTheta$par[-1]
 
               }
 
-              else{
-                  minSigma <- minTheta$par[-1]
-                  }
+               else{
+                  minSigma           <- rep(1 ,length=nlevels(nests))
+                  minSigma[-nestIdx] <- minTheta$par[-1]
+              }
 
 
               minSigmaOut        <- minSigma
               minSigma           <- minSigma[nests]
-              names(minSigma)    <- as.character(nests)
               names(minSigmaOut) <- levels(nests)
 
-              if(any(minSigma>1)){
+              if(any(minSigmaOut>1)){
                   warning("Some nesting parameters are greater than 1. These parameter values may not be consistent with economic theory")}
 
-
-              if(idx==0){
-                  idxShare <- 1 - object@shareInside
-                  idxShareIn <- 1
-                  idxPrice   <- 0
-                  idxSigma   <- 1
-
-              }
-              else{
-                  idxShare   <- shares[idx]
-                  idxShareIn <- sharesIn[idx]
-                  idxPrice   <- prices[idx]
-                  idxSigma   <- minSigma[idx]
-               }
+              idxSigma   <- 1
 
               meanval <- log(shares) - log(idxShare) - minAlpha*(prices - idxPrice)
 
@@ -420,8 +434,7 @@ setMethod(
 logit.nests <- function(prices,shares,margins,
                         ownerPre,ownerPost,
                         nests=rep(1,length(shares)),
-                        shareInside = 1,
-                        normIndex=ifelse(shareInside < 1,0,1),
+                        normIndex=ifelse(sum(shares) < 1,NA,1),
                         mcDelta=rep(0,length(prices)),
                         priceStart = prices,
                         parmsStart=NULL,
@@ -429,10 +442,6 @@ logit.nests <- function(prices,shares,margins,
                         ...
                         ){
 
-
-
-
-    shares <- shares * shareInside
 
     if(is.factor(nests)){nests <- nests[,drop=TRUE] }
     else{nests <- factor(nests)}
@@ -446,13 +455,13 @@ logit.nests <- function(prices,shares,margins,
 
     ## Create LogitNests  container to store relevant data
     result <- new("LogitNests",prices=prices, margins=margins,
-                  shares=shares,mc=prices*(1-margins),mcDelta=mcDelta,
+                  shares=shares,mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   nests=nests,
                   normIndex=normIndex,
                   parmsStart=parmsStart,
-                  priceStart=priceStart,shareInside=shareInside,
+                  priceStart=priceStart,shareInside=sum(shares),
                   labels=labels)
 
     ## Convert ownership vectors to ownership matrices
@@ -461,6 +470,9 @@ logit.nests <- function(prices,shares,margins,
     ##return(result)
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
+
+    ##Calculate constant marginal costs
+    result@mc <- calcMC(result)
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)

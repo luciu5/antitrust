@@ -64,17 +64,9 @@ setMethod(
               nests        <- object@nests
               parmsStart   <- object@parmsStart
 
-              ##nestIdx      <- which(levels(nests)==nests[idx]) # find index of nest whose parameter will be normalized
-
-              ##if(shareInside==1){parmsStart <- parmsStart[-(nestIdx+1)]} # if inside shares all sum to 1, drop nest belonging to index
-
-              ## uncover Numeraire Coefficients
-              if(shareInside<1) {alpha <- 1/shareInside -1}
-              else{alpha <- NULL}
 
 
-
-              ## Uncover price coefficient and mean valuation from margins and revenue shares
+               ## Uncover price coefficient and mean valuation from margins and revenue shares
 
 
               nprods <- length(shares)
@@ -87,20 +79,56 @@ setMethod(
 
               nMargins <-  length(margins[!is.na(margins)])
 
+
+              ## back out the parameter on the numeraire, when appropriate
+              if(shareInside<1) {alpha <- 1/shareInside -1}
+              else{ alpha <- NULL}
+
+
+
+              if(is.na(idx)){
+                  idxShare      <- 1 - sum(shares)
+                  idxShareNests <- 1
+                  idxPrice      <- 1
+              }
+
+              else{
+                  nestIdx      <- which(levels(nests)==nests[idx]) # find index of nest whose parameter will be normalized to 1
+
+                  ## if inside shares all sum to 1,
+                  ## AND the chosen nest contains more than one product,
+                  ## drop the nest belonging to index
+
+                  isSingletonNest <- length(nests[nests==levels(nests)[nestIdx]])==1
+
+                  if(!isSingletonNest){
+                      parmsStart   <- parmsStart[-(nestIdx+1)]
+                  }
+
+                  idxShare      <- shares[idx]
+                  idxShareNests <- sharesNests[idx]
+                  idxPrice      <- prices[idx]
+               }
+
+
+
+
               ## Estimate parameters by
               ## Minimizing the distance between observed and predicted margins
               minD <- function(theta){
 
-                  gamma           <- theta[1]
+                  gamma  <- theta[1]
 
-                  ##if(length(theta[-1]) < nlevels(nests)){
-                  ##    sigma           <- rep(gamma,length=nlevels(nests))
-                  ##    sigma[-nestIdx] <- theta[-1]
-                  ##}
+                   if(is.na(idx) || isSingletonNest){
+                       sigma <- theta[-1]
+                   }
 
-                  ##else{
-                      sigma <- theta[-1]
-                  ##}
+                  else{
+                      sigma           <- rep(gamma+1,length=nlevels(nests))
+                      sigma[-nestIdx] <- theta[-1]
+                  }
+
+
 
                   elast <- diag(sigma - gamma)
 
@@ -122,7 +150,7 @@ setMethod(
               constrA[-1,1] <- -1
 
               constrB <- rep(0,length(parmsStart))
-              constrB[1] <- -1
+              constrB[1] <- 1
 
               minTheta <- constrOptim(parmsStart,minD,grad=NULL,ui=constrA,ci=constrB)
 
@@ -138,33 +166,34 @@ setMethod(
               minGamma <- minTheta$par[1]
               names(minGamma) <- "Gamma"
 
-             ##  if(length( minTheta$par[-1]) < nlevels(nests)){
-
-             ##     minSigma           <- rep(minGamma ,length=nlevels(nests))
-             ##     minSigma[-nestIdx] <- minTheta$par[-1]
-
-             ## }
-
-             ##  else{
+              if(is.na(idx) || isSingletonNest){
                   minSigma <- minTheta$par[-1]
-             ##     }
+              }
+
+               else{
+                  minSigma           <- rep(minGamma+1 ,length=nlevels(nests))
+                  minSigma[-nestIdx] <- minTheta$par[-1]
+              }
+
 
 
               minSigmaOut        <- minSigma
               minSigma           <- minSigma[nests]
-              names(minSigma)    <- as.character(nests)
+              names(minSigmaOut)    <- levels(nests)
 
-              meanval <- log(shares) - log(shares[idx]) + (minGamma - 1) * (log(prices) - log(prices[idx]))
+              idxSigma   <- minSigma[idx]
+
+              meanval <- log(shares) - log(idxShare) + (minGamma - 1) * (log(prices) - log(idxPrice))
 
               meanval <- meanval - (minSigma-minGamma)/(minSigma-1)*log(sharesNests) +
-                         (minSigma[idx]-minGamma)/(minSigma[idx]-1)*log(sharesNests[idx])
+                         (idxSigma - minGamma)/(idxSigma-1)*log(idxShareNests)
 
               meanval <- exp( (minSigma-1)/(minGamma-1) * meanval )
 
 
               names(meanval)   <- object@labels
 
-              object@slopes    <- list(alpha=alpha,gamma=minGamma,sigma=minTheta$par[-1],meanval=meanval)
+              object@slopes    <- list(alpha=alpha,gamma=minGamma,sigma=minSigmaOut,meanval=meanval)
 
               return(object)
           }
@@ -318,7 +347,7 @@ setMethod(
 
               alpha       <- object@slopes$alpha
 
-              if(is.null(alpha)) stop("'shareInside' must be provided in order to calculate Compensating Variation")
+              if(is.null(alpha)) stop("'shareInside' must be less than 1 to  calculate Compensating Variation")
                if(missing(revenueInside) || isTRUE(revenueInside<0)) stop("'revenueInside' must be greater than 0 to  calculate Compensating Variation")
               totExp    <- (1 + alpha) * revenueInside
 
@@ -451,14 +480,13 @@ ces.nests <- function(prices,shares,margins,
                       ownerPre,ownerPost,
                       nests=rep(1,length(shares)),
                       shareInside = 1,
-                      normIndex=1,
+                      normIndex=ifelse(sum(shares) < 1,NA,1),
                       mcDelta=rep(0,length(prices)),
                       priceStart = prices,
                       parmsStart=NULL,
                       labels=paste("Prod",1:length(prices),sep=""),
                       ...
                       ){
-
 
 
 
@@ -473,7 +501,7 @@ ces.nests <- function(prices,shares,margins,
 
     ## Create CESNests  container to store relevant data
     result <- new("CESNests",prices=prices, shares=shares,margins=margins,
-                  mc=prices*(1-margins),mcDelta=mcDelta,
+                  mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   nests=nests,
@@ -485,9 +513,12 @@ ces.nests <- function(prices,shares,margins,
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)
-    ##return(result)
+
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
+
+    ##Calculate constant marginal costs
+    result@mc <- calcMC(result)
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)

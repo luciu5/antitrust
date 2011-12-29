@@ -67,29 +67,28 @@ setMethod(
 
  slopes    <- object@slopes[,-1]
  intercept <- object@slopes[,1]
+ mc        <- object@mc
 
 
 
+ FOC <- function(priceCand){
 
- FOC <- function(price,object){
 
-     require(nleqslv)
-
-     quantity <- exp(intercept) * apply(price^slopes,1,prod) # log(price) can produce errors.
-                                                             # this transformation avoidsusing logs
+     quantity <- exp(intercept) * apply(priceCand^slopes,1,prod) # log(price) can produce errors.
+                                                             # this transformation avoids using logs
     #quantity <- exp(as.vector(intercept+slopes %*% log(price)))
 
-     margin   <- 1 - (object@mc * (1 + mcDelta)) / price
-     revenue  <- price*quantity
+     margin   <- 1 - (mc * (1 + mcDelta)) / priceCand
+     revenue  <- priceCand*quantity
 
-     thisFOC <- revenue + (t(slopes) * owner ) %*% (margin * revenue)
+     thisFOC <- revenue + t(slopes * owner)  %*% (margin * revenue)
 
      return(as.vector(thisFOC))
  }
 
- minResult <- nleqslv(object@priceStart,FOC,object=object,...)
+ minResult <- nleqslv(object@priceStart,FOC,...)
 
- if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converge. 'nleqslv' reports: '",minResult$message,"'")}
+ if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
  priceEst        <- minResult$x
  names(priceEst) <- object@labels
@@ -140,8 +139,45 @@ setMethod(
  f= "CV",
  signature= "LogLog",
  definition=function(object){
-     print("CV method not currently for 'LogLog' Class")
+     print("CV method not currently available for 'LogLog' Class")
  })
+
+
+setMethod(
+ f= "calcPriceDeltaHypoMon",
+ signature= "LogLog",
+ definition=function(object,prodIndex){
+
+     nprods <- length(prodIndex)
+     intercept <- object@slopes[,1]
+     slopes <- object@slopes[,-1]
+     mc <- object@mc[prodIndex]
+     pricePre <- object@pricePre
+
+     calcMonopolySurplus <- function(priceCand){
+
+         pricePre[priceIndex] <- priceCand
+         quantityCand <- exp(intercept) * apply(pricePre^slopes,1,prod)
+
+         surplus <- (priceCand-mc)*quantityCand
+
+         return(sum(surplus))
+     }
+
+
+     minResult <- optim(object@prices[prodIndex],calcMonopolySurplus,
+                              method = "L-BFGS-B",lower = 0,
+                              control=list(fnscale=-1))
+
+     pricesHM <- minResult$par
+     priceDelta <- pricesHM/object@pricePre[prodIndex] - 1
+
+     return(priceDelta)
+
+ })
+
+
+
 
 
 loglog <- function(prices,quantities,margins,diversions=NULL,
@@ -164,7 +200,7 @@ loglog <- function(prices,quantities,margins,diversions=NULL,
 
 
     result <- new("LogLog",prices=prices, quantities=quantities,margins=margins,
-                  shares=shares,mc=prices*(1-margins),mcDelta=mcDelta, priceStart=priceStart,
+                  shares=shares,mcDelta=mcDelta, priceStart=priceStart,
                   ownerPre=ownerPre,diversion=diversions, symmetry=FALSE,
                   ownerPost=ownerPost, labels=labels)
 
@@ -175,6 +211,9 @@ loglog <- function(prices,quantities,margins,diversions=NULL,
 
      ## Calculate Demand Slope Coefficients
      result@slopes <- calcSlopes(result)
+
+    ##Calculate constant marginal costs
+    result@mc <- calcMC(result)
 
      ## Calculate pre and post merger equilibrium prices
      result@pricePre  <- calcPrices(result,TRUE,...)
