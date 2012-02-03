@@ -2,20 +2,22 @@ setClass(
          Class = "Linear",
          contains="Antitrust",
          representation=representation(
+         intercepts       = "vector",
          prices           = "vector",
-         quantities       = "vector",
-         margins          = "vector",
+         quantities       = "numeric",
+         margins          = "numeric",
          mc               = "vector",
          pricePre         = "vector",
          pricePost        = "vector",
-         diversion        = "anyMatrix",
+         diversion        = "matrix",
          symmetry         = "logical"
          ),
           prototype=prototype(
-
-          pricePre      =  vector(),
-          pricePost     =  vector(),
-          mc            =  vector()
+          intercepts    =  numeric(),
+          pricePre      =  numeric(),
+          pricePost     =  numeric(),
+          mc            =  numeric(),
+          symmetry      =  TRUE
 
 
         ),
@@ -35,15 +37,27 @@ setClass(
              if(any(object@quantities<0,na.rm=TRUE))          stop("'quantities' values must be positive")
              if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
 
-             if(!all(diag(object@diversion) == 1)){ stop("'diversion' diagonal elements must all equal 1")}
-             if(any(abs(object@diversion) > 1)){ stop("'diversion' elements must be between -1 and 1")}
+             if(!all(diag(object@diversion) == -1)){ stop("'diversion' diagonal elements must all equal -1")}
+
+             if(any(object@diversion[upper.tri(object@diversion)] > 1) ||
+                any(object@diversion[upper.tri(object@diversion)] < 0) ||
+                any(object@diversion[lower.tri(object@diversion)] > 1)  ||
+                any(object@diversion[lower.tri(object@diversion)] < 0)){
+                 stop("'diversion' off-diagonal elements must be between 0 and 1")}
+
+             if(isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),2))){ stop("'diversion' rows must sum to 2")}
+
 
              if(nprods != nrow(object@diversion) ||
                 nprods != ncol(object@diversion)){
                  stop("'diversions' must be a square matrix")
              }
 
-             if(length(object@symmetry)!=1){stop("'symmetry' must equal 'TRUE' or 'FALSE'")}
+             if(!is.logical(object@symmetry) || length(object@symmetry)!=1){stop("'symmetry' must equal TRUE or FALSE")}
+             if(!object@symmetry &&
+                length(object@margins[!is.na(object@margins)])!= nprods){
+                 stop("When 'symmetry' is FALSE, all product margins must be supplied")
+                 }
 
          }
  )
@@ -63,7 +77,6 @@ setMethod(
 
      nprods <- length(margins)
 
-     diag(diversion) <- -1
 
 
       if(!symmetry){
@@ -78,7 +91,7 @@ setMethod(
 
      else{
          existMargins <- which(!is.na(margins))
-         nMargins <-  length(margins[existMargins])
+
          revenues <- prices*quantities
          k <- existMargins[1] ## choose a diagonal demand parameter corresponding to a provided margin
 
@@ -90,7 +103,7 @@ setMethod(
 
               marginsCand <- -1 * as.vector(solve(t(elast * ownerPre)) %*% revenues) / revenues
 
-              measure <- sqrt(sum((margins - marginsCand)^2,na.rm=TRUE))/sqrt(nMargins)
+              measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
               return(measure)
           }
 
@@ -109,40 +122,24 @@ setMethod(
 
 
      intercept <- as.vector(quantities - slopes %*% prices)
+     names(intercept) <- object@labels
 
      if(!symmetry &&
-        !isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[lower.tri(slopes)]))){
+        !isTRUE(all.equal(slopes,t(slopes)))){
          warning("Matrix of demand slopes coefficients is not symmetric. Demand parameters may not be consistent with utility maximization theory.")}
 
      if(any(intercept<0))   {warning(  "Some demand intercepts have been found to be negative")}
      if(any(diag(slopes)>0)){warning(  "Some own-slope coefficients have been found to be positive")}
 
-     return(cbind(intercept,slopes))
+     object@slopes <- slopes
+     object@intercepts <- intercept
+
+     return(object)
 
 
  }
           )
 
-
-
-## Create a function to recover marginal cost using
-## demand parameters and supplied prices
-setMethod(
-          f= "calcMC",
-          signature= "Linear",
-          definition= function(object){
-
-              object@pricePre <- object@prices
-
-
-              marginPre <- calcMargins(object,TRUE)
-
-              mc <- (1 - marginPre) * object@prices
-              names(mc) <- object@labels
-
-              return(mc)
-          }
-          )
 
 
 
@@ -163,8 +160,8 @@ setMethod(
          owner <- object@ownerPost
      }
 
-     slopes    <- object@slopes[,-1]
-     intercept <- object@slopes[,1]
+     slopes    <- object@slopes
+     intercept <- object@intercepts
      mc <- object@mc
 
      prices <- solve( slopes +  t(slopes*owner))
@@ -216,8 +213,8 @@ setMethod(
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
-      slopes    <- object@slopes[,-1]
-      intercept <- object@slopes[,1]
+      slopes    <- object@slopes
+      intercept <- object@intercepts
 
 
      quantities <- as.vector(intercept+slopes %*% prices)
@@ -248,7 +245,7 @@ setMethod(
        if(preMerger){ prices <- object@pricePre}
        else{          prices <- object@pricePost}
 
-      slopes    <- object@slopes[,-1]
+      slopes    <- object@slopes
 
 
       quantities <-  calcQuantities(object,preMerger)
@@ -266,13 +263,13 @@ setMethod(
  signature= "Linear",
  definition=function(object){
 
-     slopes    <- object@slopes[,-1]
+     slopes    <- object@slopes
 
-      if(!isTRUE(all.equal(slopes[upper.tri(slopes)],slopes[upper.tri(t(slopes))]))){
+     if(!isTRUE(all.equal(slopes,t(slopes)))){
                   stop("price coefficient matrix must be symmetric in order to calculate compensating variation. Suggest setting 'symmetry=TRUE'")
               }
 
-     intercept <- object@slopes[,1]
+     intercept <- object@intercepts
      pricePre  <- object@pricePre
      pricePost <- object@pricePost
 
@@ -287,8 +284,8 @@ setMethod(
  definition=function(object,prodIndex){
 
      nprods <- length(prodIndex)
-     intercept <- object@slopes[,1]
-     slopes <- object@slopes[,-1]
+     intercept <- object@intercepts
+     slopes <- object@slopes
      mc <- object@mc[prodIndex]
      pricePre <- object@pricePre
 
@@ -342,7 +339,7 @@ setMethod(
 
 
 
-linear <- function(prices,quantities,margins, diversions=NULL, symmetry=TRUE,
+linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
                      labels=paste("Prod",1:length(prices),sep=""),
@@ -351,9 +348,9 @@ linear <- function(prices,quantities,margins, diversions=NULL, symmetry=TRUE,
 
     shares <- quantities/sum(quantities)
 
-    if(is.null(diversions)){
+    if(missing(diversions)){
         diversions <- tcrossprod(1/(1-shares),shares)
-        diag(diversions) <- 1
+        diag(diversions) <- -1
     }
 
 
@@ -367,13 +364,12 @@ linear <- function(prices,quantities,margins, diversions=NULL, symmetry=TRUE,
      result@ownerPre  <- ownerToMatrix(result,TRUE)
      result@ownerPost <- ownerToMatrix(result,FALSE)
 
-     ## Calculate Demand Slope Coefficients
-     result@slopes <- calcSlopes(result)
+    ## Calculate Demand Slope Coefficients and Intercepts
+    result <- calcSlopes(result)
 
     ##Calculate constant marginal costs
-     result@mc <- calcMC(result)
+    result@mc <- calcMC(result)
 
-    ## Calculate Pre and Post merger equilibrium prices
     result@pricePre  <- calcPrices(result,TRUE)
     result@pricePost <- calcPrices(result,FALSE)
 

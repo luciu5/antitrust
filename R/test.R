@@ -1,11 +1,10 @@
 rm(list=ls())
 require(nleqslv)
-require(Matrix)
 currentdir <- getwd()
 setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
-source("Classes.R")
-source("Methods.R")
+source("Antitrust.R")
 source("linear.R")
+source("aids.R")
 source("loglog.R")
 source("logit.R")
 source("logitNests.R")
@@ -17,7 +16,7 @@ source("sim.R")
 setwd(currentdir)
 
 
-testMethods <- function(object,other){
+testMethods <- function(object,param){
 
     print(object)           # return predicted price change
     summary(object)         # summarize merger simulation
@@ -29,13 +28,16 @@ testMethods <- function(object,other){
     print(diversion(object,FALSE)) # returns postmeger diversion ratios
 
     print(cmcr(object))            # returns the compensating marginal cost reduction
-    if(missing(other)){
-        print(CV(object)) }
-    else{
-        print(CV(object,other))            # returns the compensating variation
-    }
 
     print(defineMarkets(object)) # returns postmeger diversion ratios
+
+    if(!missing(param)){
+        print(CV(object,param))              # returns CV
+    }
+
+    else{ print(CV(object))  }            # returns CV
+
+
 
 
 
@@ -71,28 +73,29 @@ owner.post[1,2] <- owner.post[2,1] <- 1
 
 shares=quantity/sum(quantity)
 ## default is diversion according to revenue share
-##result1 <- pcloglog(price,quantity,margin,shares=shares,ownerPre=owner.pre,ownerPost=owner.post)
-##testMethods(result1)
+result1 <- aids(shares,margin,price,ownerPre=owner.pre,ownerPost=owner.post)
+sim1 <- sim(price,demand="AIDS",list(slopes=result1@slopes,intercepts=result1@intercepts,mktElast=result1@mktElast),ownerPre=owner.pre,ownerPost=owner.post)
+testMethods(result1)
+testMethods(sim1)
 
 ## User-supplied diversions (this will give the same answer as above)
 
 
 
 d=tcrossprod(1/(1-shares),shares)
-diag(d)=1
+diag(d)=-1
 
 result2 <- loglog(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
-
-sim2 <- sim(price,demand="LogLog",result2@slopes,ownerPre=owner.pre,ownerPost=owner.post)
+sim2 <- sim(price,demand="LogLog",list(slopes=result2@slopes,intercepts=result2@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result2)
+testMethods(sim2)
 
-
-## same as above, but with linear demand
-##result3 <- pclinear(price,quantity,margin,shares=shares,ownerPre=owner.pre,ownerPost=owner.post)
-##testMethods(result3)
+## same as above, but with  pcaids demand
+result3 <- pcaids(shares,-1/margin[1],-1,ownerPre=owner.pre,ownerPost=owner.post)
+testMethods(result3)
 
 result4 <- linear(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
-sim4 <- sim(price,demand="Linear",result4@slopes,ownerPre=owner.pre,ownerPost=owner.post)
+sim4 <- sim(price,demand="Linear",list(slopes=result4@slopes,intercepts=result4@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result4)
 
 ##Beer calibration and simulation results from Epstein/Rubenfeld 2004, pg 80+
@@ -137,17 +140,21 @@ testMethods(result6,1e9)
 knownElast=-2.5
 mktElast=-1
 d=tcrossprod(1/(1-shares.revenue),shares.revenue)
-diag(d)=1
+diag(d)=-1
 
 ## PCAIDS demand
 ## Confirmed Against Epstein/Rubenfeld 2004 Beer example
+
+result11 <- aids(shares.revenue,margins.pcaids,prices=price,diversions=d,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+testMethods(result11)
+
 result7 <- pcaids(shares.revenue,knownElast,mktElast,knownElastIndex=1,diversions=d,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
-testMethods(result7,price)
+testMethods(result7)
 
 ## Nested PCAIDS demand
 ## Confirmed Against Epstein/Rubenfeld 2004 Beer example
 result8 <- pcaids.nests(shares.revenue,margins.pcaids,knownElast,mktElast,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
-testMethods(result8,price)
+testMethods(result8)
 
 ## logit demand
 result9 <- logit(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)

@@ -20,7 +20,7 @@ setMethod(
               shareInside  <-  object@shareInside
 
               ## uncover Numeraire Coefficients
-              if(shareInside < 1 ) {alpha <- 1/shareInside - 1}
+              if(shareInside < 1 && shareInside>0) {alpha <- 1/shareInside - 1}
               else{alpha <- NULL}
 
               ## if sum of shares is less than 1, add numeraire
@@ -40,18 +40,18 @@ setMethod(
               nprods <- length(shares)
 
 
-              nMargins <-  length(margins[!is.na(margins)])
+
 
               ## Minimize the distance between observed and predicted margins
               minD <- function(gamma){
 
 
                   elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
-                  diag(elast) <- -1*gamma - diag(elast)
+                  diag(elast) <- -1*gamma + diag(elast)
 
                   marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% shares) / shares
 
-                  measure <- sqrt(sum((margins - marginsCand)^2,na.rm=TRUE))/sqrt(nMargins)
+                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
                   return(measure)
               }
@@ -105,7 +105,7 @@ setMethod(
          shares <- shares/sum(shares)
 
          elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
-         diag(elast) <- -1*gamma - diag(elast)
+         diag(elast) <- -1*gamma + diag(elast)
 
          thisFOC <- shares + as.vector((elast * owner) %*% (margins * shares))
 
@@ -150,6 +150,33 @@ setMethod(
 
 
 
+
+
+setMethod(
+ f= "calcMargins",
+ signature= "CES",
+ definition=function(object,preMerger=TRUE){
+
+     revenues     <- calcShares(object,TRUE)
+
+     elastPre <-  t(elast(object,TRUE))
+     marginPre <-  -1 * as.vector(solve(elastPre*object@ownerPre) %*% revenues) / revenues
+
+     if(preMerger){
+         names(marginPre) <- object@labels
+         return(marginPre)}
+
+     else{
+         priceDelta <- calcPriceDelta(object)
+         marginPost <- 1 - ((1 + object@mcDelta) * (1 - marginPre) / (priceDelta + 1) )
+         names(marginPost) <- object@labels
+         return(marginPost)
+     }
+
+}
+ )
+
+
 setMethod(
  f= "elast",
  signature= "CES",
@@ -164,7 +191,7 @@ setMethod(
      nprods <-  length(shares)
 
      elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
-     diag(elast) <- -1*gamma - diag(elast)
+     diag(elast) <- -1*gamma + diag(elast)
 
      dimnames(elast) <- list(object@labels,object@labels)
 
@@ -247,7 +274,7 @@ setMethod(
          shares <- shares[prodIndex]
 
          elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
-         diag(elast) <- -1*gamma - diag(elast)
+         diag(elast) <- -1*gamma + diag(elast)
 
          thisFOC <- shares + as.vector(elast  %*% (margins[prodIndex] * shares))
 

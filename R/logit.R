@@ -6,21 +6,21 @@ setClass(
          contains="Antitrust",
          representation=representation(
 
-         prices           = "vector",
-         margins          = "vector",
-         mc               = "vector",
-         pricePre         = "vector",
-         pricePost        = "vector",
-         priceStart       = "vector",
-         normIndex        = "numeric",
+         prices           = "numeric",
+         margins          = "numeric",
+         mc               = "numeric",
+         pricePre         = "numeric",
+         pricePost        = "numeric",
+         priceStart       = "numeric",
+         normIndex        = "vector",
          shareInside     = "numeric"
 
          ),
           prototype=prototype(
 
-          pricePre      =  vector(),
-          pricePost     =  vector(),
-          mc            =  vector()
+          pricePre      =  numeric(),
+          pricePost     =  numeric(),
+          mc            =  numeric()
 
         ),
 
@@ -107,8 +107,6 @@ setMethod(
               nprods <- length(shares)
 
 
-              nMargins <-  length(margins[!is.na(margins)])
-
               ## Minimize the distance between observed and predicted margins
               minD <- function(alpha){
 
@@ -119,7 +117,7 @@ setMethod(
                   revenues <- shares * prices
                   marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues
 
-                  measure <- sqrt(sum((margins - marginsCand)^2,na.rm=TRUE))/sqrt(nMargins)
+                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
                   return(measure)
               }
@@ -340,6 +338,7 @@ logit <- function(prices,shares,margins,
                   normIndex=normIndex,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
+                  mcDelta=mcDelta,
                   priceStart=priceStart,shareInside=sum(shares),
                   labels=labels)
 

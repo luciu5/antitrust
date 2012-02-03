@@ -1,4 +1,6 @@
-upp <- function(price, margin, diversion, ownerPre=NULL, efficiency=rep(0,length(price)), labels=paste("Prod",1:length(price),sep="")){
+
+
+upp <- function(price, margin, diversion, ownerPre, efficiency=rep(0,length(price)), labels=paste("Prod",1:length(price),sep="")){
 
 
     if(!(is.vector(price) & is.vector(margin)  & is.vector(efficiency))){
@@ -45,7 +47,7 @@ upp <- function(price, margin, diversion, ownerPre=NULL, efficiency=rep(0,length
 
     }
 
-    else if(is.null(ownerPre)){
+    else if(missing(ownerPre)){
         ownerPre <- diag(NA,ncol=length(price), nrow=length(price))+1
     }
 
@@ -62,3 +64,4 @@ upp <- function(price, margin, diversion, ownerPre=NULL, efficiency=rep(0,length
 
     return(result)
 }
+

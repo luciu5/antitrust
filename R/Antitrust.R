@@ -1,3 +1,74 @@
+
+
+##setClassUnion("anyMatrix", c("matrix", "Matrix"))
+setClassUnion("matrixOrVector", c("matrix", "numeric","factor"))
+setClassUnion("matrixOrList", c("matrix", "list"))
+
+
+setClass(
+
+ Class = "Antitrust",
+ representation=representation(
+ shares       = "numeric",
+ mcDelta      = "numeric",
+ slopes       = "matrixOrList",
+ ownerPre     = "matrixOrVector",
+ ownerPost    = "matrixOrVector",
+ labels       = "character"
+ ),
+         prototype=prototype(
+
+         slopes          = matrix()
+
+         ),
+         validity=function(object){
+
+             ## Sanity Checks
+
+             if(any(object@shares < 0 | object@shares > 1,na.rm=TRUE)){
+                 stop("'shares' values must be between 0 and 1")}
+
+             if(sum(object@shares) > 1){
+                 stop("The sum of 'shares' values must be less than or equal to 1")}
+
+             nprods <- length(object@shares)
+
+             ## if(any(object@mcDelta < 0 | object@mcDelta > 1,na.rm=TRUE)){
+             ##    stop("'mcDelta' values must be between 0 and 1")}
+
+             if(nprods != length(object@mcDelta)){
+                 stop("'mcDelta' must have the same length as 'shares'")}
+
+             if(any(object@mcDelta>0,na.rm=TRUE)){
+                 warning("positive values of 'mcDelta' imply an INCREASE in marginal costs")}
+             if(any(abs(object@mcDelta)>1,na.rm=TRUE)){
+                 warning("Values of 'mcDelta' greater than 1 in absolute value imply a marginal cost change greater than 100%")}
+
+              if(nprods != length(object@labels)){
+                 stop("'labels' must have the same length as 'shares'")}
+             if(is.matrix(object@ownerPre)){
+                 if(nprods != ncol(object@ownerPre)){
+                     stop("The number of rows and columns in 'ownerPre' must equal the length of 'shares'")}
+                 if(nrow(object@ownerPre) != ncol(object@ownerPre)){
+                     stop("'ownerPre' must be a square matrix ")}
+             }
+             else if (nprods != length(object@ownerPre)) stop("'ownerPre' and shares must be vectors of the same length")
+             if(is.matrix(object@ownerPost)){
+                 if(nprods != ncol(object@ownerPost)){
+                     stop("The number of rows and columns in 'ownerPost' must equal the length of 'shares'")}
+                 if(nrow(object@ownerPost) != ncol(object@ownerPost)){
+                     stop("'ownerPost' must be a square matrix ")}
+             }
+             else if (nprods != length(object@ownerPost)) stop("'ownerPost' and shares must be vectors of the same length")
+         }
+
+             )
+
+
+##
+## Antitrust Methods
+##
+
 ## Generate a bunch of generic functions
 
 setGeneric (
@@ -136,26 +207,61 @@ setMethod(
  definition=function(object,preMerger=TRUE){
 
 
-     shares     <- object@shares
 
-     elastPre <-  t(elast(object,TRUE))
-     marginPre <-  -1 * as.vector(solve(elastPre*object@ownerPre) %*% shares) / shares
+     if( preMerger) {
+         prices <- object@pricePre
+         owner  <- object@ownerPre
+
+         shares     <- calcShares(object,preMerger)
+         revenue <- shares*prices
+
+         elast <-  t(elast(object,preMerger))
+         margins <-  -1 * as.vector(solve(elast*owner) %*% revenue) / revenue
 
 
-     if(preMerger){
-         names(marginPre) <- object@labels
-         return(marginPre)
      }
 
      else{
-         priceDelta <- calcPriceDelta(object)
-         marginPost <- 1 - ((1 + object@mcDelta) * (1 - marginPre) / (priceDelta + 1) )
-         names(marginPost) <- object@labels
-         return(marginPost)
+         prices <- object@pricePost
+         mc     <- calcMC(object,FALSE)
+
+         margins <- 1 - mc/prices
      }
 
-}
+
+     names(margins) <- object@labels
+
+     return(margins)
+     }
+
  )
+
+
+
+
+## Create a method to recover marginal cost using
+## demand parameters and supplied prices
+setMethod(
+          f= "calcMC",
+          signature= "Antitrust",
+          definition= function(object,preMerger=TRUE){
+
+              object@pricePre <- object@prices
+
+
+              marginPre <- calcMargins(object,TRUE)
+
+              mc <- (1 - marginPre) * object@prices
+
+              if(!preMerger){
+                  mc <- mc*(1+object@mcDelta)
+              }
+
+              names(mc) <- object@labels
+
+              return(mc)
+          }
+          )
 
 
 
@@ -229,7 +335,7 @@ definition=function(object,preMerger=TRUE){
 
     ## transform ownerPre and ownerPost vectors into matrices, when applicable
 
-    if(preMerger) thisOwner <- object@ownerPre
+    if(preMerger) {thisOwner <- object@ownerPre}
     else{         thisOwner <- object@ownerPost}
 
 
@@ -304,6 +410,31 @@ setMethod(
 }
  )
 
+##setMethod(
+##          f= "upp",
+##          signature= "Antitrust",
+##          definition=function(object,efficiency=0){
+
+##              div       <- diversion(object,TRUE)
+##              margin    <- calcMargins(object,TRUE)
+
+              ## compute the implicit "tax" that product i levies on product j ##
+##              Tax <- t(t(div * tcrossprod(1/object@pricePre,object@pricePre)) * margin)
+
+##              result <- Tax - efficiency * (1-margin)
+##              result <- result*ownerPre
+
+##              dimnames(result) <- list(object@labels,object@labels)
+
+##              isParty <- colSums( object@ownerPost - object@ownerPre)
+##              result[!isParty,!isParty] <- NA
+##              diag(result) <- NA
+##              return(result)
+##          }
+##          )
+
+##Method to compute upp
+
 
 ## Use the Hypothetical Monopolist Test to create the set of candidate markets
 ## that satisfy a SSNIP
@@ -311,7 +442,7 @@ setMethod(
 setMethod(
  f= "defineMarkets",
  signature= "Antitrust",
- definition=function(object,startProd=NULL,ssnip=.05,supplyResponse=FALSE,...){
+ definition=function(object,startProd,ssnip=.05,supplyResponse=FALSE,...){
 
      ownerPre <- object@ownerPre
      nprods   <- ncol(ownerPre)
@@ -320,7 +451,7 @@ setMethod(
      if(length(ssnip)>1 || ssnip<0 | ssnip>1 ){stop("'ssnip' must be a number between 0 and 1")}
 
 
-     if(is.null(startProd)){
+     if(missing(startProd)){
          startProd <- which(isParty)[1]
          warning("'startProd' not specified. Setting equal to ",startProd)
      }
@@ -328,7 +459,7 @@ setMethod(
      else if(!startProd %in% which(isParty)){stop("'startProd' must equal the position number of a merging parties' product")}
 
      startDiversion <- diversion(object,TRUE)[startProd,]
-     closestSubs <- order(startDiversion,decreasing = TRUE)
+     closestSubs <- order(abs(startDiversion),decreasing = TRUE)
 
      result <- matrix(NA,ncol=nprods+1,nrow=nprods)
 
@@ -346,10 +477,10 @@ setMethod(
              candOwner[candMonopolist,candMonopolist] <- 1
              object@ownerPost <- candOwner
 
-             if(hasMethod("calcPrices",class(object))){
-                 object@pricePost <- rep(NA,nprods) #allows priceDelta to equal NA if next line fails
-                 try(object@pricePost <- calcPrices(object,FALSE,...),silent=TRUE)
-             }
+            ## if(hasMethod("calcPrices",class(object))){
+            ##     object@pricePost <- rep(NA,nprods) #allows priceDelta to equal NA if next line fails
+            ##     try(object@pricePost <- calcPrices(object,FALSE,...),silent=TRUE)
+            ## }
 
              priceDelta <-  calcPriceDelta(object)[candMonopolist]
 

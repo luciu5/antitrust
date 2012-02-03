@@ -7,7 +7,7 @@ setClass(
 
          representation=representation(
          nests="factor",
-         parmsStart="vector"
+         parmsStart="numeric"
          ),
 
          prototype=prototype(
@@ -30,7 +30,7 @@ setClass(
                  stop("'nests' length must equal the number of products")}
 
 
-             if(!is.vector(object@parmsStart) || nNestParm + 1 != length(object@parmsStart)){
+             if(nNestParm + 1 != length(object@parmsStart)){
                  stop(paste("'parmsStart' must be a vector of length",nNestParm + 1))}
 
              if(nNestParm > nMargins){
@@ -71,9 +71,6 @@ setMethod(
               sharesIn <- shares / sharesIn
 
               revenues <- prices * shares
-
-              nMargins <-  length(margins[!is.na(margins)])
-
 
               ## create index variables, contingent on whether an outside good is defined
               if(is.na(idx)){
@@ -130,7 +127,7 @@ setMethod(
                   try(marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues,TRUE)
                   if(!exists("marginsCand")){marginsCand <- 1e3}
 
-                  measure <- sqrt(sum((margins - marginsCand)^2,na.rm=TRUE))/sqrt(nMargins)
+                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
                   return(measure)
               }
@@ -437,7 +434,7 @@ logit.nests <- function(prices,shares,margins,
                         normIndex=ifelse(sum(shares) < 1,NA,1),
                         mcDelta=rep(0,length(prices)),
                         priceStart = prices,
-                        parmsStart=NULL,
+                        parmsStart,
                         labels=paste("Prod",1:length(prices),sep=""),
                         ...
                         ){
@@ -447,7 +444,7 @@ logit.nests <- function(prices,shares,margins,
     else{nests <- factor(nests)}
 
 
-    if(is.null(parmsStart)){
+    if(missing(parmsStart)){
         nNests <- nlevels(nests)
         parmsStart <- runif(nNests+1) # nesting parameter values are assumed to be between 0 and 1
         parmsStart[1] <- -1* parmsStart[1] # price coefficient is assumed to be negative

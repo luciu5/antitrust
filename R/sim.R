@@ -1,4 +1,4 @@
-sim <- function(prices,demand=c("Linear","LogLog","Logit","CES","LogitNests","CESNests"),demand.param,
+sim <- function(prices,demand=c("Linear","AIDS","LogLog","Logit","CES","LogitNests","CESNests"),demand.param,
                      ownerPre,ownerPost,nests=NULL,
                      mcDelta=rep(0,length(prices)),
                      priceStart=prices,
@@ -10,18 +10,19 @@ sim <- function(prices,demand=c("Linear","LogLog","Logit","CES","LogitNests","CE
 
     ## Create placeholders values to fill required Class slots
 
-    mc <- shares <- margins <- rep(1/nprods,nprods)
+     shares <- margins <- rep(1/nprods,nprods)
 
 
     if(!is.null(nests)){nests <- factor(nests)}
 
 
+    ## general sanity checks
+    if(!is.list(demand.param)){stop("'demand.param' must be a list.")}
 
     ## Sanity checks for discrete choice models
     if(demand %in% c("CESNests","LogitNests","CES","Logit")){
 
 
-        if(!is.list(demand.param)){stop("'demand.param' must be a list.")}
 
         if(!("normIndex" %in% names(demand.param))){
                 warning("'demand.param' does not contain 'normIndex'. Setting normIndex=1.")
@@ -48,17 +49,27 @@ sim <- function(prices,demand=c("Linear","LogLog","Logit","CES","LogitNests","CE
 
 
     ## Sanity checks for Linear-demand style models
-    if(demand %in% c("Linear","LogLog")){
+    if(demand %in% c("Linear","LogLog","AIDS")){
 
-            if(!(is.matrix(demand.param)    ||
-                 is(demand.param,"Matrix")) ||
-               ncol(demand.param)!=nprods+1 ||
-               nrow(demand.param)!=nprods   ||
-               any(demand.param[,1]<0)      ||
-               any(diag(demand.param[,-1])>0)){
-                stop("'demand.param' must be a k x (k+1) matrix whose first column contains the intercepts from a linear style demand system and whose remaining columns contain the slope coefficients. The intercepts must all be non-negative and the diagonal of the slopes must be non-positive.")}
+        if(!("slopes" %in% names(demand.param))){stop("'demand.param' does not contain 'slopes'")}
+        if(!("intercepts" %in% names(demand.param))){stop("'demand.param' does not contain 'intercepts'")}
+
+            if(!(is.matrix(demand.param$slopes)    ||
+                 is(demand.param$slopes,"Matrix")) ||
+               ncol(demand.param$slopes)!=nprods   ||
+               nrow(demand.param$slopes)!=nprods   ||
+               any(demand.param$intercepts<0)      ||
+               any(diag(demand.param$slopes)>0)){
+                stop("'demand.param' must be a k x k matrix whose first column contains the intercepts from a linear style demand system and whose remaining columns contain the slope coefficients. The intercepts must all be non-negative and the diagonal of the slopes must be non-positive")}
+
+        if (demand == "AIDS" &&
+            !("mktElast" %in% names(demand.param))){
+                warning("'demand.param' does not contain 'mktElast'. Setting 'mktElast' equal to -1")
+                demand.param$mktElast=-1
 
             }
+
+        }
 
 
 
@@ -92,7 +103,7 @@ sim <- function(prices,demand=c("Linear","LogLog","Logit","CES","LogitNests","CE
 
 
          result <- new(demand,prices=prices, shares=shares,margins=margins,
-                       mc=mc,mcDelta=mcDelta,
+                       mcDelta=mcDelta,
                        ownerPre=ownerPre,
                        ownerPost=ownerPost,
                        nests=nests,
@@ -117,7 +128,7 @@ sim <- function(prices,demand=c("Linear","LogLog","Logit","CES","LogitNests","CE
         }
 
         result <- new(demand,prices=prices, shares=shares,margins=margins,
-                       mc=mc,mcDelta=mcDelta,
+                       mcDelta=mcDelta,
                        ownerPre=ownerPre,
                        ownerPost=ownerPost,
                        nests=nests,
@@ -152,7 +163,7 @@ sim <- function(prices,demand=c("Linear","LogLog","Logit","CES","LogitNests","CE
         result <- new(demand,prices=prices, shares=shares,
                   margins=margins,
                   normIndex=normIndex,
-                  mc=mc,mcDelta=mcDelta,
+                  mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   priceStart=priceStart,shareInside=shareInside,
@@ -175,7 +186,7 @@ sim <- function(prices,demand=c("Linear","LogLog","Logit","CES","LogitNests","CE
         result <- new(demand,prices=prices, shares=shares,
                   margins=margins,
                   normIndex=normIndex,
-                  mc=mc,mcDelta=mcDelta,
+                  mcDelta=mcDelta,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   priceStart=priceStart,shareInside=shareInside,
@@ -189,26 +200,45 @@ sim <- function(prices,demand=c("Linear","LogLog","Logit","CES","LogitNests","CE
 
 
       result <- new(demand,prices=prices, quantities=shares,margins=margins,
-                   shares=shares,mc=mc,mcDelta=mcDelta,
-                   ownerPre=ownerPre,diversion=diag(nprods), symmetry=FALSE,
+                   shares=shares,mcDelta=mcDelta,
+                   ownerPre=ownerPre,diversion=-diag(nprods), symmetry=FALSE,
                    ownerPost=ownerPost, labels=labels)
 
  }
+
+ else if(demand == "AIDS"){
+
+     ## find the market elasticity that best explains user-supplied intercepts and prices
+
+
+      result <- new(demand,prices=prices, quantities=shares,margins=margins,
+                    shares=as.vector(demand.param$intercepts + demand.param$slopes %*% prices), # AIDS needs actual shares for prediction
+                    mcDelta=mcDelta, mktElast=demand.param$mktElast,
+                    ownerPre=ownerPre,diversion=-diag(nprods),
+                    priceDeltaStart=priceStart,
+                    ownerPost=ownerPost, labels=labels)
+
+ }
+
 
 
  else if(demand == "LogLog"){
 
 
       result <- new(demand,prices=prices, quantities=shares,margins=margins,
-                   shares=shares,mc=mc,mcDelta=mcDelta,  symmetry=FALSE, priceStart=priceStart,
-                   ownerPre=ownerPre,diversion=diag(nprods),
+                   shares=shares,mcDelta=mcDelta, priceStart=priceStart,
+                   ownerPre=ownerPre,diversion=-diag(nprods),
                    ownerPost=ownerPost, labels=labels)
 
  }
 
 
+    if(demand %in% c("Linear","LogLog","AIDS")){
+        result@slopes <- demand.param$slopes
+        result@intercepts <- demand.param$intercepts
+    }
+    else{result@slopes=demand.param}
 
-    result@slopes=demand.param
 
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
@@ -216,6 +246,12 @@ sim <- function(prices,demand=c("Linear","LogLog","Logit","CES","LogitNests","CE
 
     ## Uncover marginal costs
     result@mc        <- calcMC(result)
+
+    if(demand == "AIDS"){
+        ## Solve Non-Linear System for Price Changes
+        result@priceDelta <- calcPriceDelta(result,...)
+    }
+
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)

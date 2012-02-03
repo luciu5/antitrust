@@ -7,7 +7,7 @@ setClass(
 
          representation=representation(
          nests="factor",
-         parmsStart="vector"
+         parmsStart="numeric"
          ),
 
          prototype=prototype(
@@ -76,10 +76,6 @@ setMethod(
               sharesNests <- shares / sharesNests
 
 
-
-              nMargins <-  length(margins[!is.na(margins)])
-
-
               ## back out the parameter on the numeraire, when appropriate
               if(shareInside<1) {alpha <- 1/shareInside -1}
               else{ alpha <- NULL}
@@ -140,7 +136,7 @@ setMethod(
 
                   marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% shares) / shares
 
-                  measure <- sqrt(sum((margins - marginsCand)^2,na.rm=TRUE))/sqrt(nMargins)
+                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
                   return(measure)
               }
@@ -293,7 +289,7 @@ setMethod(
 
      names(shares) <- object@labels
 
-     return(shares)
+     return(as.vector(shares))
 
 }
  )
@@ -483,7 +479,7 @@ ces.nests <- function(prices,shares,margins,
                       normIndex=ifelse(sum(shares) < 1,NA,1),
                       mcDelta=rep(0,length(prices)),
                       priceStart = prices,
-                      parmsStart=NULL,
+                      parmsStart,
                       labels=paste("Prod",1:length(prices),sep=""),
                       ...
                       ){
@@ -494,7 +490,7 @@ ces.nests <- function(prices,shares,margins,
     else{nests <- factor(nests)}
 
 
-    if(is.null(parmsStart)){
+    if(missing(parmsStart)){
         nNests <- nlevels(nests)
         parmsStart <- cumsum(runif(nNests+1,1,1.5)) # parameter values are assumed to be greater than 1
                             }
@@ -519,7 +515,6 @@ ces.nests <- function(prices,shares,margins,
 
     ##Calculate constant marginal costs
     result@mc <- calcMC(result)
-
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)
     result@pricePost <- calcPrices(result,FALSE,...)

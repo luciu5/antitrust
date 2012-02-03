@@ -2,9 +2,11 @@ setClass(
          Class = "LogLog",
          contains="Linear",
          representation=representation(
-         priceStart = "vector"
+         priceStart = "numeric"
          ),
-
+         prototype=prototype(
+         symmetry=FALSE
+         ),
           validity=function(object){
 
              ## Sanity Checks
@@ -33,19 +35,20 @@ setMethod(
      nprods <- length(margins)
 
      diversion <- object@diversion * tcrossprod(quantities,1/quantities)
-     diag(diversion) <- -1
 
-    slopes <- matrix(margins * revenues,ncol=nprods, nrow=nprods,byrow=TRUE)
-    slopes <- revenues / rowSums(slopes * diversion * object@ownerPre)
-    slopes <- -t(slopes * diversion)
+     slopes <- matrix(margins * revenues,ncol=nprods, nrow=nprods,byrow=TRUE)
+     slopes <- revenues / rowSums(slopes * diversion * object@ownerPre)
+     slopes <- -t(slopes * diversion)
 
-    dimnames(slopes) <- list(object@labels,object@labels)
+     dimnames(slopes) <- list(object@labels,object@labels)
 
-    intercept <- as.vector(log(quantities) - slopes %*% log(prices))
+     intercept <- as.vector(log(quantities) - slopes %*% log(prices))
+     names(intercept) <-  object@labels
 
-     result <- cbind(Intercept=intercept,slopes)
+     object@slopes <- slopes
+     object@intercepts <- intercept
 
-     return(result)
+     return(object)
 
 
  }
@@ -65,8 +68,8 @@ setMethod(
      owner <- object@ownerPost
  }
 
- slopes    <- object@slopes[,-1]
- intercept <- object@slopes[,1]
+ slopes    <- object@slopes
+ intercept <- object@intercepts
  mc        <- object@mc
 
 
@@ -74,9 +77,9 @@ setMethod(
  FOC <- function(priceCand){
 
 
-     quantity <- exp(intercept) * apply(priceCand^slopes,1,prod) # log(price) can produce errors.
-                                                             # this transformation avoids using logs
-    #quantity <- exp(as.vector(intercept+slopes %*% log(price)))
+     quantity <- exp(intercept) * apply(priceCand^t(slopes),2,prod) # log(price) can produce errors.
+                                                                    # this transformation avoids using logs
+    ##quantity <- exp(as.vector(intercept+slopes %*% log(price)))
 
      margin   <- 1 - (mc * (1 + mcDelta)) / priceCand
      revenue  <- priceCand*quantity
@@ -107,8 +110,8 @@ setMethod(
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
-      slopes    <- object@slopes[,-1]
-      intercept <- object@slopes[,1]
+      slopes    <- object@slopes
+      intercept <- object@intercepts
 
      quantities <- exp(as.vector(intercept+slopes %*% log(prices)))
      names(quantities) <- object@labels
@@ -126,7 +129,7 @@ setMethod(
  signature= "LogLog",
  definition=function(object,margin=TRUE){
 
-      elast    <- object@slopes[,-1]
+      elast    <- object@slopes
 
       dimnames(elast) <- list(object@labels,object@labels)
 
@@ -149,15 +152,15 @@ setMethod(
  definition=function(object,prodIndex){
 
      nprods <- length(prodIndex)
-     intercept <- object@slopes[,1]
-     slopes <- object@slopes[,-1]
+     intercept <- object@intercepts
+     slopes <- object@slopes
      mc <- object@mc[prodIndex]
      pricePre <- object@pricePre
 
      calcMonopolySurplus <- function(priceCand){
 
          pricePre[priceIndex] <- priceCand
-         quantityCand <- exp(intercept) * apply(pricePre^slopes,1,prod)
+         quantityCand <- exp(intercept) * apply(pricePre^t(slopes),2,prod)
 
          surplus <- (priceCand-mc)*quantityCand
 
@@ -180,7 +183,7 @@ setMethod(
 
 
 
-loglog <- function(prices,quantities,margins,diversions=NULL,
+loglog <- function(prices,quantities,margins,diversions,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
                      priceStart=prices,
@@ -193,24 +196,24 @@ loglog <- function(prices,quantities,margins,diversions=NULL,
     shares=quantities/sum(quantities)
 
 
-    if(is.null(diversions)){
+    if(missing(diversions)){
         diversions <-  tcrossprod(1/(1-shares),shares)
-        diag(diversions) <- 1
+        diag(diversions) <- -1
     }
 
 
     result <- new("LogLog",prices=prices, quantities=quantities,margins=margins,
                   shares=shares,mcDelta=mcDelta, priceStart=priceStart,
-                  ownerPre=ownerPre,diversion=diversions, symmetry=FALSE,
+                  ownerPre=ownerPre,diversion=diversions,
                   ownerPost=ownerPost, labels=labels)
 
 
-     ## Convert ownership vectors to ownership matrices
-     result@ownerPre  <- ownerToMatrix(result,TRUE)
-     result@ownerPost <- ownerToMatrix(result,FALSE)
+    ## Convert ownership vectors to ownership matrices
+    result@ownerPre  <- ownerToMatrix(result,TRUE)
+    result@ownerPost <- ownerToMatrix(result,FALSE)
 
-     ## Calculate Demand Slope Coefficients
-     result@slopes <- calcSlopes(result)
+    ## Calculate Demand Slope Coefficients
+    result <- calcSlopes(result)
 
     ##Calculate constant marginal costs
     result@mc <- calcMC(result)

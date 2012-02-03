@@ -6,20 +6,12 @@ setClass(
          contains="PCAIDS",
          representation=
          representation(
-                        margins="vector",
                         nests="factor",
-                        nestsParms="vector"),
+                        nestsParms="numeric"),
 
          validity=function(object){
 
              nprods <- length(object@shares)
-
-             if(!is.vector(object@margins) || any(object@margins<=0 | object@margins>=1,na.rm=TRUE)){
-                 stop("'margins' must be a numeric vector whose values are between 0 and 1")}
-
-             if( nprods != length(object@margins)){
-                 stop("'margins' length must equal the number of products")}
-
 
              if(nprods != length(object@nests)){
                  stop("'nests' length must equal the number of products")}
@@ -93,9 +85,6 @@ setMethod(
               nprods <- length(shares)
 
 
-              nMargins <-  length(margins[!is.na(margins)])
-
-
               nNests <- nlevels(nests)
               nests <- as.numeric(nests)
 
@@ -135,7 +124,7 @@ setMethod(
 
                   marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% shares) / shares
 
-                  measure <- sqrt(sum((margins - marginsCand)^2,na.rm=TRUE))/sqrt(nMargins)
+                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
                   return(measure)
               }
@@ -144,12 +133,15 @@ setMethod(
 
               B <- calcB(minNests)
 
-              dimnames(B) <- list(object@labels,object@labels)
-
-
-
               object@nestsParms <- minNests
-              object@slopes    <- B
+
+
+              dimnames(B) <- list(object@labels,object@labels)
+              object@slopes <- B
+              object@intercepts <- as.vector(shares - B%*%object@prices)
+              names(object@intercepts) <- object@labels
+
+
 
 
               return(object)
@@ -178,29 +170,33 @@ setMethod(
 
 
 pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
-                         ownerPre,ownerPost,
+                         prices,ownerPre,ownerPost,
                          nests=rep(1,length(shares)),
                          knownElastIndex=1,
                          mcDelta=rep(0, length(shares)),
                          priceDeltaStart=runif(length(shares)),
-                         nestsParmStart=NULL,
+                         nestsParmStart,
                          labels=paste("Prod",1:length(shares),sep=""),
                          ...){
 
     if(is.factor(nests)){nests <- nests[,drop=TRUE] }
     else{nests <- factor(nests)}
 
-    if(is.null(nestsParmStart)){
+    if(missing(nestsParmStart)){
         nNests <- nlevels(nests)
         nestsParmStart <- runif(nNests*(nNests -1)/2)
                             }
 
+      if(missing(prices)){ prices <- rep(NA,length(shares))}
 
-        diversions <- tcrossprod(1/(1-shares),shares);diag(diversions) <- 1 #'diversions' slot not used by pcaids.nests
+    diversions <- tcrossprod(1/(1-shares),shares);diag(diversions) <- -1 #'diversions' slot not used by pcaids.nests
 
 
     ## Create PCAIDS Nests  container to store relevant data
-    result <- new("PCAIDSNests",shares=shares,margins=margins,mcDelta=mcDelta
+    result <- new("PCAIDSNests",shares=shares,
+                  prices=prices,
+                  quantities=shares,
+                  margins=margins,mcDelta=mcDelta
                   ,knownElast=knownElast,mktElast=mktElast,nests=nests,
                   nestsParms=nestsParmStart, diversion=diversions,
                   ownerPre=ownerPre,ownerPost=ownerPost,knownElastIndex=knownElastIndex,
@@ -213,8 +209,20 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
 
+
     ## Solve Non-Linear System for Price Changes
     result@priceDelta <- calcPriceDelta(result,...)
+
+
+    ## Calculate Pre and Post merger equilibrium prices
+    result@pricePre  <- calcPrices(result,TRUE)
+    result@pricePost <- calcPrices(result,FALSE)
+
+    ##Calculate constant marginal costs
+    ## These are equal to NA in pcaids
+    result@mc <- calcMC(result)
+
+
 
     return(result)
 
