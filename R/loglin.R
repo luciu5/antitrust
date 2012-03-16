@@ -1,9 +1,6 @@
 setClass(
-         Class = "LogLog",
+         Class = "LogLin",
          contains="Linear",
-         representation=representation(
-         priceStart = "numeric"
-         ),
          prototype=prototype(
          symmetry=FALSE
          ),
@@ -13,7 +10,9 @@ setClass(
 
 
              nprods <- length(object@prices)
-
+             if(any(is.na(object@margins))){
+                 stop("'margins' cannot contain NA values")
+                 }
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'prices'")}
  })
@@ -21,7 +20,7 @@ setClass(
 
 setMethod(
  f= "calcSlopes",
- signature= "LogLog",
+ signature= "LogLin",
  definition=function(object){
 
 
@@ -57,36 +56,26 @@ setMethod(
 
 setMethod(
  f= "calcPrices",
- signature= "LogLog",
+ signature= "LogLin",
  definition=function(object,preMerger=TRUE,...){
- if(preMerger){
-     mcDelta <- rep(0,length(object@mcDelta))
-     owner <- object@ownerPre
- }
- else{
-     mcDelta <- object@mcDelta
-     owner <- object@ownerPost
- }
 
- slopes    <- object@slopes
- intercept <- object@intercepts
- mc        <- object@mc
-
-
+     if(preMerger){owner <- object@ownerPre}
+     else{owner <- object@ownerPost}
+     mc <- calcMC(object,preMerger)
 
  FOC <- function(priceCand){
 
+     if(preMerger){ object@pricePre <- priceCand}
+     else{          object@pricePost <- priceCand}
 
-     quantity <- exp(intercept) * apply(priceCand^t(slopes),2,prod) # log(price) can produce errors.
-                                                                    # this transformation avoids using logs
-    ##quantity <- exp(as.vector(intercept+slopes %*% log(price)))
 
-     margin   <- 1 - (mc * (1 + mcDelta)) / priceCand
-     revenue  <- priceCand*quantity
+     margins   <- 1 - mc/priceCand
+     revenues  <- calcShares(object,preMerger,revenue=TRUE)
+     elasticities     <- elast(object,preMerger)
 
-     thisFOC <- revenue + t(slopes * owner)  %*% (margin * revenue)
+     thisFOC <- revenues + as.vector(t(elasticities * owner) %*% (margins * revenues))
 
-     return(as.vector(thisFOC))
+     return(thisFOC)
  }
 
  minResult <- nleqslv(object@priceStart,FOC,...)
@@ -103,17 +92,16 @@ setMethod(
 
 setMethod(
  f= "calcQuantities",
- signature= "LogLog",
+ signature= "LogLin",
  definition=function(object,preMerger=TRUE,...){
 
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
-      slopes    <- object@slopes
-      intercept <- object@intercepts
-
-     quantities <- exp(as.vector(intercept+slopes %*% log(prices)))
+     slopes    <- object@slopes
+     intercept <- object@intercepts
+     quantities <- exp(intercept) * apply(prices^t(slopes),2,prod)
      names(quantities) <- object@labels
 
      return(quantities)
@@ -126,7 +114,7 @@ setMethod(
 
 setMethod(
  f= "elast",
- signature= "LogLog",
+ signature= "LogLin",
  definition=function(object,margin=TRUE){
 
       elast    <- object@slopes
@@ -140,29 +128,31 @@ setMethod(
 
 setMethod(
  f= "CV",
- signature= "LogLog",
+ signature= "LogLin",
  definition=function(object){
-     print("CV method not currently available for 'LogLog' Class")
+     stop("CV method not currently available for 'LogLin' Class")
+
  })
 
 
 setMethod(
  f= "calcPriceDeltaHypoMon",
- signature= "LogLog",
+ signature= "LogLin",
  definition=function(object,prodIndex){
 
-     nprods <- length(prodIndex)
-     intercept <- object@intercepts
-     slopes <- object@slopes
-     mc <- object@mc[prodIndex]
+
+     mc <- calcMC(object,TRUE)[prodIndex]
      pricePre <- object@pricePre
 
      calcMonopolySurplus <- function(priceCand){
 
-         pricePre[priceIndex] <- priceCand
-         quantityCand <- exp(intercept) * apply(pricePre^t(slopes),2,prod)
+         pricePre[prodIndex] <- priceCand
+         object@pricePre <- pricePre
+         quantityCand <- calcQuantities(object,TRUE)
 
-         surplus <- (priceCand-mc)*quantityCand
+
+         surplus <- (priceCand-mc)*quantityCand[prodIndex]
+
 
          return(sum(surplus))
      }
@@ -173,7 +163,7 @@ setMethod(
                               control=list(fnscale=-1))
 
      pricesHM <- minResult$par
-     priceDelta <- pricesHM/object@pricePre[prodIndex] - 1
+     priceDelta <- pricesHM/pricePre[prodIndex] - 1
 
      return(priceDelta)
 
@@ -183,7 +173,7 @@ setMethod(
 
 
 
-loglog <- function(prices,quantities,margins,diversions,
+loglin <- function(prices,quantities,margins,diversions,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
                      priceStart=prices,
@@ -202,7 +192,7 @@ loglog <- function(prices,quantities,margins,diversions,
     }
 
 
-    result <- new("LogLog",prices=prices, quantities=quantities,margins=margins,
+    result <- new("LogLin",prices=prices, quantities=quantities,margins=margins,
                   shares=shares,mcDelta=mcDelta, priceStart=priceStart,
                   ownerPre=ownerPre,diversion=diversions,
                   ownerPost=ownerPost, labels=labels)
@@ -215,12 +205,9 @@ loglog <- function(prices,quantities,margins,diversions,
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
 
-    ##Calculate constant marginal costs
-    result@mc <- calcMC(result)
-
-     ## Calculate pre and post merger equilibrium prices
-     result@pricePre  <- calcPrices(result,TRUE,...)
-     result@pricePost <- calcPrices(result,FALSE,...)
+    ## Calculate pre and post merger equilibrium prices
+    result@pricePre  <- calcPrices(result,TRUE,...)
+    result@pricePost <- calcPrices(result,FALSE,...)
 
 
    return(result)

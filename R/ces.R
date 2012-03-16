@@ -20,7 +20,7 @@ setMethod(
               shareInside  <-  object@shareInside
 
               ## uncover Numeraire Coefficients
-              if(shareInside < 1 && shareInside>0) {alpha <- 1/shareInside - 1}
+              if(shareInside <= 1 && shareInside>0) {alpha <- 1/shareInside - 1}
               else{alpha <- NULL}
 
               ## if sum of shares is less than 1, add numeraire
@@ -46,17 +46,17 @@ setMethod(
               minD <- function(gamma){
 
 
-                  elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
-                  diag(elast) <- -1*gamma + diag(elast)
+                  elasticity <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
+                  diag(elasticity) <- -gamma + diag(elasticity)
 
-                  marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% shares) / shares
+                  marginsCand <- -1 * as.vector(solve(elasticity * ownerPre) %*% shares) / shares
 
                   measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
                   return(measure)
               }
 
-              minGamma <- optimize(minD,c(1,1e12))$minimum
+              minGamma <- optimize(minD,c(1,1e6))$minimum
 
 
               meanval <- log(shares) - log(idxShare) + (minGamma - 1) * (log(prices) - log(idxPrice))
@@ -72,65 +72,13 @@ setMethod(
           )
 
 
-
-
-setMethod(
- f= "calcPrices",
- signature= "CES",
- definition=function(object,preMerger=TRUE,...){
-
-
-     if(preMerger){
-         mcDelta <- rep(0,length(object@mcDelta))
-         owner <- object@ownerPre
-     }
-
-     else{
-         mcDelta <- object@mcDelta
-         owner <- object@ownerPost
-     }
-
-
-     nprods <- length(object@shares)
-
-     gamma    <- object@slopes$gamma
-     meanval  <- object@slopes$meanval
-
-
-     ##Define system of FOC as a function of prices
-     FOC <- function(priceCand){
-
-         margins <- 1 - (object@mc * (1 + mcDelta)) / priceCand
-         shares <- meanval*priceCand^(1-gamma)
-         shares <- shares/sum(shares)
-
-         elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
-         diag(elast) <- -1*gamma + diag(elast)
-
-         thisFOC <- shares + as.vector((elast * owner) %*% (margins * shares))
-
-         return(thisFOC)
-     }
-
-     ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart,FOC,...)
-
-      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
-
-
-     priceEst        <- minResult$x
-     names(priceEst) <- object@labels
-
-     return(priceEst)
-
- }
- )
-
-
 setMethod(
  f= "calcShares",
  signature= "CES",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,revenue=FALSE){
+
+
+
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
@@ -141,40 +89,18 @@ setMethod(
      shares <- meanval*prices^(1-gamma)
      shares <- shares/sum(shares)
 
+     ##transform revenue shares to quantity shares
+     if(!revenue){shares <- (shares/prices)/sum(shares/prices)}
+
      names(shares) <- object@labels
 
-     return(shares)
+     return(as.vector(shares))
 
 }
  )
 
 
 
-
-
-setMethod(
- f= "calcMargins",
- signature= "CES",
- definition=function(object,preMerger=TRUE){
-
-     revenues     <- calcShares(object,TRUE)
-
-     elastPre <-  t(elast(object,TRUE))
-     marginPre <-  -1 * as.vector(solve(elastPre*object@ownerPre) %*% revenues) / revenues
-
-     if(preMerger){
-         names(marginPre) <- object@labels
-         return(marginPre)}
-
-     else{
-         priceDelta <- calcPriceDelta(object)
-         marginPost <- 1 - ((1 + object@mcDelta) * (1 - marginPre) / (priceDelta + 1) )
-         names(marginPost) <- object@labels
-         return(marginPost)
-     }
-
-}
- )
 
 
 setMethod(
@@ -182,16 +108,13 @@ setMethod(
  signature= "CES",
  definition=function(object,preMerger=TRUE){
 
-     if(preMerger){ prices <- object@pricePre}
-     else{          prices <- object@pricePost}
-
      gamma    <- object@slopes$gamma
 
-     shares <-  calcShares(object,preMerger)
+     shares <-  calcShares(object,preMerger,revenue=TRUE)
      nprods <-  length(shares)
 
      elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
-     diag(elast) <- -1*gamma + diag(elast)
+     diag(elast) <- -gamma + diag(elast)
 
      dimnames(elast) <- list(object@labels,object@labels)
 
@@ -202,27 +125,6 @@ setMethod(
 
 
 
-
-setMethod(
- f= "diversion",
- signature= "CES",
- definition=function(object,preMerger=TRUE){
-
-     if(preMerger){ prices <- object@pricePre}
-     else{          prices <- object@pricePost}
-
-    elasticity <- elast(object,preMerger)
-    shares     <- calcShares(object,preMerger)
-
-    diversion <- -1 * t(elasticity) / diag(elasticity)
-    diag(diversion) <- 1
-    diversion <- diversion * tcrossprod(1/shares,shares) * tcrossprod(prices,1/prices)
-
-    return(diversion)
-}
- )
-
-
 setMethod(
           f= "CV",
           signature= "CES",
@@ -230,10 +132,8 @@ setMethod(
 
               alpha       <- object@slopes$alpha
 
-              if(is.null(alpha)) stop("'shareInside' must be less than 1 to  calculate Compensating Variation")
-              if(missing(revenueInside) || isTRUE(revenueInside<0)) stop("'revenueInside' must be greater than 0 to  calculate Compensating Variation")
 
-              totExp    <- (1 + alpha) * revenueInside
+             if(is.null(alpha)) stop("'shareInside' must be between 0 and 1 to  calculate Compensating Variation")
 
               gamma       <- object@slopes$gamma
               meanval     <- object@slopes$meanval
@@ -241,61 +141,20 @@ setMethod(
 
 
 
-              tempPre  <- sum(meanval * object@pricePre^(1-gamma))
-              tempPost <- sum(meanval * object@pricePost^(1-gamma))
+              VPre  <- sum(meanval * object@pricePre^(1-gamma))
+              VPost <- sum(meanval * object@pricePost^(1-gamma))
 
-              CV <- exp(log(totExp) +  log(tempPre/tempPost)/((1+alpha) * (gamma-1))) - totExp
+              result <- log(VPost/VPre) / ((1+alpha)*(1-gamma))
 
-              return(CV)
+              if(missing(revenueInside)){
+                  warning("'revenueInside' is missing. Calculating CV as a percentage change in (aggregate) income")
+                  return(result*100)}
 
- })
+              else{
+                  totExp <- revenueInside*(1+alpha)
+                  return(totExp*(exp(result)-1))
+              }
 
-setMethod(
- f= "calcPriceDeltaHypoMon",
- signature= "CES",
- definition=function(object,prodIndex,...){
-
-     nprods <- length(prodIndex)
-     pricePreOld <- object@pricePre
-     gamma    <- object@slopes$gamma
-     meanval  <- object@slopes$meanval
-
-
-     ##Define system of FOC as a function of priceDelta
-     FOC <- function(priceCand){
-
-         thisPrice <- pricePreOld
-         thisPrice[prodIndex] <- priceCand
-
-         margins <- 1 - object@mc / thisPrice
-         shares <- meanval*thisPrice^(1-gamma)
-         shares <- shares/sum(shares)
-
-         shares <- shares[prodIndex]
-
-         elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
-         diag(elast) <- -1*gamma + diag(elast)
-
-         thisFOC <- shares + as.vector(elast  %*% (margins[prodIndex] * shares))
-
-
-         return(thisFOC)
-
-     }
-
-
-
-
-     ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
-
-     if(minResult$termcd != 1){warning("'calcPriceDeltaHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
-
-     priceDelta <- minResult$x/pricePreOld[prodIndex] - 1
-
-     names(priceDelta) <- object@labels[prodIndex]
-
-     return(priceDelta)
 
  })
 
@@ -329,8 +188,6 @@ ces <- function(prices,shares,margins,
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
 
-    ##Calculate constant marginal costs
-    result@mc <- calcMC(result)
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)

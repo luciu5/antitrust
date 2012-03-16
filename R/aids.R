@@ -1,14 +1,8 @@
-#setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
-#source("Classes.R")
-#source("Methods.R")
-
-
-
 setClass(
          Class = "AIDS",
          contains="Linear",
          representation=representation(
-         priceDeltaStart  = "numeric",
+         priceStart  = "numeric",
          priceDelta       = "numeric",
          mktElast         = "numeric"
          ),
@@ -22,8 +16,6 @@ setClass(
              ## Sanity Checks
 
              nprods <- length(object@shares)
-             if(nprods != length(object@priceDeltaStart)){
-                 stop("'priceDeltaStart' must have the same length as 'shares'")}
 
              if(!isTRUE(all.equal(sum(object@shares),1))){
                  stop("The sum of 'shares' values must equal 1")}
@@ -119,22 +111,18 @@ setMethod(
  definition=function(object,...){
 
 
-     ## Calculate premerger margins
-     marginPre <- calcMargins(object,TRUE)
-
 
      ##Define system of FOC as a function of priceDelta
-     FOC <- function(priceDelta,object){
+     FOC <- function(priceDelta){
 
-         sharePost <- object@shares +  as.vector(object@slopes %*% priceDelta)
+         object@priceDelta <- exp(priceDelta)-1
 
-         elastPost <- t(object@slopes/sharePost) + sharePost * (object@mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
-         diag(elastPost) <- diag(elastPost) - 1
+         sharePost <-  calcShares(object,FALSE)
+         elastPost <-  elast(object,FALSE)
+         marginPost <- calcMargins(object,FALSE)
 
-         marginPost <- 1 - ((1 + object@mcDelta) * (1 - marginPre) / exp(priceDelta))
 
-
-         thisFOC <- sharePost + as.vector((elastPost*object@ownerPost) %*% (sharePost*marginPost))
+         thisFOC <- sharePost + as.vector(t(elastPost*object@ownerPost) %*% (sharePost*marginPost))
          return(thisFOC)
 
      }
@@ -143,12 +131,12 @@ setMethod(
 
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceDeltaStart,FOC,object=object,...)
+     minResult <- nleqslv(object@priceStart,FOC,...)
 
      if(minResult$termcd != 1){warning("'calcPriceDelta' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
 
-     deltaPrice <- (exp(minResult$x)-1)
+     deltaPrice <- exp(minResult$x)-1
      names(deltaPrice) <- object@labels
 
      return(deltaPrice)
@@ -165,24 +153,36 @@ setMethod(
      ##if(any(is.na(object@prices)){warning("'prices' contains missing values. AIDS can only predict price changes, not price levels")}
 
      if(preMerger){prices <- object@prices}
-     else{ prices <- object@prices * (1 - object@priceDelta)}
+     else{ prices <- object@prices * (1 + object@priceDelta)}
 
+     names(prices) <- object@labels
+     return(prices)
      }
           )
 
 setMethod(
  f= "calcShares",
  signature= "AIDS",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,revenue=TRUE){
 
-     if(preMerger){return(object@shares)}
+     if(!revenue &&
+        any(is.na(object@prices))
+        ){
+         warning("'prices' contains missing values. Some quantity are missing")
+        }
 
-     else{
+     prices <- calcPrices(object,preMerger)
+     shares <- object@shares
 
-         shares <-  object@shares + as.vector(object@slopes %*% log(object@priceDelta + 1))
-         return(shares)
+
+     if(!preMerger){
+         shares <-  shares + as.vector(object@slopes %*% log(object@priceDelta + 1))
      }
 
+      if(!revenue){shares <- prices*shares/sum(prices*shares)}
+
+     names(shares) <- object@labels
+     return(shares)
  }
  )
 
@@ -224,6 +224,18 @@ setMethod(
 
           )
 
+
+setMethod(
+ f= "upp",
+ signature= "AIDS",
+ definition=function(object){
+
+     if(any(is.na(object@prices))){stop("UPP cannot be calculated without supplying values to 'prices'")}
+
+     else{return(callNextMethod(object))}
+     })
+
+
 setMethod(
  f= "cmcr",
  signature= "AIDS",
@@ -256,7 +268,7 @@ setMethod(
 setMethod(
           f= "CV",
           signature= "AIDS",
-          definition=function(object){
+          definition=function(object,totalRevenue){
 
               ## computes compensating variation using the closed-form solution found in LaFrance 2004, equation 10
 
@@ -265,13 +277,19 @@ setMethod(
 
               slopes <- object@slopes
               intercepts <- object@intercepts
-              pricePre <- object@pricePre
-              pricePost <- object@pricePost
+              pricePre <- log(object@pricePre)
+              pricePost <- log(object@pricePost)
 
-              ePre <-   sum(intercepts * log(pricePre))    + .5 * as.vector(log(pricePre)    %*% slopes %*% log(pricePre) )
-              ePost <-  sum(intercepts * log(pricePost)) + .5 * as.vector(log(pricePost) %*% slopes %*% log(pricePost) )
+              result <- sum(intercepts*(pricePost-pricePre)) + .5 * as.vector(t(pricePost)%*%slopes%*%pricePost - t(pricePre)%*%slopes%*%pricePre)
 
-              return( exp(ePost) - exp(ePre)  )
+
+              if(missing(totalRevenue)){
+                  warning("'totalRevenue' is missing. Calculating CV as a percentage change in (aggregate) income")
+                  return(result*100)}
+
+               else{
+                  return(totalRevenue*(exp(result)-1))
+              }
 
           }
           )
@@ -309,31 +327,24 @@ setMethod(
  signature= "AIDS",
  definition=function(object,prodIndex,...){
 
-     nprods <- length(prodIndex)
      priceDeltaOld <- object@priceDelta
-     shares <- object@shares
-     mktElast <- object@mktElast
-     slopes <- object@slopes
-
-      ## Calculate premerger margins
-     marginPre <- calcMargins(object,TRUE)[prodIndex]
-
 
      ##Define system of FOC as a function of priceDelta
      FOC <- function(priceDelta){
 
          priceCand <- priceDeltaOld
          priceCand[prodIndex] <- priceDelta
-         shareCand <- shares +  as.vector(slopes %*% priceCand)
+         object@priceDelta <- exp(priceCand)-1
 
-         elastPost <- t(slopes/shareCand) + shareCand * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
-         diag(elastPost) <- diag(elastPost) - 1
-         elastPost <- elastPost[prodIndex,prodIndex]
+         shareCand <-  calcShares(object,FALSE)
+         elastCand <-  elast(object,FALSE)
+         marginCand <- calcMargins(object,FALSE)
 
-         marginPost <- 1 - (1 - marginPre) / exp(priceDelta)
+         elastCand <-   elastCand[prodIndex,prodIndex]
+         shareCand <-   shareCand[prodIndex]
+         marginCand <-  marginCand[prodIndex]
 
-         shareCand <-  shareCand[prodIndex]
-         thisFOC <- shareCand + as.vector(elastPost %*% (shareCand*marginPost))
+         thisFOC <- shareCand + as.vector(t(elastCand) %*% (shareCand*marginCand))
          return(thisFOC)
 
      }
@@ -342,7 +353,7 @@ setMethod(
 
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceDeltaStart[prodIndex],FOC,...)
+     minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
 
      if(minResult$termcd != 1){warning("'calcPriceDeltaHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
@@ -373,7 +384,7 @@ setMethod(
 setMethod(
  f= "summary",
  signature= "AIDS",
- definition=function(object){
+ definition=function(object,revenue=TRUE,parameters=FALSE,digits=2,...){
 
 
      curWidth <-  getOption("width")
@@ -385,8 +396,8 @@ setMethod(
      pricePre   <-  object@pricePre
      pricePost  <-  object@pricePost
 
-     outPre  <-  calcShares(object,TRUE) * 100
-     outPost <-  calcShares(object,FALSE) * 100
+     outPre  <-  calcShares(object,TRUE,revenue) * 100
+     outPost <-  calcShares(object,FALSE,revenue) * 100
 
      mcDelta <- object@mcDelta
 
@@ -396,8 +407,8 @@ setMethod(
 
 
 
-         results <- data.frame(priceDelta=priceDelta,outputPre=outPre,
-                               outputPost=outPost,outputDelta=outDelta)
+         results <- data.frame(priceDelta=priceDelta,sharesPre=outPre,
+                               sharesPost=outPost,outputDelta=outDelta)
 
 
 
@@ -409,21 +420,53 @@ setMethod(
 
      rownames(results) <- paste(isParty,object@labels)
 
-      cat("\nMerger Simulation Results:\n\n")
+     cat("\nMerger simulation results under '",class(object),"' demand:\n\n",sep="")
+
 
      options("width"=100) # this width ensures that everything gets printed on the same line
-     print(results,digits=2)
+     print(round(results,digits),digits=digits)
      options("width"=curWidth) #restore to current width
 
      cat("\n\tNotes: '*' indicates merging parties' products. Deltas are percent changes.\n")
+     if(revenue){cat("\tOutput is based on revenues.\n")}
+     else{cat("\tOutput is based on units sold.\n")}
      results <- cbind(isParty, results)
 
-     cat("\n\nShare-Weighted Price Change:",round(sum(outPost/100*priceDelta),2),sep="\t")
-     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*outPost/100),2),sep="\t")
-
-
-     cat("\n\nAggregate Elasticity Estimate:",round(object@mktElast,2),sep="\t")
+     cat("\n\nShare-Weighted Price Change:",round(sum(outPost/100*priceDelta),digits),sep="\t")
+     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*outPost/100),digits),sep="\t")
+     if(!any(is.na(pricePre))){
+         cat("\nCompensating Variation (CV):",round(CV(object,...),digits),sep="\t")
+         }
      cat("\n\n")
+
+
+
+
+     if(parameters){
+
+         cat("\nAggregate Elasticity Estimate:",round(object@mktElast,digits),sep="\t")
+         cat("\n\n")
+         cat("\nDemand Parameter Estimates:\n\n")
+         print(round(object@slopes,digits))
+         cat("\n\n")
+
+
+          if(.hasSlot(object,"intercepts") && all(!is.na(object@intercepts))){
+
+              cat("\nIntercepts:\n\n")
+              print(round(object@intercepts,digits))
+              cat("\n\n")
+
+             }
+         if(hasMethod("getNestsParms",class(object))){
+             cat("\nNesting Parameter Estimates:\n\n")
+              print(round(getNestsParms(object),digits))
+
+             cat("\n\n")
+             }
+
+
+     }
 
      rownames(results) <- object@labels
      return(invisible(results))
@@ -438,7 +481,7 @@ setMethod(
 aids <- function(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
                  mcDelta=rep(0, length(shares)),
-                 priceDeltaStart=runif(length(shares)),
+                 priceStart=runif(length(shares)),
                  labels=paste("Prod",1:length(shares),sep=""),
                  ...){
 
@@ -458,7 +501,7 @@ aids <- function(shares,margins,prices,diversions,
                   ,margins=margins, prices=prices, quantities=shares,
                   ownerPre=ownerPre,ownerPost=ownerPost,
                   diversion=diversions,
-                  priceDeltaStart=priceDeltaStart,labels=labels)
+                  priceStart=priceStart,labels=labels)
 
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
@@ -474,10 +517,6 @@ aids <- function(shares,margins,prices,diversions,
     ## Calculate Pre and Post merger equilibrium prices
     result@pricePre  <- calcPrices(result,TRUE)
     result@pricePost <- calcPrices(result,FALSE)
-
-    ##Calculate constant marginal costs
-    result@mc <- calcMC(result)
-
 
 
     return(result)

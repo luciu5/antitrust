@@ -1,5 +1,3 @@
-##source("pclinear.R")
-
 
 setClass(
          Class   = "Logit",
@@ -8,7 +6,6 @@ setClass(
 
          prices           = "numeric",
          margins          = "numeric",
-         mc               = "numeric",
          pricePre         = "numeric",
          pricePost        = "numeric",
          priceStart       = "numeric",
@@ -19,8 +16,7 @@ setClass(
           prototype=prototype(
 
           pricePre      =  numeric(),
-          pricePost     =  numeric(),
-          mc            =  numeric()
+          pricePost     =  numeric()
 
         ),
 
@@ -29,25 +25,29 @@ setClass(
 
              ## Sanity Checks
 
+             margins <- object@margins
+
              nprods <- length(object@shares)
              sumShares <- sum(object@shares)
 
              if(
-                 nprods != length(object@margins) ||
+                 nprods != length(margins) ||
                  nprods != length(object@prices)){
                  stop("'prices', 'margins' and 'shares' must all be vectors with the same length")}
 
              if(any(object@prices<0,na.rm=TRUE))             stop("'prices' values must be positive")
 
 
-             if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
+             if(any(margins<0 | margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
 
              if(!(is.matrix(object@ownerPre) || is(object@ownerPre,"Matrix"))){
                  ownerPre <- ownerToMatrix(object,TRUE)
              }
              else{ownerPre <- object@ownerPre}
 
-             if(all(is.na(ownerPre %*% object@margins))) stop("Insufficient margin information to calibrate demand parameters.")
+
+             margins[is.na(margins)]=0
+             if(max(as.vector(ownerPre %*% margins))==0) stop("Insufficient margin information to calibrate demand parameters.")
 
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'shares'")}
@@ -74,6 +74,7 @@ setClass(
                       ". If 'shares' sum to 1 , or NA if the sum of shares is less than 1")
              }
 
+             return(TRUE)
 
          })
 
@@ -105,16 +106,17 @@ setMethod(
 
 
               nprods <- length(shares)
+              revenues <- shares * prices
 
 
               ## Minimize the distance between observed and predicted margins
               minD <- function(alpha){
 
-
+                  ## the following returns the elasticity TRANSPOSED
                   elast <- -alpha *  matrix(prices * shares,ncol=nprods,nrow=nprods)
-                  diag(elast) <- alpha*prices - diag(elast)
+                  diag(elast) <- alpha*prices + diag(elast)
 
-                  revenues <- shares * prices
+
                   marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues
 
                   measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
@@ -122,7 +124,7 @@ setMethod(
                   return(measure)
               }
 
-              minAlpha <- optimize(minD,c(-1e12,0))$minimum
+              minAlpha <- optimize(minD,c(-1e6,0))$minimum
 
 
               meanval <- log(shares) - log(idxShare) - minAlpha * (prices - idxPrice)
@@ -138,63 +140,30 @@ setMethod(
 
 
 
-## Create a function to recover marginal cost using
-## demand parameters and supplied prices
-setMethod(
-          f= "calcMC",
-          signature= "Logit",
-          definition= function(object){
-
-              object@pricePre <- object@prices
-
-
-              marginPre <- calcMargins(object,TRUE)
-
-              mc <- (1 - marginPre) * object@prices
-              names(mc) <- object@labels
-
-              return(mc)
-          }
-          )
-
-
 setMethod(
  f= "calcPrices",
  signature= "Logit",
  definition=function(object,preMerger=TRUE,...){
 
 
-     if(preMerger){
-         mcDelta <- rep(0,length(object@mcDelta))
-         owner <- object@ownerPre
-     }
+     if(preMerger){owner <- object@ownerPre}
+     else{owner <- object@ownerPost}
 
-     else{
-         mcDelta <- object@mcDelta
-         owner <- object@ownerPost
-     }
+     mc <- calcMC(object,preMerger)
 
-
-     nprods <- length(object@shares)
-     shareInside <- object@shareInside
-
-     alpha    <- object@slopes$alpha
-     meanval  <- object@slopes$meanval
-
-     isOutside   <- as.numeric(shareInside < 1)
 
      ##Define system of FOC as a function of prices
      FOC <- function(priceCand){
 
-         margins <- 1 - (object@mc * (1 + mcDelta)) / priceCand
-         shares <- exp(meanval + alpha*priceCand)
-         shares <- shares/(isOutside + sum(shares))
+         if(preMerger){ object@pricePre <- priceCand}
+         else{          object@pricePost <- priceCand}
 
-         elast <- -alpha * matrix(priceCand*shares,ncol=nprods,nrow=nprods)
-         diag(elast) <- alpha*priceCand - diag(elast)
 
-         revenues <-  shares * priceCand
-         thisFOC <- revenues + as.vector((elast * owner) %*% (margins * revenues))
+         margins   <- 1 - mc/priceCand
+         revenues  <- calcShares(object,preMerger,revenue=TRUE)
+         elasticities     <- elast(object,preMerger)
+
+         thisFOC <- revenues + as.vector(t(elasticities * owner) %*% (margins * revenues))
 
          return(thisFOC)
      }
@@ -216,7 +185,7 @@ setMethod(
 setMethod(
  f= "calcShares",
  signature= "Logit",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,revenue=FALSE){
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
@@ -226,6 +195,8 @@ setMethod(
 
      shares <- exp(meanval + alpha*prices)
      shares <- shares/(as.numeric(object@shareInside<1) + sum(shares))
+
+     if(revenue){shares <- prices*shares/sum(prices*shares)}
 
      names(shares) <- object@labels
 
@@ -250,7 +221,7 @@ setMethod(
      nprods <-  length(shares)
 
      elast <- -alpha  * matrix(prices*shares,ncol=nprods,nrow=nprods,byrow=TRUE)
-     diag(elast) <- alpha*prices - diag(elast)
+     diag(elast) <- alpha*prices + diag(elast)
 
      dimnames(elast) <- list(object@labels,object@labels)
 
@@ -270,12 +241,12 @@ setMethod(
               meanval     <- object@slopes$meanval
 
 
-              tempPre  <- sum(exp(meanval + object@pricePre*alpha))
-              tempPost <- sum(exp(meanval + object@pricePost*alpha))
+              VPre  <- sum(exp(meanval + object@pricePre*alpha))
+              VPost <- sum(exp(meanval + object@pricePost*alpha))
 
-              CV <- log(tempPre/tempPost)
+              result <- log(VPost/VPre)/alpha
 
-              return(CV)
+              return(result)
 
  })
 
@@ -286,19 +257,15 @@ setMethod(
  signature= "Logit",
  definition=function(object,prodIndex){
 
-     nprods <- length(prodIndex)
-     mc       <- object@mc[prodIndex]
-     alpha    <- object@slopes$alpha
-     meanval  <- object@slopes$meanval
-     pricePre <- object@pricePre
 
-     isOutside   <- as.numeric(object@shareInside < 1)
+     mc       <- calcMC(object,TRUE)[prodIndex]
+     pricePre <- object@pricePre
 
      calcMonopolySurplus <- function(priceCand){
 
          pricePre[prodIndex] <- priceCand #keep prices of products not included in HM fixed at premerger levels
-         sharesCand <- exp(meanval + alpha*pricePre)
-         sharesCand <- sharesCand/(isOutside + sum(sharesCand))
+         object@pricePre <- pricePre
+         sharesCand <- calcShares(object,TRUE,revenue=FALSE)
 
          surplus <- (priceCand-mc)*sharesCand[prodIndex]
 
@@ -311,7 +278,7 @@ setMethod(
                               control=list(fnscale=-1))
 
      pricesHM <- maxResult$par
-     priceDelta <- pricesHM/object@pricePre[prodIndex] - 1
+     priceDelta <- pricesHM/pricePre[prodIndex] - 1
 
      names(priceDelta) <- object@labels[prodIndex]
 
@@ -348,9 +315,6 @@ logit <- function(prices,shares,margins,
 
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
-
-    ##Calculate constant marginal costs
-    result@mc <- calcMC(result)
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)

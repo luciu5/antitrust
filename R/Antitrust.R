@@ -120,8 +120,13 @@ setGeneric (
  )
 
 setGeneric (
- name= "defineMarkets",
- def=function(object,...){standardGeneric("defineMarkets")}
+ name= "isMarket",
+ def=function(object,...){standardGeneric("isMarket")}
+ )
+
+setGeneric (
+ name= "smallestMarket",
+ def=function(object,...){standardGeneric("smallestMarket")}
  )
 
 
@@ -138,6 +143,11 @@ setGeneric (
 setGeneric (
  name= "hhi",
  def=function(object,...){standardGeneric("hhi")}
+ )
+
+setGeneric (
+ name= "upp",
+ def=function(object,...){standardGeneric("upp")}
  )
 
 
@@ -179,11 +189,27 @@ setMethod(
 setMethod(
  f= "hhi",
  signature= "Antitrust",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,revenue=FALSE){
 
-     shares=calcShares(object,preMerger) *100
+     if(preMerger){owner <- object@ownerPre}
+     else{owner <- object@ownerPost}
 
-     return(sum(shares^2))
+     control <- owner>0              #assumes that a firm can set prices
+                                     #on products over which it has partial ownership
+
+     weights <- crossprod(control,owner)
+     weights <- t(t(weights)/diag(weights)) # divide each element by its corresponding diagonal
+
+     shares <- calcShares(object,preMerger,revenue) *100
+
+     result <- as.vector(shares %*% weights %*% shares)
+
+
+
+
+     return(result)
+
+
 
  }
 )
@@ -209,21 +235,19 @@ setMethod(
 
 
      if( preMerger) {
-         prices <- object@pricePre
+
          owner  <- object@ownerPre
+         revenue<- calcShares(object,preMerger,revenue=TRUE)
 
-         shares     <- calcShares(object,preMerger)
-         revenue <- shares*prices
-
-         elast <-  t(elast(object,preMerger))
-         margins <-  -1 * as.vector(solve(elast*owner) %*% revenue) / revenue
+         elast <-  elast(object,preMerger)
+         margins <-  -1 * as.vector(solve(t(elast*owner)) %*% revenue) / revenue
 
 
      }
 
      else{
          prices <- object@pricePost
-         mc     <- calcMC(object,FALSE)
+         mc     <- calcMC(object,preMerger)
 
          margins <- 1 - mc/prices
      }
@@ -231,7 +255,7 @@ setMethod(
 
      names(margins) <- object@labels
 
-     return(margins)
+     return(as.vector(margins))
      }
 
  )
@@ -259,7 +283,7 @@ setMethod(
 
               names(mc) <- object@labels
 
-              return(mc)
+              return(as.vector(mc))
           }
           )
 
@@ -271,27 +295,38 @@ setMethod(
 setMethod(
  f= "summary",
  signature= "Antitrust",
- definition=function(object){
+ definition=function(object,revenue=TRUE,parameters=FALSE,digits=2,...){
 
      curWidth <-  getOption("width")
+
+
+     pricePre   <-  object@pricePre
+     pricePost  <-  object@pricePost
+     priceDelta <- (pricePost/pricePre - 1) * 100
 
      if(hasMethod("calcQuantities",class(object))){
          outPre  <-  calcQuantities(object,TRUE)
          outPost <-  calcQuantities(object,FALSE)
+
+         if(revenue){
+             outPre <- pricePre*outPre
+             outPost <- pricePost*outPost
+         }
+
+         sumlabels=paste("quantity",c("Pre","Post"),sep="")
      }
 
      else{
-         outPre  <-  calcShares(object,TRUE) * 100
-         outPost <-  calcShares(object,FALSE) * 100
+         outPre  <-  calcShares(object,TRUE,revenue) * 100
+         outPost <-  calcShares(object,FALSE,revenue) * 100
+
+         sumlabels=paste("shares",c("Pre","Post"),sep="")
      }
 
      mcDelta <- object@mcDelta
 
      outDelta <- (outPost/outPre - 1) * 100
 
-     pricePre   <-  object@pricePre
-     pricePost  <-  object@pricePost
-     priceDelta <- (pricePost/pricePre - 1) * 100
 
      isParty <- as.numeric(colSums( object@ownerPost - object@ownerPre)>0)
      isParty <- factor(isParty,levels=0:1,labels=c(" ","*"))
@@ -300,25 +335,66 @@ setMethod(
                            priceDelta=priceDelta,outputPre=outPre,
                            outputPost=outPost,outputDelta=outDelta)
 
+     colnames(results)[colnames(results) %in% c("outputPre","outputPost")] <- sumlabels
+
      if(sum(abs(mcDelta))>0) results <- cbind(results,mcDelta=mcDelta)
 
 
      rownames(results) <- paste(isParty,object@labels)
 
-     sharesPost <- calcShares(object,FALSE)
+     sharesPost <- calcShares(object,FALSE,revenue)
 
-     cat("\nMerger Simulation Results:\n\n")
+     cat("\nMerger simulation results under '",class(object),"' demand:\n\n",sep="")
 
      options("width"=100) # this width ensures that everything gets printed on the same line
-     print(results,digits=2)
+     print(round(results,digits),digits=digits)
      options("width"=curWidth) #restore to current width
 
      cat("\n\tNotes: '*' indicates merging parties' products. Deltas are percent changes.\n")
+     if(revenue){cat("\tOutput is based on revenues.\n")}
+     else{cat("\tOutput is based on units sold.\n")}
+
      results <- cbind(isParty, results)
 
-     cat("\n\nShare-Weighted Price Change:",round(sum(sharesPost*priceDelta),2),sep="\t")
-     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*sharesPost),2),sep="\t")
+     cat("\n\nShare-Weighted Price Change:",round(sum(sharesPost*priceDelta),digits),sep="\t")
+     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*sharesPost),digits),sep="\t")
+
+     ##Only compute upp if prices are supplied
+     uppExists <- tryCatch(upp(object),error=function(e) FALSE)
+     if(uppExists){
+     cat("\nShare-Weighted Net UPP:",round(sum(upp(object)*sharesPost),digits),sep="\t")}
+
+     ##Only compute CV if prices  are supplied
+     cvExists <- tryCatch(CV(object,...),error=function(e) FALSE)
+     if(cvExists){
+     cat("\nCompensating Variation (CV):",round(CV(object,...),digits),sep="\t")}
+
      cat("\n\n")
+
+
+     if(parameters){
+
+         cat("\nDemand Parameter Estimates:\n\n")
+         if(is.list(object@slopes)){
+             print(lapply(object@slopes,round,digits=digits))
+             }
+         else{
+         print(round(object@slopes,digits))
+         }
+         cat("\n\n")
+
+         if(.hasSlot(object,"intercepts")){
+
+             cat("\nIntercepts:\n\n")
+             print(round(object@intercepts,digits))
+             cat("\n\n")
+
+             }
+
+             if(.hasSlot(object,"constraint") && object@constraint){cat("\nNote: (non-singleton) nesting parameters are constrained to be equal")}
+             cat("\n\n")
+
+         }
 
      rownames(results) <- object@labels
      return(invisible(results))
@@ -367,21 +443,16 @@ setMethod(
  signature= "Antitrust",
  definition=function(object,preMerger=TRUE){
 
-     if(hasMethod("calcQuantities",class(object))){
-         output  <-  calcQuantities(object,preMerger)
-     }
 
-     else{
-         output  <-  calcShares(object,preMerger)
-     }
+     output  <-  calcShares(object,preMerger)
 
-    elasticity <- elast(object,preMerger)
+     elasticity <- elast(object,preMerger)
 
-    diversion <- -1 * t(elasticity) / diag(elasticity)
-    diag(diversion) <- 1
-    diversion <- diversion * tcrossprod(1/output,output)
+     diversion <- -1 * t(elasticity) / diag(elasticity)
 
-    return(diversion)
+     diversion <- diversion * tcrossprod(1/output,output)
+
+     return(diversion)
 }
  )
 
@@ -391,130 +462,209 @@ setMethod(
  signature= "Antitrust",
  definition=function(object){
 
-    pricePre <- object@pricePre
-    pricePre <- tcrossprod(1/pricePre,pricePre)
+     isParty <- colSums( object@ownerPost - object@ownerPre) > 0
 
-    elastPre <- elast(object,TRUE)
-    divPre <- diversion(object,TRUE)
+     ##Compute pre-merger margins
+     marginPre  <- calcMargins(object,TRUE)
 
-    Bpre =  -1 * divPre * pricePre * object@ownerPre;  diag(Bpre) = 1
-    Bpost = -1 * divPre * pricePre * object@ownerPost; diag(Bpost) = 1
 
-    marginPre <- -1 * as.vector(solve(Bpre)  %*% (1/diag(elastPre)))
-    marginPost <-     as.vector(solve(Bpost) %*%  Bpre %*% marginPre)
+     ##compute post-merger margins evaluated at pre-merger prices
+     object@ownerPre <- object@ownerPost
+     marginPost <- calcMargins(object,TRUE)
 
-    cmcr <- (marginPost - marginPre)/(1 - marginPre)
-    names(cmcr) <- object@labels
+     cmcr <- (marginPost - marginPre)/(1 - marginPre)
+     names(cmcr) <- object@labels
 
-    return(cmcr * 100)
+     return(cmcr * 100)
 }
  )
 
-##setMethod(
-##          f= "upp",
-##          signature= "Antitrust",
-##          definition=function(object,efficiency=0){
-
-##              div       <- diversion(object,TRUE)
-##              margin    <- calcMargins(object,TRUE)
-
-              ## compute the implicit "tax" that product i levies on product j ##
-##              Tax <- t(t(div * tcrossprod(1/object@pricePre,object@pricePre)) * margin)
-
-##              result <- Tax - efficiency * (1-margin)
-##              result <- result*ownerPre
-
-##              dimnames(result) <- list(object@labels,object@labels)
-
-##              isParty <- colSums( object@ownerPost - object@ownerPre)
-##              result[!isParty,!isParty] <- NA
-##              diag(result) <- NA
-##              return(result)
-##          }
-##          )
-
 ##Method to compute upp
+setMethod(
+          f= "upp",
+          signature= "Antitrust",
+         definition=function(object){
+
+             isParty     <- colSums( object@ownerPost - object@ownerPre) > 0
+
+             ownerPre    <- object@ownerPre[isParty,isParty]
+             ownerPost   <- object@ownerPost[isParty,isParty] #this will typically be a matrix of ones
+
+             is1         <- ownerPre[1,] > 0 # identify which products belong to the first merging party listed
+
+             upp         <- rep(NA,length(is1))
+             result      <- rep(0,length(isParty))
+
+             div         <- diversion(object,preMerger=TRUE)[isParty,isParty]
+             price       <- object@pricePre[isParty]
+
+             mcPre       <- calcMC(object,preMerger=TRUE)[isParty]
+             mcPost      <- calcMC(object,preMerger=FALSE)[isParty]
+             mcDelta     <- mcPost - mcPre
+
+             margin      <- 1 - mcPre/price
+
+
+             ## weight diversion ratios by price ratios and ownership matrices ##
+             priceRatio = tcrossprod(1/price, price)
+             Bpre  =  -1 * div * priceRatio * ownerPre
+             Bpost =  -1 * div * priceRatio * ownerPost
+
+
+             D1 <- (solve(Bpre[is1,is1,drop=FALSE])   %*%  Bpost[is1,!is1,drop=FALSE]) %*% margin[!is1] # owner 1 gross upp
+             D2 <- (solve(Bpre[!is1,!is1,drop=FALSE]) %*%  Bpost[!is1,is1,drop=FALSE]) %*% margin[is1]  # owner 2 gross upp
+
+             upp[is1]  <- -as.vector(D1)
+             upp[!is1] <- -as.vector(D2)
+
+             result[isParty] <- upp*price + mcDelta #net UPP
+
+             names(result) <- object@labels
+
+             return(result)
+
+         }
+          )
+
+
 
 
 ## Use the Hypothetical Monopolist Test to create the set of candidate markets
 ## that satisfy a SSNIP
 
 setMethod(
- f= "defineMarkets",
+ f= "isMarket",
  signature= "Antitrust",
- definition=function(object,startProd,ssnip=.05,supplyResponse=FALSE,...){
+          definition=function(object,prodIndex,ssnip=.05,supplyResponse=FALSE,...){
 
-     ownerPre <- object@ownerPre
-     nprods   <- ncol(ownerPre)
-     isParty <- colSums( object@ownerPost - object@ownerPre)>0 #identify which products belong to the merging parties
+              ownerPre <- object@ownerPre
+              nprods   <- ncol(ownerPre)
 
-     if(length(ssnip)>1 || ssnip<0 | ssnip>1 ){stop("'ssnip' must be a number between 0 and 1")}
+              if(missing(prodIndex) || any(prodIndex>nprods | prodIndex <1 ) ){
+                  stop("'prodIndex' must be a vector of product indices between 1 and ",nprods)
+              }
 
+              if(length(ssnip)>1 || ssnip<0 | ssnip>1 ){stop("'ssnip' must be a number between 0 and 1")}
 
-     if(missing(startProd)){
-         startProd <- which(isParty)[1]
-         warning("'startProd' not specified. Setting equal to ",startProd)
-     }
+              isParty <- colSums( object@ownerPost - ownerPre)>0 #identify which products belong to the merging parties
 
-     else if(!startProd %in% which(isParty)){stop("'startProd' must equal the position number of a merging parties' product")}
-
-     startDiversion <- diversion(object,TRUE)[startProd,]
-     closestSubs <- order(abs(startDiversion),decreasing = TRUE)
-
-     result <- matrix(NA,ncol=nprods+1,nrow=nprods)
+              if(length(intersect(which(isParty),prodIndex))==0){
+                  stop("'prodIndex' does not contain any of the merging parties' products. Add at least one of the following indices: ",
+                       paste(which(isParty),collapse=","))
+                  }
 
 
-     for( i in 1:length(closestSubs)){
-         candMonopolist <- closestSubs[1:i]
-
-         if(supplyResponse){
-             candOwner <- ownerPre
-
-             ##create ownership structure for
-             ## products owned by hypothetical monopolist
-
-             candOwner[candMonopolist,] <- candOwner[,candMonopolist] <- 0
-             candOwner[candMonopolist,candMonopolist] <- 1
-             object@ownerPost <- candOwner
-
-            ## if(hasMethod("calcPrices",class(object))){
-            ##     object@pricePost <- rep(NA,nprods) #allows priceDelta to equal NA if next line fails
-            ##     try(object@pricePost <- calcPrices(object,FALSE,...),silent=TRUE)
-            ## }
-
-             priceDelta <-  calcPriceDelta(object)[candMonopolist]
-
-         }
-
-         else{
-             priceDelta <- rep(NA,length(candMonopolist))  #allows priceDelta to equal NA if next line fails
-             try(priceDelta <-  calcPriceDeltaHypoMon(object,candMonopolist,...),silent=TRUE)}
-
-         result[i,candMonopolist] <- 1
-         result[i,nprods+1] <- max(priceDelta[which(isParty[candMonopolist])])
+              isIncluded <- 1:nprods %in% prodIndex # test which products included in model are in prodIndex
+              divParty <- abs(diversion(object,TRUE)[isParty & isIncluded,,drop=FALSE]) # only keep rows pertaining to merging parties' products
+              minDiv <- min(divParty[,prodIndex],na.rm=TRUE) # find the minimum diversion amongst products included in candidate market
 
 
-     }
-
-     colnames(result) <- c(object@labels,"MaxPriceDelta")
-     rownames(result) <- 1:nprods
-     result[,"MaxPriceDelta"] <- result[,"MaxPriceDelta"]*100
-
-     missingResults <- is.na(result[,nprods+1])
-
-     if(any(missingResults)){
-         warning("Price equilibria for some candidate markets could not be calculated.")
-     }
-
-     #cat("\nCandidate Markets:\n\n")
-
-     result <- result[!missingResults & result[,nprods+1] >= ssnip*100,]
-     #print(round(result))
-
-     #cat(paste("\n\tNotes: 'MaxPriceDelta' is in percent changes.\n"))
+              shouldInclude <- apply(divParty,2,min)
+              shouldInclude <- shouldInclude > minDiv & !isIncluded
 
 
+              if(supplyResponse){
 
-     return(result)
- }
+                  candOwner <- ownerPre
+
+                  ##create ownership structure for
+                  ## products owned by hypothetical monopolist
+
+                  candOwner[prodIndex,] <- candOwner[,prodIndex] <- 0
+                  candOwner[prodIndex,ProdIndex] <- 1
+                  object@ownerPost <- candOwner
+                  object@mcDelta <- rep(0,nprods)
+
+                  priceDelta <-  calcPriceDelta(object)[prodIndex]
+              }
+
+              else{
+                  priceDelta <- rep(NA,length(prodIndex))  #allows priceDelta to equal NA if next line fails
+                  try(priceDelta <-  calcPriceDeltaHypoMon(object,prodIndex,...),silent=TRUE)
+              }
+
+              result <- max(priceDelta[isParty]) > ssnip
+
+                if(result && any(shouldInclude)){
+                  warning("The following indices belong to products not included 'prodIndex' but with larger diversions from the merging parties' products than those products included in 'prodIndex': ",
+                          paste(which(shouldInclude),collapse=","))
+          }
+
+              return( result)
+          }
+
+              )
+
+
+setMethod(
+ f= "smallestMarket",
+ signature= "Antitrust",
+          definition=function(object,startProd,prodOrder,ssnip=.05,supplyResponse=FALSE,...){
+
+
+            ownerPre <- object@ownerPre
+            nprods   <- ncol(ownerPre)
+            isParty <- colSums( object@ownerPost - object@ownerPre)>0 #identify which products belong to the merging parties
+
+            if(length(ssnip)>1 || ssnip<0 | ssnip>1 ){stop("'ssnip' must be a number between 0 and 1")}
+
+
+            if(missing(startProd)){
+              startProd <- which(isParty)[1]
+              warning("'startProd' not specified. Setting equal to ",startProd)
+            }
+
+            else if(!startProd %in% which(isParty)){stop("'startProd' must equal the position number of a merging parties' product")}
+
+            ##if prodOrder isn't supplied, add products to Hypo Monopolist in order of greatest diversion
+            if(missing(prodOrder)){
+                startDiversion <- diversion(object,TRUE)[startProd,]
+                closestSubs <- order(abs(startDiversion),decreasing = TRUE)
+            }
+
+            else{
+                if(length(prodOrder)!=nprods){
+                    stop("The length of 'prodOrder' must equal the number of products included in the merger simulation")
+                    }
+                if(prodOrder[1] != startProd){
+                    stop("The first element of 'prodOrder' must equal 'startProd'")
+                    }
+            }
+
+            result <- rep(NA,nprods+1)
+
+            for( i in 1:length(closestSubs)){
+              candMonopolist <- closestSubs[1:i]
+
+              if(supplyResponse){
+                candOwner <- ownerPre
+
+                ##create ownership structure for
+                ## products owned by hypothetical monopolist
+
+                candOwner[candMonopolist,] <- candOwner[,candMonopolist] <- 0
+                candOwner[candMonopolist,candMonopolist] <- 1
+                object@ownerPost <- candOwner
+
+                priceDelta <-  calcPriceDelta(object)[candMonopolist]
+
+            }
+
+              else{
+                  priceDelta <- rep(NA,length(candMonopolist))  #allows priceDelta to equal NA if next line fails
+                  try(priceDelta <-  calcPriceDeltaHypoMon(object,candMonopolist,...),silent=TRUE)
+              }
+
+              result[candMonopolist] <- 1
+              result[nprods+1] <- max(priceDelta[which(isParty[candMonopolist])]) #max price change is only over merging parties' products
+
+              if(result[nprods+1] > ssnip){break}
+
+          }
+
+            names(result) <- c(object@labels,"MaxPriceDelta")
+            result["MaxPriceDelta"] <- result["MaxPriceDelta"]*100
+
+            return(result)
+          }
           )

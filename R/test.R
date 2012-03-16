@@ -5,7 +5,7 @@ setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
 source("Antitrust.R")
 source("linear.R")
 source("aids.R")
-source("loglog.R")
+source("loglin.R")
 source("logit.R")
 source("logitNests.R")
 source("ces.R")
@@ -27,6 +27,15 @@ testMethods <- function(object,param){
     print(diversion(object,TRUE))  # returns premerger diversion ratios
     print(diversion(object,FALSE)) # returns postmeger diversion ratios
 
+    print(calcMargins(object,TRUE)) #margins
+    print(calcMargins(object,FALSE))
+
+    print(calcShares(object,TRUE)) #shares
+    print(calcShares(object,FALSE))
+
+    print(calcMC(object,TRUE)) #mc
+    print(calcMC(object,FALSE))
+
     print(cmcr(object))            # returns the compensating marginal cost reduction
 
     print(defineMarkets(object)) # returns postmeger diversion ratios
@@ -45,7 +54,7 @@ testMethods <- function(object,param){
 
 
 ## Simulate a merger between two single-product firms in a
-## three-firm market with loglog demand with diversions
+## three-firm market with loglin demand with diversions
 ## that are proportional to shares.
 ## This example assumes that the merger is between
 ## the first two firms
@@ -81,12 +90,8 @@ testMethods(sim1)
 ## User-supplied diversions (this will give the same answer as above)
 
 
-
-d=tcrossprod(1/(1-shares),shares)
-diag(d)=-1
-
-result2 <- loglog(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
-sim2 <- sim(price,demand="LogLog",list(slopes=result2@slopes,intercepts=result2@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
+result2 <- loglin(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+sim2 <- sim(price,demand="LogLin",list(slopes=result2@slopes,intercepts=result2@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result2)
 testMethods(sim2)
 
@@ -94,7 +99,7 @@ testMethods(sim2)
 result3 <- pcaids(shares,-1/margin[1],-1,ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result3)
 
-result4 <- linear(price,quantity,margin,diversions=d,ownerPre=owner.pre,ownerPost=owner.post)
+result4 <- linear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
 sim4 <- sim(price,demand="Linear",list(slopes=result4@slopes,intercepts=result4@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result4)
 
@@ -121,7 +126,7 @@ names(price) <-
 
 
 ## ces demand
-result5 <- ces(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames,shareInside=.01)
+result5 <- ces(price,shares.revenue,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames,shareInside=.01)
 demand.parm <- result5@slopes
 demand.parm$shareInside=.01
 demand.parm$normIndex=1
@@ -129,26 +134,26 @@ sim5    <- sim(price,demand="CES",demand.parm,ownerPre=ownerPre,ownerPost=ownerP
 testMethods(result5,1e9)
 
 ## Nested ces demand
-result6 <- ces.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,shareInside=.01)
+result6 <- ces.nests(price,shares.revenue,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,shareInside=.01)
+result6.noconstraint <- ces.nests(price,shares.revenue,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,shareInside=.01,constraint=FALSE)
 demand.parm <- result6@slopes
 demand.parm$shareInside=.01
 demand.parm$normIndex=1
 sim6    <- sim(price,demand="CESNests",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
 testMethods(result6,1e9)
-
+testMethods(result6.noconstraint,1e9)
 
 knownElast=-2.5
 mktElast=-1
-d=tcrossprod(1/(1-shares.revenue),shares.revenue)
-diag(d)=-1
+
 
 ## PCAIDS demand
 ## Confirmed Against Epstein/Rubenfeld 2004 Beer example
 
-result11 <- aids(shares.revenue,margins.pcaids,prices=price,diversions=d,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+result11 <- aids(shares.revenue,margins.pcaids,prices=price,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 testMethods(result11)
 
-result7 <- pcaids(shares.revenue,knownElast,mktElast,knownElastIndex=1,diversions=d,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+result7 <- pcaids(shares.revenue,knownElast,mktElast,knownElastIndex=1,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 testMethods(result7)
 
 ## Nested PCAIDS demand
@@ -168,6 +173,8 @@ testMethods(result9)
 
 ## Nested logit demand
 result10 <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
+result10.noconstraint <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,constraint=FALSE)
+
 demand.parm <- result10@slopes
 demand.parm$shareInside=.01
 sim10    <- sim(price,demand="LogitNests",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)

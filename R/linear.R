@@ -6,9 +6,9 @@ setClass(
          prices           = "vector",
          quantities       = "numeric",
          margins          = "numeric",
-         mc               = "vector",
          pricePre         = "vector",
          pricePost        = "vector",
+         priceStart       = "numeric",
          diversion        = "matrix",
          symmetry         = "logical"
          ),
@@ -16,7 +16,6 @@ setClass(
           intercepts    =  numeric(),
           pricePre      =  numeric(),
           pricePost     =  numeric(),
-          mc            =  numeric(),
           symmetry      =  TRUE
 
 
@@ -39,13 +38,12 @@ setClass(
 
              if(!all(diag(object@diversion) == -1)){ stop("'diversion' diagonal elements must all equal -1")}
 
-             if(any(object@diversion[upper.tri(object@diversion)] > 1) ||
-                any(object@diversion[upper.tri(object@diversion)] < 0) ||
-                any(object@diversion[lower.tri(object@diversion)] > 1)  ||
-                any(object@diversion[lower.tri(object@diversion)] < 0)){
-                 stop("'diversion' off-diagonal elements must be between 0 and 1")}
+             if(any(abs(object@diversion[upper.tri(object@diversion)]) > 1) ||
+                any(abs(object@diversion[lower.tri(object@diversion)]) > 1)
+                ){
+                 stop("'diversion' off-diagonal elements must be between -1 and 1")}
 
-             if(isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),2))){ stop("'diversion' rows must sum to 2")}
+             if(isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),0))){ stop("'diversion' rows must sum to 0")}
 
 
              if(nprods != nrow(object@diversion) ||
@@ -53,7 +51,13 @@ setClass(
                  stop("'diversions' must be a square matrix")
              }
 
+
+             if(nprods != length(object@priceStart)){
+                 stop("'priceStart' must have the same length as 'shares'")}
+
+
              if(!is.logical(object@symmetry) || length(object@symmetry)!=1){stop("'symmetry' must equal TRUE or FALSE")}
+
              if(!object@symmetry &&
                 length(object@margins[!is.na(object@margins)])!= nprods){
                  stop("When 'symmetry' is FALSE, all product margins must be supplied")
@@ -148,51 +152,47 @@ setMethod(
  signature= "Linear",
  definition=function(object,preMerger=TRUE,...){
 
-
-
-     if(preMerger){
-         mcDelta <- rep(0,length(object@mcDelta))
-         owner <- object@ownerPre
-     }
-
-     else{
-         mcDelta <- object@mcDelta
-         owner <- object@ownerPost
-     }
-
      slopes    <- object@slopes
      intercept <- object@intercepts
-     mc <- object@mc
 
-     prices <- solve( slopes +  t(slopes*owner))
-     prices <- prices %*% (crossprod(slopes * owner,mc * (1+mcDelta)) -  intercept)
-     prices <- as.vector(prices)
+     if(preMerger){owner <- object@ownerPre}
+     else{owner <- object@ownerPost}
 
-     quantities <- as.vector(intercept + slopes%*%prices)
+     mc <- calcMC(object,preMerger)
+
+    ## prices <-
+    ##     solve(slopes + t(slopes*owner)) %*%
+    ##     (t(slopes*owner) %*% mc - intercept)
+
+    ## prices <- as.vector(prices)
+    ## quantities <- as.vector(intercept+ slopes %*% prices)
+    ## if(any(quantities<0)){
+    ##     warning("Some equilibrium quantities are predicted to be less than 0. Re-solving under the constraint that quantities are greater than 0")
+    ##     }
 
 
-     if(any(quantities<0)){
-         warning("The linear demand model has predicted that some equilibrium levels of output are negative. Re-simulating with the constraint that all equilibrium levels of output are non-negative.")
+     FOC <- function(priceCand){
 
-         FOC <- function(priceCand){
+         if(preMerger){ object@pricePre <- priceCand}
+         else{          object@pricePost <- priceCand}
 
-             quantity <- intercept + slopes%*%priceCand
-             thisFOC  <- quantity + t(slopes*owner) %*% (priceCand - mc * (1+mcDelta))
+         margins   <- priceCand - mc
+         quantities  <- calcQuantities(object,preMerger)
 
-             return(as.vector(crossprod(thisFOC)))
+         thisFOC <- quantities + t(slopes*owner) %*% margins
 
-         }
-
-         ##Find starting value that always meets boundary conditions
-         startParm <- as.vector(solve(slopes) %*% (-intercept + 1))
-         minResult <- constrOptim(startParm,FOC,grad=NULL,ui=slopes,ci=-intercept,...)
-
-          if(minResult$convergence != 0){
-              warning("'calcPrices' solver may not have successfully converged. Returning unconstrained result. 'constrOptim' reports: '",minResult$message,"'")}
-
-          else{prices <- minResult$par}
+         return(as.vector(crossprod(thisFOC)))
 
      }
+
+     ##Find starting value that always meets boundary conditions
+     ##startParm <- as.vector(solve(slopes) %*% (-intercept + 1))
+
+     minResult <- constrOptim(object@priceStart,FOC,grad=NULL,ui=slopes,ci=-intercept,...)
+     if(minResult$convergence != 0){
+         warning("'calcPrices' solver may not have successfully converged. Returning unconstrained result. 'constrOptim' reports: '",minResult$message,"'")}
+
+     prices <- minResult$par
 
 
      names(prices) <- object@labels
@@ -228,13 +228,20 @@ setMethod(
 setMethod(
  f= "calcShares",
  signature= "Linear",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,revenue=FALSE){
 
      quantities <- calcQuantities(object,preMerger)
 
-     return(quantities/sum(quantities))
+     if (revenue){
+         if(preMerger){ prices <- object@pricePre}
+         else{          prices <- object@pricePost}
+
+         return(prices*quantities/sum(prices*quantities))
+     }
+
+     else{return(quantities/sum(quantities))}
  }
-)
+          )
 
 
 setMethod(
@@ -286,7 +293,7 @@ setMethod(
      nprods <- length(prodIndex)
      intercept <- object@intercepts
      slopes <- object@slopes
-     mc <- object@mc[prodIndex]
+     mc <- calcMC(object,TRUE)[prodIndex]
      pricePre <- object@pricePre
 
      calcMonopolySurplus <- function(priceCand){
@@ -340,9 +347,10 @@ setMethod(
 
 
 linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
-                     ownerPre,ownerPost,
-                     mcDelta=rep(0,length(prices)),
-                     labels=paste("Prod",1:length(prices),sep=""),
+                   ownerPre,ownerPost,
+                   mcDelta=rep(0,length(prices)),
+                   priceStart=prices,
+                   labels=paste("Prod",1:length(prices),sep=""),
                    ...
                      ){
 
@@ -357,7 +365,7 @@ linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
      result <- new("Linear",prices=prices, quantities=quantities,margins=margins,
                    shares=shares,mcDelta=mcDelta,
                    ownerPre=ownerPre,diversion=diversions, symmetry=symmetry,
-                   ownerPost=ownerPost, labels=labels)
+                   ownerPost=ownerPost, priceStart=priceStart,labels=labels)
 
 
      ## Convert ownership vectors to ownership matrices
@@ -367,11 +375,8 @@ linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
     ## Calculate Demand Slope Coefficients and Intercepts
     result <- calcSlopes(result)
 
-    ##Calculate constant marginal costs
-    result@mc <- calcMC(result)
-
-    result@pricePre  <- calcPrices(result,TRUE)
-    result@pricePost <- calcPrices(result,FALSE)
+    result@pricePre  <- calcPrices(result,TRUE,...)
+    result@pricePost <- calcPrices(result,FALSE,...)
 
 
    return(result)

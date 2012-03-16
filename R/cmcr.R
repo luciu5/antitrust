@@ -1,48 +1,54 @@
-cmcr.cournot <- function(share,industryElasticity){
+cmcr.cournot <- function(shares,mktElast){
 
-    if(!is.vector(share) || length(share)!=2) { stop("'share' argument must be a vector of length 2")}
-    if(!is.vector(industryElasticity) || length(industryElasticity)!=1) { stop("'industryElasticity' argument must be a vector of length 1")}
-    if(any(share < 0,na.rm=TRUE) ||
-       any(share >1,na.rm=TRUE) ) {
-        stop("'share' argument must be between 0 and 1")}
-    if(any(industryElasticity < 0,na.rm=TRUE)) { stop("'industryElasticity' argument must be positive")}
+    if(!is.vector(shares) || length(shares)!=2) { stop("'shares'  must be a vector of length 2")}
+    if(!is.vector(mktElast) || length(mktElast)!=1) { stop("'mktElast'  must be a vector of length 1")}
+    if(any(shares < 0,na.rm=TRUE) ||
+       any(shares >1,na.rm=TRUE) ) {
+        stop("'shares'  must be between 0 and 1")}
+    if(any(mktElast < 0,na.rm=TRUE)) { stop("'mktElast'  must be positive")}
 
-    mcDelta <- 2*prod(share)/(industryElasticity*sum(share) - sum(share^2))
+    mcDelta <- 2*prod(shares)/(mktElast*sum(shares) - sum(shares^2))
+
 
     return(mcDelta*100)
 }
 
 
-cmcr.bertrand <- function(price, margin, diversion, ownerPre, ownerPost=matrix(1,ncol=length(price), nrow=length(price)), labels=paste("Prod",1:length(price),sep=""))
+cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matrix(1,ncol=length(prices), nrow=length(prices)), labels=paste("Prod",1:length(prices),sep=""))
 {
 
 
     ## Check to make sure inputs are sane ##
 
-    if(!(is.vector(price) & is.vector(margin))){
-        stop("'price' and 'margin' arguments must be vectors")}
+    if(!(is.vector(prices) & is.vector(margins))){
+        stop("'prices' and 'margins' must be vectors")}
 
-    nprod = length(price)
+    nprod = length(prices)
 
 
-    if(nprod != length(margin)){
-        stop("'price'and 'margin' vectors must be the same length")}
+    if(nprod != length(margins)){
+        stop("'prices'and 'margins' vectors must be the same length")}
 
-    if(any(price < 0,na.rm=TRUE)){ stop("'price' argument must be non-negative")}
-    if(any(margin < 0 || margin > 1,na.rm=TRUE) ){ stop("'margin' vector elements  must be between 0 and 1")}
+    if(any(prices < 0,na.rm=TRUE)){ stop("'prices'  must be non-negative")}
+    if(any(margins < 0 || margins > 1,na.rm=TRUE) ){ stop("'margins' vector elements  must be between 0 and 1")}
 
-    if(!is.matrix(diversion)){ stop("'diversion' argument must be a matrix")}
-    if(!all(diag(diversion) == 1,na.rm=TRUE)){ stop("'diversion' diagonal elements must all equal 1")}
-    if(any( abs(diversion) > 1,na.rm=TRUE)){ stop("'diversion' elements must be between -1 and 1")}
+    if(!is.matrix(diversions)){ stop("'diversions'  must be a matrix")}
+    if(!all(diag(diversions) == -1,na.rm=TRUE)){ stop("'diversions' diagonal elements must all equal -1")}
+    if(any( abs(diversions) > 1,na.rm=TRUE)){ stop("'diversions' elements must be between -1 and 1")}
+    if(ncol(diversions)!=nrow(diversions) ||
+       ncol(diversions)!= nprod){
+        stop("'diversions' must be a square matrix whose dimension equals the length of 'prices'")
+    }
 
-    if(!is.matrix(ownerPost)){ stop("'ownerPost' argument must be a matrix")}
+    if(!is.matrix(ownerPost)){ stop("'ownerPost'  must be a matrix")}
     if(any(ownerPost < 0 || ownerPost > 1,na.rm=TRUE)){ stop("'ownerPost' elements must be between 0 and 1")}
 
      ## transform pre-merger ownership vector into matrix##
-    if(is.vector(ownerPre)){
+    if(is.vector(ownerPre) ||
+       is.factor(ownerPre)){
 
         if(nprod != length(ownerPre)){
-            stop("'price'and 'ownerPre' vectors must be the same length")}
+            stop("'prices'and 'ownerPre' vectors must be the same length")}
 
         owners <- as.numeric(factor(ownerPre))
         ownerPre <- matrix(0,ncol=nprod,nrow=nprod)
@@ -57,29 +63,28 @@ cmcr.bertrand <- function(price, margin, diversion, ownerPre, ownerPost=matrix(1
 
 
 
-    else if(is.matrix(ownerPre))  {
-        if( ncol(ownerPre) != nrow(ownerPre) || any(ownerPre < 0 || ownerPre > 1,na.rm=TRUE)){
-            stop("'ownerPre' must be a square matrix whose elements are between 0 and 1")}
+    else if(!is.matrix(ownerPre) ||
+            ncol(ownerPre) != nrow(ownerPre) ||
+            any(ownerPre < 0 || ownerPre > 1,na.rm=TRUE) ||
+            ncol(ownerPre) != nprod
+            ){
+            stop("'ownerPre' must be a square matrix whose dimension equals the length of 'prices' and whose elements are between 0 and 1")}
 
-        if(length(diag(ownerPre)) != nprod){
-            stop("dimensions of 'ownerPre' must be the same as 'price' vector" )}
-
-    }
 
 
 
     ## weight diversion ratios by price ratios and ownership matrices ##
-    priceRatio = tcrossprod(1/price, price)
-    Bpre =  -1 * diversion * priceRatio * ownerPre;  diag(Bpre) = 1
-    Bpost = -1 * diversion * priceRatio * ownerPost; diag(Bpost) = 1
+    priceRatio = tcrossprod(1/prices, prices)
+    Bpre =  -1 * diversions * priceRatio * ownerPre;
+    Bpost = -1 * diversions * priceRatio * ownerPost;
 
 
 
     ##calculate post-merger margin ##
-    marginPost = as.vector(solve(Bpost) %*% Bpre %*% margin)
+    marginPost = as.vector(solve(Bpost) %*% Bpre %*% margins)
 
     ## calculate proportional change in marginal cost ##
-    mcDelta= (marginPost - margin)/(1 - margin)
+    mcDelta= (marginPost - margins)/(1 - margins)
 
     names(mcDelta) <- labels
 

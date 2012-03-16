@@ -1,6 +1,3 @@
-#source("pcaids.R")
-
-
 setClass(
          Class = "PCAIDSNests",
          contains="PCAIDS",
@@ -150,23 +147,6 @@ setMethod(
 
 
 
-setMethod(
- f= "summary",
- signature= "PCAIDSNests",
- definition=function(object){
-
-     callNextMethod(object)
-
-     cat("\nNesting Parameter Estimates:\n\n")
-     print(round(getNestsParms(object),2))
-
-     cat("\n\n")
-
-
- }
-
-
-)
 
 
 pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
@@ -174,7 +154,7 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
                          nests=rep(1,length(shares)),
                          knownElastIndex=1,
                          mcDelta=rep(0, length(shares)),
-                         priceDeltaStart=runif(length(shares)),
+                         priceStart=runif(length(shares)),
                          nestsParmStart,
                          labels=paste("Prod",1:length(shares),sep=""),
                          ...){
@@ -200,7 +180,7 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
                   ,knownElast=knownElast,mktElast=mktElast,nests=nests,
                   nestsParms=nestsParmStart, diversion=diversions,
                   ownerPre=ownerPre,ownerPost=ownerPost,knownElastIndex=knownElastIndex,
-                  priceDeltaStart=priceDeltaStart,labels=labels)
+                  priceStart=priceStart,labels=labels)
 
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
@@ -217,12 +197,6 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
     ## Calculate Pre and Post merger equilibrium prices
     result@pricePre  <- calcPrices(result,TRUE)
     result@pricePost <- calcPrices(result,FALSE)
-
-    ##Calculate constant marginal costs
-    ## These are equal to NA in pcaids
-    result@mc <- calcMC(result)
-
-
 
     return(result)
 

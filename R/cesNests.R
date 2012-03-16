@@ -1,4 +1,3 @@
-##source("ces.R")
 
 
 setClass(
@@ -8,10 +7,13 @@ setClass(
          representation=representation(
          nests="factor",
          parmsStart="numeric"
+         ,
+         constraint="logical"
          ),
 
          prototype=prototype(
-         parmsStart      =  numeric()
+         parmsStart      =  numeric(),
+         constraint=TRUE
          ),
 
          validity=function(object){
@@ -24,17 +26,38 @@ setClass(
              nMargins  <- length(object@margins[!is.na(object@margins)])
              maxNests  <- nMargins - 1
 
+             ## Identify Singleton Nests
+             nestCnt   <- tapply(object@prices,object@nests,length)
+             nestCnt   <- nestCnt[object@nests]
+             isSingleton <- nestCnt==1
+
              if(nNestParm==1) stop("'ces.nests' cannot be used for non-nested problems. Use 'ces' instead")
 
              if(nprods != length(object@nests)){
-                 stop("'nests' length must equal the number of products")}
+                 stop("'nests' length must equal the number of products")
+             }
 
              if(!(object@normIndex %in% seq(1,nprods)) ){
                  stop("'normIndex' value must be between 1 and the length of 'prices'")}
 
 
-             if(!is.vector(object@parmsStart) || nNestParm + 1 != length(object@parmsStart)){
-                 stop(paste("'parmsStart' must be a vector of length",nNestParm + 1))}
+              if(object@constraint && length(object@parmsStart)!=2){
+                 stop(paste("when 'constraint' is TRUE, 'parmsStart' must be a vector of length 2",nNestParm + 1))
+                 }
+             else if(!object@constraint && nNestParm + 1 != length(object@parmsStart)){
+                 stop(paste("when 'constraint' is FALSE, 'parmsStart' must be a vector of length",nNestParm + 1))
+             }
+
+
+             if(!object@constraint &&
+                any(tapply(object@margins[!isSingleton],object@nests[!isSingleton],
+                           function(x){if(all(is.na(x))){return(TRUE)} else{return(FALSE)}}
+                           )
+                    )
+                ){
+                 stop("when 'constraint' is FALSE, at least one product margin must be supplied for each non-singleton nest")
+             }
+
 
              if(nNestParm > nMargins){
                  stop(paste(
@@ -63,8 +86,25 @@ setMethod(
               shareInside  <-  object@shareInside
               nests        <- object@nests
               parmsStart   <- object@parmsStart
+              constraint   <- object@constraint
+
+              nestCnt      <- tapply(prices,nests,length)
 
 
+              isSingletonNest <- nestCnt==1
+
+              if(any(isSingletonNest)){
+                  warning("Some nests contain only one product; their nesting parameters are not identified.
+Normalizing these parameters to 1.")
+
+              }
+
+
+
+              if(!constraint){
+                  parmsStart   <- parmsStart[c(TRUE,!isSingletonNest)] #always retain first element; this is
+                                                                          # the initial value for price coefficient
+              }
 
                ## Uncover price coefficient and mean valuation from margins and revenue shares
 
@@ -89,17 +129,6 @@ setMethod(
               }
 
               else{
-                  nestIdx      <- which(levels(nests)==nests[idx]) # find index of nest whose parameter will be normalized to 1
-
-                  ## if inside shares all sum to 1,
-                  ## AND the chosen nest contains more than one product,
-                  ## drop the nest belonging to index
-
-                  isSingletonNest <- length(nests[nests==levels(nests)[nestIdx]])==1
-
-                  if(!isSingletonNest){
-                      parmsStart   <- parmsStart[-(nestIdx+1)]
-                  }
 
                   idxShare      <- shares[idx]
                   idxShareNests <- sharesNests[idx]
@@ -115,16 +144,8 @@ setMethod(
 
                   gamma  <- theta[1]
 
-                   if(is.na(idx) || isSingletonNest){
-                       sigma <- theta[-1]
-                   }
-
-                  else{
-                      sigma           <- rep(gamma+1,length=nlevels(nests))
-                      sigma[-nestIdx] <- theta[-1]
-                  }
-
-
+                  sigma <- as.numeric(!isSingletonNest) # normalize singleton nest parms to 0
+                  sigma[!isSingletonNest] <- theta[-1]
 
                   elast <- diag(sigma - gamma)
 
@@ -162,26 +183,24 @@ setMethod(
               minGamma <- minTheta$par[1]
               names(minGamma) <- "Gamma"
 
-              if(is.na(idx) || isSingletonNest){
-                  minSigma <- minTheta$par[-1]
-              }
-
-               else{
-                  minSigma           <- rep(minGamma+1 ,length=nlevels(nests))
-                  minSigma[-nestIdx] <- minTheta$par[-1]
-              }
-
+              minSigma <-  as.numeric(!isSingletonNest)
+              minSigma[!isSingletonNest] <- minTheta$par[-1]
 
 
               minSigmaOut        <- minSigma
               minSigma           <- minSigma[nests]
               names(minSigmaOut)    <- levels(nests)
 
-              idxSigma   <- minSigma[idx]
+              ##normalize outside good nesting parameter to 1
+              if(is.na(idx)){
+                  idxSigma   <- minSigma[idx]
+              }
+              else{idxSigma <- 0}
 
-              meanval <- log(shares) - log(idxShare) + (minGamma - 1) * (log(prices) - log(idxPrice))
-
-              meanval <- meanval - (minSigma-minGamma)/(minSigma-1)*log(sharesNests) +
+              meanval <-
+                  log(shares) - log(idxShare) + (minGamma - 1) *
+                  (log(prices) - log(idxPrice)) -
+                      (minSigma-minGamma)/(minSigma-1)*log(sharesNests) +
                          (idxSigma - minGamma)/(idxSigma-1)*log(idxShareNests)
 
               meanval <- exp( (minSigma-1)/(minGamma-1) * meanval )
@@ -196,79 +215,12 @@ setMethod(
           )
 
 
-
-
-setMethod(
- f= "calcPrices",
- signature= "CESNests",
- definition=function(object,preMerger=TRUE,...){
-
-
-
-     if(preMerger){
-         mcDelta <- rep(0,length(object@mcDelta))
-         owner <- object@ownerPre
-     }
-
-     else{
-         mcDelta <- object@mcDelta
-         owner <- object@ownerPost
-     }
-
-
-     nprods <- length(object@shares)
-     nests  <- object@nests
-
-     gamma    <- object@slopes$gamma
-     sigma    <- object@slopes$sigma
-     meanval  <- object@slopes$meanval
-
-
-     ##Define system of FOC as a function of prices
-     FOC <- function(priceCand){
-
-         margins      <- 1 - (object@mc * (1 + mcDelta)) / priceCand
-
-
-         sharesIn     <- meanval*priceCand^(1-sigma[nests])
-         sharesAcross <- tapply(sharesIn,nests,sum)
-         sharesIn     <- sharesIn / sharesAcross[nests]
-         sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
-         sharesAcross <- sharesAcross / sum(sharesAcross)
-
-         shares       <- sharesIn * sharesAcross[nests]
-
-
-
-         elast <- diag(sigma - gamma)
-
-         elast <- elast[nests,nests]
-         elast <- elast * matrix(sharesIn,ncol=nprods,nrow=nprods)
-         elast <- elast + (gamma-1) * matrix(shares,ncol=nprods,nrow=nprods)
-         diag(elast) <- diag(elast) - sigma[nests]
-
-         thisFOC <- shares + as.vector((elast * owner) %*% (margins * shares))
-         return(thisFOC)
-     }
-
-     ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart,FOC,...)
-
-      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
-
-     priceEst        <- minResult$x
-     names(priceEst) <- object@labels
-
-     return(priceEst)
-
- }
- )
-
-
 setMethod(
  f= "calcShares",
  signature= "CESNests",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,revenue=FALSE){
+
+
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
@@ -287,6 +239,9 @@ setMethod(
 
      shares       <- sharesIn * sharesAcross[nests]
 
+     ##transform revenue shares to quantity shares
+     if(!revenue){shares <- (shares/prices)/sum(shares/prices)}
+
      names(shares) <- object@labels
 
      return(as.vector(shares))
@@ -301,27 +256,19 @@ setMethod(
  signature= "CESNests",
  definition=function(object,preMerger=TRUE){
 
-     if(preMerger){ prices <- object@pricePre}
-     else{          prices <- object@pricePost}
-
      nests    <- object@nests
      gamma    <- object@slopes$gamma
      sigma    <- object@slopes$sigma
      meanval  <- object@slopes$meanval
 
-     sharesIn     <- meanval*prices^(1-sigma[nests])
-     sharesAcross <- tapply(sharesIn,nests,sum)
-     sharesIn     <- sharesIn / sharesAcross[nests]
-     sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
-     sharesAcross <- sharesAcross / sum(sharesAcross)
-
-     shares       <- sharesIn * sharesAcross[nests]
+     shares <- calcShares(object,preMerger,revenue=TRUE)
+     sharesNests <- shares/tapply(shares,nests,sum)[nests]
 
      nprods <-  length(shares)
 
      elast <- diag(sigma - gamma)
      elast <- elast[nests,nests]
-     elast <- elast * matrix(sharesIn,ncol=nprods,nrow=nprods,byrow=TRUE)
+     elast <- elast * matrix(sharesNests,ncol=nprods,nrow=nprods,byrow=TRUE)
      elast <- elast + (gamma-1) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
      diag(elast) <- diag(elast) - sigma[nests]
 
@@ -343,9 +290,7 @@ setMethod(
 
               alpha       <- object@slopes$alpha
 
-              if(is.null(alpha)) stop("'shareInside' must be less than 1 to  calculate Compensating Variation")
-               if(missing(revenueInside) || isTRUE(revenueInside<0)) stop("'revenueInside' must be greater than 0 to  calculate Compensating Variation")
-              totExp    <- (1 + alpha) * revenueInside
+                if(is.null(alpha)) stop("'shareInside' must be between 0 and 1 to  calculate Compensating Variation")
 
               nests       <- object@nests
               gamma       <- object@slopes$gamma
@@ -354,122 +299,29 @@ setMethod(
               shareInside <- object@shareInside
 
 
+              VPre  <- sum(tapply(meanval *  object@pricePre^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)))
+              VPost <- sum(tapply(meanval * object@pricePost^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)))
 
-              tempPre  <- log( sum( tapply(meanval * object@pricePre^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)) ) )
-              tempPre  <- (gamma/(gamma-1)) * log( sum( tapply( meanval^((1-gamma)/(1-sigma[nests])) * object@pricePre^(-gamma),nests,sum)^((gamma-1)/gamma)) ) - tempPre
+              ##tempPre  <- log( sum( tapply(meanval * object@pricePre^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)) ) )
+              ##tempPre  <- (gamma/(gamma-1)) * log( sum( tapply( meanval^((1-gamma)/(1-sigma[nests])) * object@pricePre^(-gamma),nests,sum)^((gamma-1)/gamma)) ) - tempPre
 
-              tempPost  <- log( sum( tapply(meanval * object@pricePost^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)) ) )
-              tempPost  <- (gamma/(gamma-1)) * log( sum( tapply( meanval^((1-gamma)/(1-sigma[nests])) * object@pricePost^(-gamma),nests,sum)^((gamma-1)/gamma)) ) - tempPost
-
-
-
-              CV <- exp(log(totExp) + (tempPre - tempPost)/(1+alpha)) - totExp
-
-              names(CV) <- NULL
-
-              return(CV)
-
- })
+              ##tempPost  <- log( sum( tapply(meanval * object@pricePost^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)) ) )
+              ##tempPost  <- (gamma/(gamma-1)) * log( sum( tapply( meanval^((1-gamma)/(1-sigma[nests])) * object@pricePost^(-gamma),nests,sum)^((gamma-1)/gamma)) ) - tempPost
 
 
-setMethod(
-          f= "getNestsParms",
-          signature= "CESNests",
-          definition=function(object){
+              result <- log(VPost/VPre) / ((1+alpha)*(1-gamma))
+              names(result) <- NULL
+              if(missing(revenueInside)){
+                  warning("'revenueInside' is missing. Calculating CV as a percentage change in (aggregate) income")
+                  return(result*100)}
 
-              nestParms <- object@slopes$sigma
-
-              return(nestParms)
-
-          }
-
-          )
-
-
-setMethod(
- f= "summary",
- signature= "CESNests",
- definition=function(object){
-
-     callNextMethod(object)
-
-     nestParms <- getNestsParms(object)
-
-     cat("\nNesting Parameter Estimates:\n\n")
-     print(round(nestParms,2))
-
-     cat("\n\n")
-
-
-}
- )
-
-
-setMethod(
- f= "calcPriceDeltaHypoMon",
- signature= "CESNests",
- definition=function(object,prodIndex,...){
-
-     nprods <- length(prodIndex)
-     nests  <- object@nests
-     pricePreOld <- object@pricePre
-     gamma    <- object@slopes$gamma
-     sigma    <- object@slopes$sigma
-     meanval  <- object@slopes$meanval
-
-
-     ##Define system of FOC as a function of priceDelta
-     FOC <- function(priceCand){
-
-
-         thisPrice <- pricePreOld
-         thisPrice[prodIndex] <- priceCand
-         nprods <- length(thisPrice)
-
-         margins <- 1 - object@mc / thisPrice
-
-         sharesIn     <- meanval*thisPrice^(1-sigma[nests])
-         sharesAcross <- tapply(sharesIn,nests,sum)
-         sharesIn     <- sharesIn / sharesAcross[nests]
-         sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
-         sharesAcross <- sharesAcross / sum(sharesAcross)
-
-         shares       <- sharesIn * sharesAcross[nests]
-
-
-         elast <- diag(sigma - gamma)
-
-         elast <- elast[nests,nests]
-         elast <- elast * matrix(sharesIn,ncol=nprods,nrow=nprods)
-         elast <- elast + (gamma-1) * matrix(shares,ncol=nprods,nrow=nprods)
-         diag(elast) <- diag(elast) - sigma[nests]
-         elast <- elast[prodIndex,prodIndex]
-
-         shares <-  shares[prodIndex]
-         margins <- margins[prodIndex]
-
-         thisFOC <- shares + as.vector(elast  %*% (margins * shares))
-
-
-         return(thisFOC)
-
-     }
-
-
-
-
-     ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
-
-     if(minResult$termcd != 1){warning("'calcPriceDeltaHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
-
-     priceDelta <- minResult$x/pricePreOld[prodIndex] - 1
-
-     names(priceDelta) <- object@labels[prodIndex]
-
-     return(priceDelta)
+              else{
+                  totExp <- revenueInside*(1+alpha)
+                  return(totExp*(exp(result)-1))
+                  }
 
  })
+
 
 
 ces.nests <- function(prices,shares,margins,
@@ -479,6 +331,7 @@ ces.nests <- function(prices,shares,margins,
                       normIndex=ifelse(sum(shares) < 1,NA,1),
                       mcDelta=rep(0,length(prices)),
                       priceStart = prices,
+                      constraint = TRUE,
                       parmsStart,
                       labels=paste("Prod",1:length(prices),sep=""),
                       ...
@@ -493,6 +346,8 @@ ces.nests <- function(prices,shares,margins,
     if(missing(parmsStart)){
         nNests <- nlevels(nests)
         parmsStart <- cumsum(runif(nNests+1,1,1.5)) # parameter values are assumed to be greater than 1
+
+        if(constraint){parmsStart <- parmsStart[1:2]}
                             }
 
     ## Create CESNests  container to store relevant data
@@ -504,6 +359,7 @@ ces.nests <- function(prices,shares,margins,
                   normIndex=normIndex,
                   parmsStart=parmsStart,
                   priceStart=priceStart,
+                  constraint=constraint,
                   shareInside=shareInside,labels=labels)
 
     ## Convert ownership vectors to ownership matrices
@@ -513,8 +369,6 @@ ces.nests <- function(prices,shares,margins,
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
 
-    ##Calculate constant marginal costs
-    result@mc <- calcMC(result)
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)
     result@pricePost <- calcPrices(result,FALSE,...)

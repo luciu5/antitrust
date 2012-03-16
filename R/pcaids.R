@@ -1,9 +1,3 @@
-#setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
-#source("Classes.R")
-#source("Methods.R")
-
-
-
 setClass(
          Class = "PCAIDS",
          contains="AIDS",
@@ -87,7 +81,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
                    ownerPre,ownerPost,
                    knownElastIndex=1,
                    mcDelta=rep(0, length(shares)),
-                   priceDeltaStart=runif(length(shares)),
+                   priceStart=runif(length(shares)),
                    labels=paste("Prod",1:length(shares),sep=""),
                    ...){
 
@@ -107,7 +101,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
                   ownerPre=ownerPre,ownerPost=ownerPost,
                   knownElastIndex=knownElastIndex,
                   diversion=diversions,
-                  priceDeltaStart=priceDeltaStart,labels=labels)
+                  priceStart=priceStart,labels=labels)
 
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
@@ -124,11 +118,6 @@ pcaids <- function(shares,knownElast,mktElast=-1,
     ## These are equal to NA in pcaids
     result@pricePre  <- calcPrices(result,TRUE)
     result@pricePost <- calcPrices(result,FALSE)
-
-    ##Calculate constant marginal costs
-    ## These are equal to NA in pcaids
-    result@mc <- calcMC(result)
-
 
 
     return(result)

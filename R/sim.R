@@ -1,4 +1,4 @@
-sim <- function(prices,demand=c("Linear","AIDS","LogLog","Logit","CES","LogitNests","CESNests"),demand.param,
+sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests"),demand.param,
                      ownerPre,ownerPost,nests=NULL,
                      mcDelta=rep(0,length(prices)),
                      priceStart=prices,
@@ -42,14 +42,19 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLog","Logit","CES","LogitNes
             if(is.null(nests) ||
                length(nests)!= nprods ){stop("When 'demand' equals 'CESNests' or 'LogitNests', 'nests' must equal a vector whose length equals the number of products.")}
 
-            if(nlevels(nests) != length(demand.param$sigma)){stop("The number of nests in 'nests' does not equal to the number of nesting paramters in 'demand.param$sigma'.")}
+            if(nlevels(nests) != length(demand.param$sigma) &&
+               length(demand.param$sigma) != 1){
+                stop("The number of nests in 'nests' must either equal 1 or the number of nesting parameters in 'demand.param$sigma'.")}
+
+            if(length(demand.param$sigma)){constraint=TRUE}
+            else{constraint=FALSE}
 
         }
      }
 
 
     ## Sanity checks for Linear-demand style models
-    if(demand %in% c("Linear","LogLog","AIDS")){
+    if(demand %in% c("Linear","LogLin","AIDS")){
 
         if(!("slopes" %in% names(demand.param))){stop("'demand.param' does not contain 'slopes'")}
         if(!("intercepts" %in% names(demand.param))){stop("'demand.param' does not contain 'intercepts'")}
@@ -110,6 +115,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLog","Logit","CES","LogitNes
                        normIndex=normIndex,
                        parmsStart=c(demand.param$gamma,demand.param$sigma),
                        priceStart=priceStart,
+                       constraint=constraint,
                        shareInside=shareInside,labels=labels)
 
     }
@@ -135,6 +141,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLog","Logit","CES","LogitNes
                        normIndex=normIndex,
                        parmsStart=c(demand.param$alpha,demand.param$sigma),
                        priceStart=priceStart,
+                      constraint=constraint,
                        shareInside=shareInside,labels=labels)
 
     }
@@ -202,7 +209,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLog","Logit","CES","LogitNes
       result <- new(demand,prices=prices, quantities=shares,margins=margins,
                    shares=shares,mcDelta=mcDelta,
                    ownerPre=ownerPre,diversion=-diag(nprods), symmetry=FALSE,
-                   ownerPost=ownerPost, labels=labels)
+                   ownerPost=ownerPost, priceStart=priceStart,labels=labels)
 
  }
 
@@ -215,14 +222,14 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLog","Logit","CES","LogitNes
                     shares=as.vector(demand.param$intercepts + demand.param$slopes %*% prices), # AIDS needs actual shares for prediction
                     mcDelta=mcDelta, mktElast=demand.param$mktElast,
                     ownerPre=ownerPre,diversion=-diag(nprods),
-                    priceDeltaStart=priceStart,
+                    priceStart=priceStart,
                     ownerPost=ownerPost, labels=labels)
 
  }
 
 
 
- else if(demand == "LogLog"){
+ else if(demand == "LogLin"){
 
 
       result <- new(demand,prices=prices, quantities=shares,margins=margins,
@@ -233,7 +240,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLog","Logit","CES","LogitNes
  }
 
 
-    if(demand %in% c("Linear","LogLog","AIDS")){
+    if(demand %in% c("Linear","LogLin","AIDS")){
         result@slopes <- demand.param$slopes
         result@intercepts <- demand.param$intercepts
     }
@@ -244,8 +251,6 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLog","Logit","CES","LogitNes
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)
 
-    ## Uncover marginal costs
-    result@mc        <- calcMC(result)
 
     if(demand == "AIDS"){
         ## Solve Non-Linear System for Price Changes
