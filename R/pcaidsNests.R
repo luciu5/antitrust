@@ -155,6 +155,7 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
                          knownElastIndex=1,
                          mcDelta=rep(0, length(shares)),
                          priceStart=runif(length(shares)),
+                         isMax=FALSE,
                          nestsParmStart,
                          labels=paste("Prod",1:length(shares),sep=""),
                          ...){
@@ -191,7 +192,7 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
 
 
     ## Solve Non-Linear System for Price Changes
-    result@priceDelta <- calcPriceDelta(result,...)
+    result@priceDelta <- calcPriceDelta(result,isMax=isMax,...)
 
 
     ## Calculate Pre and Post merger equilibrium prices
