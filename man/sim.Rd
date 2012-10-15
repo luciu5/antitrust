@@ -1,0 +1,147 @@
+\name{sim}
+\alias{sim}
+\title{Merger Simulation With User-Supplied Demand Parameters}
+
+\description{Simulates the price effects of a merger between two firms
+  with user-supplied demand parameters under the assumption that all firms in the market are playing a
+  differentiated products Bertrand pricing game.}
+
+\usage{sim(prices, demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap"),
+                     demand.param,
+                     ownerPre,ownerPost,nests, capacities,
+                     mcDelta=rep(0,length(prices)),
+                     priceStart=prices,
+                     labels=paste("Prod",1:length(prices),sep=""),...
+             )
+             }
+
+\arguments{
+  \item{}{Let k denote the number of products produced by all firms.}
+  \item{prices}{A length k vector of product prices.}
+  \item{demand}{A character string indicating the type of demand system
+    to be used in the merger simulation. Supported demand systems are
+    linear (`Linear'), log-linear(`LogLin'), logit (`Logit'), nested logit
+    (`LogitNests'), ces (`CES'), nested CES (`CESNests') and capacity
+    constrained Logit (`LogitCap').}
+  \item{demand.param}{ See Below.}
+  \item{ownerPre}{EITHER a vector of length k whose values
+    indicate which firm produced a product pre-merger OR
+    a k x k matrix of pre-merger ownership shares.}
+  \item{ownerPost}{EITHER a vector of length k whose values
+    indicate which firm produced a product after the merger OR
+    a k x k matrix of post-merger ownership shares.}
+  \item{nests}{A length k vector identifying the nest that each
+    product belongs to. Must be supplied when `demand' equals `CESNests' and
+    `LogitNests'.}
+  \item{capacities}{A length k vector of product capacities.  Must be
+    supplied when `demand' equals `LogitCap'.}
+  \item{mcDelta}{A vector of length k where each element equals the
+    proportional change in a product's marginal costs due to
+    the merger. Default is 0, which assumes that the merger does not
+    affect any products' marginal cost.}
+  \item{priceStart}{A length k vector of starting values used to solve for
+    equilibrium price. Default is the `prices' vector.}
+  \item{labels}{A k-length vector of labels. Default is "Prod#", where
+    `#' is a number between 1 and the length of `prices'.}
+  \item{...}{Additional options to feed to the
+    optimizer used to solve for equilibrium prices.}
+}
+
+
+
+\details{Using user-supplied demand parameters,
+  \code{sim} simulates the effects of a merger in a market where
+  firms are playing a differentiated products pricing game.
+
+  If `demand' equals `Linear', `LogLin', or `AIDS', then `demand.parm' must be a
+  list containing `slopes', a k x k matrix of slope coefficients, and
+  `intercepts', a length-k vector of intercepts. Additionally, if
+  `demand' equals `AIDS', `demand.parm' must contain `mktElast', an
+  estimate of aggregate market elasticity.  For `Linear'
+  demand models, \code{sim} returns an error if any intercepts are
+  negative, and for both `Linear', `LogLin', and `AIDS' models,  \code{sim}
+  returns an error if not all diagonal elements of the slopes matrix are
+  negative.
+
+  If `demand' equals `Logit' or `LogitNests', then
+  `demand.parm' must equal a list containing
+  \itemize{
+    \item{alpha}{The price coefficient.}
+    \item{meanval}{A length-k vector of mean valuations `meanval'. If
+  none of the values of `meanval' are zero, an outside good is assumed
+  to exist.}
+}
+  If demand equals `CES' or `CESNests', then
+  `demand.parm' must equal a list containing
+
+  \itemize{
+    \item{gamma}{ The price coefficient,}
+    \item{alpha}{The coefficient on the numeraire good. May instead be
+      calibrated using `shareInside',}
+    \item{meanval}{A length-k vector of mean valuations `meanval'. If
+  none of the values of `meanval' are zero, an outside good is assumed
+  to exist,}
+    \item{shareInside}{ The budget share of all products in the
+    market. Default is 1, meaning that all consumer wealth is spent on
+    products in the market. May instead be specified using `alpha'.}
+
+}
+}
+
+\value{\code{sim} returns an instance of the class specified by the
+  `demand' argument.}
+
+
+
+
+
+
+\seealso{The S4 class documentation for: \code{\linkS4class{Linear}},
+  \code{\linkS4class{AIDS}}, \code{\linkS4class{LogLin}}, \code{\linkS4class{Logit}},
+  \code{\linkS4class{LogitNests}}, \code{\linkS4class{CES}}, \code{\linkS4class{CESNests}}}
+
+\author{Charles Taragin \email{charles.taragin@usdoj.gov}}
+
+
+
+\examples{
+
+## Calibration and simulation results from a merger between Budweiser and
+## Old Style. Note that the in the following model there is no outside
+## good; BUD's mean value has been normalized to zero.
+
+## Source: Epstein/Rubenfeld 2004, pg 80
+
+
+prodNames <- c("BUD","OLD STYLE","MILLER","MILLER-LITE","OTHER-LITE","OTHER-REG")
+ownerPre <-c("BUD","OLD STYLE","MILLER","MILLER","OTHER-LITE","OTHER-REG")
+ownerPost <-c("BUD","BUD","MILLER","MILLER","OTHER-LITE","OTHER-REG")
+nests <- c("Reg","Reg","Reg","Light","Light","Reg")
+
+price    <- c(.0441,.0328,.0409,.0396,.0387,.0497)
+
+demand.parm=list(alpha=-48.0457,
+                 meanval=c(0,0.4149233,1.1899885,0.8252482,0.1460183,1.4865730)
+                )
+
+sim.logit <- sim(price,demand="Logit",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost)
+
+
+
+print(sim.logit)           # return predicted price change
+summary(sim.logit)         # summarize merger simulation
+
+elast(sim.logit,TRUE)      # returns premerger elasticities
+elast(sim.logit,FALSE)     # returns postmerger elasticities
+
+diversion(sim.logit,TRUE)  # return premerger diversion ratios
+diversion(sim.logit,FALSE) # return postmerger diversion ratios
+
+
+cmcr(sim.logit)            #calculate compensating marginal cost reduction
+upp(sim.logit)             #calculate Upwards Pricing Pressure Index
+
+CV(sim.logit)              #calculate representative agent compensating variation
+
+
+}
