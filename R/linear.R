@@ -1,24 +1,18 @@
 setClass(
          Class = "Linear",
-         contains="Antitrust",
+         contains="Bertrand",
          representation=representation(
          intercepts       = "vector",
          prices           = "vector",
          quantities       = "numeric",
          margins          = "numeric",
-         pricePre         = "vector",
-         pricePost        = "vector",
          priceStart       = "numeric",
          diversion        = "matrix",
          symmetry         = "logical"
          ),
           prototype=prototype(
           intercepts    =  numeric(),
-          pricePre      =  numeric(),
-          pricePost     =  numeric(),
           symmetry      =  TRUE
-
-
         ),
          validity=function(object){
 
@@ -247,20 +241,30 @@ setMethod(
 setMethod(
  f= "elast",
  signature= "Linear",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,market=FALSE){
 
        if(preMerger){ prices <- object@pricePre}
        else{          prices <- object@pricePost}
 
-      slopes    <- object@slopes
+       slopes    <- object@slopes
 
 
-      quantities <-  calcQuantities(object,preMerger)
+       quantities <-  calcQuantities(object,preMerger)
 
-      elast <- slopes * tcrossprod(1/quantities,prices)
-      dimnames(elast) <- list(object@labels,object@labels)
+       if(market){
 
-      return(elast)
+           elast <-sum(slopes)/sum(quantities) * sum(quantities * prices / sum(quantities))
+
+       }
+
+       else{
+
+
+           elast <- slopes * tcrossprod(1/quantities,prices)
+           dimnames(elast) <- list(object@labels,object@labels)
+       }
+
+       return(elast)
 
 }
  )
