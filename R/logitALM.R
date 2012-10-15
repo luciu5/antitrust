@@ -1,0 +1,124 @@
+setClass(
+         Class   = "LogitALM",
+         contains="Logit",
+         representation=representation(
+          parmsStart="numeric"
+         ),
+         prototype=prototype(
+         normIndex         =  1
+         ),
+
+         validity=function(object){
+
+             ## Sanity Checks
+
+             nMargins  <- length(object@margins[!is.na(object@margins)])
+
+             if(nMargins<2){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
+
+             if(object@shareInside!=1){
+                 stop(" sum of 'shares' must equal 1")
+             }
+
+              if(length(object@parmsStart)!=2){
+                 stop("'parmsStart' must a vector of length 2")
+                 }
+         }
+         )
+
+setMethod(
+          f= "calcSlopes",
+          signature= "LogitALM",
+          definition=function(object){
+
+              ## Uncover Demand Coefficents
+
+              ownerPre     <-  object@ownerPre
+              shares       <-  object@shares
+              margins      <-  object@margins
+              prices       <-  object@prices
+
+              nprods <- length(object@shares)
+              nMargins <-  length(margins[!is.na(margins)])
+
+              minD <- function(theta){
+
+                  alpha <- theta[1]
+                  sOut  <- theta[2]
+
+                  probs <- shares * (1 - sOut)
+                  elast <- -alpha *  matrix(prices * probs,ncol=nprods,nrow=nprods)
+                  diag(elast) <- alpha*prices - diag(elast)
+
+                  revenues <- probs * prices
+                  marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues
+
+                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+
+                  return(measure)
+              }
+
+               ## Constrain optimizer to look  alpha <0, tau < 0
+              lowerB <- c(-Inf,0)
+              upperB <- c(0,1)
+
+              minTheta <- optim(object@parmsStart,minD,method="L-BFGS-B",lower= lowerB,upper=upperB)$par
+
+              meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) - minTheta[1] * prices
+
+              names(meanval)   <- object@labels
+
+
+              object@slopes      <- list(alpha=minTheta[1],meanval=meanval)
+              object@shareInside <- 1-minTheta[2]
+
+              return(object)
+
+          }
+
+          )
+
+
+logit.alm <- function(prices,shares,margins,
+                      ownerPre,ownerPost,
+                      mcDelta=rep(0,length(prices)),
+                      priceStart = prices,
+                      isMax=FALSE,
+                      parmsStart,
+                      labels=paste("Prod",1:length(prices),sep=""),
+                      ...
+                      ){
+
+
+    if(missing(parmsStart)){
+        parmsStart <- runif(2)
+        parmsStart[1] <- -1* parmsStart[1] # price coefficient is assumed to be negative
+    }
+
+    ## Create Logit  container to store relevant data
+    result <- new("LogitALM",prices=prices, shares=shares,
+                  margins=margins,
+                  ownerPre=ownerPre,
+                  ownerPost=ownerPost,
+                  mcDelta=mcDelta,
+                  priceStart=priceStart,
+                  shareInside=sum(shares),
+                  parmsStart=parmsStart,
+                  labels=labels)
+
+    ## Convert ownership vectors to ownership matrices
+    result@ownerPre  <- ownerToMatrix(result,TRUE)
+    result@ownerPost <- ownerToMatrix(result,FALSE)
+
+    ## Calculate Demand Slope Coefficients
+    #result <- calcSlopes(result)
+
+    ## Solve Non-Linear System for Price Changes
+    #result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
+    #result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+
+    return(result)
+
+}
+
+
