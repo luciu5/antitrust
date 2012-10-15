@@ -35,10 +35,10 @@ setClass(
 
 
              if(object@constraint && length(object@parmsStart)!=2){
-                 stop(paste("when 'constraint' is TRUE, 'parmsStart' must be a vector of length 2",nNestParm + 1))
+                 stop("when 'constraint' is TRUE, 'parmsStart' must be a vector of length 2")
                  }
              else if(!object@constraint && nNestParm + 1 != length(object@parmsStart)){
-                 stop(paste("when 'constraint' is FALSE, 'parmsStart' must be a vector of length",nNestParm + 1))
+                 stop("when 'constraint' is FALSE, 'parmsStart' must be a vector of length ",nNestParm + 1)
              }
 
 
@@ -240,7 +240,7 @@ setMethod(
 
      shares       <- sharesIn * sharesAcross[nests]
 
-     if(revenue){shares <- prices*shares/sum(prices*shares)}
+     if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares))}
 
      names(shares) <- object@labels
 
@@ -254,7 +254,7 @@ setMethod(
 setMethod(
  f= "elast",
  signature= "LogitNests",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,market=FALSE){
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
@@ -266,19 +266,29 @@ setMethod(
      meanval  <- object@slopes$meanval
 
      shares <- calcShares(object,preMerger,revenue=FALSE)
-     sharesNests <- shares/tapply(shares,nests,sum)[nests]
+
+     if(market){
+
+         elast <- alpha * sum(shares*prices) * (1 - sum(shares))
+         names(elast) <- NULL
+         }
+
+     else{
+
+         sharesNests <- shares/tapply(shares,nests,sum)[nests]
 
 
-     nprods <-  length(shares)
+         nprods <-  length(shares)
 
-     elast <- diag((1/sigma-1)*alpha)
-     elast <- elast[nests,nests]
-     elast <- elast * matrix(sharesNests*prices,ncol=nprods,nrow=nprods,byrow=TRUE)
-     elast <- -1*(elast + alpha * matrix(shares*prices,ncol=nprods,nrow=nprods,byrow=TRUE))
-     diag(elast) <- diag(elast) + (1/sigma[nests])*alpha*prices
+         elast <- diag((1/sigma-1)*alpha)
+         elast <- elast[nests,nests]
+         elast <- elast * matrix(sharesNests*prices,ncol=nprods,nrow=nprods,byrow=TRUE)
+         elast <- -1*(elast + alpha * matrix(shares*prices,ncol=nprods,nrow=nprods,byrow=TRUE))
+         diag(elast) <- diag(elast) + (1/sigma[nests])*alpha*prices
 
-     dimnames(elast) <- list(object@labels,object@labels)
+         dimnames(elast) <- list(object@labels,object@labels)
 
+         }
       return(elast)
 
 }
@@ -319,6 +329,7 @@ logit.nests <- function(prices,shares,margins,
                         normIndex=ifelse(sum(shares) < 1,NA,1),
                         mcDelta=rep(0,length(prices)),
                         priceStart = prices,
+                        isMax=FALSE,
                         constraint = TRUE,
                         parmsStart,
                         labels=paste("Prod",1:length(prices),sep=""),
@@ -360,8 +371,9 @@ logit.nests <- function(prices,shares,margins,
     result <- calcSlopes(result)
 
     ## Solve Non-Linear System for Price Changes
-    result@pricePre  <- calcPrices(result,TRUE,...)
-    result@pricePost <- calcPrices(result,FALSE,...)
+    result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+
 
     return(result)
 
