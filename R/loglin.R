@@ -115,11 +115,21 @@ setMethod(
 setMethod(
  f= "elast",
  signature= "LogLin",
- definition=function(object,margin=TRUE){
+ definition=function(object,preMerger=TRUE,market=FALSE){
 
-      elast    <- object@slopes
+    if(market){
 
-      dimnames(elast) <- list(object@labels,object@labels)
+        quantities <-  calcQuantities(object,preMerger)
+        prices     <-  calcPrices(object,preMerger)
+        elast      <-  sum(t(t(object@slopes * quantities) * 1/prices)) / sum(quantities) * sum(quantities * prices / sum(quantities))
+
+
+       }
+
+    else{
+        elast    <- object@slopes
+        dimnames(elast) <- list(object@labels,object@labels)
+    }
 
       return(elast)
 
@@ -173,7 +183,7 @@ setMethod(
 
 
 
-loglin <- function(prices,quantities,margins,diversions,
+loglinear <- function(prices,quantities,margins,diversions,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
                      priceStart=prices,
