@@ -82,6 +82,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
                    knownElastIndex=1,
                    mcDelta=rep(0, length(shares)),
                    priceStart=runif(length(shares)),
+                   isMax=FALSE,
                    labels=paste("Prod",1:length(shares),sep=""),
                    ...){
 
@@ -111,7 +112,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
     result <- calcSlopes(result)
 
     ## Solve Non-Linear System for Price Changes
-    result@priceDelta <- calcPriceDelta(result,...)
+    result@priceDelta <- calcPriceDelta(result,isMax=isMax,...)
 
 
     ## Calculate Pre and Post merger equilibrium prices
