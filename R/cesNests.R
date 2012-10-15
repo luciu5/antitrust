@@ -37,15 +37,11 @@ setClass(
                  stop("'nests' length must equal the number of products")
              }
 
-             if(!(object@normIndex %in% seq(1,nprods)) ){
-                 stop("'normIndex' value must be between 1 and the length of 'prices'")}
-
-
               if(object@constraint && length(object@parmsStart)!=2){
-                 stop(paste("when 'constraint' is TRUE, 'parmsStart' must be a vector of length 2",nNestParm + 1))
+                 stop("when 'constraint' is TRUE, 'parmsStart' must be a vector of length 2")
                  }
              else if(!object@constraint && nNestParm + 1 != length(object@parmsStart)){
-                 stop(paste("when 'constraint' is FALSE, 'parmsStart' must be a vector of length",nNestParm + 1))
+                 stop("when 'constraint' is FALSE, 'parmsStart' must be a vector of length ",nNestParm + 1)
              }
 
 
@@ -225,6 +221,7 @@ setMethod(
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
+     isOutside <- sum(object@shares) < 1
      nests     <- object@nests
      gamma    <- object@slopes$gamma
      sigma    <- object@slopes$sigma
@@ -235,7 +232,7 @@ setMethod(
      sharesAcross <- tapply(sharesIn,nests,sum)
      sharesIn     <- sharesIn / sharesAcross[nests]
      sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
-     sharesAcross <- sharesAcross / sum(sharesAcross)
+     sharesAcross <- sharesAcross / (sum(sharesAcross) + as.numeric(isOutside))
 
      shares       <- sharesIn * sharesAcross[nests]
 
@@ -254,7 +251,7 @@ setMethod(
 setMethod(
  f= "elast",
  signature= "CESNests",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,market=FALSE){
 
      nests    <- object@nests
      gamma    <- object@slopes$gamma
@@ -264,16 +261,27 @@ setMethod(
      shares <- calcShares(object,preMerger,revenue=TRUE)
      sharesNests <- shares/tapply(shares,nests,sum)[nests]
 
-     nprods <-  length(shares)
+       if(market){
 
-     elast <- diag(sigma - gamma)
-     elast <- elast[nests,nests]
-     elast <- elast * matrix(sharesNests,ncol=nprods,nrow=nprods,byrow=TRUE)
-     elast <- elast + (gamma-1) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
-     diag(elast) <- diag(elast) - sigma[nests]
+          alpha       <- object@slopes$alpha
+          if(is.null(alpha)){
+               stop("'shareInside' must be between 0 and 1 to  calculate Market Elasticity")}
+          elast <- (1+alpha) * (1-gamma) * sum(shares) * (1 - sum(shares))
+          names(elast) <- NULL
 
-     dimnames(elast) <- list(object@labels,object@labels)
+         }
 
+     else{
+         nprods <-  length(shares)
+
+         elast <- diag(sigma - gamma)
+         elast <- elast[nests,nests]
+         elast <- elast * matrix(sharesNests,ncol=nprods,nrow=nprods,byrow=TRUE)
+         elast <- elast + (gamma-1) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
+         diag(elast) <- diag(elast) - sigma[nests]
+
+         dimnames(elast) <- list(object@labels,object@labels)
+     }
       return(elast)
 
 }
@@ -331,6 +339,7 @@ ces.nests <- function(prices,shares,margins,
                       normIndex=ifelse(sum(shares) < 1,NA,1),
                       mcDelta=rep(0,length(prices)),
                       priceStart = prices,
+                      isMax=FALSE,
                       constraint = TRUE,
                       parmsStart,
                       labels=paste("Prod",1:length(prices),sep=""),
@@ -369,9 +378,11 @@ ces.nests <- function(prices,shares,margins,
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
 
+
     ## Solve Non-Linear System for Price Changes
-    result@pricePre  <- calcPrices(result,TRUE,...)
-    result@pricePost <- calcPrices(result,FALSE,...)
+    result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+
 
     return(result)
 
