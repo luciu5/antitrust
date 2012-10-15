@@ -1,0 +1,121 @@
+\begin{thebibliography}{14}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Epstein and Rubinfeld(2004)]{Epstein2004}
+Roy~J. Epstein and Daniel~L. Rubinfeld.
+\newblock Merger simulation with brand-level margin data: Extending pcaids with
+  nests.
+\newblock \emph{The B.E. Journal of Economic Analysis \& Policy},
+  advances.4\penalty0 (1):\penalty0 2, 2004.
+\newblock URL
+  \url{http://econpapers.repec.org/RePEc:bpj:bejeap:v:advances.4:y:2004:i:1:n:%
+2}.
+
+\bibitem[Farrell and Shapiro(2010)]{Farrell2010a}
+Joseph Farrell and Carl Shapiro.
+\newblock Antitrust evaluation of horizontal mergers: An economic alternative
+  to market definition.
+\newblock \emph{The B.E. Journal of Theoretical Economics}, 10\penalty0
+  (1):\penalty0 1--39, 2010.
+\newblock \doi{10.2202/1935-1704.1563}.
+
+\bibitem[Froeb et~al.(2003)Froeb, Tschantz, and Crooke]{Froeb2003}
+Luke Froeb, Steven Tschantz, and Philip Crooke.
+\newblock Bertrand competition with capacity constraints: mergers among parking
+  lots.
+\newblock \emph{Journal of Econometrics}, 113\penalty0 (1):\penalty0 49 -- 67,
+  2003.
+\newblock ISSN 0304-4076.
+\newblock \doi{10.1016/S0304-4076(02)00166-5}.
+\newblock URL
+  \url{http://www.sciencedirect.com/science/article/pii/S0304407602001665}.
+\newblock <ce:title>Introduction to statistics and econometrics in ligitation
+  support</ce:title>.
+
+\bibitem[Froeb and Werden(1998)]{Froeb1998}
+Luke~M. Froeb and Gregory~J. Werden.
+\newblock A robust test for consumer welfare enhancing mergers among sellers of
+  a homogeneous product.
+\newblock \emph{Economics Letters}, 58\penalty0 (3):\penalty0 367 -- 369, 1998.
+\newblock ISSN 0165-1765.
+\newblock \doi{DOI: 10.1016/S0165-1765(97)00287-5}.
+\newblock URL
+  \url{http://www.sciencedirect.com/science/article/B6V84-3T51RH8-3Y/2/6610d48%
+2809009001e3c4e8533d32644}.
+
+\bibitem[Jaffe and Weyl(2012)]{Jaffe2012}
+Sonia Jaffe and Eric~G. Weyl.
+\newblock The first-order approach to merger analysis.
+\newblock \emph{SSRN eLibrary}, 2012.
+
+\bibitem[LaFrance(1986)]{LaFrance1986}
+Jeffrey~T. LaFrance.
+\newblock The structure of constant elasticity demand models.
+\newblock \emph{American Journal of Agricultural Economics}, 68\penalty0
+  (3):\penalty0 543--552, 1986.
+
+\bibitem[LaFrance(2004)]{LaFrance2004}
+Jeffrey~T. LaFrance.
+\newblock Integrability of the linear approximate almost ideal demand system.
+\newblock \emph{Economics Letters}, 84\penalty0 (3):\penalty0 297 -- 303, 2004.
+\newblock ISSN 0165-1765.
+\newblock \doi{10.1016/j.econlet.2003.12.019}.
+\newblock URL
+  \url{http://www.sciencedirect.com/science/article/pii/S0165176504000461}.
+
+\bibitem[Salop and O'Brien(2000)]{Salop2000}
+Steven Salop and Daniel O'Brien.
+\newblock Competitive effects of partial ownership: Financial interest and
+  corporate control'.
+\newblock \emph{Antitrust L.J.}, 67:\penalty0 559--614, 2000.
+
+\bibitem[Sheu(2011)]{Sheu2011}
+Gloria Sheu.
+\newblock Price, quality, and variety: Measuring the gains from trade in
+  differentiated products.
+\newblock January 2011.
+
+\bibitem[{U.S Department of Justice} and {the Federal Trade
+  Commission}(2010)]{HMG2010}
+{U.S Department of Justice} and {the Federal Trade Commission}.
+\newblock Horizontal merger guidelines.
+\newblock Technical report, 2010.
+
+\bibitem[von Haefen(2002)]{Haefen2002}
+Roger~H. von Haefen.
+\newblock A complete characterization of the linear, log-linear, and semi-log
+  incomplete demand system models.
+\newblock \emph{Journal of Agricultural and Resource Economics}, 27\penalty0
+  (02), December 2002.
+\newblock URL \url{http://ideas.repec.org/a/ags/jlaare/31118.html}.
+
+\bibitem[Werden(1996)]{Werden1996}
+Gregory~J. Werden.
+\newblock A robust test for consumer welfare enhancing mergers among sellers of
+  differentiated products.
+\newblock \emph{The Journal of Industrial Economics}, 44\penalty0 (4):\penalty0
+  pp. 409--413, 1996.
+\newblock ISSN 00221821.
+\newblock URL \url{http://www.jstor.org/stable/2950522}.
+
+\bibitem[Werden and Froeb(1994)]{Werden1994}
+Gregory~J Werden and Luke~M Froeb.
+\newblock The effects of mergers in differentiated products industries: Logit
+  demand and merger policy.
+\newblock \emph{Journal of Law, Economics and Organization}, 10\penalty0
+  (2):\penalty0 407--26, October 1994.
+\newblock URL \url{http://ideas.repec.org/a/oup/jleorg/v10y1994i2p407-26.html}.
+
+\bibitem[Willig(1976)]{Willig1976}
+Robert~D. Willig.
+\newblock Consumer's surplus without apology.
+\newblock \emph{The American Economic Review}, 66\penalty0 (4):\penalty0 pp.
+  589--597, 1976.
+\newblock ISSN 00028282.
+\newblock URL \url{http://www.jstor.org/stable/1806699}.
+
+\end{thebibliography}
