@@ -108,7 +108,7 @@ setMethod(
 setMethod(
  f= "calcPriceDelta",
  signature= "AIDS",
- definition=function(object,...){
+ definition=function(object,isMax=FALSE,...){
 
 
 
@@ -135,6 +135,14 @@ setMethod(
 
      if(minResult$termcd != 1){warning("'calcPriceDelta' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
+     if(isMax){
+
+         hess <- genD(FOC,minResult$x) #compute the numerical approximation of the FOC hessian at optimium
+         hess <- hess$D[,1:hess$p]
+
+
+         if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. Price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
+     }
 
      deltaPrice <- exp(minResult$x)-1
      names(deltaPrice) <- object@labels
@@ -168,7 +176,7 @@ setMethod(
      if(!revenue &&
         any(is.na(object@prices))
         ){
-         warning("'prices' contains missing values. Some quantity are missing")
+         warning("'prices' contains missing values. Some results are missing")
         }
 
      prices <- calcPrices(object,preMerger)
@@ -192,18 +200,26 @@ setMethod(
 setMethod(
           f= "elast",
           signature= "AIDS",
-          definition=function(object,preMerger=TRUE){
+          definition=function(object,preMerger=TRUE,market=FALSE){
 
 
-              shares <- calcShares(object,preMerger)
+               if(market){
 
-              elast <- t(object@slopes/shares) + shares * (object@mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
-              diag(elast) <- diag(elast) - 1
-              dimnames(elast) <-  list(object@labels,object@labels)
+                   return(object@mktElast)
 
-              return(t(elast))
+               }
 
-          }
+               else{
+                   shares <- calcShares(object,preMerger)
+
+                   elast <- t(object@slopes/shares) + shares * (object@mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
+                   diag(elast) <- diag(elast) - 1
+                   dimnames(elast) <-  list(object@labels,object@labels)
+
+                   return(t(elast))
+
+               }
+           }
           )
 
 
@@ -212,13 +228,15 @@ setMethod(
 setMethod(
  f= "diversion",
  signature= "AIDS",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,revenue=TRUE){
 
-     diversion <- -t(object@slopes)/diag(object@slopes)
-     dimnames(diversion) <-  list(object@labels,object@labels)
+     if(revenue){
+         diversion <- -t(object@slopes)/diag(object@slopes)
+         dimnames(diversion) <-  list(object@labels,object@labels)
+         return(diversion)
+     }
 
-
-     return(diversion)
+     else{callNextMethod(object,preMerger,revenue)}
 
      }
 
@@ -482,6 +500,7 @@ aids <- function(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
                  mcDelta=rep(0, length(shares)),
                  priceStart=runif(length(shares)),
+                 isMax=FALSE,
                  labels=paste("Prod",1:length(shares),sep=""),
                  ...){
 
@@ -511,7 +530,7 @@ aids <- function(shares,margins,prices,diversions,
     result <- calcSlopes(result)
 
     ## Solve Non-Linear System for Price Changes
-    result@priceDelta <- calcPriceDelta(result,...)
+    result@priceDelta <- calcPriceDelta(result,isMax=isMax,...)
 
 
     ## Calculate Pre and Post merger equilibrium prices
