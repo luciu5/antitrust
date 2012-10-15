@@ -1,13 +1,17 @@
 rm(list=ls())
 require(nleqslv)
+require(numDeriv)
 currentdir <- getwd()
 setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
 source("Antitrust.R")
+source("Bertrand.R")
 source("linear.R")
 source("aids.R")
 source("loglin.R")
 source("logit.R")
+source("logitALM.R")
 source("logitNests.R")
+source("logitCap.R")
 source("ces.R")
 source("cesNests.R")
 source("pcaids.R")
@@ -38,7 +42,8 @@ testMethods <- function(object,param){
 
     print(cmcr(object))            # returns the compensating marginal cost reduction
 
-    print(defineMarkets(object)) # returns postmeger diversion ratios
+    print(smallestMarket(object)) # returns postmeger diversion ratios
+    print(isMarket(object,1:2)) # returns postmeger diversion ratios
 
     if(!missing(param)){
         print(CV(object,param))              # returns CV
@@ -90,7 +95,7 @@ testMethods(sim1)
 ## User-supplied diversions (this will give the same answer as above)
 
 
-result2 <- loglin(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+result2 <- loglinear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
 sim2 <- sim(price,demand="LogLin",list(slopes=result2@slopes,intercepts=result2@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
 testMethods(result2)
 testMethods(sim2)
@@ -129,7 +134,6 @@ names(price) <-
 result5 <- ces(price,shares.revenue,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames,shareInside=.01)
 demand.parm <- result5@slopes
 demand.parm$shareInside=.01
-demand.parm$normIndex=1
 sim5    <- sim(price,demand="CES",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost)
 testMethods(result5,1e9)
 
@@ -138,13 +142,12 @@ result6 <- ces.nests(price,shares.revenue,margins.logit,ownerPre=ownerPre,ownerP
 result6.noconstraint <- ces.nests(price,shares.revenue,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,shareInside=.01,constraint=FALSE)
 demand.parm <- result6@slopes
 demand.parm$shareInside=.01
-demand.parm$normIndex=1
 sim6    <- sim(price,demand="CESNests",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests)
 testMethods(result6,1e9)
 testMethods(result6.noconstraint,1e9)
 
 knownElast=-2.5
-mktElast=-1
+mktElast=-1.4
 
 
 ## PCAIDS demand
@@ -164,11 +167,11 @@ testMethods(result8)
 ## logit demand
 result9 <- logit(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 demand.parm <- result9@slopes
-demand.parm$shareInside=.01
-demand.parm$normIndex=1
 sim9    <- sim(price,demand="Logit",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 testMethods(result9)
 
+## logit ALM demand
+result12 <- logit.alm(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 
 
 ## Nested logit demand
@@ -176,6 +179,15 @@ result10 <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ow
 result10.noconstraint <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,constraint=FALSE)
 
 demand.parm <- result10@slopes
-demand.parm$shareInside=.01
 sim10    <- sim(price,demand="LogitNests",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
 testMethods(result10)
+
+## logit demand, with capacity constraints
+mktSize=1000
+cap <- c(66,200,300,200,99,300) # BUD and OTHER-LITE are capacity constrained
+result11 <- logit.cap(price,shares.quantity,margins.logit,capacities=cap,mktSize=mktSize,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+cap <- c(200,200,300,200,99,300) # OTHER-LITE is capacity constrained
+result11.2 <- logit.cap(price,shares.quantity,margins.logit,capacities=cap,mktSize=mktSize,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+demand.parm <- result11@slopes
+demand.parm$mktSize=mktSize
+sim11    <- sim(price,demand="LogitCap",demand.parm,ownerPre=ownerPre,capacities=cap,ownerPost=ownerPost,labels=prodNames)
