@@ -9,8 +9,8 @@
 
 \arguments{
   \item{x}{A vector or a matrix (e.g., a document-term matrix).}
-  \item{y}{Optional: a vector with compatible dimensions to 'x'. If
-    'NULL', all column vectors of 'x' are correlated.}
+  \item{y}{Optional: a vector with compatible dimensions to `x'. If
+    `NULL', all column vectors of `x' are correlated.}
 }
 
 

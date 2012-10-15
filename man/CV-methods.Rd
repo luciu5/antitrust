@@ -5,7 +5,7 @@
 \alias{CV,CES-method}
 \alias{CV,CESNests-method}
 \alias{CV,Linear-method}
-\alias{CV,LogLog-method}
+\alias{CV,LogLin-method}
 \alias{CV,Logit-method}
 \alias{CV,LogitNests-method}
 \alias{CV,PCAIDS-method}
@@ -17,31 +17,31 @@
 \section{Methods}{
 \describe{
 
-  \item{\code{signature(object = c("Logit","LogitNests"))}}{
+  \item{\code{signature(object = c(Logit,LogitNests))}}{
     All the information needed to
     compute CV is already available within the Logit and Nested Logit classes.
   }
 
 
-  \item{\code{signature(object = c("CES", "CESNests"), revenueInside)}}{
-    The CV method for the CES and nested CES classes has an additional
-    parameter, 'revenueInside', which must be set equal to
+  \item{\code{signature(object = c(CES, CESNests), revenueInside)}}{
+    The CV method for the "CES" and nested "CES" classes has an additional
+    parameter, `revenueInside', which must be set equal to
     the total amount that consumers have spent on
     products  inside the market in order for CV to be calculated.
   }
 
 
-  \item{\code{signature(object = "PCAIDS" , prices)}}{
-    The CV method for "PCAIDS" has an additional parameter, 'prices',
+  \item{\code{signature(object = PCAIDS , prices)}}{
+    The CV method for "PCAIDS" has an additional parameter, `prices',
     which must be set equal to the vector of pre-merger prices for all
     products in the market in order for CV to be calculated.
   }
 
-  \item{\code{signature(object = c("Linear","LogLog"))}}{
+  \item{\code{signature(object = c(Linear,LogLin))}}{
     Although no additional information is needed to calculate CV for
-    either the "Linear" or "LogLog" classes, The CV method will fail if
+    either the "Linear" or "LogLin" classes, The CV method will fail if
     the appropriate restrictions on the demand parameters have not been imposed.
   }
 }}
 \keyword{methods}
-\keyword{ ~~ other possible keyword(s) ~~ }
+

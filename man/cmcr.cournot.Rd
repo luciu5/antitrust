@@ -1,23 +1,45 @@
 \name{cmcr.cournot}
 \alias{cmcr.cournot}
-\title{Compensating Marginal Cost Reductions (Cournot)}
+\alias{upp.cournot}
+\title{Compensating Marginal Cost Reductions and Upwards Pricing
+  Pressure (Cournot)}
 
 \description{Calculate the average marginal cost reduction necessary to restore
-  premerger prices in a two-product merger involving firms playing a
+  pre-merger prices, or the net Upwards Pricing Pressure in a two-product merger involving firms playing a
   homogeneous product Cournot pricing game.}
 
-\usage{cmcr.cournot(share,industryElasticity)}
+\usage{
+cmcr.cournot(shares,mktElast)
+
+upp.cournot(prices, margins, ownerPre,
+             ownerPost=matrix(1,ncol=length(prices), nrow=length(prices)),
+             mcDelta=rep(0,length(prices)),
+             labels=paste("Prod",1:length(prices),sep=""))
+
+}
 
 
 \arguments{
 
-  \item{share}{A length-2 vector containing merging party quantity shares.}
-  \item{industryElasticity}{A length-1 containing the industry elasticity.}
+  \item{shares}{A length-2 vector containing merging party quantity shares.}
+  \item{mktElast}{A length-1 containing the industry elasticity.}
+   \item{prices}{A length-2 vector of product prices.}
+  \item{margins}{A length-2 vector of product margins.}
+  \item{ownerPre}{EITHER a vector of length 2 whose values
+  indicate which of the merging parties produced a product pre-merger OR
+    a 2 x 2 matrix of pre-merger ownership shares.}
+  \item{ownerPost}{A 2 x 2 matrix of post-merger
+    ownership shares. Default is a 2 x 2 matrix of 1s.}
+  \item{mcDelta}{A vector of length 2 where each element equals the
+    proportional change in a product's marginal costs due to
+    the merger. Default is 0, which assumes that the merger does not
+    affect any products' marginal cost.}
+  \item{labels}{A length-2 vector of product labels.}
 
 }
 
-\details{The 'share' vector must have 2 elements, and all 'share'
-  elements must be between 0 and 1. The 'industryElasticity' vector must
+\details{The `shares' vector must have 2 elements, and all `shares'
+  elements must be between 0 and 1. The `mktElast' vector must
   have 1 non-negative  element.}
 \value{A vector with 1 element whose value equals the percentage change
   in the products' average marginal costs that the merged firms must achieve in order to offset a
@@ -56,7 +78,8 @@ of a homogeneous product.''
     shares = sqrt(deltaHHI/(2*100^2)) #recover shares from change in HHI
     industryElast = 1:3
 
-    result = matrix(nrow=length(deltaHHI),ncol=length(industryElast),dimnames=list(deltaHHI,industryElast))
+    result = matrix(nrow=length(deltaHHI),ncol=length(industryElast),
+                    dimnames=list(deltaHHI,industryElast))
 
     for(s in 1:length(shares)){
         for(e in 1:length(industryElast)){

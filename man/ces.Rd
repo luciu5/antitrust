@@ -11,9 +11,10 @@
 \usage{ces(prices,shares,margins,
                 ownerPre,ownerPost,
                 shareInside = 1,
-                normIndex=1,
+                normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
                 priceStart = prices,
+                isMax=FALSE,
                 labels=paste("Prod",1:length(prices),sep=""),
                 ...
                 )
@@ -22,17 +23,20 @@ ces.nests(prices,shares,margins,
                 ownerPre,ownerPost,
                 nests=rep(1,length(shares)),
                 shareInside = 1,
-                normIndex=1,
+                normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
                 priceStart = prices,
-                parmsStart=NULL,
+                isMax=FALSE,
+                constraint = TRUE,
+                parmsStart,
                 labels=paste("Prod",1:length(prices),sep=""),
                 ...
                 )
 
              }
 \arguments{
-  Let k denote the number of products produced by all firms.
+ \item{}{Let k denote the number of products produced by all firms playing the
+   Bertrand pricing game.}
   \item{prices}{A length k vector of product prices.}
   \item{shares}{A length k vector of product revenue shares.}
   \item{margins}{A length k vector of product margins, some of which may
@@ -46,7 +50,7 @@ ces.nests(prices,shares,margins,
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
   \item{shareInside}{The proportion that a typical consumer spends on
-     all products included in the 'prices' vector. Only needed to calculate
+     all products included in the `prices' vector. Only needed to calculate
      compensating variation.
      Default is 1, meaning that all of a consumer's
      income is spent on products within the market.}
@@ -56,44 +60,67 @@ ces.nests(prices,shares,margins,
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
     affect any products' marginal cost.}
+   \item{constraint}{if TRUE, then the nesting parameters for all
+     non-singleton nests are assumed equal. If FALSE, then each
+     non-singleton nest is permitted to have its own value. Default is TRUE.}
   \item{priceStart}{A length k vector of starting values used to solve for
-    equilibrium price. Default is the 'prices' vector.}
-   \item{parmsStart}{A vector of starting values used to solve for
-    price coefficient and nest parameters. If 'NULL' then the random
+    equilibrium price. Default is the `prices' vector.}
+  \item{isMax}{If TRUE, checks to see whether computed price equilibrium
+    locally maximizes firm profits and returns a warning if not. Default is FALSE.}
+  \item{parmsStart}{A vector of starting values used to solve for
+    price coefficient and nest parameters. The first element should
+    always be the price coefficient and the remaining elements should be
+    nesting parameters. Theory requires the nesting parameters to be
+    greater than the price coefficient. If missing then the random
     draws with the appropriate restrictions are employed.}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
-    '#' is a number between 1 and the length of 'prices'.}
+    `#' is a number between 1 and the length of `prices'.}
   \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
-    optimizer used solve the model}
+    optimizer used to solve for equilibrium prices}
 
 }
 
 
 
-\details{Using product prices, revenue shares and (at least) all of the
-  product margins from any firm, \code{ces} is able to
+\details{Using product prices, revenue shares and all of the
+  product margins from at least one firm, \code{ces} is able to
   recover the price coefficient and product mean valuations in a
   Constant Elasticity of Substitution demand model. \code{ces} then uses these
-  calibrated parameters to simulate a merger between two firms under the
+  calibrated parameters to simulate the price effects of a merger between two firms under the
   assumption that that all firms in the market are playing a
   differentiated products Bertrand pricing game.
 
-  \code{ces.nests} is identical to \code{ces} except that it includes the 'nests'
+  \code{ces.nests} is identical to \code{ces} except that it includes the `nests'
   argument which may be used to assign products to different
-  nests. Nests are useful becuase they allow for richer substitution
+  nests. Nests are useful because they allow for richer substitution
   patterns between products. Products within the same nest are assumed
   to be closer substitutes than products in different nests. The degree
   of substitutability between products located in different nests is
-  controlled by the value of the nesting parameter sigma. The vector of
+  controlled by the value of the nesting parameter sigma.
+  The nesting parameters for singleton nests (nests containing
+  only one product) are not identified and normalized to 1.  The vector of
   sigmas is calibrated from the prices, revenue shares, and margins supplied
   by the user.
+
+  By default, all non-singleton nests are assumed to have a common value for sigma.
+  This constraint may be relaxed  by setting `constraint' to
+  FALSE. In this case, at least one product margin must be supplied from
+  a product within each nest.
+
+  In both  \code{ces} and  \code{ces.nests}, if revenue shares sum to 1,
+  then one product's mean value is not identified and must be normalized
+  to 1. `normIndex' may be used to specify the index (position) of the
+  product whose mean value is to be normalized. If the sum of revenue shares
+  is less than 1, both of these functions assume that the exists a k+1st
+  product in the market whose price and mean value are both normalized
+  to 1.
 
 
 }
 
-\value{\code{ces} returns an instance of class \code{"\linkS4class{CES}"}.
-  \code{ces.nests} returns an instance of \code{"\linkS4class{CESNests}"}, a
-  child class of \code{"\linkS4class{CES}".}}
+\value{\code{ces} returns an instance of class \code{\linkS4class{CES}}.
+  \code{ces.nests} returns an instance of \code{\linkS4class{CESNests}}, a
+  child class of \code{\linkS4class{CES}.}}
 
 
 
@@ -144,7 +171,8 @@ names(price) <-
     names(margins) <-
     prodNames
 
-result.ces <- ces(price,shares,margins,ownerPre=ownerPre,ownerPost=ownerPost,shareInside=.01,labels=prodNames)
+result.ces <-ces(price,shares,margins,ownerPre=ownerPre,ownerPost=ownerPost,
+                 shareInside=.01,labels=prodNames)
 
 print(result.ces)           # return predicted price change
 summary(result.ces)         # summarize merger simulation
@@ -155,12 +183,19 @@ elast(result.ces,FALSE)     # returns postmerger elasticities
 diversion(result.ces,TRUE)  # return premerger diversion ratios
 diversion(result.ces,FALSE) # return postmerger diversion ratios
 
-
 cmcr(result.ces)            #calculate compensating marginal cost reduction
+upp(result.ces)             #calculate Upwards Pricing Pressure Index
 
-CV(result.ces,1e9)              #calculate representative agent compensating variation
+CV(result.ces)              #calculate compensating variation as a percent of
+                            #representative consumer income
+CV(result.ces,1e9)          #calculate compensating variation in dollars
+                            #1e9 is an estimate of total US beer expenditure
 
+## Find the smallest antitrust market around BUD satisfying a 5\% SSNIP
+smallestMarket(result.ces,startProd=1,ssnip=.05)
 
+## See if BUD and OLD STYLE  constitute an antitrust market satisfying a 5\% SSNIP
+isMarket(result.ces,prodIndex=1:2)
 
 
 

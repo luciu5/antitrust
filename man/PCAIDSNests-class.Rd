@@ -2,9 +2,9 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{PCAIDSNests-class}
-\alias{calcSlopes,PCAIDSNests-method}
-\alias{getNestsParms,PCAIDSNests-method}
-\alias{summary,PCAIDSNests-method}
+%\alias{calcSlopes,PCAIDSNests-method}
+%\alias{getNestsParms,PCAIDSNests-method}
+
 
 \title{Class "PCAIDSNests"}
 \description{
@@ -16,13 +16,12 @@
 }
 
 \section{Objects from the Class}{
-Objects can be created by using the contructor \code{\link{pcaids.nests}}.
+Objects can be created by using the constructor \code{\link{pcaids.nests}}.
 }
 
 \section{Slots}{
   Let k denote the number of products produced by all firms.
   \describe{
-    \item{\code{margins}:}{A length k vector of product margins.}
     \item{\code{nests}:}{A length k vector identifying which nest a product
   belongs to.}
     \item{\code{nestsParms}:}{A length k vector containing nesting parameters.}
@@ -30,20 +29,19 @@ Objects can be created by using the contructor \code{\link{pcaids.nests}}.
   }
 }
 \section{Extends}{
-Class \code{"\linkS4class{PCAIDS}"}, directly.
-Class \code{"\linkS4class{Antitrust}"}, by class "PCAIDS", distance 2.
+  Class \code{\linkS4class{PCAIDS}}, directly.
+  Class \code{\linkS4class{AIDS}}, by class "PCAIDS", distance 2.
+  Class \code{\linkS4class{Linear}}, by class "AIDS", distance 3.
+  Class \code{\linkS4class{Bertrand}}, by class "Linear", distance 4.
 }
 \section{Methods}{
 
   \describe{
-    \item{calcSlopes}{\code{signature(object = "PCAIDSNests")}: Uncover nested CES demand
+    \item{\code{calcSlopes}}{\code{signature(object)}}{ Uncover nested CES demand
       parameters. Assumes that firms are currently at equilibrium  in a
       differentiated product Bertrand Nash pricing game.}
-    \item{getNestsParms}{\code{signature(object = "PCAIDSNests")}:
+    \item{\code{getNestsParms}}{\code{signature(object)}}{
       Returns a matrix containing the calibrated nesting parameters. }
-    \item{summary}{\code{signature(object = "PCAIDSNests")}: Summarizes
-      the effect of the merger, including price and quantity changes,
-      as well as nesting parameters.}
 	 }
 }
 \references{

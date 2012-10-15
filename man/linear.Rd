@@ -1,27 +1,29 @@
 \name{linear}
 \alias{linear}
-\alias{loglog}
+\alias{loglinear}
 
 \title{Linear and Log-Linear Demand Calibration and Merger Simulation}
 
 \description{Calibrates consumer demand using either a
-  linear or log-log demand system and then simulates the prices effect of a merger between two firms
+  linear or log-linear demand system and then simulates the prices effect of a merger between two firms
   under the assumption that all firms in the market are playing a differentiated products Bertrand game.}
 
 \usage{
 
 
        linear(prices,quantities,margins,
-                     diversions=NULL,
+                     diversions,
                      symmetry=TRUE,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
-                     labels=paste("Prod",1:length(prices),sep="")
+                     priceStart=prices,
+                     labels=paste("Prod",1:length(prices),sep=""),
+                     ...
                      )
 
 
-       loglog(prices,quantities,margins,
-                     diversions=NULL,
+       loglinear(prices,quantities,margins,
+                     diversions,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
                      priceStart=prices,
@@ -31,13 +33,13 @@
 }
 
 \arguments{
-  Let k denote the number of products produced by all firms.
+  \item{}{Let k denote the number of products produced by all firms.}
   \item{prices}{A length k vector product prices.}
   \item{quantities}{A length k vector of product quantities.}
   \item{margins}{A length k vector of product margins. All margins must
-    be between 0 and 1.}
+    be either be between 0 and 1, or NA.}
   \item{diversions}{A k x k matrix of diversion ratios with diagonal
-    elements equal to 1. Default is NULL, in which case diversion
+    elements equal to -1. Default is missing, in which case diversion
     according to quantity share is assumed.}
   \item{symmetry}{If TRUE, requires the matrix of demand slope coefficients to be
     consistent with utility maximization theory. Default is TRUE.}
@@ -52,53 +54,65 @@
     the merger. Default is 0, which assumes that the merger does not
   affect any products' marginal cost.}
  \item{priceStart}{A length k vector of prices used as the initial guess
-  in the nonlinear equation solver. Default is 'prices'.}
+  in the nonlinear equation solver. Default is `prices'.}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
-  '#' is a number between 1 and the length of 'prices'.}
- \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
-  optimizer used solve the model.}
+  `#' is a number between 1 and the length of `prices'.}
+ \item{...}{Additional options to feed to the solver. See below.}
 }
 
 
 
-\details{Using price, quantity, margin, and diversion information for all products
-  in a market, \code{linear} is able to
-  recover the slopes and intercepts in a Linear Demand
-  System and then use these demand parameters to simulate a merger between
+\details{Using price, quantity, and diversion information for all products
+  in a market, as well as margin information for (at least) all the
+  products of any firm, \code{linear} is able to
+  recover the slopes and intercepts in a Linear demand
+  system and then uses these demand parameters to simulate the price
+  effects of a merger between
   two firms under the assumption that the firms are playing a
   differentiated Bertrand pricing game.
 
-  Similarly,  \code{loglog} uses the same information to uncover the
+  \code{loglinear} uses the same information as \code{linear} to uncover the
   slopes and intercepts in a Log-Log demand system, and then uses these
-  demand parameters to simulate a merger two firms under the
+  demand parameters to simulate the price effects of a merger two firms under the
   assumption that the firms are playing a
   differentiated Bertrand pricing game.
 
 
-  'diversion' either equal NULL or a square matrix whose elements are be between
-  -1 and 1. If 'diversion' equals NULL, then diversion according to quantity share is assumed. If
-  a square matrix is supplied, the off-diagonal elements [i,j] of 'diversion'
+  `diversion' must equal a square matrix whose elements are be between
+  -1 and 1. If `diversion' is missing, then diversion according to quantity share is assumed. If
+  a square matrix is supplied, the off-diagonal elements [i,j] of `diversion'
   must equal an estimate of the diversion ratio from product i to product j
   (i.e. the estimated fraction of i's sales that go to j due to a small
-  increase in i's price). Also, 'diversion'
-  elements are positive if i and j are substitutes and negative if i and j are
-  complements. The Diagonal elements must all equal 1.
+  increase in i's price). Off-diagonal elements are restricted to be
+  positive (products are assumed to be substitutes).  Diagonal elements
+  must equal -1.
 
 
 
-  'ownerPre' and 'ownerPost' values will typically be equal to either 0
+  `ownerPre' and `ownerPost' values will typically be equal to either 0
   (element [i,j] is not commonly owned) or 1 (element [i,j] is commonly
   owned), though these matrices may take on any value between 0 and 1 to
   account for partial ownership.
 
 
+  Under linear demand, an analytic solution to the Bertrand pricing game
+  exists. However, this solution can at times produce negative
+  equilibrium quantities. To accommodate this issue, \code{linear}
+  uses \code{\link{constrOptim}}  to
+  find equilibrium prices with non-negative quantities. \code{...} may
+  be used to change the default options for \link{constrOptim}.
+
+  \code{loglinear} uses the non-linear equation solver
+  \code{\link[nleqslv]{nleqslv}} to find equilibrium prices.  \code{...} may
+  be used to change the default options for \code{\link[nleqslv]{nleqslv}}.
+
 
 
 }
 
-\value{\code{linear} returns an instance of class \code{"\linkS4class{Linear}"}.
-  \code{loglog} returns an instance of \code{"\linkS4class{LogLog}"}, a
-  child class of \code{"\linkS4class{Linear}"}.}
+\value{\code{linear} returns an instance of class \code{\linkS4class{Linear}}.
+  \code{loglinear} returns an instance of \code{\linkS4class{LogLin}}, a
+  child class of \code{\linkS4class{Linear}}.}
 
 
 
@@ -106,7 +120,7 @@
 
 
 \seealso{
-\code{\link{pcaids}} for a demand system that employs shares rather than quantities.
+\code{\link{aids}} for a demand system based on revenue shares rather than quantities.
   }
 
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
@@ -164,7 +178,16 @@ diversion(result.linear,FALSE) # returns postmeger diversion ratios
 
 cmcr(result.linear)            # returns the compensating marginal cost reduction
 
-CV(result.linear)              # returns compensating variation
+CV(result.linear)              # returns representative agent compensating variation
+
+
+## Find the smallest antitrust market around product 1 satisfying a 5\% SSNIP
+smallestMarket(result.linear,startProd=1,ssnip=.05)
+
+## See if products 1 and 2 constitute an antitrust market satisfying a 5\% SSNIP
+isMarket(result.linear,prodIndex=1:2)
+
+
 
 
 }

@@ -7,24 +7,38 @@
 \alias{elast,Linear-method}
 \alias{elast,Logit-method}
 \alias{elast,LogitNests-method}
-\alias{elast,LogLog-method}
-\alias{elast,PCAIDS-method}
+\alias{elast,LogLin-method}
+\alias{elast,AIDS-method}
 \title{Methods For Calculating Own and Cross-Price Elasticities}
 \description{
  Calculate the own and cross-price elasticity between any two products in the market.
 }
-\section{Methods}{
-\describe{
+\usage{
+\S4method{elast}{CES,CESNests,Linear,Logit,LogitNests,LogLin,AIDS,PCAIDSNests}(object,preMerger=TRUE,market=FALSE)
 
-\item{\code{signature(object = c("CES","CESNests",
-    "Linear","Logit","LogitNests","LogLog","PCAIDS"), preMerger=TRUE)}}{
-This method uses the results from the merger to compute the matrix
-of own and cross-price elasticities. Element i,j of this matrix is
-the percentage change in the demand for good i from a small change in
-    the price of good j. When 'preMerger' is TRUE, elasticities are
-    calculated at pre-merger equilbrium prices, and when 'preMerger' is FALSE, they
-    are calculated at post-merger equilibrium prices.
 }
-}}
+\arguments{
+  \item{object}{An instance of one of the classes listed above.}
+  \item{preMerger}{If TRUE, calculates pre-merger price elasticities. If
+    FALSE, calculates post-merger price elasticities. Default is TRUE.}
+  \item{market}{If TRUE, calculates the market (aggregate) elasticity. If
+    FALSE, calculates matrix of own- and cross-price elasticities. Default is FALSE.}
+}
+
+\details{
+
+  When `market' is FALSE, this method computes the matrix
+  of own and cross-price elasticities. Element i,j of this matrix is
+  the percentage change in the demand for good i from a small change in
+  the price of good j. When `market' is TRUE, this method computes the
+  market (aggregate) elasticities using share-weighted prices.
+
+  When `preMerger' is TRUE, elasticities are
+  calculated at pre-merger equilibrium prices and shares, and when `preMerger' is FALSE, they
+  are calculated at post-merger equilibrium prices and shares.
+}
+
+\value{returns a k x k matrix of own- and cross-price elasticities,
+  where k is the number of products in the market}
 \keyword{methods}
-\keyword{ ~~ other possible keyword(s) ~~ }
+
