@@ -83,11 +83,12 @@ setMethod(
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
+     isOutside <- sum(object@shares) < 1
      gamma    <- object@slopes$gamma
      meanval  <- object@slopes$meanval
 
      shares <- meanval*prices^(1-gamma)
-     shares <- shares/sum(shares)
+     shares <- shares/(sum(shares) + as.numeric(isOutside))
 
      ##transform revenue shares to quantity shares
      if(!revenue){shares <- (shares/prices)/sum(shares/prices)}
@@ -106,18 +107,30 @@ setMethod(
 setMethod(
  f= "elast",
  signature= "CES",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,market=FALSE){
 
      gamma    <- object@slopes$gamma
 
      shares <-  calcShares(object,preMerger,revenue=TRUE)
-     nprods <-  length(shares)
 
-     elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
-     diag(elast) <- -gamma + diag(elast)
 
-     dimnames(elast) <- list(object@labels,object@labels)
+      if(market){
 
+          alpha       <- object@slopes$alpha
+          if(is.null(alpha)){
+              stop("'shareInside' must be between 0 and 1 to  calculate Market Elasticity")}
+          elast <- (1+alpha) * (1-gamma) * sum(shares) * (1 - sum(shares))
+
+         }
+
+     else{
+
+         nprods <-  length(shares)
+         elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
+         diag(elast) <- -gamma + diag(elast)
+
+         dimnames(elast) <- list(object@labels,object@labels)
+     }
       return(elast)
 
 }
@@ -165,6 +178,7 @@ ces <- function(prices,shares,margins,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
                 priceStart = prices,
+                isMax=FALSE,
                 labels=paste("Prod",1:length(prices),sep=""),
                 ...
                 ){
@@ -190,8 +204,8 @@ ces <- function(prices,shares,margins,
 
 
     ## Solve Non-Linear System for Price Changes
-    result@pricePre  <- calcPrices(result,TRUE,...)
-    result@pricePost <- calcPrices(result,FALSE,...)
+    result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
 
     return(result)
 
