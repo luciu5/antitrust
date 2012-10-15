@@ -1,26 +1,16 @@
 
 setClass(
          Class   = "Logit",
-         contains="Antitrust",
+         contains="Bertrand",
          representation=representation(
 
          prices           = "numeric",
          margins          = "numeric",
-         pricePre         = "numeric",
-         pricePost        = "numeric",
          priceStart       = "numeric",
          normIndex        = "vector",
          shareInside     = "numeric"
 
          ),
-          prototype=prototype(
-
-          pricePre      =  numeric(),
-          pricePost     =  numeric()
-
-        ),
-
-
          validity=function(object){
 
              ## Sanity Checks
@@ -53,7 +43,7 @@ setClass(
                  stop("'priceStart' must have the same length as 'shares'")}
 
               if(
-                !(object@shareInside >0 &&
+                !(object@shareInside >=0 &&
                   object@shareInside <=1)
                 ){
                  stop("'shareInside' must be between 0 and 1")
@@ -71,7 +61,7 @@ setClass(
                    (sumShares < 1 && is.na(object@normIndex))
                   )){
                  stop("'normIndex' must take on a value between 1 and ",nprods,
-                      ". If 'shares' sum to 1 , or NA if the sum of shares is less than 1")
+                      " if 'shares' sum to 1 , or NA if the sum of shares is less than 1")
              }
 
              return(TRUE)
@@ -143,7 +133,7 @@ setMethod(
 setMethod(
  f= "calcPrices",
  signature= "Logit",
- definition=function(object,preMerger=TRUE,...){
+ definition=function(object,preMerger=TRUE,isMax=FALSE,...){
 
 
      if(preMerger){owner <- object@ownerPre}
@@ -176,6 +166,18 @@ setMethod(
      priceEst        <- minResult$x
      names(priceEst) <- object@labels
 
+
+     if(isMax){
+
+         hess <- genD(FOC,priceEst) #compute the numerical approximation of the FOC hessian at optimium
+         hess <- hess$D[,1:hess$p]
+         hess <- hess * (owner>0)   #0 terms not under the control of a common owner
+
+         state <- ifelse(preMerger,"Pre-merger","Post-merger")
+
+         if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. ",state," price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
+     }
+
      return(priceEst)
 
  }
@@ -196,7 +198,7 @@ setMethod(
      shares <- exp(meanval + alpha*prices)
      shares <- shares/(as.numeric(object@shareInside<1) + sum(shares))
 
-     if(revenue){shares <- prices*shares/sum(prices*shares)}
+     if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares))}
 
      names(shares) <- object@labels
 
@@ -210,7 +212,7 @@ setMethod(
 setMethod(
  f= "elast",
  signature= "Logit",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE,market=FALSE){
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
@@ -218,17 +220,29 @@ setMethod(
      alpha    <- object@slopes$alpha
 
      shares <-  calcShares(object,preMerger)
-     nprods <-  length(shares)
 
-     elast <- -alpha  * matrix(prices*shares,ncol=nprods,nrow=nprods,byrow=TRUE)
-     diag(elast) <- alpha*prices + diag(elast)
+     if(market){
 
-     dimnames(elast) <- list(object@labels,object@labels)
+         elast <- alpha * sum(shares*prices) * (1 - sum(shares))
+
+         }
+
+     else{
+
+
+
+         nprods <-  length(shares)
+
+         elast <- -alpha  * matrix(prices*shares,ncol=nprods,nrow=nprods,byrow=TRUE)
+         diag(elast) <- alpha*prices + diag(elast)
+
+         dimnames(elast) <- list(object@labels,object@labels)
+     }
 
       return(elast)
 
-}
- )
+ }
+          )
 
 
 
@@ -290,13 +304,14 @@ setMethod(
 
 
 logit <- function(prices,shares,margins,
-                ownerPre,ownerPost,
-                normIndex=ifelse(sum(shares)<1,NA,1),
-                mcDelta=rep(0,length(prices)),
-                priceStart = prices,
-                labels=paste("Prod",1:length(prices),sep=""),
-                ...
-                ){
+                  ownerPre,ownerPost,
+                  normIndex=ifelse(sum(shares)<1,NA,1),
+                  mcDelta=rep(0,length(prices)),
+                  priceStart = prices,
+                  isMax=FALSE,
+                  labels=paste("Prod",1:length(prices),sep=""),
+                  ...
+                  ){
 
 
     ## Create Logit  container to store relevant data
@@ -317,8 +332,8 @@ logit <- function(prices,shares,margins,
     result <- calcSlopes(result)
 
     ## Solve Non-Linear System for Price Changes
-    result@pricePre  <- calcPrices(result,TRUE,...)
-    result@pricePost <- calcPrices(result,FALSE,...)
+    result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
 
     return(result)
 
