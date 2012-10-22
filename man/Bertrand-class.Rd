@@ -53,26 +53,21 @@ Objects can be created by calls of the form \code{new("Bertrand", ...)}.
     \item{\code{\link{cmcr}}}{\code{signature(object)}}{ Calculates compensated marginal cost reduction,
       the percentage decrease in the marginal costs of the merging
       parties' products needed to offset a post-merger price increase.}
-    \item{\code{\link{isMarket}}}{\code{signature(object,prodIndex,ssnip=.05,
-	supplyResponse=FALSE,...)}}{
-      \code{isMarket} uses the Hypothetical
-      Monopolist Test to determine whether the product indexed by
-      `prodIndex' constitute an antitrust market.  Setting `supplyResponse' equal to FALSE requires
-      firms who own products not included in `prodIndex'
-      to fix their prices at (predicted) pre-merger levels, while TRUE allows these
-      firms to set their product prices optimally.}
-    \item{\code{\link{smallestMarket}}}{\code{signature(object,startProd,prodOrder,ssnip=.05,supplyResponse=FALSE,...)}}{
-      Beginning with the product
-      indexed by `startProd', \code{smallestMarket} uses the Hypothetical
-      Monopolist Test described in the Merger Guidelines to construct
-      the smallest market that satisfies a
-      `ssnip'. Products are placed under the Hypothetical Monopolist's
-      control in the order dictated by `prodOrder'. If `prodOrder' is missing, products are placed under the
-      Hypothetical Monopolist's control in order from greatest to least
-      diversion from `startProd'. Setting `supplyResponse' equal to FALSE requires
-      firms who own products not included in the Hypothetical Monopolist
-      to fix their prices at (predicted) pre-merger levels, while TRUE allows these
-      firms to set their product prices optimally.}
+    \item{\code{\link{HypoMonTest}}}{\code{signature(object,prodIndex,ssnip=.05,...)}}{
+      \code{HypoMonTest} implements the Hypothetical
+      Monopolist Test for a given `ssnip'.}
+    \item{\code{\link{calcPriceDeltaHypoMon}}}{\code{signature(object,prodIndex,...)}}{
+      Compute the proportional difference in product prices between the
+      prices of products in `prodIndex' (i.e. prices set by the
+      Hypothetical Monopolist) and prices set in the pre-merger Bertrand
+      equilibrium. `...' may be used to pass arguments to the
+      optimizer.}
+    \item{\code{\link{diversionHypoMon}}}{\code{signature(object,prodIndex,...)}}{
+      Calculates the matrix of revenue
+    diversions between all products included in the merger simulation,
+    \emph{irrespective of whether or not they are also included in
+    `prodIndex'}.
+     }
     \item{\code{hhi}}{\code{signature(object, preMerger
 	= TRUE,revenue=FALSE)}}{ Compute either the pre-merger or post-merger
       Herfindahl–Hirschman Index (HHI) under the assumption that firms play a differentiated product

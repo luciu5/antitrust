@@ -36,7 +36,7 @@
     to j.
 
     When `revenue' is TRUE, this method computes the revenue diversion
-    matrix between any two products in the market Element i,j of this matrix is the revenue diversion from
+    matrix between any two products in the market. Element i,j of this matrix is the revenue diversion from
     product i to product j, or the
     proportion of product i's revenues that leave (go to) i for (from) j due
     to a increase (decrease) in i's price. Mathematically, revenue

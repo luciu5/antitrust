@@ -241,12 +241,10 @@ CV(result.logit)              #calculate representative agent compensating varia
 
 ## Construct a matrix containing all candidate product markets satisfying a 5\% SSNIP
 
+## Implement the Hypothetical Monopolist Test
+## for BUD and OLD STYLE using a 5\% SSNIP
 
-## Find the smallest antitrust market around BUD satisfying a 5\% SSNIP
-smallestMarket(result.logit,startProd=1,ssnip=.05)
-
-## See if BUD and OLD STYLE  constitute an antitrust market satisfying a 5\% SSNIP
-isMarket(result.logit,prodIndex=1:2)
+HypoMonTest(result.logit,prodIndex=1:2)
 
 
 #

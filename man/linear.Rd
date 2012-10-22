@@ -181,11 +181,10 @@ cmcr(result.linear)            # returns the compensating marginal cost reductio
 CV(result.linear)              # returns representative agent compensating variation
 
 
-## Find the smallest antitrust market around product 1 satisfying a 5\% SSNIP
-smallestMarket(result.linear,startProd=1,ssnip=.05)
+## Implement the Hypothetical Monopolist Test
+## for products 1 and 2 using a 5\% SSNIP
 
-## See if products 1 and 2 constitute an antitrust market satisfying a 5\% SSNIP
-isMarket(result.linear,prodIndex=1:2)
+HypoMonTest(result.linear,prodIndex=1:2)
 
 
 

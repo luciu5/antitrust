@@ -191,11 +191,10 @@ CV(result.ces)              #calculate compensating variation as a percent of
 CV(result.ces,1e9)          #calculate compensating variation in dollars
                             #1e9 is an estimate of total US beer expenditure
 
-## Find the smallest antitrust market around BUD satisfying a 5\% SSNIP
-smallestMarket(result.ces,startProd=1,ssnip=.05)
+## Implement the Hypothetical Monopolist Test
+## for BUD and OLD STYLE using a 5\% SSNIP
 
-## See if BUD and OLD STYLE  constitute an antitrust market satisfying a 5\% SSNIP
-isMarket(result.ces,prodIndex=1:2)
+HypoMonTest(result.ces,prodIndex=1:2)
 
 
 

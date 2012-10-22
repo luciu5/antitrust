@@ -222,11 +222,11 @@ diversion(result.aids,FALSE) # return postmerger diversion ratios
 cmcr(result.aids)            #calculate compensating marginal cost reduction
 upp(result.aids)             #calculate Upwards Pricing Pressure Index
 
-## Find the smallest antitrust market around product A satisfying a 5\% SSNIP
-smallestMarket(result.aids,startProd=1,ssnip=.05)
 
-## See if products A and B constitute an antitrust market satisfying a 5\% SSNIP
-isMarket(result.aids,prodIndex=1:2)
+## Implement the Hypothetical Monopolist Test
+## for products A and B using a 5\% SSNIP
+
+HypoMonTest(result.aids,prodIndex=1:2)
 
 
 CV(result.aids)        #calculate compensating variation as a percent of
@@ -257,12 +257,10 @@ diversion(result.pcaids,FALSE) # return postmerger diversion ratios
 cmcr(result.pcaids)            #calculate compensating marginal cost reduction
 
 
+## Implement the Hypothetical Monopolist Test
+## for products A and B using a 5\% SSNIP
 
-## Find the smallest antitrust market around A satisfying a 5\% SSNIP
-smallestMarket(result.aids,startProd=1,ssnip=.05)
-
-## See if A and B  constitute an antitrust market satisfying a 5\% SSNIP
-isMarket(result.aids,prodIndex=1:2)
+HypoMonTest(result.aids,prodIndex=1:2)
 
 
 }
