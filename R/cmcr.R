@@ -18,7 +18,7 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
 {
 
 
-    ## Check to make sure inputs are sane ##
+
 
     if(!(is.vector(prices) & is.vector(margins))){
         stop("'prices' and 'margins' must be vectors")}

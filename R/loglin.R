@@ -6,7 +6,7 @@ setClass(
          ),
           validity=function(object){
 
-             ## Sanity Checks
+
 
 
              nprods <- length(object@prices)
@@ -146,7 +146,7 @@ setMethod(
 
 
 setMethod(
- f= "calcPriceDeltaHypoMon",
+ f= "calcPricesHypoMon",
  signature= "LogLin",
  definition=function(object,prodIndex){
 
@@ -157,11 +157,11 @@ setMethod(
      calcMonopolySurplus <- function(priceCand){
 
          pricePre[prodIndex] <- priceCand
-         object@pricePre <- pricePre
-         quantityCand <- calcQuantities(object,TRUE)
+         object@pricePre     <- pricePre
+         quantityCand        <- calcQuantities(object,TRUE)
 
 
-         surplus <- (priceCand-mc)*quantityCand[prodIndex]
+         surplus             <- (priceCand-mc)*quantityCand[prodIndex]
 
 
          return(sum(surplus))
@@ -173,9 +173,12 @@ setMethod(
                               control=list(fnscale=-1))
 
      pricesHM <- minResult$par
-     priceDelta <- pricesHM/pricePre[prodIndex] - 1
 
-     return(priceDelta)
+     #priceDelta <- pricesHM/pricePre[prodIndex] - 1
+     #names(priceDelta) <- object@labels[prodIndex]
+     names(pricesHM) <- object@labels[prodIndex]
+
+     return(pricesHM)
 
  })
 

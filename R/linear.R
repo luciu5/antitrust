@@ -16,7 +16,7 @@ setClass(
         ),
          validity=function(object){
 
-             ## Sanity Checks
+
 
              nprods <- length(object@shares) # count the number of products
 
@@ -290,7 +290,7 @@ setMethod(
  })
 
 setMethod(
- f= "calcPriceDeltaHypoMon",
+ f= "calcPricesHypoMon",
  signature= "Linear",
  definition=function(object,prodIndex){
 
@@ -342,9 +342,12 @@ setMethod(
          pricesHM <- maxResult$maximum
       }
 
-     priceDelta <- pricesHM/pricePre[prodIndex] - 1
+     #priceDelta <- pricesHM/pricePre[prodIndex] - 1
+     #names(priceDelta) <- object@labels[prodIndex]
+     names(pricesHM) <- object@labels[prodIndex]
 
-     return(priceDelta)
+     return(pricesHM)
+
 
  })
 

@@ -18,7 +18,7 @@ setClass(
          ),
            validity=function(object){
 
-               ## Sanity Checks
+
 
                if(length(object@locations) != length(object@shares)){
                    stop("'locations' length must be less than or equal to the number of products")

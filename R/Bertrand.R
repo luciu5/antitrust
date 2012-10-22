@@ -16,7 +16,7 @@ setClass(
          ),
          validity=function(object){
 
-             ## Sanity Checks
+
 
              nprods <- length(object@labels)
 
@@ -82,8 +82,16 @@ name= "calcMargins",
 
 
 setGeneric (
+ name= "calcPricesHypoMon",
+ def=function(object,...){standardGeneric("calcPricesHypoMon")}
+ )
+setGeneric (
  name= "calcPriceDeltaHypoMon",
  def=function(object,...){standardGeneric("calcPriceDeltaHypoMon")}
+ )
+setGeneric (
+ name= "HypoMonTest",
+ def=function(object,...){standardGeneric("HypoMonTest")}
  )
 setGeneric (
  name= "calcSearchSets",
@@ -95,20 +103,15 @@ setGeneric (
  def=function(object,...){standardGeneric("elast")}
  )
 
-setGeneric (
- name= "isMarket",
- def=function(object,...){standardGeneric("isMarket")}
- )
-
-setGeneric (
- name= "smallestMarket",
- def=function(object,...){standardGeneric("smallestMarket")}
- )
-
 
 setGeneric (
  name= "diversion",
  def=function(object,...){standardGeneric("diversion")}
+ )
+
+setGeneric (
+ name= "diversionHypoMon",
+ def=function(object,...){standardGeneric("diversionHypoMon")}
  )
 
 setGeneric (
@@ -459,16 +462,29 @@ setMethod(
 
 
 
-## Use the Hypothetical Monopolist Test to create the set of candidate markets
-## that satisfy a SSNIP
+## Use the Hypothetical Monopolist Test to determine whether a candidate market satisfies a SSNIP.
+setMethod(
+ f= "calcPriceDeltaHypoMon",
+ signature= "Bertrand",
+          definition=function(object,prodIndex,...){
+
+
+              pricesHM <-  calcPricesHypoMon(object,prodIndex,...)
+
+              pricesDelta <- pricesHM/object@pricePre[prodIndex] - 1
+
+              return(pricesDelta)
+
+          })
 
 setMethod(
- f= "isMarket",
+ f= "HypoMonTest",
  signature= "Bertrand",
-          definition=function(object,prodIndex,ssnip=.05,supplyResponse=FALSE,...){
+          definition=function(object,prodIndex,ssnip=.05,...){
 
               ownerPre <- object@ownerPre
               nprods   <- ncol(ownerPre)
+              pricesDelta <- rep(0,nprods)
 
               if(missing(prodIndex) || any(prodIndex>nprods | prodIndex <1 ) ){
                   stop("'prodIndex' must be a vector of product indices between 1 and ",nprods)
@@ -484,41 +500,11 @@ setMethod(
                   }
 
 
-              isIncluded <- 1:nprods %in% prodIndex # test which products included in model are in prodIndex
-              divParty <- abs(diversion(object,TRUE)[isParty & isIncluded,,drop=FALSE]) # only keep rows pertaining to merging parties' products
-              minDiv <- min(divParty[,prodIndex],na.rm=TRUE) # find the minimum diversion amongst products included in candidate market
+
+              pricesDelta[prodIndex] <-  calcPriceDeltaHypoMon(object,prodIndex,...)
 
 
-              shouldInclude <- apply(divParty,2,min)
-              shouldInclude <- (shouldInclude > minDiv) & !isIncluded
-
-
-              if(supplyResponse){
-
-                  candOwner <- ownerPre
-
-                  ##create ownership structure for
-                  ## products owned by hypothetical monopolist
-
-                  candOwner[prodIndex,] <- candOwner[,prodIndex] <- 0
-                  candOwner[prodIndex,ProdIndex] <- 1
-                  object@ownerPost <- candOwner
-                  object@mcDelta <- rep(0,nprods)
-
-                  priceDelta <-  calcPriceDelta(object)[prodIndex]
-              }
-
-              else{
-                  priceDelta <- rep(NA,length(prodIndex))  #allows priceDelta to equal NA if next line fails
-                  try(priceDelta <-  calcPriceDeltaHypoMon(object,prodIndex,...),silent=TRUE)
-              }
-
-              result <- max(priceDelta[isParty]) > ssnip
-
-              if(!is.na(result) && result && any(shouldInclude)){
-                  warning("The following indices belong to products not included 'prodIndex' but with larger diversions from the merging parties' products than those products included in 'prodIndex': ",
-                          paste(which(shouldInclude),collapse=","))
-          }
+              result <- max(pricesDelta[isParty]) > ssnip
 
               return( result)
           }
@@ -527,76 +513,15 @@ setMethod(
 
 
 setMethod(
- f= "smallestMarket",
+ f= "diversionHypoMon",
  signature= "Bertrand",
-          definition=function(object,startProd,prodOrder,ssnip=.05,supplyResponse=FALSE,...){
+          definition=function(object,prodIndex,...){
+
+              object@pricePre[prodIndex] <- calcPricesHypoMon(object,prodIndex,...)
+
+              return(diversion(object,preMerger=TRUE,revenue=TRUE))
 
 
-            ownerPre <- object@ownerPre
-            nprods   <- ncol(ownerPre)
-            isParty <- colSums( object@ownerPost - object@ownerPre)>0 #identify which products belong to the merging parties
 
-            if(length(ssnip)>1 || ssnip<0 | ssnip>1 ){stop("'ssnip' must be a number between 0 and 1")}
-
-
-            if(missing(startProd)){
-              startProd <- which(isParty)[1]
-              warning("'startProd' not specified. Setting equal to ",startProd)
-            }
-
-            else if(!startProd %in% which(isParty)){stop("'startProd' must equal the position number of a merging parties' product")}
-
-            ##if prodOrder isn't supplied, add products to Hypo Monopolist in order of greatest diversion
-            if(missing(prodOrder)){
-                startDiversion <- diversion(object,TRUE)[startProd,]
-                closestSubs <- order(abs(startDiversion),decreasing = TRUE)
-            }
-
-            else{
-                if(length(prodOrder)!=nprods){
-                    stop("The length of 'prodOrder' must equal the number of products included in the merger simulation")
-                    }
-                if(prodOrder[1] != startProd){
-                    stop("The first element of 'prodOrder' must equal 'startProd'")
-                    }
-            }
-
-            result <- rep(NA,nprods+1)
-
-            for( i in 1:length(closestSubs)){
-              candMonopolist <- closestSubs[1:i]
-
-              if(supplyResponse){
-                candOwner <- ownerPre
-
-                ##create ownership structure for
-                ## products owned by hypothetical monopolist
-
-                candOwner[candMonopolist,] <- candOwner[,candMonopolist] <- 0
-                candOwner[candMonopolist,candMonopolist] <- 1
-                object@ownerPost <- candOwner
-
-                priceDelta <-  calcPriceDelta(object)[candMonopolist]
-
-            }
-
-              else{
-                  priceDelta <- rep(NA,length(candMonopolist))  #allows priceDelta to equal NA if next line fails
-                  try(priceDelta <-  calcPriceDeltaHypoMon(object,candMonopolist,...),silent=TRUE)
               }
-
-              result[candMonopolist] <- 1
-              result[nprods+1] <- max(priceDelta[which(isParty[candMonopolist])]) #max price change is only over merging parties' products
-
-              if(isTRUE(result[nprods+1] > ssnip)){break}
-
-          }
-
-            names(result) <- c(object@labels,"MaxPriceDelta")
-            result["MaxPriceDelta"] <- result["MaxPriceDelta"]*100
-
-            if(is.na(result["MaxPriceDelta"])){stop("'smallestMarket' could not identify the smallest antitrust market")}
-
-            return(result)
-          }
           )

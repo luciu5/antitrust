@@ -11,7 +11,7 @@ setClass(
 
          validity=function(object){
 
-             ## Sanity Checks
+
 
 
 
@@ -212,7 +212,7 @@ setMethod(
 
 
 setMethod(
- f= "calcPriceDeltaHypoMon",
+ f= "calcPricesHypoMon",
  signature= "LogitCap",
  definition=function(object,prodIndex,...){
 
@@ -247,15 +247,15 @@ setMethod(
       ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
 
-     if(minResult$termcd != 1){warning("'calcPriceDeltaHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+     if(minResult$termcd != 1){warning("'calcPricesHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
 
      pricesHM <- minResult$x
-     priceDelta <- pricesHM/pricePre[prodIndex] - 1
+      #priceDelta <- pricesHM/pricePre[prodIndex] - 1
+      #names(priceDelta) <- object@labels[prodIndex]
+     names(priceHM) <- object@labels[prodIndex]
 
-     names(priceDelta) <- object@labels[prodIndex]
-
-     return(priceDelta)
+     return(priceHM)
 
  })
 

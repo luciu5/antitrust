@@ -13,7 +13,7 @@ setClass(
          ),
          validity=function(object){
 
-             ## Sanity Checks
+
 
              margins <- object@margins
 
@@ -267,7 +267,7 @@ setMethod(
 
 
 setMethod(
- f= "calcPriceDeltaHypoMon",
+ f= "calcPricesHypoMon",
  signature= "Logit",
  definition=function(object,prodIndex){
 
@@ -278,10 +278,10 @@ setMethod(
      calcMonopolySurplus <- function(priceCand){
 
          pricePre[prodIndex] <- priceCand #keep prices of products not included in HM fixed at premerger levels
-         object@pricePre <- pricePre
-         sharesCand <- calcShares(object,TRUE,revenue=FALSE)
+         object@pricePre     <- pricePre
+         sharesCand          <- calcShares(object,TRUE,revenue=FALSE)
 
-         surplus <- (priceCand-mc)*sharesCand[prodIndex]
+         surplus             <- (priceCand-mc)*sharesCand[prodIndex]
 
          return(sum(surplus))
      }
@@ -292,11 +292,12 @@ setMethod(
                               control=list(fnscale=-1))
 
      pricesHM <- maxResult$par
-     priceDelta <- pricesHM/pricePre[prodIndex] - 1
 
-     names(priceDelta) <- object@labels[prodIndex]
+     #priceDelta <- pricesHM/pricePre[prodIndex] - 1
+     #names(priceDelta) <- object@labels[prodIndex]
+     names(pricesHM) <- object@labels[prodIndex]
 
-     return(priceDelta)
+     return(pricesHM)
 
  })
 

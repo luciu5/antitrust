@@ -13,7 +13,7 @@ setClass(
 
          validity=function(object){
 
-             ## Sanity Checks
+
 
              nprods <- length(object@shares)
 
@@ -242,6 +242,14 @@ setMethod(
 
           )
 
+setMethod(
+ f= "diversionHypoMon",
+ signature= "AIDS",
+ definition=function(object){
+
+   return(diversion(object,revenue=FALSE))
+
+          })
 
 setMethod(
  f= "upp",
@@ -369,20 +377,36 @@ setMethod(
 
 
 
-
      ## Find price changes that set FOCs equal to 0
      minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
 
-     if(minResult$termcd != 1){warning("'calcPriceDeltaHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+     if(minResult$termcd != 1){warning("'calcPricesHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
 
 
      deltaPrice <- (exp(minResult$x)-1)
 
-     return(deltaPrice)
+     names(deltaPrice) <- object@labels[prodIndex]
+
+     return(deltaPrice[prodIndex])
 
  })
 
 
+
+setMethod(
+ f= "calcPricesHypoMon",
+ signature= "AIDS",
+ definition=function(object,prodIndex,...){
+
+
+     priceDeltaHM <- calcPriceDeltaHypoMon(object,prodIndex,...)
+
+     prices <- object@prices[prodIndex] * (1 + priceDeltaHM)
+
+
+     return(prices)
+
+ })
 
 
 

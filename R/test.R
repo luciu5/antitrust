@@ -42,9 +42,9 @@ testMethods <- function(object,param){
 
     print(cmcr(object))            # returns the compensating marginal cost reduction
 
-    print(smallestMarket(object)) # returns postmeger diversion ratios
-    print(isMarket(object,1:2)) # returns postmeger diversion ratios
 
+    print(HypoMonTest(object,1:2)) # returns postmeger diversion ratios
+    print(diversionHypoMon(object,1:2)) # returns postmeger diversion ratios
     if(!missing(param)){
         print(CV(object,param))              # returns CV
     }
@@ -172,7 +172,7 @@ testMethods(result9)
 
 ## logit ALM demand
 result12 <- logit.alm(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
-
+testMethods(result12)
 
 ## Nested logit demand
 result10 <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)

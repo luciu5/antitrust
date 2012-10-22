@@ -10,7 +10,7 @@ setClass(
 
          validity=function(object){
 
-             ## Sanity Checks
+
 
              nMargins  <- length(object@margins[!is.na(object@margins)])
 
@@ -111,11 +111,11 @@ logit.alm <- function(prices,shares,margins,
     result@ownerPost <- ownerToMatrix(result,FALSE)
 
     ## Calculate Demand Slope Coefficients
-    #result <- calcSlopes(result)
+    result <- calcSlopes(result)
 
     ## Solve Non-Linear System for Price Changes
-    #result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
-    #result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+    result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
 
     return(result)
 

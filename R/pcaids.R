@@ -9,7 +9,7 @@ setClass(
 
          validity=function(object){
 
-             ## Sanity Checks
+
 
 
              nprods <- length(object@shares)

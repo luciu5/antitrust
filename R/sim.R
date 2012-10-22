@@ -16,10 +16,10 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
     if(!missing(nests)){nests <- factor(nests)}
 
 
-    ## general sanity checks
+    ## general checks
     if(!is.list(demand.param)){stop("'demand.param' must be a list.")}
 
-    ## Sanity checks for discrete choice models
+    ## Checks for discrete choice models
     if(demand %in% c("CESNests","LogitNests","CES","Logit","LogitCap")){
 
          if(!("meanval" %in% names(demand.param))){
@@ -105,7 +105,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
      }
 
 
-    ## Sanity checks for Linear-demand style models
+    ## Checks for Linear-demand style models
     if(demand %in% c("Linear","LogLin","AIDS")){
 
         if(!("slopes" %in% names(demand.param))){stop("'demand.param' does not contain 'slopes'")}
