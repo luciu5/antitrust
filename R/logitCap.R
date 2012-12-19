@@ -83,7 +83,7 @@ setMethod(
                   diag(elast) <- alpha*prices + diag(elast)
 
 
-                  FOC <- revenues + (elast * ownerPre * notBinds) %*% (margins * revenues)
+                  FOC <- revenues * diag(ownerPre) + (elast * ownerPre * notBinds) %*% (margins * revenues)
 
                   ## omit the FOCs of single product, capacity constrained firms
                   measure <- sum(as.vector(FOC[!singleConstrained])^2,na.rm=TRUE)
@@ -178,7 +178,7 @@ setMethod(
          revenues         <- quantities * priceCand
          elasticities     <- elast(object,preMerger)
 
-         thisFOC <- revenues + as.vector(t(elasticities * owner) %*% (margins * revenues))
+         thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
          constraint <- quantities - capacities
 
          measure <- thisFOC + constraint + sqrt(thisFOC^2 + constraint^2)

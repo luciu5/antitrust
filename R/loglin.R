@@ -28,6 +28,7 @@ setMethod(
      margins <- object@margins
      quantities <- object@quantities
      prices <- object@prices
+     ownerPre <- object@ownerPre
 
      revenues <- prices * quantities
 
@@ -36,7 +37,7 @@ setMethod(
      diversion <- object@diversion * tcrossprod(quantities,1/quantities)
 
      slopes <- matrix(margins * revenues,ncol=nprods, nrow=nprods,byrow=TRUE)
-     slopes <- revenues / rowSums(slopes * diversion * object@ownerPre)
+     slopes <- (revenues * diag(ownerPre)) / rowSums(slopes * diversion * ownerPre)
      slopes <- -t(slopes * diversion)
 
      dimnames(slopes) <- list(object@labels,object@labels)
@@ -73,7 +74,7 @@ setMethod(
      revenues  <- calcShares(object,preMerger,revenue=TRUE)
      elasticities     <- elast(object,preMerger)
 
-     thisFOC <- revenues + as.vector(t(elasticities * owner) %*% (margins * revenues))
+     thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
 
      return(thisFOC)
  }

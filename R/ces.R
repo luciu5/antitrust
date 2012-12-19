@@ -49,7 +49,7 @@ setMethod(
                   elasticity <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
                   diag(elasticity) <- -gamma + diag(elasticity)
 
-                  marginsCand <- -1 * as.vector(solve(elasticity * ownerPre) %*% shares) / shares
+                  marginsCand <- -1 * as.vector(solve(elasticity * ownerPre) %*% (shares * diag(ownerPre))) / shares
 
                   measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 

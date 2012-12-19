@@ -156,7 +156,7 @@ Normalizing these parameters to 1.")
 
                   #measure <- sum((margins[naMargins] - marginsCand[naMargins])^2)
 
-                  measure <- revenues + as.vector((elasticity * ownerPre) %*% (margins * revenues))
+                  measure <- revenues * diag(ownerPre) + as.vector((elasticity * ownerPre) %*% (margins * revenues))
                   #measure[is.nan(measure)] <- 1e30
 
                   measure <- sum(measure[naMargins]^2,na.rm=TRUE)

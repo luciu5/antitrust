@@ -107,7 +107,7 @@ setMethod(
                   diag(elast) <- alpha*prices + diag(elast)
 
 
-                  marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% revenues) / revenues
+                  marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
 
                   measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
@@ -153,7 +153,7 @@ setMethod(
          revenues  <- calcShares(object,preMerger,revenue=TRUE)
          elasticities     <- elast(object,preMerger)
 
-         thisFOC <- revenues + as.vector(t(elasticities * owner) %*% (margins * revenues))
+         thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
 
          return(thisFOC)
      }

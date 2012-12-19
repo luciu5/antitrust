@@ -68,7 +68,7 @@ setMethod(
          elast <- t(slopesCand/shares) + shares * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
          diag(elast) <- diag(elast) - 1
 
-         marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% shares) / shares
+         marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
 
 
          measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
@@ -111,6 +111,7 @@ setMethod(
  definition=function(object,isMax=FALSE,...){
 
 
+     ownerPost <- object@ownerPost
 
      ##Define system of FOC as a function of priceDelta
      FOC <- function(priceDelta){
@@ -122,7 +123,7 @@ setMethod(
          marginPost <- calcMargins(object,FALSE)
 
 
-         thisFOC <- sharePost + as.vector(t(elastPost*object@ownerPost) %*% (sharePost*marginPost))
+         thisFOC <- sharePost*diag(ownerPost) + as.vector(t(elastPost*ownerPost) %*% (sharePost*marginPost))
          return(thisFOC)
 
      }
@@ -267,6 +268,9 @@ setMethod(
  signature= "AIDS",
  definition=function(object){
 
+
+     isParty <- colSums( object@ownerPost - object@ownerPre) > 0
+
      sharesPre <- calcShares(object,TRUE)
      sharesPre <- tcrossprod(1/sharesPre,sharesPre)
 
@@ -278,11 +282,13 @@ setMethod(
      divPre    <- elastPre/diag(elastPre)
 
 
-    Bpost      <- divPre * sharesPre * object@ownerPost
-    marginPost <- -1 * as.vector(solve(Bpost) %*% (1/diag(elastPre)))
+     Bpost      <- divPre * sharesPre * object@ownerPost
+     marginPost <- -1 * as.vector(solve(Bpost) %*% (1/diag(elastPre)))
 
-    cmcr <- (marginPost - marginPre)/(1 - marginPre)
-    names(cmcr) <- object@labels
+     cmcr <- (marginPost - marginPre)/(1 - marginPre)
+     names(cmcr) <- object@labels
+
+     cmcr <- cmcr[isParty]
 
     return(cmcr * 100)
 }
@@ -327,10 +333,11 @@ setMethod(
  definition=function(object,preMerger=TRUE){
 
      priceDelta <- object@priceDelta
+     ownerPre   <- object@ownerPre
      shares     <- calcShares(object,TRUE)
 
      elastPre <-  t(elast(object,TRUE))
-     marginPre <-  -1 * as.vector(solve(elastPre*object@ownerPre) %*% shares) / shares
+     marginPre <-  -1 * as.vector(solve(elastPre * ownerPre) %*% (shares * diag(ownerPre)) / shares
 
      if(preMerger){
          names(marginPre) <- object@labels
@@ -475,7 +482,7 @@ setMethod(
      results <- cbind(isParty, results)
 
      cat("\n\nShare-Weighted Price Change:",round(sum(outPost/100*priceDelta),digits),sep="\t")
-     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*outPost/100),digits),sep="\t")
+     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*outPost[isParty=="*"])/sum(outPost[isParty=="*"]),digits),sep="\t")
      if(!any(is.na(pricePre))){
          cat("\nCompensating Variation (CV):",round(CV(object,...),digits),sep="\t")
          }

@@ -99,7 +99,7 @@ setMethod(
               slopesCand <- slopesCand*t(diversion)
               elast <- slopesCand * tcrossprod(1/quantities,prices)
 
-              marginsCand <- -1 * as.vector(solve(t(elast * ownerPre)) %*% revenues) / revenues
+              marginsCand <- -1 * as.vector(solve(t(elast * ownerPre)) %*% (revenues * diag(ownerPre))) / revenues
 
               measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
               return(measure)
@@ -173,7 +173,7 @@ setMethod(
          margins   <- priceCand - mc
          quantities  <- calcQuantities(object,preMerger)
 
-         thisFOC <- quantities + t(slopes*owner) %*% margins
+         thisFOC <- quantities*diag(owner) + t(slopes*owner) %*% margins
 
          return(as.vector(crossprod(thisFOC)))
 
@@ -320,11 +320,10 @@ setMethod(
          else{startParm <- rep(0,nprods)}
 
 
-
          priceConstr <- pricePre
          priceConstr[prodIndex] <- 0
 
-         maxResult <- constrOptim(startParm,calcMonopolySurplus,
+         maxResult <- constrOptim(startParm[prodIndex],calcMonopolySurplus,
                                   grad=NULL,
                                   ui=slopes[prodIndex,prodIndex],
                                   ci=-intercept[prodIndex] - as.vector(slopes %*% priceConstr)[prodIndex],

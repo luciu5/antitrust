@@ -44,7 +44,7 @@ testMethods <- function(object,param){
 
 
     print(HypoMonTest(object,1:2)) # returns postmeger diversion ratios
-    print(diversionHypoMon(object,1:2)) # returns postmeger diversion ratios
+
     if(!missing(param)){
         print(CV(object,param))              # returns CV
     }

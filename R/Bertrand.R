@@ -93,9 +93,14 @@ setGeneric (
  name= "HypoMonTest",
  def=function(object,...){standardGeneric("HypoMonTest")}
  )
+#setGeneric (
+# name= "calcSearchSets",
+# def=function(object,...){standardGeneric("calcSearchSets")}
+# )
+
 setGeneric (
- name= "calcSearchSets",
- def=function(object,...){standardGeneric("calcSearchSets")}
+ name= "isMax",
+ def=function(object,...){standardGeneric("isMax")}
  )
 
 setGeneric (
@@ -180,7 +185,6 @@ setMethod(
 
 
 
-
 ## compute margins
 setMethod(
  f= "calcMargins",
@@ -195,7 +199,7 @@ setMethod(
          revenue<- calcShares(object,preMerger,revenue=TRUE)
 
          elast <-  elast(object,preMerger)
-         margins <-  -1 * as.vector(solve(t(elast*owner)) %*% revenue) / revenue
+         margins <-  -1 * as.vector(solve(t(elast*owner)) %*% (revenue * diag(ownerPre))) / revenue
 
 
      }
@@ -314,7 +318,7 @@ setMethod(
      results <- cbind(isParty, results)
 
      cat("\n\nShare-Weighted Price Change:",round(sum(sharesPost*priceDelta),digits),sep="\t")
-     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*sharesPost),digits),sep="\t")
+     cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*sharesPost[isParty=="*"])/sum(sharesPost[isParty=="*"]),digits),sep="\t")
 
      ##Only compute upp if prices are supplied
      uppExists <- tryCatch(upp(object),error=function(e) FALSE)
@@ -408,6 +412,7 @@ setMethod(
      cmcr <- (marginPost - marginPre)/(1 - marginPre)
      names(cmcr) <- object@labels
 
+     cmcr <- cmcr[isParty]
      return(cmcr * 100)
 }
  )

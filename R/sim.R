@@ -1,12 +1,16 @@
 sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap"),demand.param,
                      ownerPre,ownerPost,nests, capacities,
                      mcDelta=rep(0,length(prices)),
-                     priceStart=prices,
+                     priceStart,
                      labels=paste("Prod",1:length(prices),sep=""),...){
 
     demand <- match.arg(demand)
     nprods <- length(prices)
 
+    if(missing(priceStart)){
+        if(demand=="AIDS"){priceStart <- runif(nprods)}
+        else{              priceStart <- prices}
+        }
 
     ## Create placeholders values to fill required Class slots
 
@@ -115,9 +119,13 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
              is(demand.param$slopes,"Matrix")) ||
            ncol(demand.param$slopes)!=nprods   ||
            nrow(demand.param$slopes)!=nprods   ||
-           any(demand.param$intercepts<0)      ||
            any(diag(demand.param$slopes)>0)){
-            stop("'demand.param' must be a k x k matrix whose first column contains the intercepts from a linear style demand system and whose remaining columns contain the slope coefficients. The intercepts must all be non-negative and the diagonal of the slopes must be non-positive")}
+            stop("'slopes' must be a k x k matrix of slope coeficients whose diagonal elements must all be negative.")}
+        if(!is.vector(demand.param$intercepts)     ||
+           length(demand.param$intercepts)!=nprods ||
+           isTRUE(any(demand.param$intercepts<0,na.rm=TRUE))){
+            stop("'intercepts' must be a length-k vector whose elements are all non-negative")
+        }
 
         if (demand == "AIDS" &&
             !("mktElast" %in% names(demand.param))){
@@ -225,7 +233,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
 
         result <- new(demand,prices=prices, quantities=shares,margins=margins,
-                      shares=as.vector(demand.param$intercepts + demand.param$slopes %*% prices), # AIDS needs actual shares for prediction
+                      shares=as.vector(demand.param$intercepts + demand.param$slopes %*% log(prices)), # AIDS needs actual shares for prediction
                       mcDelta=mcDelta, mktElast=demand.param$mktElast,
                       ownerPre=ownerPre,diversion=-diag(nprods),
                       priceStart=priceStart,
