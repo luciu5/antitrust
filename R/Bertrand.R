@@ -199,7 +199,7 @@ setMethod(
          revenue<- calcShares(object,preMerger,revenue=TRUE)
 
          elast <-  elast(object,preMerger)
-         margins <-  -1 * as.vector(solve(t(elast*owner)) %*% (revenue * diag(ownerPre))) / revenue
+         margins <-  -1 * as.vector(solve(t(elast*owner)) %*% (revenue * diag(owner))) / revenue
 
 
      }

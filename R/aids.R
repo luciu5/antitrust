@@ -337,7 +337,7 @@ setMethod(
      shares     <- calcShares(object,TRUE)
 
      elastPre <-  t(elast(object,TRUE))
-     marginPre <-  -1 * as.vector(solve(elastPre * ownerPre) %*% (shares * diag(ownerPre)) / shares
+     marginPre <-  -1 * as.vector(solve(elastPre * ownerPre) %*% (shares * diag(ownerPre))) / shares
 
      if(preMerger){
          names(marginPre) <- object@labels

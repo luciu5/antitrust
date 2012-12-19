@@ -37,6 +37,7 @@ setMethod(
      diversion <- object@diversion * tcrossprod(quantities,1/quantities)
 
      slopes <- matrix(margins * revenues,ncol=nprods, nrow=nprods,byrow=TRUE)
+
      slopes <- (revenues * diag(ownerPre)) / rowSums(slopes * diversion * ownerPre)
      slopes <- -t(slopes * diversion)
 
