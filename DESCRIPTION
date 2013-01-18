@@ -1,8 +1,8 @@
 Package: antitrust
 Type: Package
 Title: Antitrust Library
-Version: 0.9
-Date: 2012-10-10
+Version: 0.91
+Date: 2013-01-03
 Author: Michael Sandfort and Charles Taragin
 Maintainer: Charles Taragin <charles.taragin@usdoj.gov>
 Depends: R (>= 2.15.0),  methods, nleqslv, numDeriv
