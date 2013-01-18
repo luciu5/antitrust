@@ -28,8 +28,10 @@
 \author{Charles Taragin\footnote{The views expressed herein are entirely those of the authors and should not be purported to reflect those of the U.S. Department of Justice.  The \texttt{antitrust} package has been released into the
 public domain without warranty of any kind, expressed or implied. We
 thank Ronald Drennan, Robert Majure, Russell Pittman, Gloria Sheu,
-Nathan Miller, Marc Remer, Alexander Raskovich, William Drake, Thomas
+Nathan Miller, Randy Chugh, Marc Remer, Alexander Raskovich, William Drake, Thomas
 Jeitschko and Conor Ryan. Address: Economic Analysis Group, Antitrust Division, U.S. Department of Justice, 450 5th St. NW, Washington DC 20530.  E-mail: charles.taragin@usdoj.gov and michael.sandfort@usdoj.gov. } \and Michael Sandfort\samethanks}
+
+%\VignetteIndexEntry{antitrust}
 
 \begin{document}
 
@@ -158,7 +160,7 @@ Suppose that there are $K$ firms in a
 market, and that each of the $k \in K$ firms produces $n_k$
 products.\footnote{Throughout, we abuse the notation slightly by
   treating variables like $K$ as both the set of firms as well as the
-  number of firms.} Let  $n=\sum_{k=1}^Kn_k$ denote the number of products sold
+  number of firms.} Let  $n=\sum\limits_{k\in K}n_k$ denote the number of products sold
 by all $K$ firms. The Bertrand model assumes that firms
 simultaneously set their products' prices in order to maximize
 their profits.
@@ -180,20 +182,23 @@ Firm $k \in K$ chooses the prices $\{p_i\}_{i=1}^{n_k}$ of its
 products so as to maximize profits. Mathematically, firm $k$ solves:
 
 \begin{align*}
-\max_{\{p_i\}_{i=1}^{n_k}} &\sum_{i=1}^{n_k}(p_i - c_i)q_i,
+\max_{\{p_i\}_{i=1}^{n_k}} &\sum_{i=1}^{n_k}\omega_{ik}(p_i - c_i)q_i,
 \end{align*}
 
-where  $q_i$, the quantity sold of product $i$,  is assumed to be a twice differentiable function of \emph{all} product prices.
+where  $\omega_{ik}$ is the share of product $i$'s profits earned by
+firm $k$, so that $\sum\limits_{k\in K} \omega_{ik}=1$.  $q_i$, the quantity sold of product $i$,  is assumed to
+be a twice differentiable function of \emph{all} product prices.
+
 Differentiating profits with respect to each $p_i$  yields the following first order conditions (FOCs):
 
 \begin{align*}
-  FOC_i&\equiv q_i +\sum_{j=1}^{n_k}( p_j - c_j)\frac{\partial q_j}{\partial
+  \partial p_i&\equiv \omega_{ik}q_i +\sum_{j=1}^{n_k}\omega_{jk}( p_j - c_j)\frac{\partial q_j}{\partial
     p_i}=0& \mbox{ for all $i\in n_k$} \\
   \intertext{ which may be rewritten as}\\
-  FOC_i&\equiv r_i + \sum_{j=1}^{n_k} r_jm_j\epsilon_{ji}=0& \mbox{ for all $i\in n_k$},
+  \partial p_i&\equiv \omega_{ik}r_i + \sum_{j=1}^{n_k} \omega_{jk}r_jm_j\epsilon_{ji}=0& \mbox{ for all $i\in n_k$},
 \end{align*}
 
-where $r_i\equiv\frac{p_iq_i}{\sum_{j=1}^np_jq_j}$ is
+where $r_i\equiv\frac{p_iq_i}{\sum\limits_{j=1}^np_jq_j}$ is
 product $i$'s revenue share, $m_i\equiv\frac{p_i-c_i}{p_i}$ is product
 $i$'s gross margin, and $\epsilon_{ij}\equiv\frac{\partial q_i}{\partial
   p_j}\frac{p_j}{q_i}$  is the elasticity of product $i$ with
@@ -203,7 +208,7 @@ The FOCs for all products may be stacked and then
 represented using the following matrix notation:
 \begin{align}
   \label{eqn:FOC}
-  r + (E\circ\Omega)'(r \circ m)=&0
+  (r\circ diag(\Omega)) + (E\circ\Omega)'(r \circ m)=&0
 \end{align}
 
 where $r$ and $m$ are $n$-length vectors of revenue shares
@@ -211,14 +216,20 @@ and margins, $E = \left(\begin{smallmatrix}
     \epsilon_{11}&\ldots&\epsilon_{1n}\\\vdots
     &\ddots&\vdots\\\epsilon_{n1}&\ldots&\epsilon_{nn} \end{smallmatrix}\right)$
 is a $n \times n$ matrix of own- and cross-price elasticities, and
-$\Omega$ is an $n \times n$ matrix whose $i,j$th element equals
-the share of product $j$ owned by the firm setting product $i$'s
-price.\footnote{The Bertrand model assumes that while any firm can
+$\Omega=\left(\begin{smallmatrix}
+    \omega_{11}&\ldots&\omega_{1n}\\\vdots
+    &\ddots&\vdots\\\omega_{n1}&\ldots&\omega_{nn} \end{smallmatrix}\right)$
+is an $n \times n$ matrix whose $i,j$th element equals
+the share of product $j$'s profits owned by the firm setting product $i$'s
+price\footnote{The Bertrand model assumes that while any firm can
   receive a portion of another firm's profits (e.g. through owning a
-  share of that firms' assets), only one firm can set a product's price.} In many cases,
-products $i$ and $j$ are wholly owned by a single firm, in which cases the $i,j$th
-element of $\Omega$ equals 1 if $i$ and $j$ are owned by the same firm and 0 otherwise.
-`$\circ$' is the Hadamard (entry-wise) product operator.
+  share of that firms' assets), only one firm can set a product's
+  price.}.  In many cases,
+product $i$ and $j$ are wholly owned by a single firm, in which cases the $i,j$th
+element of $\Omega$ equals 1 if $i$ and $j$ are owned by the same firm
+and 0 otherwise. Under partial ownership, the columns of the matrix formed from the
+unique rows of $\Omega$ must sum to 1.
+`$diag$' returns the diagonal of a square matrix and `$\circ$' is the Hadamard (entry-wise) product operator.
 
 
 \subsection{Adding Exogenous Capacity Constraints}
@@ -232,7 +243,7 @@ products so as to maximize profits, subject to capacity constraints $\{g_i\}_{i=
 Mathematically, firm $k$ solves:
 
 \begin{align*}
-  \max_{\{p_i\}_{i=1}^{n_k}} &\sum_{i=1}^{n_k}(p_i - c_i)q_i,\\
+  \max_{\{p_i\}_{i=1}^{n_k}} &\sum_{i=1}^{n_k}\omega_{ik}(p_i - c_i)q_i,\\
   \intertext{subject to}
   & q_i \le g_i,&i=1\ldots n_k
 \end{align*}
@@ -241,13 +252,14 @@ In general, either the capacity constraint for product $i$ will bind
 and the firm will
 be forced to produce less of $i$ than it would find optimal, or the capacity
 constraint will not bind, and the firm will produce the optimal
-amount implied by the FOCs. In the former, it can be shown that $FOC_i\le 0$ and $q_i - g_i=0$,
+amount implied by the FOCs. In the former, it can be shown that
+$\partial p_i\le 0$ and $q_i - g_i=0$,
 while in the latter
-$FOC_i=0$ and $q_i - g_i \le 0$. Mathematically, these cases can be
+$\partial p_i=0$ and $q_i - g_i \le 0$. Mathematically, these cases can be
 written as
 
 \begin{align}
-  \max\{FOC_i, q_i - g_i\}=0,&i=1\ldots n_k
+  \max\{\partial p_i, q_i - g_i\}=0,&i=1\ldots n_k
 \label{eqn:FOCC}
 \end{align}
 
@@ -430,6 +442,8 @@ $\beta_{ii}$  for some $i\in n$ is sufficient to estimate all the diagonal eleme
 in turn are sufficient to estimate all the off-diagonal elements of
 $B$. Once $B$ has been estimated, $\alpha$ may be recovered from the linear demand system.}
 
+
+
 By default, the \verb@calcSlopes@ method, called by the \verb@linear@
 function to calibrate the linear demand parameters, assumes that the above two
 assumptions hold and uses all the FOCs from
@@ -443,6 +457,7 @@ more equations than unknowns. To accommodate this,
 \verb@calcSlopes@ employs a minimum distance algorithm to find the
 parameter value that best satisfies all the FOCs for which there are data.
 
+
 For completeness, \verb@linear@ includes the `symmetry' argument that,
 when set equal to FALSE, instructs \verb@calcSlopes@ to calibrate demand parameters without imposing
 symmetry on $B$. Note that when `symmetry' is FALSE, the system of
@@ -453,6 +468,7 @@ consumer choice theory, and welfare measures such as compensating
 variation cannot be calculated.\footnote{The \texttt{CV} method used to
   compute compensating variation checks to
 see if $B$ is symmetric and returns an error if it isn't.}
+
 
 \subsection{Log-Linear Demand}
 The Bertrand model with log-linear demand  may be implemented using the
@@ -525,13 +541,13 @@ $B$ is a matrix of slopes\footnote{LA-AIDS differs from AIDS in that
 
 The LA-AIDS model yields the following own- and cross-price elasticities:
 \begin{align*}
-  \epsilon_{ii}=&-1 + \frac{\beta_{ii}}{r_i} + r_i(1+ \epsilon) \\
+  \epsilon_{ii}=&-1 + \frac{\beta_{ii}}{r_i} + r_i(1+ \epsilon)  \\
   \epsilon_{ij}=&\frac{\beta_{ij}}{r_i} + r_j(1+ \epsilon),
 \end{align*}
 
-where $\epsilon$ is the market elasticity of demand. Some implications
-of the LA-AIDS  are that
-$\epsilon\le -1$ and $|\epsilon| \le |\epsilon_{ii}|$ for all $i \in n$.
+where $\epsilon$ is the market elasticity of demand. LA-AIDS  also
+assumes that that
+$\epsilon\le 0$ and $|\epsilon| \le |\epsilon_{ii}|$ for all $i \in n$.
 
 As with the linear  demand system,
 the LA-AIDS model assumes that $B$ is symmetric and that diversion is
@@ -1271,7 +1287,8 @@ described earlier. The formula for $CMCR_{Bertrand}$ in matrix notation is:
     margins for each of the merging parties' products. $m_{post}$,
     post-merger margins evaluated at pre-merger prices, may be
     found using}
-  m_{post}=&(B_{post})^{-1}B_{pre}m_{pre}&\\
+  m_{post}=&(B_{post})^{-1}\left(\frac{diag(\Omega_{post})}{diag(\Omega_{pre})}\circ
+  B_{pre}m_{pre}\right)&\\
   B_s=&D^q_{pre}\circ((1/p_{pre})p_{pre}')\circ\Omega_s,& s \in \{pre,post\},
 \end{align*}
 
@@ -1320,7 +1337,8 @@ accounting for any merger-specific efficiencies.  The net UPP for all of firm $k
 a merger with firm $l$ may be written as
 
 \begin{align*}
-  UPP_k=&B_{kk,pre}^{-1}B_{kl,post}(m_l\circ p_l) - (1-m_k)\circ p_k\circ\Delta mc_k&&\\
+  UPP_k=&B_{kk,pre}^{-1}\left(\frac{diag(\Omega_{kl,pre})}{diag(\Omega_{kl,post})}\circ
+  B_{kl,post}(m_l\circ p_l)\right) - (1-m_k)\circ p_k\circ\Delta mc_k&&\\
   B_{fg,s}=&D^q_{fg,pre}\circ((1/p_{f,pre})p_{g,pre}')\circ\Omega_{fg,s},& s
   \in \{pre,post\};& f,g\in \{k,l\}\\
 \end{align*}
@@ -1414,6 +1432,22 @@ can be often be remedied by supplying additional margin
 information, supplying margin information for products with
 disparate market shares, or supplying the market elasticity parameter directly.
 
+\section{Getting Help}
+
+A man page has been written for each class, method, and function
+contained in \atr . These pages describe the relevant object, its
+inputs and outputs, and typically contain at least one example of how
+it is used. See the \verb@help@ function for assistance on how to
+access these pages.
+
+In addition to the man pages, \rlan's S4 system includes a number of
+ways to investigate the properties of the classes and methods
+contained in \atr. To learn more about a particular instance of an
+\atr class, use the \texttt{str} command. To learn more about the class itself
+(e.g. class slots, who its parent and child classes are) use the
+\texttt{showClass} function. To show which methods are defined for a
+class, or which class have a particular method, use the \texttt{showMethods} function. To see how a method has
+been defined, use the \texttt{getMethod} function.
 
 \section{Modifying and Extending \atr{}}
 \atr{} was written using \rlan's S4 object-oriented class
@@ -1450,6 +1484,7 @@ values. In addition to creating a new class instance, each constructor function 
   \item Returns the class instance.
 
 \end{enumerate}
+
 
 
 Perhaps the easiest way to modify an existing class is to create a new
