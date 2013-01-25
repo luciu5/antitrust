@@ -58,7 +58,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
     according to revenue share is assumed.}
   \item{ownerPre}{EITHER a vector of length k whose values
       indicate which firm produced a product before the merger OR a
-      k x k matrix of pre-merger ownership shares.}
+      k x k matrix of pre-merger ownership shares. }
   \item{ownerPost}{EITHER a vector of length k whose values
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
@@ -235,6 +235,20 @@ CV(result.aids)        #calculate compensating variation as a percent of
 
 CV(result.aids,14.5e12)     #calculate compensating variation in dollars
                             #14.5e12 is an estimate of total US GDP
+
+
+## Get a detailed description of the 'AIDS' class slots
+showClass("AIDS")
+
+## Show all methods attached to the 'AIDS' Class
+showMethods(classes="AIDS")
+
+## Show which class have their own 'elast' method
+showMethods("elast")
+
+## Show the method definition for 'elast' and Class 'AIDS'
+getMethod("elast","AIDS")
+
 
 
 ## AIDS: the following assumes that only one product's elasticity is

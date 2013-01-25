@@ -1,5 +1,4 @@
 \name{HHI}
-\alias{hhi}
 \alias{HHI}
 \title{Herfindahl-Hirschman Index}
 

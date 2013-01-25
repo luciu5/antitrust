@@ -197,6 +197,19 @@ CV(result.ces,1e9)          #calculate compensating variation in dollars
 HypoMonTest(result.ces,prodIndex=1:2)
 
 
+## Get a detailed description of the 'CES' class slots
+showClass("CES")
+
+## Show all methods attached to the 'CES' Class
+showMethods(classes="CES")
+
+## Show which class have their own 'elast' method
+showMethods("elast")
+
+## Show the method definition for 'elast' and Class 'CES'
+getMethod("elast","CES")
+
+
 
 
 }

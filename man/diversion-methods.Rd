@@ -2,15 +2,15 @@
 \docType{methods}
 \alias{diversion-methods}
 \alias{diversion}
-\alias{diversion,Bertrand-method}
+\alias{diversion,ANY-method}
 \alias{diversion,AIDS-method}
+\alias{diversion,Bertrand-method}
 \title{Methods For Calculating Diversion}
 \description{
  Calculate the diversion matrix between any two products in the market.
 }
 \usage{
-\S4method{diversion}{Bertrand}(object,preMerger=TRUE,revenue=FALSE)
-\S4method{diversion}{AIDS}(object,preMerger=TRUE,revenue=TRUE)
+\S4method{diversion}{ANY}(object,preMerger=TRUE,revenue=FALSE)
 }
 \arguments{
   \item{object}{An instance of one of the classes listed above.}

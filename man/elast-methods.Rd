@@ -2,20 +2,21 @@
 \docType{methods}
 \alias{elast-methods}
 \alias{elast}
+\alias{elast,ANY-method}
+\alias{elast,AIDS-method}
 \alias{elast,CES-method}
 \alias{elast,CESNests-method}
 \alias{elast,Linear-method}
+\alias{elast,LogLin-method}
 \alias{elast,Logit-method}
 \alias{elast,LogitNests-method}
-\alias{elast,LogLin-method}
-\alias{elast,AIDS-method}
+
 \title{Methods For Calculating Own and Cross-Price Elasticities}
 \description{
  Calculate the own and cross-price elasticity between any two products in the market.
 }
 \usage{
-\S4method{elast}{CES,CESNests,Linear,Logit,LogitNests,LogLin,AIDS,PCAIDSNests}(object,preMerger=TRUE,market=FALSE)
-
+\S4method{elast}{ANY}(object,preMerger=TRUE,market=FALSE)
 }
 \arguments{
   \item{object}{An instance of one of the classes listed above.}

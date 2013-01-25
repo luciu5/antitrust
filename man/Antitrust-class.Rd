@@ -2,6 +2,8 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{Antitrust-class}
+\alias{matrixOrList-class}
+\alias{matrixOrVector-class}
 %\alias{cmcr,Antitrust-method}
 %\alias{diversion,Antitrust-method}
 %\alias{hhi,Antitrust-method}
@@ -50,22 +52,19 @@ Objects can be created by calls of the form \code{new("Antitrust", ...)}.
     \item{\code{show}}{\code{signature(object)}}{ Displays
       the percentage change in prices due to the merger. }
      }}
-\references{
-%%  ~~put references to the literature/web site here~~
+
+\section{The "matrixOrList" and "matrixOrVector" Classes}{
+The "matrixOrList" and "matrixOrVector" classes are
+virtual classes used for validity checking in the `ownerPre' and
+`ownerPost' slots of "Antitrust" and the `slopes' slot in
+"Bertrand".
 }
+
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\note{
-%%  ~~further notes~~
-}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
-showClass("Antitrust")
+showClass("Antitrust")           # get a detailed description of the class
+showMethods(classes="Antitrust") # show all methods defined for the class
 }
 \keyword{classes}

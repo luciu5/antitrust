@@ -32,6 +32,7 @@ Objects can be created by using the constructor \code{\link{pcaids}}.
   Class \code{\linkS4class{AIDS}}, directly.
   Class \code{\linkS4class{Linear}}, by class "AIDS", distance 2.
   Class \code{\linkS4class{Bertrand}}, by class "Linear", distance 3.
+  Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 4.
 }
 \section{Methods}{
 
@@ -41,23 +42,12 @@ Objects can be created by using the constructor \code{\link{pcaids}}.
       differentiated product Bertrand Nash pricing game.}
 	 }
 }
-\references{
-%%  ~~put references to the literature/web site here~~
-}
 
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\note{
-%%  ~~further notes~~
-}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
-showClass("PCAIDS")
+showClass("PCAIDS")           # get a detailed description of the class
+showMethods(classes="PCAIDS") # show all methods defined for the class
 }
 \keyword{classes}

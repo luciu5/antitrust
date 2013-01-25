@@ -2,6 +2,7 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{AIDS-class}
+
 %\alias{calcMargins,AIDS-method}
 %\alias{calcPrices,AIDS-method}
 %\alias{calcPriceDelta,AIDS-method}
@@ -29,7 +30,7 @@ Objects can be created by using the constructor function \code{\link{aids}}.
   \describe{
     \item{\code{mktElast}:}{A negative number equal to the industry pre-merger
       price elasticity.}
-    \item{\code{priceDeltaStart}:}{A length k vector who elements equal to an
+    \item{\code{priceStart}:}{A length k vector who elements equal to an
       initial guess of the proportional change in prices caused by the
       merger.}
     \item{\code{priceDelta}:}{A length k vector containing the
@@ -91,22 +92,12 @@ Objects can be created by using the constructor function \code{\link{aids}}.
       digits reported in output.}
   }
 }
-\references{
-%%  ~~put references to the literature/web site here~~
-}
+
+
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
-showClass("AIDS")
+showClass("AIDS")           # get a detailed description of the class
+showMethods(classes="AIDS") # show all methods defined for the class
 }
 \keyword{classes}

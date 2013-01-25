@@ -10,7 +10,7 @@
                      demand.param,
                      ownerPre,ownerPost,nests, capacities,
                      mcDelta=rep(0,length(prices)),
-                     priceStart=prices,
+                     priceStart,
                      labels=paste("Prod",1:length(prices),sep=""),...
              )
              }
@@ -40,7 +40,8 @@
     the merger. Default is 0, which assumes that the merger does not
     affect any products' marginal cost.}
   \item{priceStart}{A length k vector of starting values used to solve for
-    equilibrium price. Default is the `prices' vector.}
+    equilibrium price. Default is the `prices' vector for all values of
+  demand except for "AIDS", which is set equal to a vector of 0s.}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
     `#' is a number between 1 and the length of `prices'.}
   \item{...}{Additional options to feed to the
@@ -53,10 +54,10 @@
   \code{sim} simulates the effects of a merger in a market where
   firms are playing a differentiated products pricing game.
 
-  If `demand' equals `Linear', `LogLin', or `AIDS', then `demand.parm' must be a
+  If `demand' equals `Linear', `LogLin', or `AIDS', then `demand.param' must be a
   list containing `slopes', a k x k matrix of slope coefficients, and
   `intercepts', a length-k vector of intercepts. Additionally, if
-  `demand' equals `AIDS', `demand.parm' must contain `mktElast', an
+  `demand' equals `AIDS', `demand.param' must contain `mktElast', an
   estimate of aggregate market elasticity.  For `Linear'
   demand models, \code{sim} returns an error if any intercepts are
   negative, and for both `Linear', `LogLin', and `AIDS' models,  \code{sim}
@@ -64,7 +65,7 @@
   negative.
 
   If `demand' equals `Logit' or `LogitNests', then
-  `demand.parm' must equal a list containing
+  `demand.param' must equal a list containing
   \itemize{
     \item{alpha}{The price coefficient.}
     \item{meanval}{A length-k vector of mean valuations `meanval'. If
@@ -72,7 +73,7 @@
   to exist.}
 }
   If demand equals `CES' or `CESNests', then
-  `demand.parm' must equal a list containing
+  `demand.param' must equal a list containing
 
   \itemize{
     \item{gamma}{ The price coefficient,}
@@ -120,11 +121,11 @@ nests <- c("Reg","Reg","Reg","Light","Light","Reg")
 
 price    <- c(.0441,.0328,.0409,.0396,.0387,.0497)
 
-demand.parm=list(alpha=-48.0457,
+demand.param=list(alpha=-48.0457,
                  meanval=c(0,0.4149233,1.1899885,0.8252482,0.1460183,1.4865730)
                 )
 
-sim.logit <- sim(price,demand="Logit",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost)
+sim.logit <- sim(price,demand="Logit",demand.param,ownerPre=ownerPre,ownerPost=ownerPost)
 
 
 

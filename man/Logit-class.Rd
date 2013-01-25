@@ -40,6 +40,7 @@ Objects can be created by using the constructor function \code{\link{logit}}.
 }
 \section{Extends}{
 Class \code{\linkS4class{Bertrand}}, directly.
+Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 2.
 }
 \section{Methods}{
   For all of methods containing the `preMerger' argument, `preMerger' takes
@@ -75,22 +76,11 @@ Class \code{\linkS4class{Bertrand}}, directly.
 
 }
 
-\references{
-%%  ~~put references to the literature/web site here~~
-}
+
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
-showClass("Logit")
+showClass("Logit")           # get a detailed description of the class
+showMethods(classes="Logit") # show all methods defined for the class
 }
 \keyword{classes}

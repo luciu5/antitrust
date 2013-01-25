@@ -28,8 +28,9 @@ Objects can be created by using the constructor function \code{\link{ces}}.
   }
 }
 \section{Extends}{
-Class \code{\linkS4class{Logit}}, directly.
-Class \code{\linkS4class{Bertrand}}, by class "Logit", distance 2.
+  Class \code{\linkS4class{Logit}}, directly.
+  Class \code{\linkS4class{Bertrand}}, by class "Logit", distance 2.
+  Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 3.
 }
 \section{Methods}{
   For all of methods containing the `preMerger' argument, `preMerger' takes
@@ -55,23 +56,13 @@ Class \code{\linkS4class{Bertrand}}, by class "Logit", distance 2.
     \item{\code{\link{elast}}}{\code{signature(object, preMerger = TRUE)}}{ Computes a k x k matrix of own and cross-price elasticities.}
 	 }
 }
-\references{
-%%  ~~put references to the literature/web site here~~
-}
+
 
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\note{
-%%  ~~further notes~~
-}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
-showClass("CES")
+showClass("CES")           # get a detailed description of the class
+showMethods(classes="CES") # show all methods defined for the class
 }
 \keyword{classes}

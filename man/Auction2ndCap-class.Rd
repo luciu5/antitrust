@@ -76,6 +76,7 @@ Class \code{\linkS4class{Antitrust}}, directly.
 %%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
 }
 \examples{
-showClass("Auction2ndCap")
+showClass("Auction2ndCap")           # get a detailed description of the class
+showMethods(classes="Auction2ndCap") # show all methods defined for the class
 }
 \keyword{classes}

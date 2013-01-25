@@ -1,23 +1,23 @@
 \name{defineMarketTools-methods}
 \docType{methods}
-\alias{HypoMonTest-methods}
-\alias{calcPriceDeltaHypoMon-methods}
-\alias{calcPricesHypoMon-methods}
-\alias{diversionHypoMon-methods}
 \alias{HypoMonTest}
-\alias{HypoMonTest,Bertrand-methods}
+\alias{HypoMonTest,ANY-method}
+\alias{HypoMonTest,Bertrand-method}
 \alias{calcPricesHypoMon}
-\alias{calcPricesHypoMon,Linear-methods}
-\alias{calcPricesHypoMon,LogLin-methods}
-\alias{calcPricesHypoMon,Logit-methods}
-\alias{calcPricesHypoMon,AIDS-methods}
+\alias{calcPricesHypoMon,ANY-method}
+\alias{calcPricesHypoMon,AIDS-method}
+\alias{calcPricesHypoMon,Linear-method}
+\alias{calcPricesHypoMon,LogLin-method}
+\alias{calcPricesHypoMon,Logit-method}
+\alias{calcPricesHypoMon,LogitCap-method}
 \alias{calcPriceDeltaHypoMon}
-\alias{calcPriceDeltaHypoMon,Bertrand-methods}
-\alias{calcPriceDeltaHypoMon,AIDS-methods}
+\alias{calcPriceDeltaHypoMon,ANY-method}
+\alias{calcPriceDeltaHypoMon,AIDS-method}
+\alias{calcPriceDeltaHypoMon,Bertrand-method}
 \alias{diversionHypoMon}
-\alias{diversionHypoMon,Bertand-Methods}
-\alias{diversionHypoMon,AIDS-Methods}
-\alias{HypoMonTest,Bertrand-methods}
+\alias{diversionHypoMon,ANY-method}
+\alias{diversionHypoMon,AIDS-method}
+\alias{diversionHypoMon,Bertrand-method}
 \title{Methods For Implementing The Hypothetical Monopolist Test}
 
 \description{
@@ -27,13 +27,10 @@ Test described in the 2010 Horizontal Merger Guidelines.
 
 \usage{
 \S4method{HypoMonTest}{Bertrand}(object,prodIndex,ssnip=.05,...)
-
-\S4method{calcPricesHypoMon}{Logit,AIDS,Linear,LogLin}(object,prodIndex)
-\S4method{calcPriceDeltaHypoMon}{Bertrand,AIDS}(object,prodIndex)
-
+\S4method{calcPricesHypoMon}{ANY}(object,prodIndex)
+\S4method{calcPriceDeltaHypoMon}{ANY}(object,prodIndex)
 \S4method{diversionHypoMon}{Bertrand}(object,prodIndex,...)
 \S4method{diversionHypoMon}{AIDS}(object)
-
 }
 
 \arguments{

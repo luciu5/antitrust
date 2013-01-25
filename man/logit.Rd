@@ -1,6 +1,7 @@
 \name{logit}
 \alias{logit}
 \alias{logit.nests}
+\alias{logit.nests.alm}
 \alias{logit.cap}
 \alias{logit.alm}
 \title{(Nested) Logit Demand Calibration and Merger Simulation}
@@ -33,6 +34,18 @@ logit.nests(prices,shares,margins,
                 ownerPre,ownerPost,
                 nests=rep(1,length(shares)),
                 normIndex=ifelse(sum(shares) < 1,NA,1),
+                mcDelta=rep(0,length(prices)),
+                priceStart = prices,
+                isMax=FALSE,
+                constraint = TRUE,
+                parmsStart,
+                labels=paste("Prod",1:length(prices),sep=""),
+                ...
+                )
+
+logit.nests.alm(prices,shares,margins,
+                ownerPre,ownerPost,
+                nests=rep(1,length(shares)),
                 mcDelta=rep(0,length(prices)),
                 priceStart = prices,
                 isMax=FALSE,
@@ -114,7 +127,7 @@ logit.cap(prices,shares,margins,
   calibrated parameters to simulate a merger between two firms.
 
   \code{logit.alm} is identical to \code{logit} except that it assumes
-  that an outside product is included and uses additional margin
+  that an outside product exists and uses additional margin
   information to estimate the share of the outside good.
 
   \code{logit.nests} is identical to \code{logit} except that it includes the `nests'
@@ -134,6 +147,9 @@ logit.cap(prices,shares,margins,
   FALSE. In this case, at least one product margin must be supplied from
   a product within each nest.
 
+  \code{logit.nests.alm} is identical to \code{logit.nests} except that it assumes
+   that an outside product exists  and uses additional margin
+   information to estimate the share of the outside good.
 
   \code{logit.cap} is identical to  \code{logit}  except that firms are
   playing the Bertrand pricing game under exogenously supplied capacity
@@ -239,12 +255,26 @@ upp(result.logit)            #calculate Upwards Pricing Pressure Index
 
 CV(result.logit)              #calculate representative agent compensating variation
 
-## Construct a matrix containing all candidate product markets satisfying a 5\% SSNIP
 
 ## Implement the Hypothetical Monopolist Test
 ## for BUD and OLD STYLE using a 5\% SSNIP
 
 HypoMonTest(result.logit,prodIndex=1:2)
+
+
+
+## Get a detailed description of the 'Logit' class slots
+showClass("Logit")
+
+## Show all methods attached to the 'Logit' Class
+showMethods(classes="Logit")
+
+## Show which class have their own 'elast' method
+showMethods("elast")
+
+## Show the method definition for 'elast' and Class 'Logit'
+getMethod("elast","Logit")
+
 
 
 #

@@ -26,16 +26,16 @@ Objects can be created by using the constructor function \code{\link{ces.nests}}
     product belongs to.}
   \item{\code{parmsStart}:}{A length k vector who elements equal an
     initial guess of the nesting parameter values.}
-   \item{\code{slopes}:}{A list containing the coefficient on the numeraire
-      (`alpha'),  the coefficient on price (`gamma'), a vector of
-      nesting parameters (`sigma') and the vector of mean
-      valuations (`meanval')}
+    \item{\code{constraint}:}{A length 1 logical vector that equals TRUE
+      if all nesting parameters are constrained to equal the same value
+      and FALSE otherwise. Default is TRUE.}
   }
 }
 \section{Extends}{
-Class \code{\linkS4class{CES}}, directly.
-Class \code{\linkS4class{Logit}}, by class "CES", distance 2.
-Class \code{\linkS4class{Bertrand}}, by class "CES", distance 3.
+  Class \code{\linkS4class{CES}}, directly.
+  Class \code{\linkS4class{Logit}}, by class "CES", distance 2.
+  Class \code{\linkS4class{Bertrand}}, by class "CES", distance 3.
+  Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 4.
 }
 \section{Methods}{
   For all of methods containing the `preMerger' argument, `preMerger' takes
@@ -63,22 +63,11 @@ Class \code{\linkS4class{Bertrand}}, by class "CES", distance 3.
       elasticities.}
   }
 }
-\references{
-%%  ~~put references to the literature/web site here~~
-}
+
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
-showClass("CESNests")
+showClass("CESNests")           # get a detailed description of the class
+showMethods(classes="CESNests") # show all methods defined for the class
 }
 \keyword{classes}

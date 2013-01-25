@@ -2,13 +2,15 @@
 \docType{methods}
 \alias{CV-methods}
 \alias{CV}
+\alias{CV,ANY-method}
+\alias{CV,AIDS-method}
 \alias{CV,CES-method}
 \alias{CV,CESNests-method}
 \alias{CV,Linear-method}
 \alias{CV,LogLin-method}
 \alias{CV,Logit-method}
 \alias{CV,LogitNests-method}
-\alias{CV,PCAIDS-method}
+
 \title{Methods For Calculating Compensating Variation (CV)}
 \description{
  Calculate the amount of money a consumer would need to
@@ -31,9 +33,10 @@
   }
 
 
-  \item{\code{signature(object = PCAIDS , prices)}}{
-    The CV method for "PCAIDS" has an additional parameter, `prices',
-    which must be set equal to the vector of pre-merger prices for all
+  \item{\code{signature(object = AIDS , totalRevenue)}}{
+    The CV method for "AIDS" has an additional parameter, `totalRevenue',
+    which should aggregate income (e.g. GDP). If supplied computes CV in terms of dollars. If missing, CV is
+    calculated as a percentage change in aggregate in income. must be set equal to the vector of pre-merger prices for all
     products in the market in order for CV to be calculated.
   }
 

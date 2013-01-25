@@ -187,6 +187,18 @@ CV(result.linear)              # returns representative agent compensating varia
 HypoMonTest(result.linear,prodIndex=1:2)
 
 
+## Get a detailed description of the 'Linear' class slots
+showClass("Linear")
+
+## Show all methods attached to the 'Linear' Class
+showMethods(classes="Linear")
+
+## Show which class have their own 'elast' method
+showMethods("elast")
+
+## Show the method definition for 'elast' and Class 'Linear'
+getMethod("elast","Linear")
+
 
 
 }

@@ -38,6 +38,7 @@ Objects can be created by using the constructor function \code{\link{linear}}.
  }
  \section{Extends}{
    Class \code{\linkS4class{Bertrand}}, directly.
+   Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 2.
  }
  \section{Methods}{
    For all of methods containing the `preMerger' argument, `preMerger' takes
@@ -72,22 +73,11 @@ Objects can be created by using the constructor function \code{\link{linear}}.
 	 = TRUE)}}{ Computes a k x k matrix of own and cross-price elasticities.}
    }
  }
-\references{
-%%  ~~put references to the literature/web site here~~
-}
+
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\note{
-%%  ~~further notes~~
-}
-
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
-showClass("Linear")
+showClass("Linear")           # get a detailed description of the class
+showMethods(classes="Linear") # show all methods defined for the class
 }
 \keyword{classes}

@@ -13,8 +13,8 @@ Antitrust Library
 \tabular{ll}{
 Package: \tab antitrust\cr
 Type: \tab Package\cr
-Version: \tab 0.9\cr
-Date: \tab 2012-10-10\cr
+Version: \tab 0.9.1\cr
+Date: \tab 2013-01-03\cr
 License: \tab Unlimited \cr
 LazyLoad: \tab yes\cr
 }
@@ -48,14 +48,9 @@ E-mail: charles.taragin@usdoj.gov and michael.sandfort@usdoj.gov.
 
 
 \author{
-Michael Sandfort and Charles Taragin
+Charles Taragin and Michael Sandfort
 
-Maintainer: Charles Taragin <charles.taragin@usdoj.gov>
-
-}
-\references{
+Maintainer: Charles Taragin \email{charles.taragin@usdoj.gov}
 }
 
-\seealso{
-}
 

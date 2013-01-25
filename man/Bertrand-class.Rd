@@ -2,11 +2,6 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{Bertrand-class}
-%\alias{cmcr,Bertrand-method}
-%\alias{diversion,Bertrand-method}
-%\alias{hhi,Bertrand-method}
-\alias{show,Bertrand-method}
-%\alias{summary,Bertrand-method}
 
 
 \title{Class "Bertrand"}
@@ -34,6 +29,9 @@ Objects can be created by calls of the form \code{new("Bertrand", ...)}.
     \item{\code{slopes}:}{A k x (k+1) matrix of linear demand intercepts and slope coefficients}
   }
 }
+ \section{Extends}{
+   Class \code{\linkS4class{Antitrust}}, directly.
+ }
 \section{Methods}{
   Many of the methods described below contain a `preMerger' and
   `revenue' argument. The `preMerger' takes
@@ -68,10 +66,9 @@ Objects can be created by calls of the form \code{new("Bertrand", ...)}.
     \emph{irrespective of whether or not they are also included in
     `prodIndex'}.
      }
-    \item{\code{hhi}}{\code{signature(object, preMerger
-	= TRUE,revenue=FALSE)}}{ Compute either the pre-merger or post-merger
-      Herfindahl–Hirschman Index (HHI) under the assumption that firms play a differentiated product
-      Bertrand Nash pricing game.}
+    \item{\code{hhi}}{\code{signature(object, preMerger= TRUE,revenue=FALSE)}}{ Compute either the pre-merger or
+      post-merger Herfindahl-Hirschman Index (HHI) under the assumption
+      that firms play a differentiated product Bertrand Nash pricing game.}
     \item{\code{\link{diversion}}}{\code{signature(object, preMerger
 	= TRUE)}}{ Computes a k x k matrix of diversion ratios.}
     \item{\code{summary}}{\code{signature(object,revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2)}}{ Summarizes
@@ -85,22 +82,12 @@ Objects can be created by calls of the form \code{new("Bertrand", ...)}.
       Calculate the Upwards Pricing Pressure (upp) index.
     }
      }}
-\references{
-%%  ~~put references to the literature/web site here~~
-}
+
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\note{
-%%  ~~further notes~~
-}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
-showClass("Bertrand")
+showClass("Bertrand")           # get a detailed description of the class
+showMethods(classes="Bertrand") # show all methods defined for the class
 }
 \keyword{classes}

@@ -2,9 +2,12 @@
 \docType{methods}
 \alias{cmcr-methods}
 \alias{upp-methods}
+\alias{cmcr,ANY-method}
 \alias{cmcr,Bertrand-method}
 \alias{cmcr,AIDS-method}
+\alias{upp,ANY-method}
 \alias{upp,Bertrand-method}
+\alias{upp,AIDS-method}
 
 \title{Methods For Calculating Compensating Marginal Cost Reductions and
 Upwards Pricing Pressure Index (Bertrand)}
@@ -14,12 +17,11 @@ Upwards Pricing Pressure Index (Bertrand)}
   premerger prices in a merger, or the Upwards Pricing Pressure Index
   for the products of merging firms playing a differentiated
   products Bertrand pricing game.
-
 }
-\usage{
-\S4method{cmcr}{Bertrand}(object)
 
-\S4method{upp}{Bertrand}(object)
+\usage{
+\S4method{cmcr}{ANY}(object)
+\S4method{upp}{ANY}(object)
 }
 
 \arguments{
