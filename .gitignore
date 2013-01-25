@@ -1,1 +1,10 @@
-\.*
+
+*.pdf
+*.log
+*.aux
+*.toc
+*.bak
+.Rhistory
+*.blg
+*.dvi
+inst/doc/antitrust.tex
