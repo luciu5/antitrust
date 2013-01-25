@@ -1,0 +1,204 @@
+\name{linear}
+\alias{linear}
+\alias{loglinear}
+
+\title{Linear and Log-Linear Demand Calibration and Merger Simulation}
+
+\description{Calibrates consumer demand using either a
+  linear or log-linear demand system and then simulates the prices effect of a merger between two firms
+  under the assumption that all firms in the market are playing a differentiated products Bertrand game.}
+
+\usage{
+
+
+       linear(prices,quantities,margins,
+                     diversions,
+                     symmetry=TRUE,
+                     ownerPre,ownerPost,
+                     mcDelta=rep(0,length(prices)),
+                     priceStart=prices,
+                     labels=paste("Prod",1:length(prices),sep=""),
+                     ...
+                     )
+
+
+       loglinear(prices,quantities,margins,
+                     diversions,
+                     ownerPre,ownerPost,
+                     mcDelta=rep(0,length(prices)),
+                     priceStart=prices,
+                     labels=paste("Prod",1:length(prices),sep=""),
+                     ...
+             )
+}
+
+\arguments{
+  \item{}{Let k denote the number of products produced by all firms.}
+  \item{prices}{A length k vector product prices.}
+  \item{quantities}{A length k vector of product quantities.}
+  \item{margins}{A length k vector of product margins. All margins must
+    be either be between 0 and 1, or NA.}
+  \item{diversions}{A k x k matrix of diversion ratios with diagonal
+    elements equal to -1. Default is missing, in which case diversion
+    according to quantity share is assumed.}
+  \item{symmetry}{If TRUE, requires the matrix of demand slope coefficients to be
+    consistent with utility maximization theory. Default is TRUE.}
+  \item{ownerPre}{EITHER a vector of length k whose values
+    indicate which firm produced a product pre-merger OR
+    a k x k matrix of pre-merger ownership shares.}
+  \item{ownerPost}{EITHER a vector of length k whose values
+    indicate which firm produced a product after the merger OR
+    a k x k matrix of post-merger ownership shares.}
+  \item{mcDelta}{A length k vector where each element equals the
+    proportional change in a product's marginal costs due to
+    the merger. Default is 0, which assumes that the merger does not
+  affect any products' marginal cost.}
+ \item{priceStart}{A length k vector of prices used as the initial guess
+  in the nonlinear equation solver. Default is `prices'.}
+  \item{labels}{A k-length vector of labels. Default is "Prod#", where
+  `#' is a number between 1 and the length of `prices'.}
+ \item{...}{Additional options to feed to the solver. See below.}
+}
+
+
+
+\details{Using price, quantity, and diversion information for all products
+  in a market, as well as margin information for (at least) all the
+  products of any firm, \code{linear} is able to
+  recover the slopes and intercepts in a Linear demand
+  system and then uses these demand parameters to simulate the price
+  effects of a merger between
+  two firms under the assumption that the firms are playing a
+  differentiated Bertrand pricing game.
+
+  \code{loglinear} uses the same information as \code{linear} to uncover the
+  slopes and intercepts in a Log-Log demand system, and then uses these
+  demand parameters to simulate the price effects of a merger two firms under the
+  assumption that the firms are playing a
+  differentiated Bertrand pricing game.
+
+
+  `diversion' must equal a square matrix whose elements are be between
+  -1 and 1. If `diversion' is missing, then diversion according to quantity share is assumed. If
+  a square matrix is supplied, the off-diagonal elements [i,j] of `diversion'
+  must equal an estimate of the diversion ratio from product i to product j
+  (i.e. the estimated fraction of i's sales that go to j due to a small
+  increase in i's price). Off-diagonal elements are restricted to be
+  positive (products are assumed to be substitutes).  Diagonal elements
+  must equal -1.
+
+
+
+  `ownerPre' and `ownerPost' values will typically be equal to either 0
+  (element [i,j] is not commonly owned) or 1 (element [i,j] is commonly
+  owned), though these matrices may take on any value between 0 and 1 to
+  account for partial ownership.
+
+
+  Under linear demand, an analytic solution to the Bertrand pricing game
+  exists. However, this solution can at times produce negative
+  equilibrium quantities. To accommodate this issue, \code{linear}
+  uses \code{\link{constrOptim}}  to
+  find equilibrium prices with non-negative quantities. \code{...} may
+  be used to change the default options for \link{constrOptim}.
+
+  \code{loglinear} uses the non-linear equation solver
+  \code{\link[nleqslv]{nleqslv}} to find equilibrium prices.  \code{...} may
+  be used to change the default options for \code{\link[nleqslv]{nleqslv}}.
+
+
+
+}
+
+\value{\code{linear} returns an instance of class \code{\linkS4class{Linear}}.
+  \code{loglinear} returns an instance of \code{\linkS4class{LogLin}}, a
+  child class of \code{\linkS4class{Linear}}.}
+
+
+
+
+
+
+\seealso{
+\code{\link{aids}} for a demand system based on revenue shares rather than quantities.
+  }
+
+\author{Charles Taragin \email{charles.taragin@usdoj.gov}}
+
+\references{
+von Haefen, Roger (2002).
+``A Complete Characterization Of The Linear, Log-Linear, And Semi-Log
+Incomplete Demand System Models.''
+\emph{Journal of Agricultural and Resource Economics}, \bold{27}(02).
+\url{http://ideas.repec.org/a/ags/jlaare/31118.html}.
+}
+
+
+\examples{
+
+## Simulate a merger between two single-product firms in a
+## three-firm market with linear demand with diversions
+## that are proportional to shares.
+## This example assumes that the merger is between
+## the first two firms
+
+
+
+n <- 3 #number of firms in market
+price    <- c(2.9,3.4,2.2)
+quantity <- c(650,998,1801)
+
+
+slopes <- matrix(
+c(-2.3,	  0.18,	0.28,
+   0.11, -2.4,	0.1,
+   0.13,   .16,-2.7),ncol=n)
+
+
+margin <- -1/diag(slopes)
+
+
+#simulate merger between firms 1 and 2
+owner.pre <- diag(n)
+owner.post <- owner.pre
+owner.post[1,2] <- owner.post[2,1] <- 1
+
+
+
+result.linear <- linear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+
+print(result.linear)           # return predicted price change
+summary(result.linear)         # summarize merger simulation
+
+elast(result.linear,TRUE)      # returns premerger elasticities
+elast(result.linear,FALSE)     # returns postmerger elasticities
+
+diversion(result.linear,TRUE)  # returns premerger diversion ratios
+diversion(result.linear,FALSE) # returns postmeger diversion ratios
+
+cmcr(result.linear)            # returns the compensating marginal cost reduction
+
+CV(result.linear)              # returns representative agent compensating variation
+
+
+## Implement the Hypothetical Monopolist Test
+## for products 1 and 2 using a 5\% SSNIP
+
+HypoMonTest(result.linear,prodIndex=1:2)
+
+
+## Get a detailed description of the 'Linear' class slots
+showClass("Linear")
+
+## Show all methods attached to the 'Linear' Class
+showMethods(classes="Linear")
+
+## Show which class have their own 'elast' method
+showMethods("elast")
+
+## Show the method definition for 'elast' and Class 'Linear'
+getMethod("elast","Linear")
+
+
+
+}
