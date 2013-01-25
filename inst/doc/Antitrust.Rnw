@@ -186,7 +186,7 @@ products so as to maximize profits. Mathematically, firm $k$ solves:
 \end{align*}
 
 where  $\omega_{ik}$ is the share of product $i$'s profits earned by
-firm $k$, so that $\sum\limits_{k\in K} \omega_{ik}=1$.  $q_i$, the quantity sold of product $i$,  is assumed to
+firm $k$, so that $\sum\limits_{k\in K} \omega_{ik}\le 1$.  $q_i$, the quantity sold of product $i$,  is assumed to
 be a twice differentiable function of \emph{all} product prices.
 
 Differentiating profits with respect to each $p_i$  yields the following first order conditions (FOCs):
@@ -682,50 +682,6 @@ included and by default $\delta_1$ is normalized to 0.\footnote{It can
   product.} Otherwise, an outside good is included whose price and
 $\delta$ are normalized to 0, and whose share  equals $s_0=1-\sum\limits_{i\in n}s_i$.
 
-\subsubsection{Logit With Unobserved Outside Share}
-The Bertrand model with Logit demand and unobserved outside share may be
-implemented using the \verb@logit.alm@ function.
-
-The Bertrand model with Logit demand described above assumes that when
-an outside good is included, its share is known. In some instances,
-however, users may find it difficult to reliably estimate the share of
-the outside good. The \verb@logit.alm@ function attempts to circumvent
-this issue by treating the share of the outside good as a nuisance parameter
-and using additional margin information to estimate that
-parameter.\footnote{The outside good is a nuisance parameter because
-  it is only needed to obtain estimates of the other demand
-  parameters and is not used to solve for equilibrium prices.}
-
-\verb@logit.alm@ accomplishes this by noting that the probability that a consumer
-purchases product $i \in n$ can be rewritten as
-\begin{align*}
-  s_i=& s_{i|I}s_I,&\\
-  s_{i|I}=&\frac{\exp(V_i)}{\sum\limits_{k \in I}\exp(V_k)},&\\
-  s_I=&1-s_0,&\\
-  \intertext{ where  $s_{i|I}$ is product $i$'s quantity share,
-    conditional on a product being chosen from the set of inside goods
-    $I$. This implies that}
-  \sum\limits_{k \in I} s_{k|I}=&1,&\\
-  \intertext{As in the Logit
-    Model, we assume that $V_i$ takes on the following form}\\
-  V_i=&\delta_i + \alpha p_i,& \alpha\le 0.
-\end{align*}
-
-Likewise, the own- and cross-price elasticities may be rewritten as
-
-\begin{align*}
-  \epsilon_{ii}=&\alpha (1-s_{i|I}(1-s_0))p_i \\
-  \epsilon_{ij}=&-\alpha s_{j|I}(1-s_0)p_j
-\end{align*}
-
-This version of the Logit model has $n+2$ parameters to estimate ($n$ $\delta$s,
-$\alpha$, and $s_0$) and up to $2n$ equations with which to estimate them (up to
-$n$ complete FOCs and $n$
-choice probabilities). \verb@calcSlopes@ exploits this over-identification
-by employing a minimum distance algorithm to find the
-values for $\alpha$ and $s_0$ that best satisfy all the FOCs for which there
- are data. The $\delta$s are then recovered from the choice probabilities.
-
 
 \subsubsection{Logit With Capacity Constraints}
 The capacity-constrained Bertrand model with Logit demand may be implemented using the
@@ -828,6 +784,67 @@ purchase an ``outside'' good. This works almost the same in
 \verb@logit.nests@ as \verb@logit@, except that when the sum of market
 revenue shares is less than 1, the outside good is placed in its own nest with its nesting
 parameter normalized to 1.
+
+\subsubsection{(Nested) Logit With Unobserved Outside Share}
+The Bertrand model with (nested) Logit demand and unobserved outside share may be
+implemented using the (\verb@logit.nests.alm@) \verb@logit.alm@ function.
+
+The Bertrand model with Logit demand described above assumes that when
+an outside good is included, its share is known. In some instances,
+however, users may find it difficult to reliably estimate the share of
+the outside good. The \verb@logit.alm@ function attempts to circumvent
+this issue by treating the share of the outside good as a nuisance parameter
+and using additional margin information to estimate that
+parameter.\footnote{The outside good is a nuisance parameter because
+  it is only needed to obtain estimates of the other demand
+  parameters and is not used to solve for equilibrium prices.}
+
+\verb@logit.alm@ accomplishes this by noting that the probability that a consumer
+purchases product $i \in n$ can be rewritten as
+\begin{align*}
+  s_i=& s_{i|I}s_I,&\\
+  s_{i|I}=&\frac{\exp(V_i)}{\sum\limits_{k \in I}\exp(V_k)},&\\
+  s_I=&1-s_0,&\\
+  \intertext{ where  $s_{i|I}$ is product $i$'s quantity share,
+    conditional on a product being chosen from the set of inside goods
+    $I$. This implies that}
+  \sum\limits_{k \in I} s_{k|I}=&1,&\\
+  \intertext{As in the Logit
+    Model, we assume that $V_i$ takes on the following form}\\
+  V_i=&\delta_i + \alpha p_i,& \alpha\le 0.
+\end{align*}
+
+Likewise, the own- and cross-price elasticities may be rewritten as
+
+\begin{align*}
+  \epsilon_{ii}=&\alpha (1-s_{i|I}(1-s_0))p_i \\
+  \epsilon_{ij}=&-\alpha s_{j|I}(1-s_0)p_j
+\end{align*}
+
+This version of the Logit model has $n+2$ parameters to estimate ($n$ $\delta$s,
+$\alpha$, and $s_0$) and up to $2n$ equations with which to estimate them (up to
+$n$ complete FOCs and $n$
+choice probabilities). \verb@calcSlopes@ exploits this over-identification
+by employing a minimum distance algorithm to find the
+values for $\alpha$ and $s_0$ that best satisfy all the FOCs for which there
+ are data. The $\delta$s are then recovered from the choice probabilities.
+
+ Similar logic may be used to formulate the nested logit with
+ unobserved outside share. Under the assumption that the outside good is
+ the sole member of its own nest $H_0$, the probability that a consumer
+ purchases product $i$ in nest $h\in H\setminus H_0$ can be rewritten as
+
+ \begin{align*}
+   s_i=& s_{i|h}s_{h}s_I,&\\
+   s_I=&1-s_0,&
+ \end{align*}
+
+ where $s_{i|h}$ and $s_h$ are defined in the section on Nested Logit
+ demand, and $s_I$ is the unobserved probability that an inside good is
+ selected. This version of the nested Logit model  has $n+h+2$ parameters to estimate ($n$ $\delta$s,
+ $h$ nesting parameters, $\alpha$, and $s_0$) and up to $2n$ equations with which to estimate them (up to
+ $n$ complete FOCs and $n$ choice probabilities).
+
 
 
 \subsection{CES Demand}
