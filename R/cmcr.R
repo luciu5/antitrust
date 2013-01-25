@@ -42,6 +42,10 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
 
     if(!is.matrix(ownerPost)){ stop("'ownerPost'  must be a matrix")}
     if(any(ownerPost < 0 || ownerPost > 1,na.rm=TRUE)){ stop("'ownerPost' elements must be between 0 and 1")}
+    if(
+       !isTRUE(all.equal(colSums(unique(ownerPost)),rep(1,nprod)))){
+        stop("The columns of the matrix formed from the unique rows of 'ownerPost' must sum to 1")
+    }
 
      ## transform pre-merger ownership vector into matrix##
     if(is.vector(ownerPre) ||
@@ -66,9 +70,10 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
     else if(!is.matrix(ownerPre) ||
             ncol(ownerPre) != nrow(ownerPre) ||
             any(ownerPre < 0 || ownerPre > 1,na.rm=TRUE) ||
-            ncol(ownerPre) != nprod
+            ncol(ownerPre) != nprod ||
+            !isTRUE(all.equal(colSums(unique(ownerPre)),rep(1,nprod)))
             ){
-            stop("'ownerPre' must be a square matrix whose dimension equals the length of 'prices' and whose elements are between 0 and 1")}
+            stop("'ownerPre' must be a square matrix whose dimension equals the length of 'prices' and whose elements are between 0 and 1. Also, the columns of the matrix formed from the unique rows of 'ownerPre' must sum to 1")}
 
 
 
@@ -81,7 +86,9 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
 
 
     ##calculate post-merger margin ##
-    marginPost = as.vector(solve(Bpost) %*% Bpre %*% margins)
+    marginPost = as.vector( solve(Bpost) %*%
+    ((diag(ownerPost)/diag(ownerPre)) * as.vector(Bpre %*% margins))
+    )
 
     ## calculate proportional change in marginal cost ##
     mcDelta= (marginPost - margins)/(1 - margins)

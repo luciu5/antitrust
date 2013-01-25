@@ -135,7 +135,7 @@ setMethod(
 
               dimnames(B) <- list(object@labels,object@labels)
               object@slopes <- B
-              object@intercepts <- as.vector(shares - B%*%object@prices)
+              object@intercepts <- as.vector(shares - B%*%log(object@prices))
               names(object@intercepts) <- object@labels
 
 

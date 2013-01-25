@@ -117,19 +117,6 @@ Normalizing these parameters to 1.")
 
 
 
-              if(is.na(idx)){
-                  idxShare      <- 1 - sum(shares)
-                  idxShareNests <- 1
-                  idxPrice      <- 1
-              }
-
-              else{
-
-                  idxShare      <- shares[idx]
-                  idxShareNests <- sharesNests[idx]
-                  idxPrice      <- prices[idx]
-               }
-
 
 
 
@@ -186,11 +173,22 @@ Normalizing these parameters to 1.")
               minSigma           <- minSigma[nests]
               names(minSigmaOut)    <- levels(nests)
 
-              ##normalize outside good nesting parameter to 1
-              if(is.na(idx)){
-                  idxSigma   <- minSigma[idx]
+
+               if(is.na(idx)){
+                  idxShare      <- 1 - sum(shares)
+                  idxShareNests <- 1
+                  idxPrice      <- 1
+                  idxSigma      <- 0
               }
-              else{idxSigma <- 0}
+
+              else{
+
+                  idxShare      <- shares[idx]
+                  idxShareNests <- sharesNests[idx]
+                  idxPrice      <- prices[idx]
+                  idxSigma      <- minSigma[idx]
+               }
+
 
               meanval <-
                   log(shares) - log(idxShare) + (minGamma - 1) *
@@ -347,8 +345,7 @@ ces.nests <- function(prices,shares,margins,
 
 
 
-    if(is.factor(nests)){nests <- nests[,drop=TRUE] }
-    else{nests <- factor(nests)}
+    nests <- factor(nests,levels=unique(nests))
 
 
     if(missing(parmsStart)){

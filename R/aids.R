@@ -24,6 +24,9 @@ setClass(
                  stop("'margins' must contain at least two non-missing margins in order to calibrate demand parameters")
              }
 
+             if(isTRUE(!all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods)))){ stop("'diversion' rows must sum to 0")}
+
+
              ## Need to write a check that tests if the margins for all the firm's products is present
 
          }
@@ -76,8 +79,9 @@ setMethod(
          return(measure)
      }
 
-     ui <- matrix(c(-1/shares[k],0,1 - shares[k],-1),ncol=2,nrow=2)
-     ci <- c(shares[k] - 1,1)
+     ##constrain mktElast, coef to be negative and mktElast to be less than the own price elasticity
+     ui <- matrix(c(-1/shares[k],0,-1,1 - shares[k],-1,0),ncol=2,nrow=3)
+     ci <- c(shares[k] - 1,0,0)
 
      parmsStart <- c(-1 - shares[k]*(1-shares[k]),-2) # These starting values always satisfy constraints
 
@@ -93,7 +97,7 @@ setMethod(
 
      if(abs(minParam[2])>5){warning("'mktElast' estimate is large.")}
      object@mktElast <- minParam[2]
-     object@intercepts <- as.vector(shares - B%*%prices)
+     object@intercepts <- as.vector(shares - B%*%log(prices))
      names(object@intercepts) <- object@labels
 
 
@@ -119,11 +123,11 @@ setMethod(
          object@priceDelta <- exp(priceDelta)-1
 
          sharePost <-  calcShares(object,FALSE)
-         elastPost <-  elast(object,FALSE)
+         elastPost <-  t(elast(object,FALSE))
          marginPost <- calcMargins(object,FALSE)
 
 
-         thisFOC <- sharePost*diag(ownerPost) + as.vector(t(elastPost*ownerPost) %*% (sharePost*marginPost))
+         thisFOC <- sharePost*diag(ownerPost) + as.vector((elastPost*ownerPost) %*% (sharePost*marginPost))
          return(thisFOC)
 
      }
@@ -269,7 +273,10 @@ setMethod(
  definition=function(object){
 
 
-     isParty <- colSums( object@ownerPost - object@ownerPre) > 0
+     ownerPre  <- object@ownerPre
+     ownerPost <- object@ownerPost
+
+     isParty <- rowSums( abs(ownerPost - ownerPre) ) > 0
 
      sharesPre <- calcShares(object,TRUE)
      sharesPre <- tcrossprod(1/sharesPre,sharesPre)
@@ -282,8 +289,9 @@ setMethod(
      divPre    <- elastPre/diag(elastPre)
 
 
-     Bpost      <- divPre * sharesPre * object@ownerPost
-     marginPost <- -1 * as.vector(solve(Bpost) %*% (1/diag(elastPre)))
+     Bpost      <- divPre * sharesPre * ownerPost
+     marginPost <- -1 * as.vector(solve(Bpost) %*% (diag(ownerPost)/diag(elastPre))
+                                  )
 
      cmcr <- (marginPost - marginPre)/(1 - marginPre)
      names(cmcr) <- object@labels
@@ -438,7 +446,7 @@ setMethod(
 
      curWidth <-  getOption("width")
 
-     isParty <- as.numeric(colSums( object@ownerPost - object@ownerPre)>0)
+     isParty <- as.numeric(rowSums( abs(object@ownerPost - object@ownerPre))>0)
      isParty <- factor(isParty,levels=0:1,labels=c(" ","*"))
 
 

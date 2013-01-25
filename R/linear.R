@@ -37,7 +37,7 @@ setClass(
                 ){
                  stop("'diversion' off-diagonal elements must be between -1 and 1")}
 
-             if(isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),0))){ stop("'diversion' rows must sum to 0")}
+             if(any(round(rowSums(object@diversion,na.rm=TRUE),4)>0)){ stop("'diversion' rows must sum to no more than 0")}
 
 
              if(nprods != nrow(object@diversion) ||
@@ -81,7 +81,7 @@ setMethod(
 
 
           slopes <- matrix(margins * prices,ncol=nprods, nrow=nprods,byrow=TRUE)
-          slopes <- 1/rowSums(slopes * diversion * ownerPre) * quantities
+          slopes <- diag(ownerPre)/rowSums(slopes * diversion * ownerPre) * quantities
           slopes <- -t(slopes * diversion)
 
 
@@ -97,9 +97,9 @@ setMethod(
               beta <- -s*diversion[k,]/diversion[,k]
               slopesCand <- matrix(beta,ncol=nprods,nrow=nprods,byrow=TRUE)
               slopesCand <- slopesCand*t(diversion)
-              elast <- slopesCand * tcrossprod(1/quantities,prices)
+              elast <- t(slopesCand * tcrossprod(1/quantities,prices))
 
-              marginsCand <- -1 * as.vector(solve(t(elast * ownerPre)) %*% (revenues * diag(ownerPre))) / revenues
+              marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
 
               measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
               return(measure)
@@ -126,8 +126,8 @@ setMethod(
         !isTRUE(all.equal(slopes,t(slopes)))){
          warning("Matrix of demand slopes coefficients is not symmetric. Demand parameters may not be consistent with utility maximization theory.")}
 
-     if(any(intercept<0))   {warning(  "Some demand intercepts have been found to be negative")}
-     if(any(diag(slopes)>0)){warning(  "Some own-slope coefficients have been found to be positive")}
+     if(any(intercept<0))   {warning(  "Some demand intercepts are negative")}
+     if(any(diag(slopes)>0)){warning(  "Some own-slope coefficients are positive")}
 
      object@slopes <- slopes
      object@intercepts <- intercept
@@ -146,7 +146,7 @@ setMethod(
  signature= "Linear",
  definition=function(object,preMerger=TRUE,...){
 
-     slopes    <- object@slopes
+     slopes    <- t(object@slopes) #transpose slopes for FOCs
      intercept <- object@intercepts
 
      if(preMerger){owner <- object@ownerPre}
@@ -154,40 +154,45 @@ setMethod(
 
      mc <- calcMC(object,preMerger)
 
-    ## prices <-
-    ##     solve(slopes + t(slopes*owner)) %*%
-    ##     (t(slopes*owner) %*% mc - intercept)
+     ##first try the analytic solution
+     prices <-
+         solve((t(slopes)*diag(owner)) + (slopes*owner)) %*%
+             ((slopes*owner) %*% mc - (intercept*diag(owner)))
 
-    ## prices <- as.vector(prices)
-    ## quantities <- as.vector(intercept+ slopes %*% prices)
-    ## if(any(quantities<0)){
-    ##     warning("Some equilibrium quantities are predicted to be less than 0. Re-solving under the constraint that quantities are greater than 0")
-    ##     }
+     prices <- as.vector(prices)
+     quantities <- as.vector(intercept + slopes %*% prices)
+
+     ##use the numeric solution if analytic solution yields negative quantities
+     if(any(quantities<0)){
+
+         warning("Equilibrium prices yield negative equilibrium quantities. Recomputing equilibrium prices  under the restriction that equilbrium quantities must be non-negative")
 
 
-     FOC <- function(priceCand){
 
-         if(preMerger){ object@pricePre <- priceCand}
-         else{          object@pricePost <- priceCand}
+         FOC <- function(priceCand){
 
-         margins   <- priceCand - mc
-         quantities  <- calcQuantities(object,preMerger)
+             if(preMerger){ object@pricePre <- priceCand}
+             else{          object@pricePost <- priceCand}
 
-         thisFOC <- quantities*diag(owner) + t(slopes*owner) %*% margins
+             margins   <- priceCand - mc
+             quantities  <- calcQuantities(object,preMerger)
 
-         return(as.vector(crossprod(thisFOC)))
+             thisFOC <- quantities*diag(owner) + (slopes*owner) %*% margins
+
+             return(as.vector(crossprod(thisFOC)))
+
+         }
+
+         ##Find starting value that always meets boundary conditions
+         ##startParm <- as.vector(solve(slopes) %*% (-intercept + 1))
+
+         minResult <- constrOptim(object@priceStart,FOC,grad=NULL,ui=slopes,ci=-intercept,...)
+         if(minResult$convergence != 0){
+             warning("'calcPrices' solver may not have successfully converged. Returning unconstrained result. 'constrOptim' reports: '",minResult$message,"'")}
+
+         prices <- minResult$par
 
      }
-
-     ##Find starting value that always meets boundary conditions
-     ##startParm <- as.vector(solve(slopes) %*% (-intercept + 1))
-
-     minResult <- constrOptim(object@priceStart,FOC,grad=NULL,ui=slopes,ci=-intercept,...)
-     if(minResult$convergence != 0){
-         warning("'calcPrices' solver may not have successfully converged. Returning unconstrained result. 'constrOptim' reports: '",minResult$message,"'")}
-
-     prices <- minResult$par
-
 
      names(prices) <- object@labels
 

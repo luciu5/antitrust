@@ -28,7 +28,10 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
 
     if(!is.matrix(ownerPost)){ stop("'ownerPost' must be a matrix")}
     if(any(ownerPost < 0 || ownerPost > 1,na.rm=TRUE)){ stop("'ownerPost' elements must be between 0 and 1")}
-
+    if(
+       !isTRUE(all.equal(colSums(unique(ownerPost)),rep(1,nprod)))){
+        stop("The columns of the matrix formed from the unique rows of 'ownerPost' must sum to 1")
+    }
     if(any(mcDelta<0,na.rm=TRUE)){stop("'mcDelta' must be positive")}
 
     ## transform pre-merger ownership vector into matrix##
@@ -54,15 +57,20 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
     else if(!is.matrix(ownerPre) ||
             ncol(ownerPre) != nrow(ownerPre) ||
             any(ownerPre < 0 || ownerPre > 1,na.rm=TRUE) ||
-            ncol(ownerPre) != nprod
-            ){
-            stop("'ownerPre' must be a square matrix whose dimension equals then length of 'prices' and whose elements are between 0 and 1")}
+            ncol(ownerPre) != nprod ||
+            !isTRUE(all.equal(colSums(unique(ownerPre)),rep(1,nprod)))
+        ){
+    stop("'ownerPre' must be a square matrix whose dimension equals then length of 'prices' and whose elements are between 0 and 1 Also, the columns of the matrix formed from the unique rows of 'ownerPre' must sum to 1")
+}
 
 
 
 
-    ## identify which products belong to the first merging party listed
-    is1 <- ownerPre[1,] > 0
+
+      ## identify which products belong to the first merging party listed
+      is1         <- unique(ceiling(ownerPre))[1,] > 0 # identify which products belong to the first merging party listed
+      is2         <- unique(ceiling(ownerPre))[2,] > 0 # identify which products belong to the 2nd   merging party listed
+
     result <- rep(NA,nprod)
 
     mcPre  <- prices*(1-margins)
@@ -73,11 +81,15 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
     Bpre =   -1 * diversions * priceRatio * ownerPre
     Bpost =  -1 * diversions * priceRatio * ownerPost
 
-    D1 <- (solve(Bpre[is1,is1,drop=FALSE])   %*%  Bpost[is1,!is1,drop=FALSE]) %*% margins[!is1] # owner 1 gross upp
-    D2 <- (solve(Bpre[!is1,!is1,drop=FALSE]) %*%  Bpost[!is1,is1,drop=FALSE]) %*% margins[is1]  # owner 2 gross upp
+    D1 <- (solve(Bpre[is1,is1,drop=FALSE])   %*%
+           ((diag(ownerPre)[is1]/diag(ownerPost)[is1]) * as.vector(Bpost[is1,is2,drop=FALSE] %*%
+                                             margins[is2]))) # owner 1 gross upp
+    D2 <- (solve(Bpre[is2,is2,drop=FALSE]) %*%
+          ((diag(ownerPre)[is2]/diag(ownerPost)[is2]) * as.vector(Bpost[is2,is1,drop=FALSE] %*%
+                                           margins[is1])))  # owner 2 gross upp
 
     result[is1]  <- -as.vector(D1)
-    result[!is1] <- -as.vector(D2)
+    result[is2] <- -as.vector(D2)
 
     result <- result*prices + (mcPost - mcPre)
 

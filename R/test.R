@@ -11,6 +11,7 @@ source("loglin.R")
 source("logit.R")
 source("logitALM.R")
 source("logitNests.R")
+source("logitNestsALM.R")
 source("logitCap.R")
 source("ces.R")
 source("cesNests.R")
@@ -175,12 +176,14 @@ result12 <- logit.alm(price,shares.quantity,margins.logit,ownerPre=ownerPre,owne
 testMethods(result12)
 
 ## Nested logit demand
-result10 <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
+result10 <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,parmsStart=c(-0.1117361,0.6340260))
 result10.noconstraint <- logit.nests(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,constraint=FALSE)
 
 demand.parm <- result10@slopes
 sim10    <- sim(price,demand="LogitNests",demand.parm,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames)
 testMethods(result10)
+
+result10.2 <- logit.nests.alm(price,shares.quantity,margins.logit,ownerPre=ownerPre,ownerPost=ownerPost,nests=nests,labels=prodNames,parmsStart=c(-0.48110442,0.69168332,0.01972695))
 
 ## logit demand, with capacity constraints
 mktSize=1000

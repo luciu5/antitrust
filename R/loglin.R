@@ -73,9 +73,9 @@ setMethod(
 
      margins   <- 1 - mc/priceCand
      revenues  <- calcShares(object,preMerger,revenue=TRUE)
-     elasticities     <- elast(object,preMerger)
+     elasticities     <- t(elast(object,preMerger))
 
-     thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
+     thisFOC <- revenues * diag(owner) + as.vector((elasticities * owner) %*% (margins * revenues))
 
      return(thisFOC)
  }

@@ -18,11 +18,10 @@ setClass(
                  stop("'knownElastIndex' value must be between 1 and the length of 'shares'")}
              if(nprods != length(object@mcDelta)){
                  stop("'mcDelta' must have the same length as 'shares'")}
-             if(object@knownElast>0 || object@mktElast > -1 ){
-                 stop("All elasticities must be negative. 'mktElast' must be less than -1")}
-             if(object@knownElast > object@mktElast){
-                 stop("'mktElast' must be greater than 'knownElast'")}
-
+             if(object@knownElast>0 || object@mktElast > 0 ){
+                 stop("'mktElast', 'knownElast' must be non-positive")}
+             if(abs(object@knownElast) < abs(object@mktElast) ){
+                  stop("'mktElast' must be less  than 'knownElast' in absolute value")}
          }
 
          )
@@ -60,7 +59,7 @@ setMethod(
 
      dimnames(B) <- list(labels,labels)
      object@slopes <- B
-     object@intercepts <- as.vector(shares - B%*%object@prices)
+     object@intercepts <- as.vector(shares - B%*%log(object@prices))
      names(object@intercepts) <- object@labels
 
      return(object)

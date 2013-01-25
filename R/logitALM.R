@@ -58,7 +58,7 @@ setMethod(
                   return(measure)
               }
 
-               ## Constrain optimizer to look  alpha <0, tau < 0
+               ## Constrain optimizer to look  alpha <0,  0 < sOut < 1
               lowerB <- c(-Inf,0)
               upperB <- c(0,1)
 

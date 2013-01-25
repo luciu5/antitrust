@@ -17,7 +17,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
     shares <- margins <- rep(1/nprods,nprods)
 
 
-    if(!missing(nests)){nests <- factor(nests)}
+    if(!missing(nests)){nests <- factor(nests,levels=unique(nests))}
 
 
     ## general checks
@@ -231,11 +231,14 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
         ## find the market elasticity that best explains user-supplied intercepts and prices
 
+        aidsShares    <- as.vector(demand.param$intercepts + demand.param$slopes %*% log(prices)) # AIDS needs actual shares for prediction
+        aidsDiv       <- tcrossprod(1/(1-aidsShares),aidsShares)
+        diag(aidsDiv) <- -1
 
         result <- new(demand,prices=prices, quantities=shares,margins=margins,
-                      shares=as.vector(demand.param$intercepts + demand.param$slopes %*% log(prices)), # AIDS needs actual shares for prediction
+                      shares=aidsShares,
                       mcDelta=mcDelta, mktElast=demand.param$mktElast,
-                      ownerPre=ownerPre,diversion=-diag(nprods),
+                      ownerPre=ownerPre,diversion=aidsDiv,
                       priceStart=priceStart,
                       ownerPost=ownerPost, labels=labels)
 

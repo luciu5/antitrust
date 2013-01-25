@@ -98,10 +98,11 @@ setGeneric (
 # def=function(object,...){standardGeneric("calcSearchSets")}
 # )
 
-setGeneric (
- name= "isMax",
- def=function(object,...){standardGeneric("isMax")}
- )
+#setGeneric (
+# name= "isMax",
+# def=function(object,...){standardGeneric("isMax")}
+# )
+
 
 setGeneric (
  name= "elast",
@@ -199,7 +200,7 @@ setMethod(
          revenue<- calcShares(object,preMerger,revenue=TRUE)
 
          elast <-  elast(object,preMerger)
-         margins <-  -1 * as.vector(solve(t(elast*owner)) %*% (revenue * diag(owner))) / revenue
+         margins <-  -1 * as.vector(solve(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
 
 
      }
@@ -289,7 +290,7 @@ setMethod(
      outDelta <- (outPost/outPre - 1) * 100
 
 
-     isParty <- as.numeric(colSums( object@ownerPost - object@ownerPre)>0)
+     isParty <- as.numeric(rowSums( abs(object@ownerPost - object@ownerPre))>0)
      isParty <- factor(isParty,levels=0:1,labels=c(" ","*"))
 
      results <- data.frame(pricePre=pricePre,pricePost=pricePost,
@@ -321,14 +322,14 @@ setMethod(
      cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*sharesPost[isParty=="*"])/sum(sharesPost[isParty=="*"]),digits),sep="\t")
 
      ##Only compute upp if prices are supplied
-     uppExists <- tryCatch(upp(object),error=function(e) FALSE)
-     if(is.logical(uppExists)){
-     cat("\nShare-Weighted Net UPP:",round(sum(upp(object)*sharesPost),digits),sep="\t")}
+     thisUPP <- tryCatch(upp(object),error=function(e) FALSE)
+     if(!is.logical(thisUPP)){
+     cat("\nShare-Weighted Net UPP:",round(sum(thisUPP*sharesPost[isParty=="*"])/sum(sharesPost[isParty=="*"]),digits),sep="\t")}
 
      ##Only compute CV if prices  are supplied
-     cvExists <- tryCatch(CV(object,...),error=function(e) FALSE)
-     if(cvExists){
-     cat("\nCompensating Variation (CV):",round(CV(object,...),digits),sep="\t")}
+     thisCV <- tryCatch(CV(object,...),error=function(e) FALSE)
+     if(!is.logical(thisCV)){
+     cat("\nCompensating Variation (CV):",round(thisCV,digits),sep="\t")}
 
      cat("\n\n")
 
@@ -399,7 +400,7 @@ setMethod(
  signature= "Bertrand",
  definition=function(object){
 
-     isParty <- colSums( object@ownerPost - object@ownerPre) > 0
+     isParty <- rowSums( abs(object@ownerPost - object@ownerPre) ) > 0
 
      ##Compute pre-merger margins
      marginPre  <- calcMargins(object,TRUE)
@@ -423,12 +424,13 @@ setMethod(
           signature= "Bertrand",
          definition=function(object){
 
-             isParty     <- colSums( object@ownerPost - object@ownerPre) > 0
+             isParty     <- rowSums( abs(object@ownerPost  - object@ownerPre) ) > 0
 
-             ownerPre    <- object@ownerPre[isParty,isParty]
-             ownerPost   <- object@ownerPost[isParty,isParty] #this will typically be a matrix of ones
+             ownerPre    <- object@ownerPre[isParty,isParty,drop=FALSE]
+             ownerPost   <- object@ownerPost[isParty,isParty,drop=FALSE] #this will typically be a matrix of ones
 
-             is1         <- ownerPre[1,] > 0 # identify which products belong to the first merging party listed
+             is1         <- unique(ceiling(ownerPre))[1,] > 0 # identify which products belong to the first merging party listed
+             is2         <- unique(ceiling(ownerPre))[2,] > 0 # identify which products belong to the 2nd   merging party listed
 
              upp         <- rep(NA,length(is1))
              result      <- rep(0,length(isParty))
@@ -449,17 +451,21 @@ setMethod(
              Bpost =  -1 * div * priceRatio * ownerPost
 
 
-             D1 <- (solve(Bpre[is1,is1,drop=FALSE])   %*%  Bpost[is1,!is1,drop=FALSE]) %*% margin[!is1] # owner 1 gross upp
-             D2 <- (solve(Bpre[!is1,!is1,drop=FALSE]) %*%  Bpost[!is1,is1,drop=FALSE]) %*% margin[is1]  # owner 2 gross upp
+             D1 <- (solve(Bpre[is1,is1,drop=FALSE])   %*%
+                    ((diag(ownerPre)[is1]/diag(ownerPost)[is1]) * as.vector(Bpost[is1,is2,drop=FALSE] %*%
+                                                                            margin[is2]))) # owner 1 gross upp
+             D2 <- (solve(Bpre[is2,is2,drop=FALSE]) %*%
+                    ((diag(ownerPre)[is2]/diag(ownerPost)[is2]) * as.vector(Bpost[is2,is1,drop=FALSE] %*%
+                                                                              margin[is1])))  # owner 2 gross upp
 
              upp[is1]  <- -as.vector(D1)
-             upp[!is1] <- -as.vector(D2)
+             upp[is2] <- -as.vector(D2)
 
              result[isParty] <- upp*price + mcDelta #net UPP
 
              names(result) <- object@labels
 
-             return(result)
+             return(result[isParty])
 
          }
           )
@@ -497,7 +503,7 @@ setMethod(
 
               if(length(ssnip)>1 || ssnip<0 | ssnip>1 ){stop("'ssnip' must be a number between 0 and 1")}
 
-              isParty <- colSums( object@ownerPost - ownerPre)>0 #identify which products belong to the merging parties
+              isParty <- rowSums( abs(object@ownerPost - ownerPre) )>0 #identify which products belong to the merging parties
 
               if(length(intersect(which(isParty),prodIndex))==0){
                   stop("'prodIndex' does not contain any of the merging parties' products. Add at least one of the following indices: ",
