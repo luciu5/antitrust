@@ -7,3 +7,5 @@
 *.blg
 *.dvi
 .Rproj.user
+*.tex
+antitrust.Rproj
