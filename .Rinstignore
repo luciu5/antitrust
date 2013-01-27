@@ -1,3 +1,6 @@
-\.git
-\.gitignore
+.git/.*
+.gitignore
 test.R
+R/auction2ndcap.R
+R/cesNestsALM.R
+man/Auction2ndCap-class.Rd

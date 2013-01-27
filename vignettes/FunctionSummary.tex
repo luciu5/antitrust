@@ -1,0 +1,77 @@
+\begin{sidewaystable}
+\small
+\begin{center}
+  \caption{\atr{} functions and their information requirements}
+\label{tab:functionsum}
+\begin{tabular}{llccccll}
+  \hline
+Name & Demand& Price & Margin & Diversion & Quantity/ & Capacity& Cite \\
+& & & & & Share & \\
+  \hline\hline
+  \verb@cmcr.bertrand@ & any                              & M & M & M &                     &  & \cite{Werden1996} \\
+  \verb@cmcr.cournot@           & any                              &  & 1 &  &M                     & & \cite{Froeb1998} \\
+  \verb@upp.bertrand@ & any                              & M & M & M & &
+  &   \cite{Farrell2010a} \\
+& & & & &  & & \cite{Jaffe2012} \\
+  \verb@HHI@           & any                              &  &  &  & A                     &&  \cite{Salop2000} \\\hline
+  \verb@linear@ & Linear                         & A & 1+ & O & A && \cite{Haefen2002} \\
+   \verb@loglin@ & Log-linear & A & A & O & A &&
+   \cite{Haefen2002} \\
+  & & & & &  && \cite{LaFrance2004} \\
+   \verb@aids@ & AIDS                           &    O       &  2+
+   & O & A && \cite{Epstein2004}\\
+   & & & & &  && \cite{LaFrance2004} \\
+   \verb@pcaids@ & PCAIDS                           &    O   &  1
+   & O & A && \cite{Epstein2004} \\
+  & & & & &  && \cite{LaFrance2004} \\
+   \verb@pcaids.nests@ & Nested PCAIDS                    & O
+   & 2+ & O & A && \cite{Epstein2004} \\
+   \verb@logit@ & Logit                            & A & 1+ &
+   & A && \cite{Werden1994} \\
+   \verb@logit.alm@ & Logit -- Unobserved Outside Share                            & A & 2+ &               & A && \cite{Werden1994} \\
+   \verb@logit.nests@ & Nested Logit                     & A & 2+ &
+   & A && \cite{Werden1994} \\
+   \verb@logit.cap@ & Capacity-Constrained Logit         & A & 2+ &               & A &A& \cite{Froeb2003} \\
+   \verb@ces@ & Constant Elasticity              & A & 1+ &               & A  && \cite{Sheu2011} \\
+   \verb@ces.nests@ & Nested Constant Elasticity       & A & 2+ &               & A && \cite{Sheu2011} \\
+   \hline
+   \verb@sim@ &             & A & &               &  && \\
+   \hline
+ \end{tabular}
+\end{center}
+`M': data on merging parties' products,\\
+`A': data on all products,\\
+`O': optional data; if supplied it must be on all products,\\
+`\#+': data on at least \# products.
+\end{sidewaystable}
+
+\begin{table}
+\small
+\begin{center}
+  \caption{Selected \atr{} methods}
+\label{tab:atrmethods}
+\begin{tabular}{r|l}
+Name & Description \\ \hline\hline
+
+
+\verb@CV@ & Compute compensating variation\\
+\verb@calcMC@ & Compute pre- and post-merger (constant) marginal costs\\
+\verb@calcMargins@ & Compute pre- and post-merger equilibrium margins\\
+\verb@calcPrices@ & Compute pre- and post-merger equilibrium prices\\
+\verb@calcPriceDelta@ & Compute \emph{proportional} change in
+equilibrium prices\\
+\verb@calcShares@ &Compute pre- and post-merger equilibrium shares\\
+\verb@cmcr@& Compute compensating marginal cost reduction (CMCR)\\
+\verb@HypoMonTest@& Use the Hypothetical Monopolist Test to \\
+&determine whether a specified set of products satisfy a SSNIP\\
+\verb@diversion@ & Compute pre- and post-merger diversion matrices\\
+\verb@diversionHypoMon@& Compute the diversion matrix under a
+Hypothetical Monopolist Test \\
+\verb@elast@ & Compute pre- and post-merger elasticity matrices\\
+\verb@hhi@ & Compute HHI using pre- and post-merger equilbrium
+shares\\
+\verb@upp@ & Compute net Upwards Pricing Pressure (UPP)\\
+\verb@summary@ & Summarize result\\\hline
+\end{tabular}
+\end{center}
+\end{table}

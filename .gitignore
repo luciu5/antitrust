@@ -1,4 +1,3 @@
-
 *.pdf
 *.log
 *.aux
@@ -7,4 +6,4 @@
 .Rhistory
 *.blg
 *.dvi
-inst/doc/antitrust.tex
+.Rproj.user

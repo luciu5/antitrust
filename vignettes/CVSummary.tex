@@ -1,0 +1,33 @@
+\begin{table}
+\small
+\begin{center}
+  \caption{Compensating variation formulas}
+  \label{tab:cvsum}
+\begin{tabular}{rcc}
+  \hline
+Demand & Formula&Reports\\
+ \hline\hline
+Linear &$\alpha'(p_{post}-p_{pre}) + .5p'_{post}Bp_{post} - .5p'_{pre}Bp_{pre}$&level\\
+AIDS &$\alpha'(\log p_{post}-\log p_{pre}) + .5\log p'_{post}B\log
+p_{post} - .5\log p'_{pre}B\log p_{pre}$& proportion\\
+CES  &$\frac{1}{1+\alpha}\frac{1}{1-\gamma}\log\left(\frac{\sum\limits_{i\in n}
+    \delta_ip_{i,post}^{1-\gamma}}{\sum\limits_{i\in n}
+    \delta_ip_{i,pre}^{1-\gamma}}\right)$& proportion\\
+Nested CES &$\frac{1}{1+\alpha}\frac{1}{1-\gamma}\log\left(\frac{\sum\limits_{h\in
+    H}\left(\sum\limits_{i\in h}\delta_i
+  p_{i,post}^{1-\sigma_h}\right)^\frac{1-\gamma}{1-\sigma_h}} {\sum\limits_{h\in
+    H}\left(\sum\limits_{i\in h}\delta_i
+  p_{i,pre}^{1-\sigma_h}\right)^\frac{1-\gamma}{1-\sigma_h}}\right)$ &proportion\\
+Logit &$\frac{1}{\alpha}\log\left(\frac{\sum\limits_{i\in n}\exp(\delta_i+\alpha
+    p_{i,post})}{\sum\limits_{i\in n}\exp(\delta_i+\alpha
+    p_{i,pre})}\right)$&level\\
+Nested Logit & $\frac{1}{\alpha}\log\left(\frac{\sum\limits_{h\in H}\left(\sum\limits_{i\in h}\exp(\frac{\delta_i+\alpha
+    p_{i,post}}{\sigma_h})\right)^{\sigma_h}}{\sum\limits_{h\in H}\left(\sum\limits_{i\in h}\exp(\frac{\delta_i+\alpha
+    p_{i,pre}}{\sigma_h})\right)^{\sigma_h}}\right)$& level\\
+\hline
+\end{tabular}
+\end{center}
+Note: The `Reports' column indicates whether the compensating
+variation formula returns compensating variation in levels (e.g. dollar
+amounts) or as a proportion of aggregate income.
+\end{table}
