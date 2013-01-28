@@ -147,8 +147,14 @@ setGeneric (
  def=function(object,...){standardGeneric("getNestsParms")}
  )
 
-setGeneric (name= "summary")
 
+setGeneric (
+  name= "plotData",
+  def=function(object,...){standardGeneric("plotData")}
+)
+
+setGeneric (name= "summary")
+setGeneric("Plot",function(object,...){standardGeneric("Plot")})
 
 ## Create some methods for the Bertrand Class
 
@@ -248,6 +254,54 @@ setMethod(
           )
 
 
+##plot method
+
+setMethod(
+  f= "Plot",
+  signature= "Bertrand",
+  definition=function(object){
+   
+    nprods=length(object@labels)
+    pricePre=object@pricePre
+    pricePost=object@pricePost
+    labels=object@labels
+    
+    
+    prices<-quantPre<-quantPost<-prod<-NULL
+    
+    plotThis <- function(price,idx,preMerger){
+                plotData(object,price=price,index=idx,preMerger=preMerger)
+              }
+    
+    for(i in 1:nprods){
+      thesePrices=seq(0.4,1.2,.1)*pricePre[i]
+      quantPre=c(quantPre,sapply(thesePrices,plotThis,idx=i,preMerger=TRUE))
+      quantPost=c(quantPost,sapply(thesePrices,plotThis,idx=i,preMerger=FALSE))
+      prices=c(prices,thesePrices)
+      prod=c(prod,rep(object@labels[i],length(thesePrices)))
+    }
+    
+    resultPre=data.frame(quantity=quantPre,price=prices,prod=prod,Demand="pre-merger")
+    resultPost=data.frame(quantity=quantPost,price=prices,prod=prod,Demand="post-merger")
+    result=rbind(resultPre,resultPost)
+    result=result[result$quantity>0,]
+    
+    equilibria=data.frame(quantity=c(calcQuantities(object,TRUE),
+                                     calcQuantities(object,FALSE)),
+                          price=c(pricePre,pricePost),
+                          prod=labels,
+                          Demand=rep(c("pre-merger","post-merger"),each=nprods))
+    
+    thisPlot=ggplot(result,(aes(quantity,price,color=Demand,group=Demand))) + geom_line() 
+    thisPlot=thisPlot + facet_wrap(~prod,scales="free_x") 
+    thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="yellow",data.frame(mc=calcMC(object),prod=labels))
+    thisPlot=thisPlot + geom_vline(aes(xintercept = quantity,group=Demand,colour=Demand),linetype=3,equilibria[,c("quantity","Demand","prod")] )
+    thisPlot=thisPlot + geom_hline(aes(yintercept = price,group=Demand,colour=Demand),linetype=3,equilibria[,c("price","Demand","prod")] )
+    thisPlot=thisPlot + geom_point(aes(y=price,x=quantity,color=Demand,group=Demand),equilibria)
+    
+    return(thisPlot)
+  }
+)
 
 
 ##summarize method
