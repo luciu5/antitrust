@@ -148,13 +148,9 @@ setGeneric (
  )
 
 
-setGeneric (
-  name= "plotData",
-  def=function(object,...){standardGeneric("plotData")}
-)
 
 setGeneric (name= "summary")
-setGeneric("Plot",function(object,...){standardGeneric("Plot")})
+
 
 ## Create some methods for the Bertrand Class
 
@@ -257,47 +253,62 @@ setMethod(
 ##plot method
 
 setMethod(
-  f= "Plot",
-  signature= "Bertrand",
-  definition=function(object){
-   
+  f= "plot",
+  signature= c("Bertrand","missing"),
+  definition=function(x,y,points=seq(0.4,1.2,.1)){
+    object=x
     nprods=length(object@labels)
     pricePre=object@pricePre
     pricePost=object@pricePost
     labels=object@labels
     
+    if(hasMethod("calcQuantities",class(object))){
+      outPre=calcQuantities(object,preMerger=TRUE)
+      outPost=calcQuantities(object,preMerger=FALSE)
+    }
+    else{
+      outPre=calcShares(object,preMerger=TRUE)
+      outPost=calcShares(object,preMerger=FALSE)
+    }
     
     prices<-quantPre<-quantPost<-prod<-NULL
     
     plotThis <- function(price,idx,preMerger){
-                plotData(object,price=price,index=idx,preMerger=preMerger)
+      thisObj=object
+      if(preMerger){thisObj@pricePre[idx]=price}
+      else{thisObj@pricePost[idx]=price}
+      
+      if(hasMethod("calcQuantities",class(thisObj))){
+        return(calcQuantities(thisObj,preMerger=preMerger)[idx])
+      }
+      else{return(calcShares(thisObj,preMerger=preMerger)[idx])}
               }
     
     for(i in 1:nprods){
-      thesePrices=seq(0.4,1.2,.1)*pricePre[i]
+      thesePrices=points*pricePre[i]
       quantPre=c(quantPre,sapply(thesePrices,plotThis,idx=i,preMerger=TRUE))
       quantPost=c(quantPost,sapply(thesePrices,plotThis,idx=i,preMerger=FALSE))
       prices=c(prices,thesePrices)
       prod=c(prod,rep(object@labels[i],length(thesePrices)))
     }
     
-    resultPre=data.frame(quantity=quantPre,price=prices,prod=prod,Demand="pre-merger")
-    resultPost=data.frame(quantity=quantPost,price=prices,prod=prod,Demand="post-merger")
+    resultPre=data.frame(output=quantPre,price=prices,prod=prod,Demand="pre-merger")
+    resultPost=data.frame(output=quantPost,price=prices,prod=prod,Demand="post-merger")
     result=rbind(resultPre,resultPost)
-    result=result[result$quantity>0,]
+    result=result[result$output>0,]
     
-    equilibria=data.frame(quantity=c(calcQuantities(object,TRUE),
-                                     calcQuantities(object,FALSE)),
+    equilibria=data.frame(output=c(outPre,
+                                   outPost),
                           price=c(pricePre,pricePost),
                           prod=labels,
                           Demand=rep(c("pre-merger","post-merger"),each=nprods))
     
-    thisPlot=ggplot(result,(aes(quantity,price,color=Demand,group=Demand))) + geom_line() 
+    thisPlot=ggplot(result,(aes(output,price,color=Demand,group=Demand))) + geom_line() 
     thisPlot=thisPlot + facet_wrap(~prod,scales="free_x") 
     thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="yellow",data.frame(mc=calcMC(object),prod=labels))
-    thisPlot=thisPlot + geom_vline(aes(xintercept = quantity,group=Demand,colour=Demand),linetype=3,equilibria[,c("quantity","Demand","prod")] )
+    thisPlot=thisPlot + geom_vline(aes(xintercept = output,group=Demand,colour=Demand),linetype=3,equilibria[,c("output","Demand","prod")] )
     thisPlot=thisPlot + geom_hline(aes(yintercept = price,group=Demand,colour=Demand),linetype=3,equilibria[,c("price","Demand","prod")] )
-    thisPlot=thisPlot + geom_point(aes(y=price,x=quantity,color=Demand,group=Demand),equilibria)
+    thisPlot=thisPlot + geom_point(aes(y=price,x=output,color=Demand,group=Demand),equilibria)
     
     return(thisPlot)
   }

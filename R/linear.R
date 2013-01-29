@@ -294,20 +294,6 @@ setMethod(
      return(result)
  })
 
-setMethod(
-  f= "plotData",
-  signature= "Linear",
-  definition=function(object,index,price,preMerger=TRUE){
-    
-    if(preMerger){prices=object@pricePre}
-    else{prices=object@pricePost}
-    
-    prices[index]=price
-    quantities= object@intercepts + object@slopes %*% prices
-    
-    return(quantities[index])
-  }
-  )
 
 setMethod(
  f= "calcPricesHypoMon",
