@@ -254,12 +254,14 @@ setMethod(
 
 setMethod(
   f= "plot",
-  signature= c("Bertrand","missing"),
-  definition=function(x,y,points=seq(0.4,1.2,.1)){
+  signature= "Bertrand",
+  definition=function(x,y=seq(0.4,1.2,.1)){
     object=x
     nprods=length(object@labels)
     pricePre=object@pricePre
     pricePost=object@pricePost
+    preMC=calcMC(object,preMerger=TRUE)
+    postMC=calcMC(object,preMerger=FALSE)
     labels=object@labels
     
     if(hasMethod("calcQuantities",class(object))){
@@ -285,7 +287,7 @@ setMethod(
               }
     
     for(i in 1:nprods){
-      thesePrices=points*pricePre[i]
+      thesePrices=y*pricePre[i]
       quantPre=c(quantPre,sapply(thesePrices,plotThis,idx=i,preMerger=TRUE))
       quantPost=c(quantPost,sapply(thesePrices,plotThis,idx=i,preMerger=FALSE))
       prices=c(prices,thesePrices)
@@ -303,12 +305,20 @@ setMethod(
                           prod=labels,
                           Demand=rep(c("pre-merger","post-merger"),each=nprods))
     
-    thisPlot=ggplot(result,(aes(output,price,color=Demand,group=Demand))) + geom_line() 
+    thisPlot=ggplot(result,(aes(output,price,color=Demand,group=Demand))) + geom_line() + theme_bw() 
     thisPlot=thisPlot + facet_wrap(~prod,scales="free_x") 
-    thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="yellow",data.frame(mc=calcMC(object),prod=labels))
+    
     thisPlot=thisPlot + geom_vline(aes(xintercept = output,group=Demand,colour=Demand),linetype=3,equilibria[,c("output","Demand","prod")] )
     thisPlot=thisPlot + geom_hline(aes(yintercept = price,group=Demand,colour=Demand),linetype=3,equilibria[,c("price","Demand","prod")] )
     thisPlot=thisPlot + geom_point(aes(y=price,x=output,color=Demand,group=Demand),equilibria)
+    
+    thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="yellow",data.frame(mc=preMC,prod=labels))
+   
+    if(!isTRUE(all.equal(preMC,postMC))){
+      thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="orange",data.frame(mc=postMC[postMC!=preMC],prod=labels[postMC!=preMC]))
+     
+    }
+    else{}
     
     return(thisPlot)
   }

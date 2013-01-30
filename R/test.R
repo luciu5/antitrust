@@ -1,5 +1,6 @@
 rm(list=ls())
 require(nleqslv)
+require(ggplot2)
 require(numDeriv)
 currentdir <- getwd()
 setwd("h:/TaragIC/AntiTrustRPackage/antitrust/R")
@@ -44,6 +45,7 @@ testMethods <- function(object,param){
     print(cmcr(object))            # returns the compensating marginal cost reduction
 
 
+    print(plot(object))
     print(HypoMonTest(object,1:2)) # returns postmeger diversion ratios
 
     if(!missing(param)){
