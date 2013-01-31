@@ -78,8 +78,8 @@ Objects can be created by calls of the form \code{new("Bertrand", ...)}.
       rather than than shares (when possible). Setting `parameters' equal to TRUE reports
       all demand parameters. `digits' controls the number of significant
       digits reported in output.}
-     \item{\code{plot}}{\code{signature(x=object,y=seq(0.4,1.2,.1)}}{
-      Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. 
+     \item{\code{plot}}{\code{signature(x=object,scale=.1}}{
+      Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. `scale' controls the amount above marginal cost and below equilbrium price that is plotted.
     }  
     \item{\code{upp}}{\code{signature(object)}}{
       Calculate the Upwards Pricing Pressure (upp) index.
