@@ -82,12 +82,13 @@
 \S4method{hhi}{Bertrand}(object,preMerger=TRUE,revenue=FALSE)
 \S4method{ownerToMatrix}{Antitrust}(object,preMerger=TRUE)
 \S4method{ownerToVec}{Antitrust}(object,preMerger=TRUE)
-\S4method{plot}{Bertrand}(x=object,scale=.1)
+\S4method{plot}{Bertrand}(x,scale=.1)
 \S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2,...)
 }
 
 \arguments{
   \item{object}{An instance of one of the classes listed above.}
+  \item{x}{Used only in plot method. Should always be set equal to object}
   \item{preMerger}{If TRUE, returns pre-merger outcome. If
     FALSE, returns post-merger outcome.  Default is TRUE.}
   \item{isMax}{If TRUE, uses numerical derivatives to determine if
@@ -176,7 +177,7 @@
     converts a k x k ownership matrix into a length-k ownership vector
 
   }
-   \item{plot}{\code{signature(x=Bertrand,scale=.1)}}{
+   \item{plot}{\code{signature(x,scale=.1)}}{
 Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. `scale' controls the amount above marginal cost and below equilbrium price that is plotted.
   }
   \item{show}{\code{signature(object)}}{
