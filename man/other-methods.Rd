@@ -101,6 +101,7 @@
     is FALSE}
     \item{digits}{The number of significant digits to round
   printed results. Default is 2}
+  \item{scale}{The proportion below marginal cost and above equilbrium price that should be plotted. Default is .1 }
   \item{...}{Arguments to be passed to non-linear solver, OR for
     \code{summary} to \code{CV}.}
 }
