@@ -59,6 +59,7 @@
 \alias{ownerToMatrix}
 \alias{ownerToMatrix,ANY-method}
 \alias{ownerToMatrix,Antitrust-method}
+\alias{plot,Bertrand-method}
 \alias{summary}
 \alias{summary,ANY-method}
 \alias{summary,AIDS-method}
@@ -81,6 +82,7 @@
 \S4method{hhi}{Bertrand}(object,preMerger=TRUE,revenue=FALSE)
 \S4method{ownerToMatrix}{Antitrust}(object,preMerger=TRUE)
 \S4method{ownerToVec}{Antitrust}(object,preMerger=TRUE)
+\S4method{plot}{Bertrand}(x=object,y=seq(0.4,1.2,.1))
 \S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2,...)
 }
 
@@ -173,6 +175,9 @@
 
     converts a k x k ownership matrix into a length-k ownership vector
 
+  }
+   \item{plot}{\code{signature(x=Bertrand,,y=seq(0.4,1.2,.1))}}{
+  Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. 
   }
   \item{show}{\code{signature(object)}}{
     Displays the percentage change in prices due to the merger.
