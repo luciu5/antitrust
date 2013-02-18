@@ -25,6 +25,9 @@
 \alias{calcPriceDelta,ANY-method}
 \alias{calcPriceDelta,Antitrust-method}
 \alias{calcPriceDelta,AIDS-method}
+\alias{calcProducerSurplus}
+\alias{calcProducerSurplus,ANY-method}
+\alias{calcProducerSurplus,Bertrand-method}
 \alias{calcMargins}
 \alias{calcMargins,ANY-method}
 \alias{calcMargins,AIDS-method}
@@ -75,6 +78,7 @@
 \S4method{calcPrices}{ANY}(object,preMerger=TRUE,...)
 \S4method{calcPriceDelta}{Antitrust}(object)
 \S4method{calcPriceDelta}{AIDS}(object,isMax=FALSE,...)
+\S4method{calcProducerSurplus}{Bertrand}(object,preMerger=TRUE)
 \S4method{calcMargins}{ANY}(object,preMerger=TRUE)
 \S4method{calcMC}{Bertrand}(object,preMerger=TRUE)
 \S4method{calcSlopes}{ANY}(object,preMerger=TRUE)
@@ -82,12 +86,13 @@
 \S4method{hhi}{Bertrand}(object,preMerger=TRUE,revenue=FALSE)
 \S4method{ownerToMatrix}{Antitrust}(object,preMerger=TRUE)
 \S4method{ownerToVec}{Antitrust}(object,preMerger=TRUE)
-\S4method{plot}{Bertrand}(x=object,y=seq(0.4,1.2,.1))
+\S4method{plot}{Bertrand}(x,scale=.1)
 \S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2,...)
 }
 
 \arguments{
   \item{object}{An instance of one of the classes listed above.}
+  \item{x}{Used only in plot method. Should always be set equal to object}
   \item{preMerger}{If TRUE, returns pre-merger outcome. If
     FALSE, returns post-merger outcome.  Default is TRUE.}
   \item{isMax}{If TRUE, uses numerical derivatives to determine if
@@ -100,6 +105,7 @@
     is FALSE}
     \item{digits}{The number of significant digits to round
   printed results. Default is 2}
+  \item{scale}{The proportion below marginal cost and above equilbrium price that should be plotted. Default is .1 }
   \item{...}{Arguments to be passed to non-linear solver, OR for
     \code{summary} to \code{CV}.}
 }
@@ -137,6 +143,9 @@
     Nash-Bertrand pricing game. This method calls a non-linear
     equations solver to find a sequence of price changes that satisfy
     the Bertrand FOCs.
+  }
+   \item{calcProducerSurplus}{\code{signature(object=Bertrand,preMerger=TRUE)}}{
+    Computes equilibrium producer surplus.
   }
   \item{calcMargins}{\code{signature(object=c(Bertrand,LogitCap),preMerger=TRUE)}}{
     Computes equilibrium product margins assuming that firms are playing a
@@ -176,8 +185,8 @@
     converts a k x k ownership matrix into a length-k ownership vector
 
   }
-   \item{plot}{\code{signature(x=Bertrand,,y=seq(0.4,1.2,.1))}}{
-  Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. 
+   \item{plot}{\code{signature(x,scale=.1)}}{
+Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. `scale' controls the amount above marginal cost and below equilbrium price that is plotted.
   }
   \item{show}{\code{signature(object)}}{
     Displays the percentage change in prices due to the merger.

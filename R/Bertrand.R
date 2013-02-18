@@ -90,6 +90,10 @@ setGeneric (
  def=function(object,...){standardGeneric("calcPriceDeltaHypoMon")}
  )
 setGeneric (
+  name= "calcProducerSurplus",
+  def=function(object,...){standardGeneric("calcProducerSurplus")}
+)
+setGeneric (
  name= "HypoMonTest",
  def=function(object,...){standardGeneric("HypoMonTest")}
  )
@@ -224,6 +228,33 @@ setMethod(
 
 
 
+## compute margins
+setMethod(
+  f= "calcProducerSurplus",
+  signature= "Bertrand",
+  definition=function(object,preMerger=TRUE){
+    
+    
+    mc     <- calcMC(object,preMerger)
+    if( preMerger) {prices <- object@pricePre}
+    else{prices <- object@pricePost}
+    
+    if(hasMethod("calcQuantities",class(object))){
+      output <- calcQuantities(object,preMerger)
+    }
+    else{
+      warning("'calcQuantities' method not defined for class ",class(object),". Using 'calcShares' instead")
+      output <- calcShares(object,preMerger,revenue=FALSE)
+    }
+    
+    ps <- (prices - mc) * output
+    names(ps) <- object@labels
+    
+    return(ps)
+  }
+  
+)
+
 
 ## Create a method to recover marginal cost using
 ## demand parameters and supplied prices
@@ -255,14 +286,17 @@ setMethod(
 setMethod(
   f= "plot",
   signature= "Bertrand",
-  definition=function(x,y=seq(0.4,1.2,.1)){
+  definition=function(x,scale=.1){
     object=x
     nprods=length(object@labels)
     pricePre=object@pricePre
     pricePost=object@pricePost
-    preMC=calcMC(object,preMerger=TRUE)
-    postMC=calcMC(object,preMerger=FALSE)
+    mcPre=calcMC(object,preMerger=TRUE)
+    mcPost=calcMC(object,preMerger=FALSE)
     labels=object@labels
+    isParty <- rowSums( abs(object@ownerPost - object@ownerPre))>0
+    isParty <- ifelse(isParty,"*","")
+    labels  <- paste(isParty,labels,sep="")
     
     if(hasMethod("calcQuantities",class(object))){
       outPre=calcQuantities(object,preMerger=TRUE)
@@ -287,11 +321,11 @@ setMethod(
               }
     
     for(i in 1:nprods){
-      thesePrices=y*pricePre[i]
+      thesePrices=seq((1-scale)*min(mcPre[i],mcPost[i]),(1+scale)*max(pricePre[i],pricePost[i]),length.out=100)
       quantPre=c(quantPre,sapply(thesePrices,plotThis,idx=i,preMerger=TRUE))
       quantPost=c(quantPost,sapply(thesePrices,plotThis,idx=i,preMerger=FALSE))
       prices=c(prices,thesePrices)
-      prod=c(prod,rep(object@labels[i],length(thesePrices)))
+      prod=c(prod,rep(labels[i],length(thesePrices)))
     }
     
     resultPre=data.frame(output=quantPre,price=prices,prod=prod,Demand="pre-merger")
@@ -302,23 +336,26 @@ setMethod(
     equilibria=data.frame(output=c(outPre,
                                    outPost),
                           price=c(pricePre,pricePost),
+                          mc=c(mcPre,mcPost),
                           prod=labels,
                           Demand=rep(c("pre-merger","post-merger"),each=nprods))
+    equilibria$Cost=equilibria$Demand
+
     
-    thisPlot=ggplot(result,(aes(output,price,color=Demand,group=Demand))) + geom_line() + theme_bw() 
+    thisPlot=ggplot(result,(aes(output,price,color=Demand,group=Demand))) + geom_line() + theme_bw() + theme(legend.position="bottom", legend.direction="horizontal",legend.title=element_blank())
     thisPlot=thisPlot + facet_wrap(~prod,scales="free_x") 
     
     thisPlot=thisPlot + geom_vline(aes(xintercept = output,group=Demand,colour=Demand),linetype=3,equilibria[,c("output","Demand","prod")] )
     thisPlot=thisPlot + geom_hline(aes(yintercept = price,group=Demand,colour=Demand),linetype=3,equilibria[,c("price","Demand","prod")] )
     thisPlot=thisPlot + geom_point(aes(y=price,x=output,color=Demand,group=Demand),equilibria)
     
-    thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="yellow",data.frame(mc=preMC,prod=labels))
+    thisPlot=thisPlot + geom_hline(aes(yintercept = mc,group=Cost,color=Cost),data=equilibria[,c("mc","Cost","prod")],show_guide=TRUE)
    
-    if(!isTRUE(all.equal(preMC,postMC))){
-      thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="orange",data.frame(mc=postMC[postMC!=preMC],prod=labels[postMC!=preMC]))
+    #if(!isTRUE(all.equal(mcPre,mcPost))){
+    #  thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="orange",data=data.frame(mc=mcPost[mcPost!=mcPre],prod=labels[mcPost!=mcPre]),show_guide=TRUE)
      
-    }
-    else{}
+    #}
+    
     
     return(thisPlot)
   }
