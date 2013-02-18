@@ -90,6 +90,10 @@ setGeneric (
  def=function(object,...){standardGeneric("calcPriceDeltaHypoMon")}
  )
 setGeneric (
+  name= "calcProducerSurplus",
+  def=function(object,...){standardGeneric("calcProducerSurplus")}
+)
+setGeneric (
  name= "HypoMonTest",
  def=function(object,...){standardGeneric("HypoMonTest")}
  )
@@ -223,6 +227,33 @@ setMethod(
  )
 
 
+
+## compute margins
+setMethod(
+  f= "calcProducerSurplus",
+  signature= "Bertrand",
+  definition=function(object,preMerger=TRUE){
+    
+    
+    mc     <- calcMC(object,preMerger)
+    if( preMerger) {prices <- object@pricePre}
+    else{prices <- object@pricePost}
+    
+    if(hasMethod("calcQuantities",class(object))){
+      output <- calcQuantities(object,preMerger)
+    }
+    else{
+      warning("'calcQuantities' method not defined for class ",class(object),". Using 'calcShares' instead")
+      output <- calcShares(object,preMerger,revenue=FALSE)
+    }
+    
+    ps <- (prices - mc) * output
+    names(ps) <- object@labels
+    
+    return(ps)
+  }
+  
+)
 
 
 ## Create a method to recover marginal cost using
