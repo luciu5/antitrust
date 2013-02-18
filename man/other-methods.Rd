@@ -25,6 +25,9 @@
 \alias{calcPriceDelta,ANY-method}
 \alias{calcPriceDelta,Antitrust-method}
 \alias{calcPriceDelta,AIDS-method}
+\alias{calcProducerSurplus}
+\alias{calcProducerSurplus,ANY-method}
+\alias{calcProducerSurplus,Bertrand-method}
 \alias{calcMargins}
 \alias{calcMargins,ANY-method}
 \alias{calcMargins,AIDS-method}
@@ -75,6 +78,7 @@
 \S4method{calcPrices}{ANY}(object,preMerger=TRUE,...)
 \S4method{calcPriceDelta}{Antitrust}(object)
 \S4method{calcPriceDelta}{AIDS}(object,isMax=FALSE,...)
+\S4method{calcProducerSurplus}{Bertrand}(object,preMerger=TRUE)
 \S4method{calcMargins}{ANY}(object,preMerger=TRUE)
 \S4method{calcMC}{Bertrand}(object,preMerger=TRUE)
 \S4method{calcSlopes}{ANY}(object,preMerger=TRUE)
@@ -139,6 +143,9 @@
     Nash-Bertrand pricing game. This method calls a non-linear
     equations solver to find a sequence of price changes that satisfy
     the Bertrand FOCs.
+  }
+   \item{calcProducerSurplus}{\code{signature(object=Bertrand,preMerger=TRUE)}}{
+    Computes equilibrium producer surplus.
   }
   \item{calcMargins}{\code{signature(object=c(Bertrand,LogitCap),preMerger=TRUE)}}{
     Computes equilibrium product margins assuming that firms are playing a
