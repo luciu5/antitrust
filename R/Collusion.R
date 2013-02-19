@@ -1,43 +1,49 @@
 setClass(
   Class = "Collusion",
   representation=representation(
-    stage.function       = "function",
-    stage.result         = "Logit"
+    stage         = "Logit"
   )
   
   
-  ## compute margins
+  ## compute all coordinating price games
   setMethod(
-    f= "calcMargins",
-    signature= "Bertrand",
+    f= "calcCoordinatingEquilibria",
+    signature= "Collusion",
     definition=function(object,preMerger=TRUE){
+  
+      stage  <- object@stage
+      nprods <- length(object@labels)
       
+      if(preMerger){owner<-stage@ownerPre}
+      else{owner<-stage@ownerPost}
       
-      
-      if( preMerger) {
+      firms     <- unique(owner)
+      prodOwner <- ownerToVec(object)
+       
+      ps <- NULL
+      for( group in 2:nrow(firms)){
+        thisGame <- stage
+        theseCombn <- combn(1:nrow(firms),group)
         
-        owner  <- object@ownerPre
-        revenue<- calcShares(object,preMerger,revenue=TRUE)
+        thisPS <- matrix(ncol=ncol(theseCombn),nrow=nprods)
         
-        elast <-  elast(object,preMerger)
-        margins <-  -1 * as.vector(solve(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
+        for(c in 1:ncol(theseCombn)){
+          
+         thisOwner<- owner
+         thisOwner[prodOwner %in% theseCombn[c,], prodOwner %in% theseCombn[c,]] <- 1
+         thisGame@ownerPre <-  thisOwner
+         thisPS[,c] <- calcProducerSurplus(thisGame)
+        
+        }
+        
+        ps <- cbind(ps,calcProducerSurplus(thisGame))
+        
         
         
       }
-      
-      else{
-        prices <- object@pricePost
-        mc     <- calcMC(object,preMerger)
-        
-        margins <- 1 - mc/prices
-      }
-      
-      
-      names(margins) <- object@labels
-      
-      return(as.vector(margins))
+
     }
-    
+      
   )
   
   
