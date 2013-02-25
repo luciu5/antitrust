@@ -50,21 +50,21 @@ sttasetClass(
       ps <- list()
       for( group in 2:nrow(firms)){
         thisGame <- stage
-        theseCombn <- combn(1:nrow(firms),group)
+        theseCoalitions <- combn(1:nrow(firms),group)
         
         #thisPS <- matrix(ncol=ncol(theseCombn),nrow=nprods)
-         thisPS <- vector("list",ncol(theseCombn))
-         names(thisPS)<- apply(theseCombn,2,paste,collapse=",")
+         thisPS <- vector("list",ncol(theseCoalitions))
+         names(thisPS)<- apply(theseCoalitions,2,paste,collapse=",")
         
-        for(c in 1:ncol(theseCombn)){
+        for(c in 1:ncol(theseCoalitions)){
           
          thisOwner<- owner
-         thisCoalition <-  prodOwner %in% theseCombn[,c]
+         thisCoalition <-  prodOwner %in% theseCoalitions[,c]
          thisOwner[ thisCoalition, thisCoalition]=1
-         thisGame@ownerPre <-  thisGame@ownerPost <- thisOwner
+         thisGame@ownerPre <-  thisGame@ownerPost <- thisOwner #All-C scenario for particular coalition
          thisGame@ownerPost[isParty,isParty]=1
-         thisGame@pricePre <-   calcPrices(thisGame,preMerger=TRUE)
-         thisGame@pricePost <-  calcPrices(thisGame,preMerger=FALSE)
+         thisGame@pricePre <-   try(calcPrices(thisGame,preMerger=TRUE),silent=TRUE)
+         thisGame@pricePost <-  try(calcPrices(thisGame,preMerger=FALSE),silent=TRUE)
          #thisPS[,c] <- calcProducerSurplus(thisGame)
           thisPS[[c]] <- thisGame
         }

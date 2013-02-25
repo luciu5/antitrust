@@ -86,6 +86,10 @@ setGeneric (
  def=function(object,...){standardGeneric("calcPricesHypoMon")}
  )
 setGeneric (
+  name= "calcProducerSurplusGrimTrigger",
+  def=function(object,...){standardGeneric("calcProducerSurplusGrimTrigger")}
+)
+setGeneric (
  name= "calcPriceDeltaHypoMon",
  def=function(object,...){standardGeneric("calcPriceDeltaHypoMon")}
  )
@@ -248,6 +252,17 @@ setMethod(
               return(as.vector(mc))
           }
           )
+
+## Coordinated effects using Grim Trigger strategies
+## and optimal deffection
+setMethod(
+  f= "calcProducerSurplusGrimTrigger",
+  signature= "Bertrand",
+  definition= function(object,coalition,discount){
+    
+
+  }
+)
 
 
 ##plot method
