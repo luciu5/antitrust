@@ -218,7 +218,7 @@ setMethod(
 
      else{
          prices <- object@pricePost
-         mc     <- calcMC(object,preMerger)
+         mc     <- object@mcPost
 
          margins <- 1 - mc/prices
      }
@@ -266,9 +266,13 @@ setMethod(
   definition=function(object,preMerger=TRUE){
     
     
-    mc     <- calcMC(object,preMerger)
-    if( preMerger) {prices <- object@pricePre}
-    else{prices <- object@pricePost}
+    if( preMerger) {
+      prices <- object@pricePre
+      mc     <- object@mcPre
+    }
+    else{prices <- object@pricePost
+         mc     <- object@mcPost
+    }
     
     if(hasMethod("calcQuantities",class(object))){
       output <- calcQuantities(object,preMerger)
@@ -363,8 +367,8 @@ setMethod(
     nprods=length(object@labels)
     pricePre=object@pricePre
     pricePost=object@pricePost
-    mcPre=calcMC(object,preMerger=TRUE)
-    mcPost=calcMC(object,preMerger=FALSE)
+    mcPre=object@mcPre
+    mcPost=object@mcPost
     labels=object@labels
     isParty <- rowSums( abs(object@ownerPost - object@ownerPre))>0
     isParty <- ifelse(isParty,"*","")
@@ -622,8 +626,8 @@ setMethod(
              div         <- diversion(object,preMerger=TRUE)[isParty,isParty]
              price       <- object@pricePre[isParty]
 
-             mcPre       <- calcMC(object,preMerger=TRUE)[isParty]
-             mcPost      <- calcMC(object,preMerger=FALSE)[isParty]
+             mcPre       <- object@mcPre[isParty]
+             mcPost      <- object@mcPost[isParty]
              mcDelta     <- mcPost - mcPre
 
              margin      <- 1 - mcPre/price

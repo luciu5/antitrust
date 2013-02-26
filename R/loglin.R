@@ -61,9 +61,15 @@ setMethod(
  signature= "LogLin",
  definition=function(object,preMerger=TRUE,...){
 
-     if(preMerger){owner <- object@ownerPre}
-     else{owner <- object@ownerPost}
-     mc <- calcMC(object,preMerger)
+     if(preMerger){
+       owner <- object@ownerPre
+       mc    <- object@mcPre
+     }
+     else{
+       owner <- object@ownerPost
+       mc    <- object@mcPost
+     }
+     
 
  FOC <- function(priceCand){
 
@@ -153,7 +159,7 @@ setMethod(
  definition=function(object,prodIndex){
 
 
-     mc <- calcMC(object,TRUE)[prodIndex]
+     mc <- object@mcPre[prodIndex]
      pricePre <- object@pricePre
 
      calcMonopolySurplus <- function(priceCand){
@@ -219,6 +225,11 @@ loglinear <- function(prices,quantities,margins,diversions,
 
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
+    
+    ## Calculate marginal cost
+    result@mcPre <-  calcMC(result,TRUE)
+    result@mcPost <- calcMC(result,FALSE)
+    
 
     ## Calculate pre and post merger equilibrium prices
     result@pricePre  <- calcPrices(result,TRUE,...)

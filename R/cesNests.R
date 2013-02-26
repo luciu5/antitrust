@@ -374,7 +374,10 @@ ces.nests <- function(prices,shares,margins,
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
 
-
+    ## Calculate marginal cost
+    result@mcPre <-  calcMC(result,TRUE)
+    result@mcPost <- calcMC(result,FALSE)
+    
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
     result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)

@@ -10,11 +10,15 @@ setClass(
          ownerPost    = "matrixOrVector",
          pricePre     = "vector",
          pricePost    = "vector",
+         mcPre        = "vector",
+         mcPost      = "vector",
          labels       = "character"
          ),
          prototype=prototype(
          pricePre      =  numeric(),
-         pricePost     =  numeric()
+         pricePost     =  numeric(),
+         mcPre      =  numeric(),
+         mcPost     =  numeric()
          ),
          validity=function(object){
 
