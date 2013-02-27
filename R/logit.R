@@ -136,10 +136,16 @@ setMethod(
  definition=function(object,preMerger=TRUE,isMax=FALSE,...){
 
 
-     if(preMerger){owner <- object@ownerPre}
-     else{owner <- object@ownerPost}
+     if(preMerger){
+       owner <- object@ownerPre
+       mc    <- object@mcPre
+     }
+     else{
+       owner <- object@ownerPost
+       mc    <- object@mcPost
+     }
 
-     mc <- calcMC(object,preMerger)
+
 
 
      ##Define system of FOC as a function of prices
@@ -272,7 +278,7 @@ setMethod(
  definition=function(object,prodIndex){
 
 
-     mc       <- calcMC(object,TRUE)[prodIndex]
+     mc       <- object@mcPre[prodIndex]
      pricePre <- object@pricePre
 
      calcMonopolySurplus <- function(priceCand){
@@ -331,6 +337,10 @@ logit <- function(prices,shares,margins,
 
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
+    
+    ## Calculate marginal cost
+    result@mcPre <-  calcMC(result,TRUE)
+    result@mcPost <- calcMC(result,FALSE)
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)

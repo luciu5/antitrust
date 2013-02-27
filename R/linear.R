@@ -149,10 +149,14 @@ setMethod(
      slopes    <- t(object@slopes) #transpose slopes for FOCs
      intercept <- object@intercepts
 
-     if(preMerger){owner <- object@ownerPre}
-     else{owner <- object@ownerPost}
+     if(preMerger){
+       owner <- object@ownerPre
+       mc    <- object@mcPre
+     }
+     else{owner <- object@ownerPost
+          mc    <- object@mcPre
+     }
 
-     mc <- calcMC(object,preMerger)
 
      ##first try the analytic solution
      prices <-
@@ -303,7 +307,7 @@ setMethod(
      nprods <- length(prodIndex)
      intercept <- object@intercepts
      slopes <- object@slopes
-     mc <- calcMC(object,TRUE)[prodIndex]
+     mc <- object@mcPre[prodIndex]
      pricePre <- object@pricePre
 
      calcMonopolySurplus <- function(priceCand){
@@ -387,6 +391,11 @@ linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
     ## Calculate Demand Slope Coefficients and Intercepts
     result <- calcSlopes(result)
 
+    
+    ## Calculate marginal cost
+    result@mcPre <-  calcMC(result,TRUE)
+    result@mcPost <- calcMC(result,FALSE)
+    
     result@pricePre  <- calcPrices(result,TRUE,...)
     result@pricePost <- calcPrices(result,FALSE,...)
 

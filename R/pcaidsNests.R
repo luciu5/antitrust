@@ -194,6 +194,10 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
     ## Solve Non-Linear System for Price Changes
     result@priceDelta <- calcPriceDelta(result,isMax=isMax,...)
 
+    ## Calculate marginal cost
+    result@mcPre <-  calcMC(result,TRUE)
+    result@mcPost <- calcMC(result,FALSE)
+    
 
     ## Calculate Pre and Post merger equilibrium prices
     result@pricePre  <- calcPrices(result,TRUE)

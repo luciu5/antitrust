@@ -137,7 +137,7 @@ setMethod(
 
      else{
          prices <- object@pricePost
-         mc     <- calcMC(object,preMerger)
+         mc     <- object@mcPost
 
          margins <- 1 - mc/prices
      }
@@ -160,10 +160,15 @@ setMethod(
 
      capacities <- object@capacities
 
-     if(preMerger){owner <- object@ownerPre}
-     else{owner <- object@ownerPost}
+     if(preMerger){
+       owner <- object@ownerPre
+       mc    <- object@mcPre
+     }
+     else{
+       owner <- object@ownerPost
+       mc    <- object@mcPost
+     }
 
-     mc <- calcMC(object,preMerger)
 
 
      ##Define system of FOC as a function of prices
@@ -217,7 +222,7 @@ setMethod(
  definition=function(object,prodIndex,...){
 
 
-     mc       <- calcMC(object,TRUE)[prodIndex]
+     mc       <- object@mcPre[prodIndex]
      pricePre <- object@pricePre
 
       FOC <- function(priceCand){
@@ -292,6 +297,10 @@ logit.cap <- function(prices,shares,margins,
     result <- calcSlopes(result)
 
 
+    ## Calculate marginal cost
+    result@mcPre <-  calcMC(result,TRUE)
+    result@mcPost <- calcMC(result,FALSE)
+    
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
     result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)

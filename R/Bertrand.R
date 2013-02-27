@@ -94,6 +94,11 @@ setGeneric (
   def=function(object,...){standardGeneric("calcProducerSurplus")}
 )
 setGeneric (
+  
+  name= "calcProducerSurplusGrimTrigger",
+  def=function(object,...){standardGeneric("calcProducerSurplusGrimTrigger")}
+)
+setGeneric (
  name= "HypoMonTest",
  def=function(object,...){standardGeneric("HypoMonTest")}
  )
@@ -213,7 +218,7 @@ setMethod(
 
      else{
          prices <- object@pricePost
-         mc     <- calcMC(object,preMerger)
+         mc     <- object@mcPost
 
          margins <- 1 - mc/prices
      }
@@ -225,35 +230,6 @@ setMethod(
      }
 
  )
-
-
-
-## compute margins
-setMethod(
-  f= "calcProducerSurplus",
-  signature= "Bertrand",
-  definition=function(object,preMerger=TRUE){
-    
-    
-    mc     <- calcMC(object,preMerger)
-    if( preMerger) {prices <- object@pricePre}
-    else{prices <- object@pricePost}
-    
-    if(hasMethod("calcQuantities",class(object))){
-      output <- calcQuantities(object,preMerger)
-    }
-    else{
-      warning("'calcQuantities' method not defined for class ",class(object),". Using 'calcShares' instead")
-      output <- calcShares(object,preMerger,revenue=FALSE)
-    }
-    
-    ps <- (prices - mc) * output
-    names(ps) <- object@labels
-    
-    return(ps)
-  }
-  
-)
 
 
 ## Create a method to recover marginal cost using
@@ -281,6 +257,106 @@ setMethod(
           )
 
 
+
+
+## compute margins
+setMethod(
+  f= "calcProducerSurplus",
+  signature= "Bertrand",
+  definition=function(object,preMerger=TRUE){
+    
+    
+    if( preMerger) {
+      prices <- object@pricePre
+      mc     <- object@mcPre
+    }
+    else{prices <- object@pricePost
+         mc     <- object@mcPost
+    }
+    
+    if(hasMethod("calcQuantities",class(object))){
+      output <- calcQuantities(object,preMerger)
+    }
+    else{
+      warning("'calcQuantities' method not defined for class ",class(object),". Using 'calcShares' instead")
+      output <- calcShares(object,preMerger,revenue=FALSE)
+    }
+    
+    ps <- (prices - mc) * output
+    names(ps) <- object@labels
+    
+    return(ps)
+  }
+  
+)
+## Coordinated effects using Grim Trigger strategies
+## and optimal deffection
+
+setMethod(
+  f= "calcProducerSurplusGrimTrigger",
+  signature= "Bertrand",
+  definition= function(object,coalition,discount,preMerger=TRUE){
+    nprod <- length(object@labels)
+    if(!is.numeric(coalition) ||
+         length(coalition) > nprod ||
+         !coalition %in% 1:nprod){
+      stop ("'coalition' must be a vector of product indices no greater than the number of products")
+    }
+    if(any(discount<0 | discount>=1) ||
+       length(discount) != length(coalition)){
+      stop ("'discount' must be a vector of values between 0 and 1 and whose length equals that of 'coalition'")
+    }
+    
+    psPunish <- calcProducerSurplus(object,preMerger)
+    
+    if(preMerger){
+      ownerPre <- object@ownerPre
+      object@ownerPre[coalition,coalition] <- 1
+      ownerCoalition <- object@ownerPre
+      object@pricePre <- calcPrices(object,preMerger)
+      psCoord  <- calcProducerSurplus(object,preMerger)
+      
+      psDefect <- psPunish
+      
+      #test to see if c defects
+      for(c in coalition){
+        object@ownerPre <- ownerCoalition
+        object@ownerPre[c,] <- ownerPre[c,]
+        object@pricePre <- calcPrices(object,preMerger)
+        psDefect[c] <- calcProducerSurplus(object,preMerger)[c]
+      }
+      
+    }
+    else{
+      
+      ownerPost <- object@ownerPost
+      object@ownerPost[coalition,coalition] <- 1
+      ownerCoalition <- object@ownerPost
+      object@pricePost <- calcPrices(object,preMerger)
+      psCoord  <- calcProducerSurplus(object,preMerger)
+      
+      psDefect <- psPunish
+      
+      for(c in coalition){
+        object@ownerPost <- ownerCoalition
+        object@ownerPost[c,] <- ownerPost[c,]
+        object@pricePost <- calcPrices(object,preMerger)
+        psDefect[c] <- calcProducerSurplus(object,preMerger)[c]
+      }
+    }
+
+    result<-cbind(Discount=discount,Coord=psCoord,Defect=psDefect,Punish=psPunish)
+    rownames(result) <- object@labels
+    
+    result <- result[coalition,]
+    
+    result <- cbind(result,IC=result[,"Coord"] > result[,"Defect"]*(1-discount) + result[,"Punish"]*discount)
+    return(result)
+  }
+)
+
+
+
 ##plot method
 
 setMethod(
@@ -291,8 +367,8 @@ setMethod(
     nprods=length(object@labels)
     pricePre=object@pricePre
     pricePost=object@pricePost
-    mcPre=calcMC(object,preMerger=TRUE)
-    mcPost=calcMC(object,preMerger=FALSE)
+    mcPre=object@mcPre
+    mcPost=object@mcPost
     labels=object@labels
     isParty <- rowSums( abs(object@ownerPost - object@ownerPre))>0
     isParty <- ifelse(isParty,"*","")
@@ -550,8 +626,8 @@ setMethod(
              div         <- diversion(object,preMerger=TRUE)[isParty,isParty]
              price       <- object@pricePre[isParty]
 
-             mcPre       <- calcMC(object,preMerger=TRUE)[isParty]
-             mcPost      <- calcMC(object,preMerger=FALSE)[isParty]
+             mcPre       <- object@mcPre[isParty]
+             mcPost      <- object@mcPost[isParty]
              mcDelta     <- mcPost - mcPre
 
              margin      <- 1 - mcPre/price
