@@ -136,20 +136,20 @@ setMethod(
 
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart,FOC,...)
-
-     if(minResult$termcd != 1){warning("'calcPriceDelta' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
-
+     minResult <- dfsane(object@priceStart,FOC,quiet=TRUE,...)
+     
+     if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'dfsane' reports: '",minResult$message,"'")}
+     
      if(isMax){
 
-         hess <- genD(FOC,minResult$x) #compute the numerical approximation of the FOC hessian at optimium
+         hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
          hess <- hess$D[,1:hess$p]
 
 
          if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. Price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
      }
 
-     deltaPrice <- exp(minResult$x)-1
+     deltaPrice <- exp(minResult$par)-1
      names(deltaPrice) <- object@labels
 
      return(deltaPrice)

@@ -86,11 +86,12 @@ setMethod(
      return(thisFOC)
  }
 
- minResult <- nleqslv(object@priceStart,FOC,...)
+ minResult <- dfsane(object@priceStart,FOC,quiet=TRUE,...)
 
- if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
-
- priceEst        <- minResult$x
+if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'dfsane' reports: '",minResult$message,"'")}
+     
+ 
+ priceEst        <- minResult$par
  names(priceEst) <- object@labels
  return(priceEst)
 

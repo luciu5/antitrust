@@ -165,11 +165,11 @@ setMethod(
      }
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart,FOC,...)
+     minResult <- dfsane(object@priceStart,FOC,quiet=TRUE,...)
 
-      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+      if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'dfsane' reports: '",minResult$message,"'")}
 
-     priceEst        <- minResult$x
+     priceEst        <- minResult$par
      names(priceEst) <- object@labels
 
 

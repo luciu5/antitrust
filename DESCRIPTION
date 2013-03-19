@@ -5,7 +5,7 @@ Version: 0.91
 Date: 2013-01-03
 Author: Michael Sandfort and Charles Taragin
 Maintainer: Charles Taragin <charles.taragin@usdoj.gov>
-Depends: R (>= 2.15.0),  methods, nleqslv, numDeriv, ggplot2
+Depends: R (>= 2.15.0),  methods, BB, numDeriv, ggplot2
 Description: A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects mergers under different competitive regimes.
 License: Unlimited
 LazyLoad: yes
