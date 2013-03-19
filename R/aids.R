@@ -136,9 +136,9 @@ setMethod(
 
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- dfsane(object@priceStart,FOC,quiet=TRUE,...)
+     minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,...)
      
-     if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'dfsane' reports: '",minResult$message,"'")}
+     if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
      
      if(isMax){
 
