@@ -88,7 +88,7 @@ setMethod(
 
  minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,...)
 
-if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBSolve' reports: '",minResult$message,"'")}
      
  
  priceEst        <- minResult$par
