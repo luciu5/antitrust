@@ -192,11 +192,11 @@ setMethod(
      }
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart,FOC,...)
+     minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,...)
 
-      if(minResult$termcd != 1){warning("'calcPrices' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+      if(minResult$termcd != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
 
-     priceEst        <- minResult$x
+     priceEst        <- minResult$par
      names(priceEst) <- object@labels
   if(isMax){
 

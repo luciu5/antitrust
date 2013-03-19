@@ -60,10 +60,16 @@ setMethod(
 
               ownerPre     <-  object@ownerPre
               shares       <-  object@shares
+              nprods      <-   length(shares)
 
               margins      <-  object@margins
-              naMargins    <- !is.na(object@margins)
-
+              
+              ## identify which products have enough margin 
+              ## information to impute Bertrand margins
+              isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
+              isMargin[ownerPre==0]=0
+              isMargin    <- !is.na(rowSums(isMargin))
+              
               prices       <-  object@prices
               idx          <-  object@normIndex
 
@@ -90,7 +96,7 @@ Normalizing these parameters to 1.")
                ## Uncover price coefficient and mean valuation from margins and revenue shares
 
 
-              nprods <- length(shares)
+             
 
               sharesNests <- tapply(shares,nests,sum)[nests]
 
@@ -117,13 +123,17 @@ Normalizing these parameters to 1.")
                   diag(elasticity) <- diag(elasticity) + (1/sigma[nests])*alpha*prices
 
 
+                  
+                  elasticity <- elasticity[isMargin,isMargin]
+                  revenues   <- revenues[isMargin]
+                  ownerPre   <- ownerPre[isMargin,isMargin]
+                  margins    <- margins[isMargin]
 
+                  #marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
-                  marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
-                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
-
-                  ##measure <- revenues * diag(ownerPre) + as.vector((elasticity * ownerPre) %*% (margins * revenues))
-                  ##measure <- sum(measure[naMargins]^2,na.rm=TRUE)
+                  measure <- revenues * diag(ownerPre) + as.vector((elasticity * ownerPre) %*% (margins * revenues))
+                  measure <- sum(measure^2,na.rm=TRUE)
 
                   return(measure)
               }

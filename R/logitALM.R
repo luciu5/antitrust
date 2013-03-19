@@ -39,7 +39,12 @@ setMethod(
               prices       <-  object@prices
 
               nprods <- length(object@shares)
-              nMargins <-  length(margins[!is.na(margins)])
+              
+              ##identify which products have enough margin 
+              ## information to impute Bertrand margins
+              isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
+              isMargin[ownerPre==0]=0
+              isMargin    <- !is.na(rowSums(isMargin))
 
               minD <- function(theta){
 
@@ -51,10 +56,20 @@ setMethod(
                   diag(elast) <- alpha*prices - diag(elast)
 
                   revenues <- probs * prices
-                  marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  #marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
-                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
-
+                  elast      <-   elast[isMargin,isMargin]
+                  revenues   <-   revenues[isMargin]
+                  ownerPre   <-   ownerPre[isMargin,isMargin]
+                  margins    <-   margins[isMargin]
+                  
+                  #marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+                  
+                  measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
+                  measure <- sum(measure^2,na.rm=TRUE)
+                  
                   return(measure)
               }
 
@@ -120,8 +135,8 @@ logit.alm <- function(prices,shares,margins,
     
 
     ## Solve Non-Linear System for Price Changes
-    result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
-    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+    #result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
+    #result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
 
     return(result)
 

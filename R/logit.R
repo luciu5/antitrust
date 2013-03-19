@@ -97,6 +97,12 @@ setMethod(
 
               nprods <- length(shares)
               revenues <- shares * prices
+              
+              ## identify which products have enough margin 
+              ## information to impute Bertrand margins
+              isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
+              isMargin[ownerPre==0]=0
+              isMargin    <- !is.na(rowSums(isMargin))
 
 
               ## Minimize the distance between observed and predicted margins
@@ -106,10 +112,17 @@ setMethod(
                   elast <- -alpha *  matrix(prices * shares,ncol=nprods,nrow=nprods)
                   diag(elast) <- alpha*prices + diag(elast)
 
+                  
+                  elast      <- elast[isMargin,isMargin]
+                  revenues   <- revenues[isMargin]
+                  ownerPre   <- ownerPre[isMargin,isMargin]
+                  margins    <- margins[isMargin]
 
-                  marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
-
-                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+                  #marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+                  
+                  measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
+                  measure <- sum(measure^2,na.rm=TRUE)
 
                   return(measure)
               }

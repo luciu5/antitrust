@@ -38,6 +38,13 @@ setMethod(
 
 
               nprods <- length(shares)
+              
+              ## identify which products have enough margin 
+              ## information to impute Bertrand margins
+              isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
+              isMargin[ownerPre==0]=0
+              isMargin    <- !is.na(rowSums(isMargin))
+             
 
 
 
@@ -48,10 +55,16 @@ setMethod(
 
                   elasticity <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
                   diag(elasticity) <- -gamma + diag(elasticity)
-
-                  marginsCand <- -1 * as.vector(solve(elasticity * ownerPre) %*% (shares * diag(ownerPre))) / shares
-
-                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+                  
+                  elasticity <- elasticity[isMargin,isMargin]
+                  shares     <- shares[isMargin]
+                  ownerPre   <- ownerPre[isMargin,isMargin]
+                  margins    <- margins[isMargin]
+    
+                  #marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (shares * diag(ownerPre))) / shares
+                  #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)                  
+                   FOC <- (shares * diag(ownerPre)) + (elasticity * ownerPre) %*% (shares * margins)
+                   measure<-sum(FOC^2,na.rm=TRUE)
 
                   return(measure)
               }
