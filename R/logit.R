@@ -107,7 +107,7 @@ setMethod(
                   diag(elast) <- alpha*prices + diag(elast)
 
 
-                  marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
 
                   measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
