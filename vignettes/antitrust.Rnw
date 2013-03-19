@@ -182,7 +182,7 @@ Firm $k \in K$ chooses the prices $\{p_i\}_{i=1}^{n_k}$ of its
 products so as to maximize profits. Mathematically, firm $k$ solves:
 
 \begin{align*}
-\max_{\{p_i\}_{i=1}^{n_k}} &\sum_{i=1}^{n_k}\omega_{ik}(p_i - c_i)q_i,
+\max_{\{p_i\}_{i=1}^{n_k}} &\sum_{i=1}^{n}\omega_{ik}(p_i - c_i)q_i,
 \end{align*}
 
 where  $\omega_{ik}$ is the share of product $i$'s profits earned by
@@ -192,10 +192,10 @@ be a twice differentiable function of \emph{all} product prices.
 Differentiating profits with respect to each $p_i$  yields the following first order conditions (FOCs):
 
 \begin{align*}
-  \partial p_i&\equiv \omega_{ik}q_i +\sum_{j=1}^{n_k}\omega_{jk}( p_j - c_j)\frac{\partial q_j}{\partial
+  \partial p_i&\equiv \omega_{ik}q_i +\sum_{j=1}^{n}\omega_{jk}( p_j - c_j)\frac{\partial q_j}{\partial
     p_i}=0& \mbox{ for all $i\in n_k$} \\
   \intertext{ which may be rewritten as}\\
-  \partial p_i&\equiv \omega_{ik}r_i + \sum_{j=1}^{n_k} \omega_{jk}r_jm_j\epsilon_{ji}=0& \mbox{ for all $i\in n_k$},
+  \partial p_i&\equiv \omega_{ik}r_i + \sum_{j=1}^{n} \omega_{jk}r_jm_j\epsilon_{ji}=0& \mbox{ for all $i\in n_k$},
 \end{align*}
 
 where $r_i\equiv\frac{p_iq_i}{\sum\limits_{j=1}^np_jq_j}$ is
@@ -243,7 +243,7 @@ products so as to maximize profits, subject to capacity constraints $\{g_i\}_{i=
 Mathematically, firm $k$ solves:
 
 \begin{align*}
-  \max_{\{p_i\}_{i=1}^{n_k}} &\sum_{i=1}^{n_k}\omega_{ik}(p_i - c_i)q_i,\\
+  \max_{\{p_i\}_{i=1}^{n_k}} &\sum_{i=1}^{n}\omega_{ik}(p_i - c_i)q_i,\\
   \intertext{subject to}
   & q_i \le g_i,&i=1\ldots n_k
 \end{align*}

@@ -211,7 +211,7 @@ setMethod(
          revenue<- calcShares(object,preMerger,revenue=TRUE)
 
          elast <-  elast(object,preMerger)
-         margins <-  -1 * as.vector(solve(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
+         margins <-  -1 * as.vector(ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
 
 
      }
@@ -639,10 +639,10 @@ setMethod(
              Bpost =  -1 * div * priceRatio * ownerPost
 
 
-             D1 <- (solve(Bpre[is1,is1,drop=FALSE])   %*%
+             D1 <- (ginv(Bpre[is1,is1,drop=FALSE])   %*%
                     ((diag(ownerPre)[is1]/diag(ownerPost)[is1]) * as.vector(Bpost[is1,is2,drop=FALSE] %*%
                                                                             margin[is2]))) # owner 1 gross upp
-             D2 <- (solve(Bpre[is2,is2,drop=FALSE]) %*%
+             D2 <- (ginv(Bpre[is2,is2,drop=FALSE]) %*%
                     ((diag(ownerPre)[is2]/diag(ownerPost)[is2]) * as.vector(Bpost[is2,is1,drop=FALSE] %*%
                                                                               margin[is1])))  # owner 2 gross upp
 
