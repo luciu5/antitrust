@@ -119,7 +119,7 @@ Normalizing these parameters to 1.")
 
 
 
-                  marginsCand <- -1 * as.vector(solve(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
                   measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
                   ##measure <- revenues * diag(ownerPre) + as.vector((elasticity * ownerPre) %*% (margins * revenues))

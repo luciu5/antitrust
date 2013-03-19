@@ -71,7 +71,7 @@ setMethod(
          elast <- t(slopesCand/shares) + shares * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
          diag(elast) <- diag(elast) - 1
 
-         marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
+         marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
 
 
          measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
@@ -290,7 +290,7 @@ setMethod(
 
 
      Bpost      <- divPre * sharesPre * ownerPost
-     marginPost <- -1 * as.vector(solve(Bpost) %*% (diag(ownerPost)/diag(elastPre))
+     marginPost <- -1 * as.vector(ginv(Bpost) %*% (diag(ownerPost)/diag(elastPre))
                                   )
 
      cmcr <- (marginPost - marginPre)/(1 - marginPre)
@@ -345,7 +345,7 @@ setMethod(
      shares     <- calcShares(object,TRUE)
 
      elastPre <-  t(elast(object,TRUE))
-     marginPre <-  -1 * as.vector(solve(elastPre * ownerPre) %*% (shares * diag(ownerPre))) / shares
+     marginPre <-  -1 * as.vector(ginv(elastPre * ownerPre) %*% (shares * diag(ownerPre))) / shares
 
      if(preMerger){
          names(marginPre) <- object@labels
