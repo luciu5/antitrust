@@ -24,7 +24,7 @@ setClass(
                  stop("'margins' must contain at least two non-missing margins in order to calibrate demand parameters")
              }
 
-             if(isTRUE(!all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods)))){ stop("'diversion' rows must sum to 0")}
+             if(!isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods)))){ stop("'diversion' rows must sum to 0")}
 
 
              ## Need to write a check that tests if the margins for all the firm's products is present
