@@ -37,7 +37,7 @@ setClass(
                 any(tapply(object@margins[!isSingleton],object@nests[!isSingleton],
                            function(x){if(all(is.na(x))){return(TRUE)} else{return(FALSE)}}
                            )
-                    )
+                    ,na.rm=TRUE)
                 ){
                  stop("when 'constraint' is FALSE, at least one product margin must be supplied for each non-singleton nest")
              }
