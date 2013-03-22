@@ -124,12 +124,9 @@ setMethod(
               c.LB = object@sellerCostParms[1]
               c.UB = object@sellerCostParms[2]
 
-               if(c < c.LB) { retval = 0 }
-               else if(c > c.UB) { retval = 1 }
-               else {
-                   Fc = do.call(cdfF,list(c))
-                   retval = 1-(1-Fc)^tHat
-               }
+              Fc = do.call(cdfF,list(c))
+              retval = 1-(1-Fc)^tHat
+               
                   return(retval)
 
               }
@@ -221,9 +218,9 @@ setMethod(
 
 ## Create Constructor Function
 
-auction2nd.cap <- function(capacities,buyerCost=0,
-                           sellerCostCDF=c(punif,pexp,pweibull)
-                           sellerCostParms,
+auction2nd.cap <- function(capacities, reserve=Inf, buyerCost=0,
+                           sellerCostCDF=c("punif","pexp","pweibull"),
+                           parmsStart,
                            ownerPre,ownerPost,
                            labels=paste("Firm",1:length(capacities),sep="")
                           ){
@@ -232,12 +229,15 @@ auction2nd.cap <- function(capacities,buyerCost=0,
     sellerCostCDF <- match.arg(sellerCostCDF)
     sellerCostPDF <- match.fun(paste("d",substring(sellerCostCDF,2,),sep=""))
     
-    if(missing(sellerCostParms)){
-      
-      
-    }
+    
+    if (missing(parmsStart))
+      if(sellerCostCDF=="punif"){parmsStart=c(0,1)} #uniform on 0,1
+    
+      else if(sellerCostCDF=="pexp"){parmsStart=1}
+    
+      else if(sellerCostCDF=="pweibul"){parmsStart=c(1,5) #symmetric, unimodal distribution}
+}
 
-   
     result <- new("Auction2ndCap",capacities=capacities,
                   buyerCost=buyerCost,
                   sellerCostCDF=sellerCostCDF,
