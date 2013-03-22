@@ -37,7 +37,7 @@ setClass(
 
 
              margins[is.na(margins)]=0
-             if(max(as.vector(ownerPre %*% margins))==0) stop("Insufficient margin information to calibrate demand parameters.")
+             if(isTRUE(all.equal(max(as.vector(ownerPre %*% margins)),0))) stop("Insufficient margin information to calibrate demand parameters.")
 
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'shares'")}
@@ -57,7 +57,7 @@ setClass(
          }
 
              if(!(
-                  (sumShares == 1  && object@normIndex %in% 1:nprods) ||
+                  (isTRUE(all.equal(sumShares,1))  && object@normIndex %in% 1:nprods) ||
                    (sumShares < 1 && is.na(object@normIndex))
                   )){
                  stop("'normIndex' must take on a value between 1 and ",nprods,
