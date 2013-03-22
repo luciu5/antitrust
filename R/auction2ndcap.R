@@ -223,7 +223,7 @@ setMethod(
 
 auction2nd.cap <- function(capacities,buyerCost=0,
                            sellerCostCDF=c(punif,pexp,pweibull)
-                           sellerCostParms=c(0,1e12),
+                           sellerCostParms,
                            ownerPre,ownerPost,
                            labels=paste("Firm",1:length(capacities),sep="")
                           ){
@@ -232,6 +232,10 @@ auction2nd.cap <- function(capacities,buyerCost=0,
     sellerCostCDF <- match.arg(sellerCostCDF)
     sellerCostPDF <- match.fun(paste("d",substring(sellerCostCDF,2,),sep=""))
     
+    if(missing(sellerCostParms)){
+      
+      
+    }
 
    
     result <- new("Auction2ndCap",capacities=capacities,
