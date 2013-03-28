@@ -113,7 +113,7 @@ logit.cap(prices,shares,margins,
     draws with the appropriate restrictions are employed.}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
     `#' is a number between 1 and the length of `prices'.}
-  \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
+  \item{...}{Additional options to feed to the \code{\link[BB]{BBsolve}}
     optimizer used to solve for equilibrium prices.}
 
 }

@@ -56,7 +56,7 @@ Objects can be created by using the constructor function \code{\link{aids}}.
       Bertrand Nash pricing game.When isMax equals TRUE, a check is run
       to determine if the calculated equilibrium price vector locally maximizes
       profits. `...' may be used to change the
-      default values of \code{\link[nleqslv]{nleqslv}}, the non-linear equation solver.}
+      default values of \code{\link[BB]{BBsolve}}, the non-linear equation solver.}
     \item{\code{calcPrices}}{\code{signature(object, preMerger
 	= TRUE)}}{ Compute either pre-merger or post-merger equilibrium
       prices under the assumptions that consumer demand is AIDS and firms play a differentiated product

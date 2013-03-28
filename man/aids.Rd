@@ -82,7 +82,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   price coefficient and nest parameters. If missing then the random
   draws with the appropriate restrictions are employed.}
   \item{labels}{A k-length vector of labels.}
-  \item{...}{Additional options to feed to the \code{\link[nleqslv]{nleqslv}}
+  \item{...}{Additional options to feed to the \code{\link[BB]{BBsolve}}
   optimizer used to solve for equilibrium prices.}
 
 }
