@@ -4,8 +4,11 @@ setClass(
          contains="Antitrust",
          representation=representation(
          capacities       = "numeric",
+         margins          = "numeric",
+         prices           = "numeric",
          reserve          = "numeric",
-         sellerCostCDF    = "function",
+         shareInside      = "numeric",
+         sellerCostCDF    = "character",
          sellerCostCDFLowerTail    = "logical",
          sellerCostPDF    = "function",
          sellerCostParms  = "numeric",
@@ -18,8 +21,8 @@ setClass(
          prototype=prototype(
          reservePre      =  numeric(),
          reservePost     =  numeric(),
-         parmsStart      =  numeric(),
          buyerCost       =  numeric(),
+         sellerCostParms =  numeric(),
          sellerCostCDFLowerTail    = TRUE
 
 
@@ -27,55 +30,68 @@ setClass(
          validity=function(object){
 
              nprods <- length(object@labels)
-             cdf    <- as.character(quote(object@sellerCostCDF))
-
+             #cdf    <- as.character(quote(object@sellerCostCDF))
+             #print(cdf)
+             cdf    <- object@sellerCostCDF
+             if(is.na(object@reserve)){parmsStart <- object@parmsStart[-1]}
+             else{parmsStart <- object@parmsStart}
 
              if(nprods != length(object@capacities)){
                  stop("'labels' must have the same length as 'capacities'")}
 
              
-             if( (cdf=="punif"){
-                if(length(object@parmsStart)!=2 ||
-                    object@parmsStart[1] >= object@parmsStart[2]){
-                  stop("For the Uniform distribution, 'sellerCostParms' must a numeric vector of length 2 whose first element is less than the second element")
+             if( cdf=="punif"){
+                if(length(parmsStart)!=2 ||
+                    parmsStart[1] >= parmsStart[2]){
+                  if(is.na(object@reserve)){stop("The first element of parmsStart must be a starting value for 'reserve'")}
+                  stop("For the Uniform distribution, 'parmsStart' must be a numeric vector of length ", 2 + is.na(object@reserve),
+                        "whose final element must be greater than the next-to-last element")
                 }
              }
                
-             else if( (cdf=="pexp"){
-                if(length(object@parmsStart)!=1 ||
-                    object@parmsStart[1] <=0){
-                    stop("For the Exponential distribution, 'sellerCostParms' must a numeric vector of length 1 whose first element is greater than 0")
+             else if( cdf=="pexp"){
+                if(length(parmsStart)!=1 ||
+                    parmsStart[1] <=0){
+                    if(is.na(object@reserve)){stop("The first element of parmsStart must be a starting value for 'reserve'")}
+                    stop("For the Exponential distribution, 'parmsStart' must be a numeric vector of length ",
+                         1 + is.na(object@reserve),"whose final element is greater than 0")
                  }
              }
-             else if( (cdf=="pweibull"){
-                if(length(object@parmsStart)!=2 ||
-                     object@parmsStart[1] <=0  ||
-                     object@parmsStart[2] <=0 ){
-                    stop("For the Weibull distribution, 'sellerCostParms' must a numeric vector of length 1 whose first element is greater than 0")
+             else if( cdf=="pweibull"){
+                if(length(parmsStart)!=2 ||
+                     parmsStart[1] <=0  ||
+                     parmsStart[2] <=0 ){
+                  if(is.na(object@reserve)){stop("The first element of parmsStart must be a starting value for 'reserve'")}
+                    stop("For the Weibull distribution, 'parmsStart' must be a numeric vector of length ", 
+                         2 + is.na(object@reserve)," whose final 2 elements must be greater than 0")
                         }
                       }
-             else if( (cdf=="pgumbel"){
-                if(length(object@parmsStart)!=2 ||
-                     object@parmsStart[2] <=0){
-                    stop("For the Gumbel distribution, 'sellerCostParms' must a numeric vector of length 1 whose first element is greater than 0")
+             else if( cdf=="pgumbel"){
+                if(length(parmsStart)!=2 ||
+                     parmsStart[2] <=0){
+                  if(is.na(object@reserve)){stop("The first element of parmsStart must be a starting value for 'reserve'")}
+                    stop("For the Gumbel distribution, 'parmsStart' must be a numeric vector of length ", 
+                         2 + is.na(object@reserve)," whose final element must be greater than 0")
                     }
                   }
-             else if( (cdf=="pfrechet"){
-                if(length(object@parmsStart)!=3 ||
-                      object@parmsStart[2] <=0  ||
-                      object@parmsStart[3] <=0  ){
-                      stop("For the Frechet distribution, 'sellerCostParms' must a numeric vector of length 1 whose first element is greater than 0")
+             else if( cdf=="pfrechet"){
+                if(length(parmsStart)!=3 ||
+                      parmsStart[2] <=0  ||
+                      parmsStart[3] <=0  ){
+                  if(is.na(object@reserve)){stop("The first element of parmsStart must be a starting value for 'reserve'")}
+                      stop("For the Frechet distribution, 'parmsStart' must be a numeric vector of length ", 
+                           2 + is.na(object@reserve)," whose final 2 elements must be greater than 0")
                         }
                       }       
-            else if( (cdf=="pgev"){
-                 if(length(object@parmsStart)!=3 ||
-                    object@parmsStart[1] <=0){
-                    stop("For the GEV distribution, 'sellerCostParms' must a numeric vector of length 1 whose first element is greater than 0")
+            else if( cdf=="pgev"){
+                 if(length(parmsStart)!=3 ||
+                    parmsStart[1] <=0){
+                   if(is.na(object@reserve)){stop("For the GEV distribution, 'parmsStart' must be a numeric vector of length 4. The first element of parmsStart must be a starting value for 'reserve'. The second element must be positive")}
+                    stop("For the GEV distribution, 'parmsStart' must be a numeric vector of length  ", 
+                         3," whose 1st element must be greater than 0")
                     }
                   }                 
-             if(length(object@buyerCost)!=1){
-                 stop("'buyerCost' must be a length-1 numeric vector")
-             }
+            
 
              return(TRUE)
          }
@@ -89,6 +105,10 @@ setGeneric (
  name= "cdfG",
  def=function(object,...){standardGeneric("cdfG")}
  )
+setGeneric (
+  name= "calcExpectedPrice",
+  def=function(object,...){standardGeneric("calcExpectedPrice")}
+)
 setGeneric (
  name= "calcExpectedLowestCost",
  def=function(object,...){standardGeneric("calcExpectedLowestCost")}
@@ -113,7 +133,7 @@ setGeneric (
 setMethod(
     f= "calcSellerCostParms",
     signature= "Auction2ndCap",
-    definition=function(object){
+    definition=function(object,...){
 
         ## method to calibrate seller cost distribution parameters
         sellerCostParms <- object@sellerCostParms
@@ -123,14 +143,14 @@ setMethod(
         prices          <- object@prices
         parmsStart      <- object@parmsStart
 
+        cdf <- object@sellerCostCDF
 
         minD <- function(parmsStart){
 
             if(is.na(reserve)){r <- parmsStart[1]; parmsStart <- parmsStart[-1]}
             else{r <- reserve}
 
-            sInside <- parmsStart[1]
-            sellectCostParms <- parmsStart[-1]
+            sellerCostParms <- parmsStart
 
             object@reservePre      <- r
             object@sellerCostParms <- sellerCostParms
@@ -138,18 +158,46 @@ setMethod(
 
             ##calculate each bidder's profit margin, conditional on that bidder winning
             thisMargin  <- calcExpectedSupplierProfits(object)/calcShares(object)
-            thisPrice   <- calcPrices(object)
+            thisPrice   <- calcPrices(object)/calcShares(object)
             thisInShare <- cdfG(object)
 
-            predicted   <- c(thisMargin/thisPrice,thisInShare)
-            observed    <- c(margins,shareInside)
+            predicted   <- c(thisMargin,thisPrice,thisInShare)
+            observed    <- c(margins*prices,prices,shareInside)
 
             return(sum((predicted-observed)^2,na.rm=TRUE))
 
         }
 
-        result <- optim(parmsStart,minD)
+       if(cdf == "punif") {
+         ui = diag(length(parmsStart) + is.na(reserve))
+         ui[nrow(ui),nrow(ui)-1]=-1 #constrain cLower to be less than cUpper
+         ci = rep(0,length(parmsStart) + is.na(reserve))
+         
+         result <- constrOptim(parmsStart,minD,grad=NULL,ui=ui,ci=ci,...)
+       }
+        else{
+          lb <- ub <- rep(Inf,length(parmsStart))
+          
+          if( cdf=="pexp"){lb[1] <-0}
+          else if( cdf=="pweibull"){ lb[1:2] <- 0}
+          else if( cdf=="pgumbel"){  lb[2] <- 0}
+          else if( cdf=="pfrechet"){ lb[2:3] <- 0}       
+          else if( cdf=="pgev"){ lb[1] <- 0}                 
+          
+          if(is.na(reserve)){lb <- c(0,lb); ub <- c(Inf,ub)}
+          
+          if(length(parmsStart)>1){method="L-BFGS-B"}
+          else{method="Brent"; ub=1e12} #'Brent' is equivalent to using optimize for 1D problems
+          
+          result <- optim(parmsStart,minD,method=method,lower=lb,upper=ub,...)
+          
+        }
 
+        object@sellerCostParms <- 
+        if(is.na(reserve)){object@reserve <- result$par[1]; object@sellerCostParms <-  result$par[-1]}
+        else{object@sellerCostParms <- result$par}
+        
+        return(object)
   }
 )
 
@@ -165,25 +213,25 @@ setMethod(
     reserve    <- object@reserve
     
     object@reservePre <- reserve
-    cdfF = object@sellerCostCDF
+    cdfF = match.fun(object@sellerCostCDF)
     pdfF = object@sellerCostPDF
     
-    sellerCostParms <- c(reserve,as.list(object@sellerCostParms))
+    sellerCostParms <- c(list(reserve),as.list(object@sellerCostParms))
     fc = do.call(pdfF,sellerCostParms)
     
     sellerCostParms <- c(sellerCostParms,
-                         lower.tail=object@sellerCostCDFLowerTail)
+                         lower.tail=as.list(object@sellerCostCDFLowerTail))
     Fc = do.call(cdfF,sellerCostParms)
     
     gc <- tHat*fc*(1-Fc)^(tHat-1)
     
-    expectedPrice  <- calcPrices(object,preMerger=TRUE)
+    expectedPrice  <- calcExpectedPrice(object,preMerger=TRUE)
     partialSupplierProfits <- (1-Fc)^(tHat-capacities) - (1-Fc)^tHat
     partialSupplierProfits <- sum(partialSupplierProfits)/gc
     
     result <- reserve - 2*expectedPrice + partialSupplierProfits
     
-    return(max(result,0))
+    return(max(result,0,na.rm=TRUE))
 
   }
 )
@@ -221,7 +269,7 @@ setMethod(
           definition=function(object,preMerger=TRUE){
             
 
-              val  <- object@buyerCost * (1-cdfG(object,preMerger=preMerger)) + calcPrices(object,preMerger)*cdfG(object,preMerger=preMerger)
+              val  <- object@buyerCost * (1-cdfG(object,preMerger=preMerger)) + calcExpectedPrice(object,preMerger)*cdfG(object,preMerger=preMerger)
 
               return(val)
           })
@@ -231,8 +279,11 @@ setMethod(
           signature= "Auction2ndCap",
           definition=function(object,preMerger=TRUE){
 
-              val <- calcExpectedLowestCost(object) + sum(calcExpectedSupplierProfits(object,preMerger))/cdfG(object,preMerger=preMerger)
-
+            ## is this correct? why are all other firm's profits a function of firm's price?
+              #val <- calcExpectedLowestCost(object) + sum(calcExpectedSupplierProfits(object,preMerger))/cdfG(object,preMerger=preMerger)
+            ## I think this is the ex ante price that firm i sets. Should I be using the lowest cost 
+            ## across all firms, or just that firm's lowest cost. I think the latter-- check with Nate.
+            val <- calcExpectedSupplierProfits(object,preMerger) + calcExpectedLowestCost(object,preMerger)*cdfG(object,preMerger=preMerger)
               return(val)
           })
 
@@ -250,9 +301,9 @@ setMethod(
               else{capacities <- object@capacities}
 
 
-              cdfF = object@sellerCostCDF
-              sellerCostParms <- c(c,as.list(object@sellerCostParms),
-                                   lower.tail=object@sellerCostCDFLowerTail)
+              cdfF = match.fun(object@sellerCostCDF)
+              sellerCostParms <- c(list(c),as.list(object@sellerCostParms),
+                                   lower.tail=as.list(object@sellerCostCDFLowerTail))
 
               Fc = do.call(cdfF,sellerCostParms)
               retval = 1-(1-Fc)^capacities
@@ -263,11 +314,21 @@ setMethod(
           )
 
 setMethod(
+  f= "calcExpectedPrice",
+  signature= "Auction2ndCap",
+  definition=function(object,preMerger=TRUE){
+  
+    val <- calcExpectedLowestCost(object,preMerger) + sum(calcExpectedSupplierProfits(object,preMerger))/cdfG(object,preMerger=preMerger)
+    return(val)  
+  }
+)
+
+setMethod(
           f= "calcExpectedLowestCost",
           signature= "Auction2ndCap",
           definition=function(object,preMerger=TRUE){
 
-              cdfF <- object@sellerCostCDF
+              cdfF <- match.fun(object@sellerCostCDF)
               pdfF <- object@sellerCostPDF
 
               if(preMerger) {
@@ -283,10 +344,10 @@ setMethod(
 
                ## The expected lowest production cost
                elcIntegrand = function(c){
-                   sellerCostParms <- c(c,as.list(object@sellerCostParms),
-                                        lower.tail=object@sellerCostCDFLowerTail)
-
-                  fc = do.call(pdfF,sellerCostParms)
+                   sellerCostParms <- c(list(c),as.list(object@sellerCostParms))
+                   fc = do.call(pdfF,sellerCostParms)
+                   sellerCostParms <- c(sellerCostParms,
+                                        lower.tail=as.list(object@sellerCostCDFLowerTail))
                   Fc = do.call(cdfF,sellerCostParms)
                   retval = c*tHat*fc*(1-Fc)^(tHat-1)
 
@@ -295,9 +356,10 @@ setMethod(
 
 
 
+              
                   num = integrate(elcIntegrand,lower=-Inf,upper=r)$value
 
-                  retval = num/cdfG(object,r)
+                  retval = num/cdfG(object)
                   return(retval)
 
 
@@ -319,9 +381,9 @@ setMethod(
               tHat = sum(tVec)
 
               espIntegrand = function(c,t){
-                  sellerCostParms <- c(c,as.list(object@sellerCostParms),
-                                   lower.tail=object@sellerCostCDFLowerTail)
-                  Fc = do.call(object@sellerCostCDF,sellerCostParms)
+                  sellerCostParms <- c(list(c),as.list(object@sellerCostParms),
+                                   lower.tail=as.list(object@sellerCostCDFLowerTail))
+                  Fc = do.call(match.fun(object@sellerCostCDF),sellerCostParms)
                 val = (1-Fc)^(tHat-t)-(1-Fc)^tHat
               }
 
@@ -343,7 +405,7 @@ setMethod(
 
               capacities <- object@capacities
               ownerPost  <- object@ownerPost
-              cdfF = object@sellerCostCDF
+              cdfF = match.fun(object@sellerCostCDF)
               sellerCostParms <- as.list(object@sellerCostParms)
               tHat <- sum(capacities)
 
@@ -351,8 +413,8 @@ setMethod(
 
               if(preMerger){
 
-                  sellerCostParms <- c(object@reservePre,sellerCostParms,
-                                   lower.tail=object@sellerCostCDFLowerTail)
+                  sellerCostParms <- c(list(object@reservePre),sellerCostParms,
+                                   lower.tail=as.list(object@sellerCostCDFLowerTail))
                   Fc = do.call(cdfF,sellerCostParms)
                   shareOutside <- 1 - (1-Fc^tHat)
                   return((shareOutside*capacities)/sum(capacities))
@@ -373,56 +435,61 @@ setMethod(
 
 ## Create Constructor Function
 
-auction2nd.cap <- function(capacities, margins,prices, shareInside=1, reserve=10*max(prices),
+auction2nd.cap <- function(capacities, margins,prices,reserve=10*max(prices),shareInside=1,
                            sellerCostCDF=c("punif","pexp","pweibull","pgumbel","pfrechet","pgev"),
                            parmsStart,
                            ownerPre,ownerPost,
-                           labels=paste("Firm",1:length(capacities),sep="")
+                           labels=paste("Firm",1:length(capacities),sep=""),...
                           ){
 
-##Gumbel is the log of the weibull and as such may be added
-##Frechet is 1/Weibull and may be added. GEV works for the same reason
-##add package evd
 
     sellerCostCDF <- match.arg(sellerCostCDF)
     lower.tail    <- TRUE
     sellerCostPDF <- match.fun(paste("d",substring(sellerCostCDF,2,),sep=""))
 
-
+    if(is.na(reserve)){reserve <- NA_real_} 
 
     if (missing(parmsStart)){
-      if(sellerCostCDF=="punif"){parmsStart=c(0,1)} #uniform on 0,1
-
+      
+      if(sellerCostCDF=="punif"){parmsStart=range(prices)} #uniform on price range
       else if(sellerCostCDF=="pexp"){parmsStart=1}
-
       else if(sellerCostCDF=="pweibull"){parmsStart=c(1,5)} #symmetric, unimodal distribution
       else if(sellerCostCDF=="pgumbel"){parmsStart=c(1,5); lower.tail=FALSE} #symmetric, unimodal distribution
       else if(sellerCostCDF=="pfrechet"){parmsStart=c(0,1,5); lower.tail=FALSE} #symmetric, unimodal distribution located @ 0
       else if(sellerCostCDF=="pgev"){parmsStart=c(1,5,0); lower.tail=FALSE} #symmetric, unimodal distribution located @ 0
 
+    
+      if(is.na(reserve)){
+        parmsStart<-c(10*max(prices),parmsStart)
+      }
     }
 
     result <- new("Auction2ndCap",capacities=capacities,
+                  margins=margins,
+                  prices=prices,
                   reserve=reserve,
                   shareInside=shareInside,
-                  sellerCostCDF=match.fun(sellerCostCDF),
+                  sellerCostCDF=sellerCostCDF,
                   sellerCostCDFLowerTail=lower.tail,
                   sellerCostPDF=sellerCostPDF,
-                  sellerCostParms=sellerCostParms,
                   ownerPre=ownerPre,ownerPost=ownerPost,
                   parmsStart=parmsStart,
                   labels=labels)
 
 
-    result@sellerCostParms <- calcSellerCostParms(result)
+    ## Calibrate seller cost parameters
+    result                 <- calcSellerCostParms(result,...)
+    
+    ## Calibrate buyer cost parameter
     result@buyerCost       <- calcBuyerCost(result)
     
+    ## Compute pre- and post-merger reserves
     result@reservePre      <- calcOptimalReserve(result,preMerger=TRUE) #Find Buyer Reserve pre-merger
     result@reservePost     <- calcOptimalReserve(result,preMerger=FALSE) #Find Buyer Reserve pre-merger
     
-    result@pricePre        <- calcPrices(result,preMerger=TRUE) # Calculate premerger expected price
-    result@pricePost       <- calcPrices(result,preMerger=FALSE) # Calculate postmerger expected price
-
+    result@pricePre        <- calcPrices(result,preMerger=TRUE)
+    result@pricePost        <- calcPrices(result,preMerger=FALSE)
+    
     return(result)
     }
 
