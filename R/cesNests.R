@@ -48,7 +48,7 @@ setClass(
                 any(tapply(object@margins[!isSingleton],object@nests[!isSingleton],
                            function(x){if(all(is.na(x))){return(TRUE)} else{return(FALSE)}}
                            )
-                    )
+                    ,na.rm=TRUE)
                 ){
                  stop("when 'constraint' is FALSE, at least one product margin must be supplied for each non-singleton nest")
              }
@@ -147,12 +147,12 @@ Normalizing these parameters to 1.")
                   #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
                   
                   
-                  elasticity <- elasticity[isMargin,isMargin]
+                  elast      <- elast[isMargin,isMargin]
                   shares     <- shares[isMargin]
                   ownerPre   <- ownerPre[isMargin,isMargin]
                   margins    <- margins[isMargin]
                   
-                  FOC <- (shares * diag(ownerPre)) + (elasticity * ownerPre) %*% (shares * margins)
+                  FOC <- (shares * diag(ownerPre)) + (elast * ownerPre) %*% (shares * margins)
                   measure<-sum(FOC^2,na.rm=TRUE)
 
                   return(measure)

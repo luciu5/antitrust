@@ -103,8 +103,8 @@
   be used to change the default options for \link{constrOptim}.
 
   \code{loglinear} uses the non-linear equation solver
-  \code{\link[nleqslv]{nleqslv}} to find equilibrium prices.  \code{...} may
-  be used to change the default options for \code{\link[nleqslv]{nleqslv}}.
+  \code{\link[BB]{BBsolve}} to find equilibrium prices.  \code{...} may
+  be used to change the default options for \code{\link[BB]{BBsolve}}.
 
 
 

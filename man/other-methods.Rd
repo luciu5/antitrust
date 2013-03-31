@@ -130,7 +130,7 @@
     Computes equilibrium product price levels assuming that firms are playing a
     Nash-Bertrand pricing game. `...' may be used to feed additional
     options to the optimizer responsible for computing equilibrium
-    prices. Typically, \code{\link[nleqslv]{nleqslv}} is used, but see
+    prices. Typically, \code{\link[BB]{BBsolve}} is used, but see
     the appropriate document for further details.
   }
    \item{calcPriceDelta}{\code{signature(object=Bertrand)}}{

@@ -54,7 +54,7 @@ Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 2.
       Bertrand Nash pricing game. When isMax equals TRUE, a check is run
       to determine if the calculated equilibrium price vector locally maximizes
       profits. `...' may be used to change the
-      default values of \code{\link[nleqslv]{nleqslv}}, the non-linear equation solver. }
+      default values of \code{\link[BB]{BBsolve}}, the non-linear equation solver. }
     \item{\code{\link{calcPriceDeltaHypoMon}}}{\code{signature(object = Logit,prodIndex,...)}}{ Calculates the price changes that a
    Hypothetical Monopolist would impose on its products
    relative to pre-merger prices. }
