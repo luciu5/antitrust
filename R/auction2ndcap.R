@@ -148,7 +148,7 @@ setMethod(
         cdf <- object@sellerCostCDF
 
         minD <- function(parmsStart){
-
+           print(parmsStart)
             if(is.na(reserve)){r <- parmsStart[1]; parmsStart <- parmsStart[-1]}
             else{r <- reserve}
 
@@ -156,26 +156,34 @@ setMethod(
 
             object@reservePre      <- r
             object@sellerCostParms <- sellerCostParms
-            
-            if(cdf %in% c("punif","pfrechet")){
-            object@sellerCostBounds[1] <- parmsStart[1] }
-            else if (cdf=="pgev"){
+           
+           ## For uniform. frechet, and gev, distribution bounds are a function 
+           ## of distribution parameters
+           
+           if(cdf == "punif"){
+                object@sellerCostBounds <- parmsStart }
+           else if(cdf == "pfrechet"){
+                object@sellerCostBounds[1] <- parmsStart[1] }
+           else if (cdf=="pgev"){
               object@sellerCostBounds <-c(ifelse(parmsStart[3]>0,parmsStart[1]-parmsStart[2]/parmsStart[3],-Inf),
                                           ifelse(parmsStart[3]<0,parmsStart[1]-parmsStart[2]/parmsStart[3],Inf)
                                           ) 
             
             }
 
+            
+            thisShare <- calcShares(object)
 
             ##calculate each bidder's profit margin, conditional on totCap bidder winning
-            thisMargin  <- calcExpectedSupplierProfits(object)/calcShares(object)
-            thisPrice   <- calcPrices(object)/calcShares(object)
+            thisMargin  <- calcExpectedSupplierProfits(object)/thisShare
+            thisPrice   <- calcPrices(object)/thisShare
             thisInShare <- cdfG(object)
 
-            predicted   <- c(thisMargin,thisPrice,thisInShare)
-            observed    <- c(margins*prices,prices,shareInside)
-
-            return(sum((predicted-observed)^2,na.rm=TRUE))
+            measure   <- c(margins - thisMargin/thisPrice,
+                           1 - thisPrice/prices,
+                           shareInside - thisInShare)
+           
+            return(sum(measure^2,na.rm=TRUE))
 
         }
 
@@ -188,7 +196,7 @@ setMethod(
          
          
          result <- constrOptim(parmsStart,minD,grad=NULL,ui=ui,ci=ci,...)
-        print(result)
+        
        }
         else{
           lb <- ub <- rep(Inf,length(parmsStart))
@@ -207,12 +215,14 @@ setMethod(
           result <- optim(parmsStart,minD,method=method,lower=lb,upper=ub,...)
           
         }
-
+        print(result)
         result <- result$par
         if(is.na(reserve)){object@reserve <- result[1]; result <- result[-1]}
-        object@sellerCostParms <- result$par
-        
-        if(cdf %in% c("punif","pfrechet")){
+        object@sellerCostParms <- result
+       
+        if(cdf == "punif"){
+          object@sellerCostBounds <- result }
+        else if(cdf == "pfrechet"){
           object@sellerCostBounds[1] <- result[1] }
         else if (cdf=="pgev"){
           object@sellerCostBounds <-c(ifelse(result[3]>0,result[1]-result[2]/result[3],-Inf),
@@ -253,20 +263,19 @@ setMethod(
     partialSupplierProfits <- (1-Fc)^(totCap-capacities) - (1-Fc)^totCap
     partialSupplierProfits <- sum(partialSupplierProfits)/gc
     
-    result <- reserve - 2*expectedPrice + partialSupplierProfits
+    result <- reserve + partialSupplierProfits
     
-    return(max(result,0,na.rm=TRUE))
+    return(result)
 
   }
 )
 setMethod(
           f= "calcOptimalReserve",
           signature= "Auction2ndCap",
-          definition=function(object,preMerger=TRUE,lower=-1e12,upper=-lower){
+          definition=function(object,preMerger=TRUE,lower,upper){
 
-            #sellerCostCDF = as.character(quote(object@sellerCostCDF))
-
-
+            if(missing(lower)){lower <- max(object@sellerCostBounds[1],0)}
+            if(missing(upper)){upper <- object@buyerCost}
 
             minD <- function(r){
               if(preMerger){object@reservePre <- r}
@@ -293,7 +302,8 @@ setMethod(
           definition=function(object,preMerger=TRUE){
             
 
-              val  <- object@buyerCost * (1-cdfG(object,preMerger=preMerger)) + calcExpectedPrice(object,preMerger=preMerger)*cdfG(object,preMerger=preMerger)
+              shareInside <- cdfG(object,preMerger=preMerger)
+              val  <- object@buyerCost * (1-shareInside) + calcExpectedPrice(object,preMerger=preMerger)*shareInside
 
               return(val)
           })
@@ -318,7 +328,11 @@ setMethod(
 
                   capacities <- sum(object@capacities)
               }
-              else{capacities <- object@capacities}
+              else{
+               
+                capacities <- object@capacities
+                #if(length(c)!=length(capacities)){stop("'c' must have the same length as 'capacities")}
+              }
 
 
               cdfF = match.fun(object@sellerCostCDF)
@@ -367,7 +381,9 @@ setMethod(
     ## The expected lowest production cost
     elcIntegrand = function(c,t){
       sellerCostParms <- c(list(c),as.list(object@sellerCostParms))
+     
       fc = do.call(pdfF,sellerCostParms)
+     
       sellerCostParms <- c(sellerCostParms,
                            lower.tail=as.list(object@sellerCostCDFLowerTail))
       Fc = do.call(cdfF,sellerCostParms)
@@ -378,9 +394,15 @@ setMethod(
     }
     
     result <- sapply(
-      capacities,
+      t,
       function(t.i) {
-        retval = integrate(elcIntegrand,lower=sellerCostBounds[1],upper=r,t=t.i)$value
+        if( r < sellerCostBounds[2]) {
+            retval = integrate(elcIntegrand,lower=sellerCostBounds[1],upper=r, stop.on.error = FALSE,t=t.i)$value 
+        } 
+        else {
+          retval = integrate(elcIntegrand,lower=sellerCostBounds[1],upper=sellerCostBounds[2], stop.on.error = FALSE,t=t.i)$value
+        }
+       
         return(retval)
       })
     #result = integrate(elcIntegrand,lower=sellerCostBounds[1],upper=r)$value
@@ -418,7 +440,7 @@ setMethod(
 
 
               if(preMerger) { capacities = object@capacities }
-              else { tVec = tapply(object@capacities,object@ownerPost,sum) }
+              else {          capacities = tapply(object@capacities,object@ownerPost,sum) }
 
               totCap = sum(capacities)
 
@@ -426,14 +448,21 @@ setMethod(
                   sellerCostParms <- c(list(c),as.list(object@sellerCostParms),
                                    lower.tail=as.list(object@sellerCostCDFLowerTail))
                   Fc = do.call(match.fun(object@sellerCostCDF),sellerCostParms)
-                val = (1-Fc)^(totCap-t)-(1-Fc)^totCap
+                 val = (1-Fc)^(totCap-t)-(1-Fc)^totCap
               }
 
 
               retval <- sapply(
                                 capacities,
                                 function(t.i) {
-                                        retval = integrate(espIntegrand,lower=sellerCostBounds[1],upper=r,t.i)$value
+                                 
+                                  if( r < sellerCostBounds[2]) {
+                                    retval = integrate(espIntegrand,lower=sellerCostBounds[1],upper=r, stop.on.error = FALSE,t=t.i)$value 
+                                  } 
+                                  else {
+                                    retval = integrate(espIntegrand,lower=sellerCostBounds[1],upper=sellerCostBounds[2], stop.on.error = FALSE,t=t.i)$value
+                                  }
+                                        
                                     return(retval)
                                 })
 
@@ -447,24 +476,14 @@ setMethod(
 
               capacities <- object@capacities
               ownerPost  <- object@ownerPost
-              cdfF = match.fun(object@sellerCostCDF)
-              sellerCostParms <- as.list(object@sellerCostParms)
-              totCap <- sum(capacities)
+             
+              shareOutside <- cdfG(object,preMerger=preMerger)
 
-
-
-              if(preMerger){
-
-                  sellerCostParms <- c(list(object@reservePre),sellerCostParms,
-                                   lower.tail=as.list(object@sellerCostCDFLowerTail))
-                  Fc = do.call(cdfF,sellerCostParms)
-                  shareOutside <- 1 - (1-Fc^totCap)
+              if(preMerger){ 
                   return((shareOutside*capacities)/sum(capacities))
               }
               else{
-                  sellerCostParms <- c(object@reservePost,sellerCostParms,
-                                   lower.tail=object@sellerCostCDFLowerTail)
-                  Fc = do.call(cdfF,sellerCostParms)
+                  
                   return((shareOutside*tapply(capacities,ownerPost,sum))/sum(capacities))
               }
 
@@ -477,7 +496,7 @@ setMethod(
 
 ## Create Constructor Function
 
-auction2nd.cap <- function(capacities, margins,prices,reserve=10*max(prices,na.rm=TRUE),shareInside=1,
+auction2nd.cap <- function(capacities, margins,prices,reserve=NA,shareInside=1,
                            sellerCostCDF=c("punif","pexp","pweibull","pgumbel","pfrechet","pgev"),
                            parmsStart,
                            ownerPre,ownerPost,
@@ -502,7 +521,7 @@ auction2nd.cap <- function(capacities, margins,prices,reserve=10*max(prices,na.r
 
     
       if(is.na(reserve) || missing(reserve)){
-        parmsStart<-c(10*max(prices,na.rm=TRUE),parmsStart)
+        parmsStart<-c(max(prices,na.rm=TRUE),parmsStart)
       }
     }
     
