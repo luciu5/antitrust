@@ -90,7 +90,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
          if(demand %in% c("CESNests","LogitNests")){
 
              if(!("sigma" %in% names(demand.param))){
-                 stop("'demand.param' does not contain 'meanval'.")
+                 stop("'demand.param' does not contain 'sigma'.")
             }
              if(length(demand.param$sigma)==1){constraint=TRUE}
              else{constraint=FALSE}
@@ -268,6 +268,9 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)
 
+    ## Calculate marginal cost
+    result@mcPre     <-  calcMC(result,TRUE)
+    result@mcPost    <-  calcMC(result,FALSE)
 
     if(demand == "AIDS"){
         ## Solve Non-Linear System for Price Changes
