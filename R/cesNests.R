@@ -318,8 +318,8 @@ setMethod(
               shareInside <- object@shareInside
 
 
-              VPre  <- sum(tapply(meanval *  object@pricePre^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)))
-              VPost <- sum(tapply(meanval * object@pricePost^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)))
+              VPre  <- sum(tapply(meanval *  object@pricePre^(1-sigma[nests]),nests,sum,na.rm=TRUE) ^((1-gamma)/(1-sigma)))
+              VPost <- sum(tapply(meanval * object@pricePost^(1-sigma[nests]),nests,sum,na.rm=TRUE) ^((1-gamma)/(1-sigma)))
 
               ##tempPre  <- log( sum( tapply(meanval * object@pricePre^(1-sigma[nests]),nests,sum) ^((1-gamma)/(1-sigma)) ) )
               ##tempPre  <- (gamma/(gamma-1)) * log( sum( tapply( meanval^((1-gamma)/(1-sigma[nests])) * object@pricePre^(-gamma),nests,sum)^((gamma-1)/gamma)) ) - tempPre

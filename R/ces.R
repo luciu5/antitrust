@@ -167,8 +167,8 @@ setMethod(
 
 
 
-              VPre  <- sum(meanval * object@pricePre^(1-gamma))
-              VPost <- sum(meanval * object@pricePost^(1-gamma))
+              VPre  <- sum(meanval * object@pricePre^(1-gamma),na.rm=TRUE)
+              VPost <- sum(meanval * object@pricePost^(1-gamma),na.rm=TRUE)
 
               result <- log(VPost/VPre) / ((1+alpha)*(1-gamma))
 

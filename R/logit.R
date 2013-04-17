@@ -274,8 +274,8 @@ setMethod(
               meanval     <- object@slopes$meanval
 
 
-              VPre  <- sum(exp(meanval + object@pricePre*alpha))
-              VPost <- sum(exp(meanval + object@pricePost*alpha))
+              VPre  <- sum(exp(meanval + object@pricePre*alpha),na.rm=TRUE)
+              VPost <- sum(exp(meanval + object@pricePost*alpha),na.rm=TRUE)
 
               result <- log(VPost/VPre)/alpha
 
