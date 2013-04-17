@@ -19,6 +19,7 @@ source("cesNests.R")
 source("pcaids.R")
 source("pcaidsNests.R")
 source("sim.R")
+source("auction2ndcap.R")
 setwd(currentdir)
 
 
@@ -196,3 +197,108 @@ result11.2 <- logit.cap(price,shares.quantity,margins.logit,capacities=cap,mktSi
 demand.parm <- result11@slopes
 demand.parm$mktSize=mktSize
 sim11    <- sim(price,demand="LogitCap",demand.parm,ownerPre=ownerPre,capacities=cap,ownerPost=ownerPost,labels=prodNames)
+
+
+##
+##Auctions
+##
+
+
+
+condShare=c(0.65,0.30,0.05)        #Vendor Shares, Conditional on Vendor Purchase
+inShare=c(0.70)                    #Combined Vendor Share (equals 1 less In-House Share)
+price=c(160,NA,NA)	           #Average Price of Each Vendor, in $000s
+margin=c(0.65,NA,NA)           #Average Price-Cost Margin of Each Vendor
+
+
+result.unif = auction2nd.cap(
+          capacities=condShare,
+          margins=margin,prices=price,reserve=NA,
+          shareInside=inShare,
+          sellerCostCDF="punif",constrain.reserve=FALSE,
+          ownerPre=1:3,ownerPost=c(1,1,3)
+          )
+
+#Generate Fake data
+result.unif@sellerCostParms <- result.unif@sellerCostBounds <- c(2,5)
+result.unif@reservePre <- 4
+
+
+
+shares=c(0.65,0.3,0.05)
+shareIn.unif=cdfG(result.unif)
+prices.unif=calcPrices(result.unif,exAnte=FALSE)
+margin.unif=calcMargins(result.unif,exAnte=FALSE)
+
+
+
+test.unif <- auction2nd.cap(
+    capacities=shares,
+    margins=margin.unif,prices=prices.unif,reserve=NA,
+    shareInside=shareIn.unif,
+    sellerCostCDF="punif",
+    ownerPre=1:3,ownerPost=c(1,1,3)
+    )
+
+summary(test.unif)
+str(test.unif)
+
+test.exp <- auction2nd.cap(
+    capacities=shares,
+    margins=margin.unif,prices=prices.unif,
+    shareInside=shareIn.unif,
+    sellerCostCDF="pexp",reserve=NA,
+    ownerPre=1:3,ownerPost=c(1,1,3)
+    )
+
+
+summary(test.exp)
+str(test.exp)
+
+
+## Weibull Distribution
+test.w <- auction2nd.cap(
+    capacities=condShare,
+    margins=margin.unif,prices=prices.unif,
+    shareInside=shareIn.unif,
+    sellerCostCDF="pweibull",reserve=NA,
+    ownerPre=1:3,ownerPost=c(1,1,3)
+    )
+
+
+
+summary(test.w)
+str(test.w)
+
+
+##Gumbel Distribution
+test.g <- auction2nd.cap(
+    capacities=shares,
+    margins=margin.unif,prices=prices.unif,reserve=NA,
+    shareInside=shareIn.unif,
+    sellerCostCDF="pgumbel",constrain.reserve=FALSE,
+    ownerPre=1:3,ownerPost=c(1,1,3)
+    )
+
+
+
+summary(test.g)
+str(test.g)
+
+
+
+
+##Frechet Distribution
+test.f <- auction2nd.cap(
+    capacities=shares,
+    margins=margin.unif,prices=prices.unif,reserve=NA,
+    shareInside=shareIn.unif,
+    sellerCostCDF="pfrechet",parmsStart=c(4,1,1,3),
+    ownerPre=1:3,ownerPost=c(1,1,3)
+    )
+
+
+
+
+summary(test.f)
+str(test.f)
