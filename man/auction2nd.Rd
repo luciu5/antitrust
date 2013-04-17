@@ -4,36 +4,94 @@
 \
 \title{(Capacity Constrained) 2nd Price Auction Model}
 
-\description{}
+\description{Calibrates the parameters of bidder cost distributions and
+  then simulates the price effect of a merger between two firms
+  under the assumption that firms are competing in a (Capacity
+  Constrained) 2nd price auction.}
 
 \usage{
 
-auction2nd.cap(capacities,
-               buyerCost=0,
-               sellerCostCDF=punif,
-               sellerCostPDF=dunif,
-               rangeCostDist=c(0,1e12),
-               ownerPre,ownerPost,
-               labels=paste("Firm",1:length(capacities),sep="")
-               )
+auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
+                           sellerCostCDF=c("punif","pexp","pweibull","pgumbel","pfrechet"),
+                           ownerPre,ownerPost,
+                           mcDelta=rep(0,length(capacities)),
+                           constrain.reserve=TRUE, parmsStart,
+                           labels=ownerPre,...
+                          )
 
              }
 \arguments{
-  Let k denote the number of firms bidding in the auction.
-  \item{capacities}{A length k vector of product capacities.}
-  \item{ownerPre}{EITHER a vector of length k whose values
-    indicate which firm produced a product pre-merger OR
-    a k x k matrix of pre-merger ownership shares.}
-  \item{ownerPost}{EITHER a vector of length k whose values
-    indicate which firm produced a product after the merger OR
-    a k x k matrix of post-merger ownership shares.}
+  \item{}{Let k denote the number of firms bidding in the auction.}
+  \item{capacities}{A length k vector of firm capacities OR capacity
+    shares.}
+  \item{margins}{A length k vector of product margins. All margins must
+    be either be between 0 and 1, or NA.}
+  \item{prices}{A length k vector product prices. Prices may be NA.}
+  \item{reserve}{A length 1 vector equal to the buyer's reserve
+    price. Default is NA .}
+  \item{shareInside}{A length 1 vector equal to the probability that the
+    buyer selects the outside option. Default is NA. }
+  \item{sellerCostCDF}{A length 1 character vector indicating which
+    probability distribution will be used  to model bidder cost
+    draws. Possible options are "punif", "pexp", "pweibull", "pgumbel",
+    "pfrechet". Default is "punif".}
+  \item{ownerPre}{A length k factor whose values
+    indicate which firms are present in the market pre-merger.}
+  \item{ownerPost}{A length k factor whose values
+    indicate which firms are present in the market post-merger.}
+  \item{mcDelta}{A vector of length k where each element equals the
+    proportional change in a firm's capacity  due to
+    the merger. Default is 0, which assumes that the merger does not
+    affect any products' capacity.}
+  \item{constrain.reserve}{If TRUE, the buyer's post-merger optimal
+    reserve price is assumed to equal the buyer's pre-merger optimal
+    reserve price. If FALSE, the buyer re-calculates her optimal reserve
+    price post-merger.}
+  \item{parmsStart}{A vector of starting values for calibrated parameters. See below
+    for more details}
   \item{labels}{A k-length vector of labels. Default is "Firm", where
     `#' is a number between 1 and the length of `capacities'.}
+  \item{...}{Additional options to feed to either \code{\link{optim}} or \code{\link{constrOptim}}.}
 }
 
 
 
 \details{
+  \code{auction2nd.cap} examines how a merger affects equilbrium bidding
+  behavior when a single buyer is running a 2nd price procurement
+  auction with bidders whose marginal cost of supplying the product is
+  private information. This version of the model assumes that
+  bidders are differentiated by their capacities in the sense that firms
+  with greater capacity are more likely to have lower costs than firms
+  with smaller capacities.
+
+  Using firm prices, shares, and margins, as well as information
+  on the auction reserve price as well as the proportion of buyers who
+  choose not to purchase from any bidder,  \code{auction2nd.cap}
+  calibrates the parameters of the common distribution from which
+  bidder's costs are drawn (and if
+  not supplied the implied reserve price) and then uses these calibrated
+  parameters to calibrate the value to the buyer of selecting the
+  outside option. Once these parameters have been calibrated,
+  \code{auction2nd.cap} computes the buyer's optimal pre-merger reservation
+  price, and if 'constrain.reserve' is FALSE, computes the buyer's
+  optimal post-merger reservation price (setting 'constrain.reserve' to
+  TRUE sets the buyer's post-merger optimal reserve equal to the buyer's
+  pre-merger optimal reserve). The pre- and post-merger \emph{ex ante}
+  prices for each bidder are then computed.
+
+  Currently, the common distribution from which costs may be drawn is
+  restricted to be either: Uniform ("punif"), Exponential ("pexp"), Weibull
+  ("pweibull"), Gumbel ("pgumbel"), and Frechet ("pfrechet"). Note that
+  the Exponential is a single parameter distribution, the Uniform and
+  Weibull are two parameter distributions, and the Gumbel and Frechet
+  are 3 parameter distributions. Accordingly, sufficient price, margin,
+  reserve, and outside share information must be supplied in order to
+  calibrate the parameters of the specified
+  distribution. \code{auction2nd.cap} returns an error if insufficient
+  information is supplied.
+
+
 }
 
 \value{\code{auction2nd.cap} returns an instance of class
@@ -44,10 +102,8 @@ auction2nd.cap(capacities,
 
 
 
-
-\seealso{}
-
-\author{Michael Sandfort \email{michael.sandfort@usdoj.gov}}
+\author{Charles Taragin \email{charles.taragin@usdoj.gov}, with code
+  contributed by Michael Sandfort and Nathan Miller}
 
 \references{
   Keith Waehrer and  Perry, Martin (2003).
@@ -59,27 +115,27 @@ auction2nd.cap(capacities,
 
 
 \examples{
+##Suppose there are 3 firms (A,B,C) participating in a procurement auction with
+## an unknown reservation price and that firms A acquires firm B.
 
-## Both bidders in a 2-bid auction merge
-## Source: Waehrer and Perry (2003) pg. 297
+caps <- c(0.65,0.30,0.05)           # total capacity normalized to 1 in this example
+inShare    <- .67                   # probability that buyer does not select
+                                    # any bidder
+prices     <- c(3.89, 3.79, 3.74)   # average price charged by each firm
+margins    <- c(.228, .209, 0.197)  # average margin earned by each firm
+ownerPre   <- ownerPost   <-c("A","B","C")
+ownerPost[ownerPost=="B"] <- "A"
 
+result.unif = auction2nd.cap(
+          capacities=caps,
+          margins=margins,prices=prices,reserve=NA,
+          shareInside=inShare,
+          sellerCostCDF="punif",
+          ownerPre=ownerPre,ownerPost=ownerPost,
+          labels=ownerPre
+          )
 
-cap = c(.5,.5)
-bc = 1
-costRange = 0:1
-owner.pre = 0:1
-owner.post = rep(0,2)
-
-result <- auction2nd.cap(capacities=cap,
-         buyerCost=bc,
-         sellerCostCDF=punif,
-         sellerCostPDF=dunif,
-         rangeCostDist=costRange,
-         ownerPre=owner.pre,ownerPost=owner.post
-         )
-
-print(result)           # return percent predicted price change in
-
-
+print(result.unif)
+summary(result.unif)
 
 }
