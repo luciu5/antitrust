@@ -22,14 +22,30 @@ Objects can be created by using the constructor function \code{\link{auction2nd.
   Let k denote the number of firms.
   \describe{
     \item{\code{capacities}:}{A length k vector of firm capacities.}
-    \item{\code{sellerCostCDF}:}{A function returning the Cumulative
-      Distribution of Seller Costs}
+    \item{\code{prices}:}{A length k vector of product prices.}
+    \item{\code{margins}:}{A length k vector of product margins, some of which may
+      equal NA.}
+    \item{\code{reserve}:}{A length 1 vector equal to observed buyer's
+      reserve price. May equal NA.}
+     \item{\code{shareInside}:}{A length 1 vector equal to the
+       probability that a buyer selects the outside option. May equal NA.}
+    \item{\code{sellerCostCDF}:}{A length 1 character vector equal to
+      the name of the function that calculates the Cumulative
+      Distribution (CDF) of SellerCosts.}
+    \item{\code{sellerCostCDFLowerTail}:}{A length 1 logical vector equal to
+      TRUE if the  probabilities are P[X <= x], otherwise, P[X > x].}
     \item{\code{sellerCostPDF}:}{A function returning the Probability Density
-      Distribution of Seller Costs}
-    \item{\code{rangeCostDist}:}{The bounds of the seller's CDF and
-      PDF}
-    \item{\code{buyerCost}:}{Buyer's self-supply cost}
-    \item{\code{buyerReserve}:}{Buyer's reservation price}
+      of Seller Costs.}
+    \item{\code{sellerCostBounds}:}{The bounds on the seller's CDF.}
+    \item{\code{sellerCostParameter}:}{The parameters of the seller's CDF.}
+    \item{\code{buyerValuation}:}{Buyer's self-supply cost.}
+    \item{\code{reservePre}:}{Buyer's optimal pre-merger reservation price.}
+    \item{\code{reservePost}:}{Buyer's optimal post-merger reservation
+      price.}
+    \item{\code{mcDelta}:}{A length k vector equal to the proportional
+      change in a firm's capacity following the merger.}
+    \item{\code{parmsStart}:}{A vector of starting values.}
+
   }
 }
 \section{Extends}{
@@ -40,41 +56,50 @@ Class \code{\linkS4class{Antitrust}}, directly.
   For all of methods containing the `preMerger' argument, `preMerger' takes
   on a value of TRUE or FALSE, where TRUE invokes the method using the
   pre-merger ownership structure, while FALSE invokes the method using
-  the post-merger ownership structure.
+  the post-merger ownership structure. Likewise, for all methods
+  containing the 'exAnte' argument, `if exAnte' equals TRUE then the
+  \emph{ex ante} expected result for each firm is produced, while FALSE produces the
+  expected result conditional on each firm winning the auction.
   \describe{
+    \item{\code{calcBuyerExpectedCost}}{\code{signature(object = Auction2ndCap, preMerger
+	= TRUE)}}{Computes the expected amount that the buyer will pay
+  to the auction winner.}
+    \item{\code{calcBuyerValuation}}{\code{signature(object =
+  Auction2ndCap)}}{Computes the value to the buyer of the outside option.}
     \item{\code{calcExpectedLowestCost}}{\code{signature(object = Auction2ndCap, preMerger
 	= TRUE)}}{Computes the expected lowest cost of the winning bid.}
-    \item{\code{calcExpectedSupplierProfits}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE)}}{}
+    \item{\code{calcExpectedPrice}}{\code{signature(object = Auction2ndCap, preMerger
+	= TRUE)}}{Computes the expected price paid by the buyer.}
+    \item{\code{calcProducerSurplus}}{\code{signature(object = Auction2ndCap, preMerger
+	= TRUE,exAnte=TRUE)}}{Computes the expected profits of each supplier}
+    \item{\code{calcMC}}{\code{signature(object = Auction2ndCap, preMerger
+	= TRUE,exAnte=TRUE)}}{Computes the expected marginal cost of
+      each supplier.}
+    \item{\code{calcMargins}}{\code{signature(object = Auction2ndCap, preMerger
+      = TRUE,exAnte=TRUE)}}{Compute each firm's expected margin.}
     \item{\code{calcOptimalReserve}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE)}}{Computes Bidder's optimal reserve price.}
+	= TRUE,lower,upper)}}{Computes the bidder's optimal reserve price.}
     \item{\code{calcPrices}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE)}}{Computes the expected price that the buyer pays,
-      conditional on the buyer purchasing.}
-    Hypothetical Monopolist would impose on its products
-    relative to pre-merger prices. }
-  \item{\code{calcBuyerExpectedCost}}{\code{signature(object = Auction2ndCap, preMerger
-      = TRUE)}}{}
+	= TRUE,exAnte=TRUE)}}{Computes the expected price that the buyer pays,
+      conditional on the buyer purchasing from a particular firm.}
+    \item{\code{calcSellerCostParms}}{\code{signature(object =
+	Auction2ndCap)}}{Calibrate the parameters of the Seller Cost
+  CDF, as well as the reserve price, if not supplied.}
+  \item{\code{calcShares}}{\code{signature(object = Auction2ndCap, preMerger
+      = TRUE,exAnte=TRUE)}}{Compute the probability that a firm wins.}
   \item{\code{cdfG}}{\code{signature(object = Auction2ndCap,
-      c)}}{Calculates the probability that a cost draw less than or equal to
-    `c' is realized. If `c' is not supplied, the buyer reserve is used.  }
+      c,preMerger=TRUE)}}{Calculates the probability that a cost draw less than or equal to
+    `c' is realized for each firm. If `c' is not supplied, the buyer reserve and total
+    capacity is used.}
+  \item{\code{summary}}{\code{signature(object =
+      Auction2ndCap,exAnte=FALSE, parameters=FALSE,digits=2)}}{Summarize the
+    results of the calibration and simulation.}
 }
 
-\references{
-%%  ~~put references to the literature/web site here~~
-}
+
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
-\note{
-%%  ~~further notes~~
-}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-\seealso{
-%%  ~~objects to See Also as \code{\link{~~fun~~}}, ~~~
-%%  ~~or \code{\linkS4class{CLASSNAME}} for links to other classes ~~~
-}
 \examples{
 showClass("Auction2ndCap")           # get a detailed description of the class
 showMethods(classes="Auction2ndCap") # show all methods defined for the class
