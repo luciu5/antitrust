@@ -15,10 +15,10 @@ setClass(
          labels       = "character"
          ),
          prototype=prototype(
-         pricePre      =  numeric(),
-         pricePost     =  numeric(),
-         mcPre      =  numeric(),
-         mcPost     =  numeric()
+         pricePre      =  rep(NA,length(object@labels)),
+         pricePost     =  rep(NA,length(object@labels)),
+         mcPre      =     rep(NA,length(object@labels)),
+         mcPost     =     rep(NA,length(object@labels))
          ),
          validity=function(object){
 

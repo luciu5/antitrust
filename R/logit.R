@@ -153,8 +153,10 @@ setMethod(
 setMethod(
  f= "calcPrices",
  signature= "Logit",
- definition=function(object,preMerger=TRUE,isMax=FALSE,...){
+ definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
 
+
+     priceStart <- object@priceStart
 
      if(preMerger){
        owner <- object@ownerPre
@@ -165,19 +167,33 @@ setMethod(
        mc    <- object@mcPost
      }
 
+     nprods <- length(object@shares)
+     if(missing(subset)){
+        subset <- rep(TRUE,nprods)
+     }
+
+     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
+
+     if(any(!subset)){
+         owner <- owner[subset,subset]
+         mc    <- mc[subset]
+         priceStart <- priceStart[subset]
+         }
+
+     priceEst <- rep(NA,nprods)
 
 
 
      ##Define system of FOC as a function of prices
      FOC <- function(priceCand){
 
-         if(preMerger){ object@pricePre <- priceCand}
-         else{          object@pricePost <- priceCand}
+         if(preMerger){ object@pricePre[subset] <- priceCand}
+         else{          object@pricePost[subset] <- priceCand}
 
 
          margins   <- 1 - mc/priceCand
-         revenues  <- calcShares(object,preMerger,revenue=TRUE)
-         elasticities     <- t(elast(object,preMerger))
+         revenues  <- calcShares(object,preMerger,revenue=TRUE,subset=subset)[subset]
+         elasticities     <- t(elast(object,preMerger,subset=subset))
 
          thisFOC <- revenues * diag(owner) + as.vector((elasticities * owner) %*% (margins * revenues))
 
@@ -185,17 +201,14 @@ setMethod(
      }
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,...)
+     minResult <- BBsolve(priceStart,FOC,quiet=TRUE,...)
 
       if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
-
-     priceEst        <- minResult$par
-     names(priceEst) <- object@labels
 
 
      if(isMax){
 
-         hess <- genD(FOC,priceEst) #compute the numerical approximation of the FOC hessian at optimium
+         hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
          hess <- hess$D[,1:hess$p]
          hess <- hess * (owner>0)   #0 terms not under the control of a common owner
 
@@ -203,6 +216,10 @@ setMethod(
 
          if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. ",state," price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
      }
+
+
+     priceEst[subset]        <- minResult$par
+     names(priceEst) <- object@labels
 
      return(priceEst)
 
@@ -213,10 +230,20 @@ setMethod(
 setMethod(
  f= "calcShares",
  signature= "Logit",
- definition=function(object,preMerger=TRUE,revenue=FALSE){
+ definition=function(object,preMerger=TRUE,revenue=FALSE,subset){
+
+     nprods <- length(object@shares)
+
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
+
+     if(missing(subset)){
+         subset <- !is.na(prices)
+         if(all(is.na(prices))){subset <- rep(TRUE,nprods)}
+                     }
+     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
+
 
      alpha    <- object@slopes$alpha
      meanval  <- object@slopes$meanval
@@ -224,9 +251,10 @@ setMethod(
      outVal <- ifelse(object@shareInside<1, exp(alpha*object@priceOutside), 0)
 
      shares <- exp(meanval + alpha*prices)
-     shares <- shares/(outVal+ sum(shares))
+     shares <- shares/(outVal+ sum(shares[subset]))
+     shares[!subset] <- NA
 
-     if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares))}
+     if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares,na.rm=TRUE),na.rm=TRUE)}
 
      names(shares) <- object@labels
 
@@ -240,14 +268,28 @@ setMethod(
 setMethod(
  f= "elast",
  signature= "Logit",
- definition=function(object,preMerger=TRUE,market=FALSE){
+ definition=function(object,preMerger=TRUE,market=FALSE,subset){
+
+     nprods <- length(object@shares)
+
+
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
+     if(missing(subset)){
+         subset <- !is.na(prices)
+         if(all(is.na(prices))){subset <- rep(TRUE,nprods)}
+     }
+     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
+
+
+     prices <- prices[subset]
+     labels <- object@labels[subset]
+
      alpha    <- object@slopes$alpha
 
-     shares <-  calcShares(object,preMerger)
+     shares <-  calcShares(object,preMerger,subset=subset)[subset]
 
      if(market){
 
@@ -264,7 +306,7 @@ setMethod(
          elast <- -alpha  * matrix(prices*shares,ncol=nprods,nrow=nprods,byrow=TRUE)
          diag(elast) <- alpha*prices + diag(elast)
 
-         dimnames(elast) <- list(object@labels,object@labels)
+         dimnames(elast) <- list(labels,labels)
      }
 
       return(elast)
@@ -336,6 +378,7 @@ logit <- function(prices,shares,margins,
                   ownerPre,ownerPost,
                   normIndex=ifelse(sum(shares)<1,NA,1),
                   mcDelta=rep(0,length(prices)),
+                  subset=rep(TRUE,length(prices)),
                   priceOutside = 0,
                   priceStart = prices,
                   isMax=FALSE,
@@ -351,6 +394,7 @@ logit <- function(prices,shares,margins,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   mcDelta=mcDelta,
+                  subset=subset,
                   priceOutside=priceOutside,
                   priceStart=priceStart,shareInside=sum(shares),
                   labels=labels)
@@ -368,7 +412,7 @@ logit <- function(prices,shares,margins,
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
-    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,subset=subset,...)
 
     return(result)
 

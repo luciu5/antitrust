@@ -144,7 +144,7 @@ logit.nests.alm <- function(prices,shares,margins,
 
 
        nests <- factor(nests,levels = unique(nests)) # factor nests, keeping levels in the order in which they appear
-       nNestParm <- nlevels(nests) #calculate the number of nesting parameters
+       nNestParm <- sum(tapply(nests,nests,length)>1) # count the number of  non-singleton nests
        nMargins  <- length(margins[!is.na(margins)])
        maxNests  <- nMargins - 2
 

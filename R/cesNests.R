@@ -29,8 +29,10 @@ setClass(
              nestCnt   <- tapply(object@prices,object@nests,length)
              nestCnt   <- nestCnt[object@nests]
              isSingleton <- nestCnt==1
+             
+             nNestParm <- nNestParm - sum(isSingleton) #singleton nests are not identified
 
-             if(nNestParm==1) stop("'ces.nests' cannot be used for non-nested problems. Use 'ces' instead")
+             if(nNestParm==1) stop("'ces.nests' cannot be used for non-nested problems or problems with only singleton nests. Use 'ces' instead")
 
              if(nprods != length(object@nests)){
                  stop("'nests' length must equal the number of products")

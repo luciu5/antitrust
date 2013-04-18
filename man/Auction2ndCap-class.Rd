@@ -60,41 +60,29 @@ Class \code{\linkS4class{Antitrust}}, directly.
   containing the 'exAnte' argument, `if exAnte' equals TRUE then the
   \emph{ex ante} expected result for each firm is produced, while FALSE produces the
   expected result conditional on each firm winning the auction.
-  \describe{
-    \item{\code{calcBuyerExpectedCost}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE)}}{Computes the expected amount that the buyer will pay
+ \describe{
+    \item{\code{calcBuyerExpectedCost}}{\code{signature(object = Auction2ndCap, preMerger = TRUE)}}{Computes the expected amount that the buyer will pay
   to the auction winner.}
-    \item{\code{calcBuyerValuation}}{\code{signature(object =
-  Auction2ndCap)}}{Computes the value to the buyer of the outside option.}
-    \item{\code{calcExpectedLowestCost}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE)}}{Computes the expected lowest cost of the winning bid.}
-    \item{\code{calcExpectedPrice}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE)}}{Computes the expected price paid by the buyer.}
-    \item{\code{calcProducerSurplus}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE,exAnte=TRUE)}}{Computes the expected profits of each supplier}
-    \item{\code{calcMC}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE,exAnte=TRUE)}}{Computes the expected marginal cost of
+    \item{\code{calcBuyerValuation}}{\code{signature(object = Auction2ndCap)}}{Computes the value to the buyer of the outside option.}
+    \item{\code{calcExpectedLowestCost}}{\code{signature(object = Auction2ndCap, preMerger = TRUE)}}{Computes the expected lowest cost of the winning bid.}
+    \item{\code{calcExpectedPrice}}{\code{signature(object = Auction2ndCap, preMerger = TRUE)}}{Computes the expected price paid by the buyer.}
+    \item{\code{calcProducerSurplus}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,exAnte=TRUE)}}{Computes the expected profits of each supplier}
+    \item{\code{calcMC}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,exAnte=TRUE)}}{Computes the expected marginal cost of
       each supplier.}
-    \item{\code{calcMargins}}{\code{signature(object = Auction2ndCap, preMerger
-      = TRUE,exAnte=TRUE)}}{Compute each firm's expected margin.}
-    \item{\code{calcOptimalReserve}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE,lower,upper)}}{Computes the bidder's optimal reserve price.}
-    \item{\code{calcPrices}}{\code{signature(object = Auction2ndCap, preMerger
-	= TRUE,exAnte=TRUE)}}{Computes the expected price that the buyer pays,
+    \item{\code{calcMargins}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,exAnte=TRUE)}}{Compute each firm's expected margin.}
+    \item{\code{calcOptimalReserve}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,lower,upper)}}{Computes the bidder's optimal reserve price.}
+    \item{\code{calcPrices}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,exAnte=TRUE)}}{Computes the expected price that the buyer pays,
       conditional on the buyer purchasing from a particular firm.}
-    \item{\code{calcSellerCostParms}}{\code{signature(object =
-	Auction2ndCap)}}{Calibrate the parameters of the Seller Cost
+    \item{\code{calcSellerCostParms}}{\code{signature(object = Auction2ndCap)}}{Calibrate the parameters of the Seller Cost
   CDF, as well as the reserve price, if not supplied.}
-  \item{\code{calcShares}}{\code{signature(object = Auction2ndCap, preMerger
-      = TRUE,exAnte=TRUE)}}{Compute the probability that a firm wins.}
-  \item{\code{cdfG}}{\code{signature(object = Auction2ndCap,
-      c,preMerger=TRUE)}}{Calculates the probability that a cost draw less than or equal to
+  \item{\code{calcShares}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,exAnte=TRUE)}}{Compute the probability that a firm wins.}
+  \item{\code{cdfG}}{\code{signature(object = Auction2ndCap,c,preMerger=TRUE)}}{Calculates the probability that a cost draw less than or equal to
     `c' is realized for each firm. If `c' is not supplied, the buyer reserve and total
     capacity is used.}
   \item{\code{summary}}{\code{signature(object =
       Auction2ndCap,exAnte=FALSE, parameters=FALSE,digits=2)}}{Summarize the
     results of the calibration and simulation.}
-}
+}}
 
 
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}

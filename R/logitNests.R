@@ -25,8 +25,10 @@ setClass(
              nestCnt   <- tapply(object@prices,object@nests,length)
              nestCnt   <- nestCnt[object@nests]
              isSingleton <- nestCnt==1
+             
+             nNestParm <- nNestParm - sum(isSingleton) #singleton nests are not identified
 
-             if(nNestParm==1) stop("'logit.nests', 'logit.nests.alm' may not be used for non-nested problems. Use 'logit', 'logit.alm' instead")
+             if(nNestParm==1) stop("'logit.nests', 'logit.nests.alm' may not be used for non-nested problems or problems with only singleton nests. Use 'logit', 'logit.alm' instead")
 
              if(nprods != length(object@nests)){
                  stop("'nests' length must equal the number of products")}
@@ -328,7 +330,7 @@ logit.nests <- function(prices,shares,margins,
 
 
     nests <- factor(nests,levels = unique(nests)) # factor nests, keeping levels in the order in which they appear
-    nNestParm <- nlevels(nests) #calculate the number of nesting parameters
+    nNestParm <- sum(tapply(nests,nests,length)>1) # count the number of  non-singleton nests
     nMargins  <- length(margins[!is.na(margins)])
     maxNests  <- nMargins - 1
 
