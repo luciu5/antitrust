@@ -137,9 +137,10 @@ setMethod(
 
      ## Find price changes that set FOCs equal to 0
      minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,...)
-     
+
+
      if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
-     
+
      if(isMax){
 
          hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
@@ -393,12 +394,12 @@ setMethod(
 
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
+     minResult <- BBsolve(object@priceStart[prodIndex],FOC,quiet=TRUE,...)
 
-     if(minResult$termcd != 1){warning("'calcPricesHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+     if(minResult$convergence != 0){warning("'calcPricesHypoMon' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
 
 
-     deltaPrice <- (exp(minResult$x)-1)
+     deltaPrice <- (exp(minResult$par)-1)
 
      names(deltaPrice) <- object@labels[prodIndex]
 
@@ -571,11 +572,11 @@ aids <- function(shares,margins,prices,diversions,
     ## Solve Non-Linear System for Price Changes
     result@priceDelta <- calcPriceDelta(result,isMax=isMax,...)
 
-    
+
     ## Calculate marginal cost
     result@mcPre <-  calcMC(result,TRUE)
     result@mcPost <- calcMC(result,FALSE)
-    
+
 
     ## Calculate Pre and Post merger equilibrium prices
     result@pricePre  <- calcPrices(result,TRUE)

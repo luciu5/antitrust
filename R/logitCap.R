@@ -191,10 +191,11 @@ setMethod(
          return(measure)
      }
 
+
      ## Find price changes that set FOCs equal to 0
      minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,...)
 
-      if(minResult$termcd != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+      if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
 
      priceEst        <- minResult$par
      names(priceEst) <- object@labels
@@ -250,12 +251,12 @@ setMethod(
 
 
       ## Find price changes that set FOCs equal to 0
-     minResult <- nleqslv(object@priceStart[prodIndex],FOC,...)
+     minResult <- BBsolve(object@priceStart[prodIndex],FOC,quiet=TRUE,...)
 
-     if(minResult$termcd != 1){warning("'calcPricesHypoMon' nonlinear solver may not have successfully converged. 'nleqslv' reports: '",minResult$message,"'")}
+     if(minResult$convergence != 0){warning("'calcPricesHypoMon' nonlinear solver may not have successfully converged. 'BBSolve' reports: '",minResult$message,"'")}
 
 
-     pricesHM <- minResult$x
+     pricesHM <- minResult$par
       #priceDelta <- pricesHM/pricePre[prodIndex] - 1
       #names(priceDelta) <- object@labels[prodIndex]
      names(priceHM) <- object@labels[prodIndex]
