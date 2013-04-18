@@ -1,4 +1,6 @@
 rm(list=ls())
+require(BB)
+require(MASS)
 require(nleqslv)
 require(ggplot2)
 require(numDeriv)

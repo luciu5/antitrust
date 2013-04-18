@@ -63,13 +63,13 @@ setMethod(
               nprods      <-   length(shares)
 
               margins      <-  object@margins
-              
-              ## identify which products have enough margin 
+
+              ## identify which products have enough margin
               ## information to impute Bertrand margins
               isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
               isMargin[ownerPre==0]=0
               isMargin    <- !is.na(rowSums(isMargin))
-              
+
               prices       <-  object@prices
               idx          <-  object@normIndex
 
@@ -96,7 +96,7 @@ Normalizing these parameters to 1.")
                ## Uncover price coefficient and mean valuation from margins and revenue shares
 
 
-             
+
 
               sharesNests <- tapply(shares,nests,sum)[nests]
 
@@ -123,7 +123,7 @@ Normalizing these parameters to 1.")
                   diag(elasticity) <- diag(elasticity) + (1/sigma[nests])*alpha*prices
 
 
-                  
+
                   elasticity <- elasticity[isMargin,isMargin]
                   revenues   <- revenues[isMargin]
                   ownerPre   <- ownerPre[isMargin,isMargin]
@@ -171,7 +171,7 @@ Normalizing these parameters to 1.")
               if(is.na(idx)){
                   idxShare <- 1 - object@shareInside
                   idxShareIn <- 1
-                  idxPrice   <- 0
+                  idxPrice   <- object@priceOutside
                   idxSigma   <- 1
 
               }
@@ -214,12 +214,13 @@ setMethod(
      sigma     <- object@slopes$sigma
      meanval   <- object@slopes$meanval
      isOutside <- as.numeric(object@shareInside < 1)
+     outVal    <- ifelse(object@shareInside<1, exp(alpha*object@priceOutside), 0)
 
      sharesIn     <- exp((meanval+alpha*prices)/sigma[nests])
 
      inclusiveValue <- log(tapply(sharesIn,nests,sum))
      sharesAcross <-   exp(sigma*inclusiveValue)
-     sharesAcross <- sharesAcross/(isOutside + sum(sharesAcross))
+     sharesAcross <- sharesAcross/(outVal + sum(sharesAcross))
 
 
      sharesIn     <- sharesIn/exp(inclusiveValue)[nests]
@@ -316,6 +317,7 @@ logit.nests <- function(prices,shares,margins,
                         nests=rep(1,length(shares)),
                         normIndex=ifelse(sum(shares) < 1,NA,1),
                         mcDelta=rep(0,length(prices)),
+                        priceOutside=0,
                         priceStart = prices,
                         isMax=FALSE,
                         constraint = TRUE,
@@ -357,6 +359,7 @@ logit.nests <- function(prices,shares,margins,
     ## Create LogitNests  container to store relevant data
     result <- new("LogitNests",prices=prices, margins=margins,
                   shares=shares,mcDelta=mcDelta,
+                  priceOutside=priceOutside,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   nests=nests,
@@ -373,11 +376,11 @@ logit.nests <- function(prices,shares,margins,
 
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
-    
+
     ## Calculate marginal cost
     result@mcPre <-  calcMC(result,TRUE)
     result@mcPost <- calcMC(result,FALSE)
-    
+
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)

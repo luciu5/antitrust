@@ -25,6 +25,8 @@ Objects can be created by using the constructor function \code{\link{ces}}.
     \item{\code{slopes}:}{A list containing the coefficient on the numeraire
       (`alpha'),  the coefficient on price (`gamma'), and the vector of mean
       valuations (`meanval')}
+     \item{\code{priceOutside}:}{The price of the outside good. Default
+      is 1.}
   }
 }
 \section{Extends}{

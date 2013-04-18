@@ -1,6 +1,7 @@
 sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap"),demand.param,
                      ownerPre,ownerPost,nests, capacities,
                      mcDelta=rep(0,length(prices)),
+                     priceOutside,
                      priceStart,
                      labels=paste("Prod",1:length(prices),sep=""),...){
 
@@ -33,29 +34,31 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
              stop("'meanval' must be a length-k vector of product mean valuations. NAs not allowed.")
              }
 
-         ## An outside option is assumed to exist if all mean valuations are non-zero
-         if(all(demand.param$meanval!=0)){
-             normIndex <- NA
-             shares <- rep(1/(nprods+1),nprods)
-         }
-         else{
-             normIndex <- which(demand.param$meanval==0)
+         if(demand %in% c("LogitNests","Logit","LogitCap")){
 
-             if(length(normIndex)>1){
-                 warning("multiple values of meanval are equal to zero. Normalizing with respect to the first product with zero mean value.")
-                 normIndex <- normIndex[1]
+             ## An outside option is assumed to exist if all mean valuations are non-zero
+             if(all(demand.param$meanval!=0)){
+                 normIndex <- NA
+                 shares <- rep(1/(nprods+1),nprods)
+             }
+             else{
+                 normIndex <- which(demand.param$meanval==0)
+
+                 if(length(normIndex)>1){
+                     warning("multiple values of meanval are equal to zero. Normalizing with respect to the first product with zero mean value.")
+                     normIndex <- normIndex[1]
+                 }
+
              }
 
-         }
-
-         if(demand %in% c("LogitNests","Logit","LogitCap")){
              if(!("alpha" %in% names(demand.param))   ||
                   length(demand.param$alpha) != 1     ||
                   isTRUE(demand.param$alpha>0)){
                  stop("'demand.param' does not contain 'alpha' or 'alpha' is not a negative number.")
              }
 
-             shareInside <- 1 - sum(shares)
+             shareInside <- sum(shares)
+             if(missing(priceOutside)){priceOutside <- 0}
 
          }
 
@@ -82,9 +85,28 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
                  if(shareInside<1) {demand.param$alpha <- 1/shareInside -1}
                  else{ demand.param$alpha <- NULL}
+
+
              }
 
 
+             ## An outside option is assumed to exist if all mean valuations are non-zero
+             if(all(demand.param$meanval!=1)){
+                 normIndex <- NA
+                 shares <- rep(1/(nprods+1),nprods)
+             }
+             else{
+                 normIndex <- which(demand.param$meanval==1)
+
+                 if(length(normIndex)>1){
+                     warning("multiple values of meanval are equal to one. Normalizing with respect to the first product with  mean value equal to 1.")
+                     normIndex <- normIndex[1]
+                 }
+
+             }
+
+
+             if(missing(priceOutside)){priceOutside <- 1}
          }
 
          if(demand %in% c("CESNests","LogitNests")){

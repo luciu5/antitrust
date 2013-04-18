@@ -8,9 +8,13 @@ setClass(
          margins          = "numeric",
          priceStart       = "numeric",
          normIndex        = "vector",
-         shareInside     = "numeric"
+         shareInside      = "numeric",
+         priceOutside     = "numeric"
 
          ),
+    prototype=prototype(
+    priceOutside=0
+    ),
          validity=function(object){
 
 
@@ -64,6 +68,9 @@ setClass(
                       " if 'shares' sum to 1 , or NA if the sum of shares is less than 1")
              }
 
+             if(object@priceOutside<0 ||
+                length(object@priceOutside) != 1){stop('priceOutside must be a non-negative number')}
+
              return(TRUE)
 
          })
@@ -85,7 +92,7 @@ setMethod(
 
               if(is.na(idx)){
                   idxShare <- 1 - object@shareInside
-                  idxPrice <- 0
+                  idxPrice <- object@priceOutside
               }
               else{
                   idxShare <- shares[idx]
@@ -97,8 +104,8 @@ setMethod(
 
               nprods <- length(shares)
               revenues <- shares * prices
-              
-              ## identify which products have enough margin 
+
+              ## identify which products have enough margin
               ## information to impute Bertrand margins
               isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
               isMargin[ownerPre==0]=0
@@ -112,7 +119,7 @@ setMethod(
                   elast <- -alpha *  matrix(prices * shares,ncol=nprods,nrow=nprods)
                   diag(elast) <- alpha*prices + diag(elast)
 
-                  
+
                   elast      <- elast[isMargin,isMargin]
                   revenues   <- revenues[isMargin]
                   ownerPre   <- ownerPre[isMargin,isMargin]
@@ -120,7 +127,7 @@ setMethod(
 
                   #marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
                   #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
-                  
+
                   measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
                   measure <- sum(measure^2,na.rm=TRUE)
 
@@ -214,8 +221,10 @@ setMethod(
      alpha    <- object@slopes$alpha
      meanval  <- object@slopes$meanval
 
+     outVal <- ifelse(object@shareInside<1, exp(alpha*object@priceOutside), 0)
+
      shares <- exp(meanval + alpha*prices)
-     shares <- shares/(as.numeric(object@shareInside<1) + sum(shares))
+     shares <- shares/(outVal+ sum(shares))
 
      if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares))}
 
@@ -327,6 +336,7 @@ logit <- function(prices,shares,margins,
                   ownerPre,ownerPost,
                   normIndex=ifelse(sum(shares)<1,NA,1),
                   mcDelta=rep(0,length(prices)),
+                  priceOutside = 0,
                   priceStart = prices,
                   isMax=FALSE,
                   labels=paste("Prod",1:length(prices),sep=""),
@@ -341,6 +351,7 @@ logit <- function(prices,shares,margins,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   mcDelta=mcDelta,
+                  priceOutside=priceOutside,
                   priceStart=priceStart,shareInside=sum(shares),
                   labels=labels)
 
@@ -350,7 +361,7 @@ logit <- function(prices,shares,margins,
 
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
-    
+
     ## Calculate marginal cost
     result@mcPre <-  calcMC(result,TRUE)
     result@mcPost <- calcMC(result,FALSE)

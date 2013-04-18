@@ -1,7 +1,10 @@
 setClass(
-         Class   = "CES",
-         contains="Logit"
-       )
+    Class   = "CES",
+    contains="Logit",
+    prototype=prototype(
+    priceOutside=0
+    )
+    )
 
 
 setMethod(
@@ -26,7 +29,7 @@ setMethod(
               ## if sum of shares is less than 1, add numeraire
                if(is.na(idx)){
                   idxShare <- 1 - sum(shares)
-                  idxPrice <- 1
+                  idxPrice <- object@priceOutside
               }
               else{
                   idxShare <- shares[idx]
@@ -38,13 +41,13 @@ setMethod(
 
 
               nprods <- length(shares)
-              
-              ## identify which products have enough margin 
+
+              ## identify which products have enough margin
               ## information to impute Bertrand margins
               isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
               isMargin[ownerPre==0]=0
               isMargin    <- !is.na(rowSums(isMargin))
-             
+
 
 
 
@@ -55,14 +58,14 @@ setMethod(
 
                   elasticity <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods)
                   diag(elasticity) <- -gamma + diag(elasticity)
-                  
+
                   elasticity <- elasticity[isMargin,isMargin]
                   shares     <- shares[isMargin]
                   ownerPre   <- ownerPre[isMargin,isMargin]
                   margins    <- margins[isMargin]
-    
+
                   #marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (shares * diag(ownerPre))) / shares
-                  #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)                  
+                  #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
                    FOC <- (shares * diag(ownerPre)) + (elasticity * ownerPre) %*% (shares * margins)
                    measure<-sum(FOC^2,na.rm=TRUE)
 
@@ -96,12 +99,13 @@ setMethod(
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
-     isOutside <- sum(object@shares) < 1
+
      gamma    <- object@slopes$gamma
      meanval  <- object@slopes$meanval
 
+     outVal <- ifelse(sum(object@shares)<1, object@priceOutside^(1-gamma), 0)
      shares <- meanval*prices^(1-gamma)
-     shares <- shares/(sum(shares) + as.numeric(isOutside))
+     shares <- shares/(sum(shares) + outVal)
 
      ##transform revenue shares to quantity shares
      if(!revenue){shares <- (shares/prices)/sum(shares/prices)}
@@ -190,6 +194,7 @@ ces <- function(prices,shares,margins,
                 shareInside = 1,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
+                priceOutside=1,
                 priceStart = prices,
                 isMax=FALSE,
                 labels=paste("Prod",1:length(prices),sep=""),
@@ -203,6 +208,7 @@ ces <- function(prices,shares,margins,
     result <- new("CES",prices=prices, shares=shares, margins=margins,
                   normIndex=normIndex,
                   mcDelta=mcDelta,
+                  priceOutside=priceOutside,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   priceStart=priceStart,
@@ -214,11 +220,11 @@ ces <- function(prices,shares,margins,
 
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
-    
+
     ## Calculate marginal cost
     result@mcPre <-  calcMC(result,TRUE)
     result@mcPost <- calcMC(result,FALSE)
-    
+
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)

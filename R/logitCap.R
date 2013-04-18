@@ -57,7 +57,7 @@ setMethod(
 
               if(is.na(idx)){
                   idxShare <- 1 - object@shareInside
-                  idxPrice <- 0
+                  idxPrice <- object@priceOutside
               }
               else{
                   idxShare <- shares[idx]
@@ -272,6 +272,7 @@ logit.cap <- function(prices,shares,margins,
                       mktSize=sum(capacities),
                       normIndex=ifelse(sum(shares)<1,NA,1),
                       mcDelta=rep(0,length(prices)),
+                       priceOutside=0,
                       priceStart = prices,
                       isMax=FALSE,
                       labels=paste("Prod",1:length(prices),sep=""),
@@ -286,6 +287,7 @@ logit.cap <- function(prices,shares,margins,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   mcDelta=mcDelta,
+                  priceOutside=priceOutside,
                   priceStart=priceStart,shareInside=sum(shares),
                   labels=labels)
 
@@ -300,7 +302,7 @@ logit.cap <- function(prices,shares,margins,
     ## Calculate marginal cost
     result@mcPre <-  calcMC(result,TRUE)
     result@mcPost <- calcMC(result,FALSE)
-    
+
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
     result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)

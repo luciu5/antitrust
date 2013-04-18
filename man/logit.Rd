@@ -15,6 +15,7 @@ logit(prices,shares,margins,
                 ownerPre,ownerPost,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
+                priceOutside = 0,
                 priceStart = prices,
                 isMax=FALSE,
                 labels=paste("Prod",1:length(prices),sep=""),
@@ -23,6 +24,7 @@ logit(prices,shares,margins,
 logit.alm(prices,shares,margins,
                 ownerPre,ownerPost,
                 mcDelta=rep(0,length(prices)),
+                priceOutside = 0,
                 priceStart = prices,
                 isMax=FALSE,
                 parmsStart,
@@ -35,6 +37,7 @@ logit.nests(prices,shares,margins,
                 nests=rep(1,length(shares)),
                 normIndex=ifelse(sum(shares) < 1,NA,1),
                 mcDelta=rep(0,length(prices)),
+                priceOutside = 0,
                 priceStart = prices,
                 isMax=FALSE,
                 constraint = TRUE,
@@ -47,6 +50,7 @@ logit.nests.alm(prices,shares,margins,
                 ownerPre,ownerPost,
                 nests=rep(1,length(shares)),
                 mcDelta=rep(0,length(prices)),
+                priceOutside = 0,
                 priceStart = prices,
                 isMax=FALSE,
                 constraint = TRUE,
@@ -61,6 +65,7 @@ logit.cap(prices,shares,margins,
                 mktSize,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
+                priceOutside = 0,
                 priceStart = prices,
                 isMax=FALSE,
                 labels=paste("Prod",1:length(prices),sep=""),
@@ -100,7 +105,10 @@ logit.cap(prices,shares,margins,
     affect any products' marginal cost.}
   \item{constraint}{if TRUE, then the nesting parameters for all
     non-singleton nests are assumed equal. If FALSE, then each
-    non-singleton nest is permitted to have its own value. Default is TRUE.}
+    non-singleton nest is permitted to have its own value. Default is
+    TRUE.}
+  \item{priceOutside}{A length 1 vector indicating the price of the
+    outside good. Default is 0.}
   \item{priceStart}{A length k vector of starting values used to solve for
     equilibrium price. Default is the `prices' vector.}
   \item{isMax}{If TRUE, checks to see whether computed price equilibrium

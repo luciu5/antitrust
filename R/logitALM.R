@@ -39,8 +39,8 @@ setMethod(
               prices       <-  object@prices
 
               nprods <- length(object@shares)
-              
-              ##identify which products have enough margin 
+
+              ##identify which products have enough margin
               ## information to impute Bertrand margins
               isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
               isMargin[ownerPre==0]=0
@@ -63,13 +63,13 @@ setMethod(
                   revenues   <-   revenues[isMargin]
                   ownerPre   <-   ownerPre[isMargin,isMargin]
                   margins    <-   margins[isMargin]
-                  
+
                   #marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
                   #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
-                  
+
                   measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
                   measure <- sum(measure^2,na.rm=TRUE)
-                  
+
                   return(measure)
               }
 
@@ -79,7 +79,7 @@ setMethod(
 
               minTheta <- optim(object@parmsStart,minD,method="L-BFGS-B",lower= lowerB,upper=upperB)$par
 
-              meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) - minTheta[1] * prices
+              meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) - minTheta[1] * (prices - object@priceOutside)
 
               names(meanval)   <- object@labels
 
@@ -97,6 +97,7 @@ setMethod(
 logit.alm <- function(prices,shares,margins,
                       ownerPre,ownerPost,
                       mcDelta=rep(0,length(prices)),
+                      priceOutside=0,
                       priceStart = prices,
                       isMax=FALSE,
                       parmsStart,
@@ -116,6 +117,7 @@ logit.alm <- function(prices,shares,margins,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   mcDelta=mcDelta,
+                  priceOutside=priceOutside,
                   priceStart=priceStart,
                   shareInside=sum(shares),
                   parmsStart=parmsStart,
@@ -127,12 +129,12 @@ logit.alm <- function(prices,shares,margins,
 
     ## Calculate Demand Slope Coefficients
     result <- calcSlopes(result)
-    
+
     ## Calculate marginal cost
     result@mcPre <-  calcMC(result,TRUE)
     result@mcPost <- calcMC(result,FALSE)
-    
-    
+
+
 
     ## Solve Non-Linear System for Price Changes
     #result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)

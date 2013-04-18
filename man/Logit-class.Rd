@@ -33,6 +33,8 @@ Objects can be created by using the constructor function \code{\link{logit}}.
      the mean values of all other products are normalized.}
     \item{\code{shareInside}:}{The share of customers that purchase any of the
       products included in the `prices' vector.}
+    \item{\code{priceOutside}:}{The price of the outside good. Default
+      is 0.}
      \item{\code{slopes}:}{A list containing the coefficient on price (`alpha') and the vector of mean
       valuations (`meanval')}
 

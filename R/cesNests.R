@@ -105,8 +105,8 @@ Normalizing these parameters to 1.")
 
 
               nprods <- length(shares)
-              
-              ## identify which products have enough margin 
+
+              ## identify which products have enough margin
               ## information to impute Bertrand margins
               isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
               isMargin[ownerPre==0]=0
@@ -145,13 +145,13 @@ Normalizing these parameters to 1.")
 
                   #marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
                   #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
-                  
-                  
+
+
                   elast      <- elast[isMargin,isMargin]
                   shares     <- shares[isMargin]
                   ownerPre   <- ownerPre[isMargin,isMargin]
                   margins    <- margins[isMargin]
-                  
+
                   FOC <- (shares * diag(ownerPre)) + (elast * ownerPre) %*% (shares * margins)
                   measure<-sum(FOC^2,na.rm=TRUE)
 
@@ -191,7 +191,7 @@ Normalizing these parameters to 1.")
                if(is.na(idx)){
                   idxShare      <- 1 - sum(shares)
                   idxShareNests <- 1
-                  idxPrice      <- 1
+                  idxPrice      <- object@priceOutside
                   idxSigma      <- 0
               }
 
@@ -232,18 +232,19 @@ setMethod(
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
-     isOutside <- sum(object@shares) < 1
+
      nests     <- object@nests
      gamma    <- object@slopes$gamma
      sigma    <- object@slopes$sigma
      meanval  <- object@slopes$meanval
 
+     outVal <- ifelse(sum(object@shares)<1, object@priceOutside^(1-gamma), 0)
 
      sharesIn     <- meanval*prices^(1-sigma[nests])
      sharesAcross <- tapply(sharesIn,nests,sum)
      sharesIn     <- sharesIn / sharesAcross[nests]
      sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
-     sharesAcross <- sharesAcross / (sum(sharesAcross) + as.numeric(isOutside))
+     sharesAcross <- sharesAcross / (sum(sharesAcross) + outVal)
 
      shares       <- sharesIn * sharesAcross[nests]
 
@@ -349,6 +350,7 @@ ces.nests <- function(prices,shares,margins,
                       shareInside = 1,
                       normIndex=ifelse(sum(shares) < 1,NA,1),
                       mcDelta=rep(0,length(prices)),
+                      priceOutside=1,
                       priceStart = prices,
                       isMax=FALSE,
                       constraint = TRUE,
@@ -372,6 +374,7 @@ ces.nests <- function(prices,shares,margins,
     ## Create CESNests  container to store relevant data
     result <- new("CESNests",prices=prices, shares=shares,margins=margins,
                   mcDelta=mcDelta,
+                  priceOutside=priceOutside,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   nests=nests,
@@ -391,7 +394,7 @@ ces.nests <- function(prices,shares,margins,
     ## Calculate marginal cost
     result@mcPre <-  calcMC(result,TRUE)
     result@mcPost <- calcMC(result,FALSE)
-    
+
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
     result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)

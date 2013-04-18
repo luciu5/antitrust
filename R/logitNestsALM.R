@@ -112,7 +112,7 @@ Normalizing these parameters to 1.")
 
                meanval <-
                   log(shares * (1 - shareOut)) - log(shareOut) -
-                      minAlpha*prices +
+                      minAlpha*(prices - object@priceOutside) +
                           (minSigma-1)*log(sharesNests)
 
 
@@ -133,6 +133,7 @@ logit.nests.alm <- function(prices,shares,margins,
                             ownerPre,ownerPost,
                             nests=rep(1,length(shares)),
                             mcDelta=rep(0,length(prices)),
+                            priceOutside=0,
                             priceStart = prices,
                             isMax=FALSE,
                             constraint = TRUE,
@@ -176,6 +177,7 @@ logit.nests.alm <- function(prices,shares,margins,
                      ownerPost=ownerPost,
                      nests=nests,
                      mcDelta=mcDelta,
+                     priceOutside=priceOutside,
                      priceStart=priceStart,
                      shareInside=sum(shares),
                      parmsStart=parmsStart,
@@ -188,11 +190,11 @@ logit.nests.alm <- function(prices,shares,margins,
 
        ## Calculate Demand Slope Coefficients
        result <- calcSlopes(result)
-       
+
        ## Calculate marginal cost
        result@mcPre <-  calcMC(result,TRUE)
        result@mcPost <- calcMC(result,FALSE)
-       
+
 
        ## Solve Non-Linear System for Price Changes
        result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
