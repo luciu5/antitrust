@@ -8,17 +8,17 @@ setClass(
          representation=representation(
          ownerPre     = "matrixOrVector",
          ownerPost    = "matrixOrVector",
-         pricePre     = "vector",
-         pricePost    = "vector",
-         mcPre        = "vector",
-         mcPost      = "vector",
+         pricePre     = "numeric",
+         pricePost    = "numeric",
+         mcPre        = "numeric",
+         mcPost       = "numeric",
          labels       = "character"
          ),
-         prototype=prototype(
-         pricePre      =  rep(NA,length(object@labels)),
-         pricePost     =  rep(NA,length(object@labels)),
-         mcPre      =     rep(NA,length(object@labels)),
-         mcPost     =     rep(NA,length(object@labels))
+         prototype(
+         pricePre  = numeric(),
+         pricePost = numeric(),
+         mcPre     = numeric(),
+         mcPost    = numeric()
          ),
          validity=function(object){
 
@@ -30,7 +30,7 @@ setClass(
              if(is.matrix(object@ownerPre)){
 
                  if(nprods != ncol(object@ownerPre)){
-                     stop("The number of rows and columns in 'ownerPre' must equal the length of 'shares'")}
+                     stop("The number of rows and columns in 'ownerPre' must equal the length of 'labels'")}
                  if(nrow(object@ownerPre) != ncol(object@ownerPre)){
                      stop("'ownerPre' must be a square matrix ")}
 
@@ -41,20 +41,20 @@ setClass(
                      }
              }
 
-             else if (nprods != length(object@ownerPre)) stop("'ownerPre' and shares must be vectors of the same length")
+             else if (nprods != length(object@ownerPre)) stop("'ownerPre' and 'labels' must be vectors of the same length")
              if(is.matrix(object@ownerPost)){
                  if(nprods != ncol(object@ownerPost)){
-                     stop("The number of rows and columns in 'ownerPost' must equal the length of 'shares'")}
+                     stop("The number of rows and columns in 'ownerPost' must equal the length of 'labels'")}
                  if(nrow(object@ownerPost) != ncol(object@ownerPost)){
                      stop("'ownerPost' must be a square matrix")}
                  if(
-                    any(colSums(unique(object@ownerPost))>1)
+                    any(colSums(unique(object@ownerPost))>1,na.rm=TRUE)
                     ){
                      stop("The columns of the matrix formed from the unique rows of 'ownerPost' must sum to no more than 1")
                      }
              }
 
-             else if (nprods != length(object@ownerPost)) stop("'ownerPost' and shares must be vectors of the same length")
+             else if (nprods != length(object@ownerPost)) stop("'ownerPost' and 'labels' must be vectors of the same length")
 
               return(TRUE)
          }
@@ -138,7 +138,7 @@ setMethod(
 
               if(is.vector(thisOwner) || is.factor(thisOwner)){
 
-                  nprod <- length(object@shares)
+                  nprod <- length(object@labels)
                   owners <- as.numeric(factor(thisOwner))
                   thisOwner <- matrix(0,ncol=nprod,nrow=nprod)
 

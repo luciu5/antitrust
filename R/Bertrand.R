@@ -12,15 +12,17 @@ setClass(
          ),
          prototype=prototype(
 
-         slopes          = matrix()
+         slopes          = matrix(),
+         mcDelta         = numeric(),
+         subset         =  logical()
 
          ),
          validity=function(object){
 
-
-
+             
              nprods <- length(object@labels)
 
+             
 
              if(nprods != length(object@shares) ||
                 nprods != length(object@subset)){
@@ -166,8 +168,6 @@ setGeneric (name= "summary")
 
 
 ## Create some methods for the Bertrand Class
-
-
 
 
 ## Method to compute HHI
@@ -565,10 +565,9 @@ setMethod(
 
 
 
+     labels  <- object@labels
      output  <-  calcShares(object,preMerger,revenue)
-     subset  <-  !is.na(output)
-     output  <- output[subset]
-     labels  <- object@labels[subset]
+     
 
      elasticity <- elast(object,preMerger)
 

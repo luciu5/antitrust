@@ -13,7 +13,10 @@ setClass(
 
          ),
     prototype=prototype(
-    priceOutside=0
+      priceStart  = numeric(),
+      normIndex   = 1,
+      shareInside = numeric(),
+      priceOutside = 0
     ),
          validity=function(object){
 
@@ -74,6 +77,7 @@ setClass(
              return(TRUE)
 
          })
+
 
 
 setMethod(
@@ -192,8 +196,8 @@ setMethod(
 
 
          margins   <- 1 - mc/priceCand
-         revenues  <- calcShares(object,preMerger,revenue=TRUE,subset=subset)[subset]
-         elasticities     <- t(elast(object,preMerger,subset=subset))
+         revenues  <- calcShares(object,preMerger,revenue=TRUE)[subset]
+         elasticities     <- t(elast(object,preMerger)[subset,subset])
 
          thisFOC <- revenues * diag(owner) + as.vector((elasticities * owner) %*% (margins * revenues))
 
@@ -230,20 +234,12 @@ setMethod(
 setMethod(
  f= "calcShares",
  signature= "Logit",
- definition=function(object,preMerger=TRUE,revenue=FALSE,subset){
+ definition=function(object,preMerger=TRUE,revenue=FALSE){
 
-     nprods <- length(object@shares)
-
-
+   
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
-
-     if(missing(subset)){
-         subset <- !is.na(prices)
-         if(all(is.na(prices))){subset <- rep(TRUE,nprods)}
-                     }
-     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
-
+                     
 
      alpha    <- object@slopes$alpha
      meanval  <- object@slopes$meanval
@@ -251,9 +247,8 @@ setMethod(
      outVal <- ifelse(object@shareInside<1, exp(alpha*object@priceOutside), 0)
 
      shares <- exp(meanval + alpha*prices)
-     shares <- shares/(outVal+ sum(shares[subset]))
-     shares[!subset] <- NA
-
+     shares <- shares/(outVal+ sum(shares,na.rm=TRUE))
+    
      if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares,na.rm=TRUE),na.rm=TRUE)}
 
      names(shares) <- object@labels
@@ -268,32 +263,21 @@ setMethod(
 setMethod(
  f= "elast",
  signature= "Logit",
- definition=function(object,preMerger=TRUE,market=FALSE,subset){
-
-     nprods <- length(object@shares)
-
-
+ definition=function(object,preMerger=TRUE,market=FALSE){
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
-     if(missing(subset)){
-         subset <- !is.na(prices)
-         if(all(is.na(prices))){subset <- rep(TRUE,nprods)}
-     }
-     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
-
-
-     prices <- prices[subset]
-     labels <- object@labels[subset]
+    
+     labels <- object@labels
 
      alpha    <- object@slopes$alpha
 
-     shares <-  calcShares(object,preMerger,subset=subset)[subset]
+     shares <-  calcShares(object,preMerger)
 
      if(market){
 
-         elast <- alpha * sum(shares*prices) * (1 - sum(shares))
+         elast <- alpha * sum(shares*prices,na.rm=TRUE) * (1 - sum(shares,na.rm=TRUE))
 
          }
 
@@ -353,7 +337,7 @@ setMethod(
 
          surplus             <- (priceCand-mc)*sharesCand[prodIndex]
 
-         return(sum(surplus))
+         return(sum(surplus,na.rm=TRUE))
      }
 
 
