@@ -13,6 +13,7 @@
                 shareInside = 1,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
+                subset=rep(TRUE, length(prices)),
                 priceOutside = 1,
                 priceStart = prices,
                 isMax=FALSE,
@@ -26,6 +27,7 @@ ces.nests(prices,shares,margins,
                 shareInside = 1,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
+                subset=rep(TRUE, length(prices)),
                 priceOutside = 1,
                 priceStart = prices,
                 isMax=FALSE,
@@ -62,6 +64,10 @@ ces.nests(prices,shares,margins,
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
     affect any products' marginal cost.}
+   \item{subset}{A vector of length k where each element equals TRUE if
+     the product indexed by that element should be included in the
+     post-merger simulation and FALSE if it should be excluded.Default is a
+     length k vector of TRUE.}
    \item{constraint}{if TRUE, then the nesting parameters for all
      non-singleton nests are assumed equal. If FALSE, then each
      non-singleton nest is permitted to have its own value. Default is

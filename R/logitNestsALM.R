@@ -133,6 +133,7 @@ logit.nests.alm <- function(prices,shares,margins,
                             ownerPre,ownerPost,
                             nests=rep(1,length(shares)),
                             mcDelta=rep(0,length(prices)),
+                            subset=rep(TRUE,length(prices)),
                             priceOutside=0,
                             priceStart = prices,
                             isMax=FALSE,
@@ -177,6 +178,7 @@ logit.nests.alm <- function(prices,shares,margins,
                      ownerPost=ownerPost,
                      nests=nests,
                      mcDelta=mcDelta,
+                     subset=subset,
                      priceOutside=priceOutside,
                      priceStart=priceStart,
                      shareInside=sum(shares),
@@ -198,7 +200,7 @@ logit.nests.alm <- function(prices,shares,margins,
 
        ## Solve Non-Linear System for Price Changes
        result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
-       result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+       result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,subset=subset,...)
 
        return(result)
 

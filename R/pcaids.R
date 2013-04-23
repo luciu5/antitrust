@@ -80,6 +80,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
                    ownerPre,ownerPost,
                    knownElastIndex=1,
                    mcDelta=rep(0, length(shares)),
+                   subset=rep(TRUE, length(shares)),
                    priceStart=runif(length(shares)),
                    isMax=FALSE,
                    labels=paste("Prod",1:length(shares),sep=""),
@@ -87,7 +88,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
 
 
 
-    if(missing(prices)){ prices <- rep(NA,length(shares))}
+    if(missing(prices)){ prices <- rep(NA_real_,length(shares))}
 
     if(missing(diversions)){
         diversions <- tcrossprod(1/(1-shares),shares)
@@ -97,6 +98,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
   ## Create PCAIDS container to store relevant data
     result <- new("PCAIDS",shares=shares,prices=prices,
                    quantities=shares, margins=shares,mcDelta=mcDelta,
+                  subset=subset,
                   knownElast=knownElast,mktElast=mktElast,
                   ownerPre=ownerPre,ownerPost=ownerPost,
                   knownElastIndex=knownElastIndex,
@@ -111,7 +113,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
     result <- calcSlopes(result)
 
     ## Solve Non-Linear System for Price Changes
-    result@priceDelta <- calcPriceDelta(result,isMax=isMax,...)
+    result@priceDelta <- calcPriceDelta(result,isMax=isMax,subset=subset,...)
 
 
     ## Calculate Pre and Post merger equilibrium prices

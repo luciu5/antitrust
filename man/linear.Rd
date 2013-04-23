@@ -16,6 +16,7 @@
                      symmetry=TRUE,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
+                     subset=rep(TRUE, length(prices)),
                      priceStart=prices,
                      labels=paste("Prod",1:length(prices),sep=""),
                      ...
@@ -26,6 +27,7 @@
                      diversions,
                      ownerPre,ownerPost,
                      mcDelta=rep(0,length(prices)),
+                     subset=rep(TRUE, length(prices)),
                      priceStart=prices,
                      labels=paste("Prod",1:length(prices),sep=""),
                      ...
@@ -52,13 +54,17 @@
   \item{mcDelta}{A length k vector where each element equals the
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
-  affect any products' marginal cost.}
- \item{priceStart}{A length k vector of prices used as the initial guess
-  in the nonlinear equation solver. Default is `prices'.}
-  \item{labels}{A k-length vector of labels. Default is "Prod#", where
-  `#' is a number between 1 and the length of `prices'.}
- \item{...}{Additional options to feed to the solver. See below.}
-}
+    affect any products' marginal cost.}
+   \item{subset}{A vector of length k where each element equals TRUE if
+     the product indexed by that element should be included in the
+     post-merger simulation and FALSE if it should be excluded.Default is a
+     length k vector of TRUE.}
+   \item{priceStart}{A length k vector of prices used as the initial guess
+     in the nonlinear equation solver. Default is `prices'.}
+   \item{labels}{A k-length vector of labels. Default is "Prod#", where
+     `#' is a number between 1 and the length of `prices'.}
+   \item{...}{Additional options to feed to the solver. See below.}
+ }
 
 
 

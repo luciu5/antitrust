@@ -63,57 +63,6 @@ testMethods <- function(object,param){
 
 }
 
-
-## Simulate a merger between two single-product firms in a
-## three-firm market with loglin demand with diversions
-## that are proportional to shares.
-## This example assumes that the merger is between
-## the first two firms
-
-
-
-n <- 3 #number of firms in market
-price    <- c(2.9,3.4,2.2)
-quantity <- c(650,998,1801)
-nests <- c("a","b","a")
-
-slopes <- matrix(
-c(-2.3,	  0.18,	0.28,
-   0.11, -2.4,	0.1,
-   0.13,   .16,-2.7),ncol=n)
-
-
-margin <- -1/diag(slopes)
-
-
-#simulate merger between firms 1 and 2
-owner.pre <- diag(n)
-owner.post <- owner.pre
-owner.post[1,2] <- owner.post[2,1] <- 1
-
-shares=quantity/sum(quantity)
-## default is diversion according to revenue share
-result1 <- aids(shares,margin,price,ownerPre=owner.pre,ownerPost=owner.post)
-sim1 <- sim(price,demand="AIDS",list(slopes=result1@slopes,intercepts=result1@intercepts,mktElast=result1@mktElast),ownerPre=owner.pre,ownerPost=owner.post)
-testMethods(result1)
-testMethods(sim1)
-
-## User-supplied diversions (this will give the same answer as above)
-
-
-result2 <- loglinear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
-sim2 <- sim(price,demand="LogLin",list(slopes=result2@slopes,intercepts=result2@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
-testMethods(result2)
-testMethods(sim2)
-
-## same as above, but with  pcaids demand
-result3 <- pcaids(shares,-1/margin[1],-1,ownerPre=owner.pre,ownerPost=owner.post)
-testMethods(result3)
-
-result4 <- linear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
-sim4 <- sim(price,demand="Linear",list(slopes=result4@slopes,intercepts=result4@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
-testMethods(result4)
-
 ##Beer calibration and simulation results from Epstein/Rubenfeld 2004, pg 80+
 n <- 4 #number of firms in market
 prodNames <- c("BUD","OLD STYLE","MILLER","MILLER-LITE","OTHER-LITE","OTHER-REG")
@@ -199,6 +148,61 @@ result11.2 <- logit.cap(price,shares.quantity,margins.logit,capacities=cap,mktSi
 demand.parm <- result11@slopes
 demand.parm$mktSize=mktSize
 sim11    <- sim(price,demand="LogitCap",demand.parm,ownerPre=ownerPre,capacities=cap,ownerPost=ownerPost,labels=prodNames)
+
+
+
+
+
+## Simulate a merger between two single-product firms in a
+## three-firm market with loglin demand with diversions
+## that are proportional to shares.
+## This example assumes that the merger is between
+## the first two firms
+
+
+
+n <- 3 #number of firms in market
+price    <- c(2.9,3.4,2.2)
+quantity <- c(650,998,1801)
+nests <- c("a","b","a")
+
+slopes <- matrix(
+c(-2.3,	  0.18,	0.28,
+   0.11, -2.4,	0.1,
+   0.13,   .16,-2.7),ncol=n)
+
+
+margin <- -1/diag(slopes)
+
+
+#simulate merger between firms 1 and 2
+owner.pre <- diag(n)
+owner.post <- owner.pre
+owner.post[1,2] <- owner.post[2,1] <- 1
+
+shares=quantity/sum(quantity)
+## default is diversion according to revenue share
+result1 <- aids(shares,margin,price,ownerPre=owner.pre,ownerPost=owner.post)
+sim1 <- sim(price,demand="AIDS",list(slopes=result1@slopes,intercepts=result1@intercepts,mktElast=result1@mktElast),ownerPre=owner.pre,ownerPost=owner.post)
+testMethods(result1)
+testMethods(sim1)
+
+## User-supplied diversions (this will give the same answer as above)
+
+
+result2 <- loglinear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+sim2 <- sim(price,demand="LogLin",list(slopes=result2@slopes,intercepts=result2@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
+testMethods(result2)
+testMethods(sim2)
+
+## same as above, but with  pcaids demand
+result3 <- pcaids(shares,-1/margin[1],-1,ownerPre=owner.pre,ownerPost=owner.post)
+testMethods(result3)
+
+result4 <- linear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+sim4 <- sim(price,demand="Linear",list(slopes=result4@slopes,intercepts=result4@intercepts),ownerPre=owner.pre,ownerPost=owner.post)
+testMethods(result4)
+
 
 
 ##

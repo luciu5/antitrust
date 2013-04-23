@@ -19,10 +19,10 @@ setClass(
          ),
          validity=function(object){
 
-             
+
              nprods <- length(object@labels)
 
-             
+
 
              if(nprods != length(object@shares) ||
                 nprods != length(object@subset)){
@@ -186,6 +186,7 @@ setMethod(
      weights <- t(t(weights)/diag(weights)) # divide each element by its corresponding diagonal
 
      shares <- calcShares(object,preMerger,revenue) *100
+     shares[is.na(shares)] <- 0
 
      result <- as.vector(shares %*% weights %*% shares)
 
@@ -254,7 +255,7 @@ setMethod(
                   mc <- mc*(1+object@mcDelta)
               }
 
-              names(mc) <- object@labels
+             names(mc) <- object@labels
 
               return(as.vector(mc))
           }
@@ -299,65 +300,90 @@ setMethod(
 setMethod(
   f= "calcProducerSurplusGrimTrigger",
   signature= "Bertrand",
-  definition= function(object,coalition,discount,preMerger=TRUE){
-    nprod <- length(object@labels)
-    if(!is.numeric(coalition) ||
+  definition= function(object,coalition,discount,preMerger=TRUE,...){
+
+      subset <- object@subset
+      nprod  <- length(object@labels)
+      if(!is.numeric(coalition) ||
          length(coalition) > nprod ||
          !coalition %in% 1:nprod){
-      stop ("'coalition' must be a vector of product indices no greater than the number of products")
-    }
-    if(any(discount<0 | discount>=1) ||
-       length(discount) != length(coalition)){
-      stop ("'discount' must be a vector of values between 0 and 1 and whose length equals that of 'coalition'")
-    }
-
-    psPunish <- calcProducerSurplus(object,preMerger)
-
-    if(preMerger){
-      ownerPre <- object@ownerPre
-      object@ownerPre[coalition,coalition] <- 1
-      ownerCoalition <- object@ownerPre
-      object@pricePre <- calcPrices(object,preMerger)
-      psCoord  <- calcProducerSurplus(object,preMerger)
-
-      psDefect <- psPunish
-
-      #test to see if c defects
-      for(c in coalition){
-        object@ownerPre <- ownerCoalition
-        object@ownerPre[c,] <- ownerPre[c,]
-        object@pricePre <- calcPrices(object,preMerger)
-        psDefect[c] <- calcProducerSurplus(object,preMerger)[c]
+          stop ("'coalition' must be a vector of product indices no greater than the number of products")
+      }
+      if(any(discount<=0 | discount>=1) ||
+         length(discount) != length(coalition)){
+          stop ("'discount' must be a vector of values between 0 and 1 and whose length equals that of 'coalition'")
       }
 
-    }
-    else{
 
-      ownerPost <- object@ownerPost
-      object@ownerPost[coalition,coalition] <- 1
-      ownerCoalition <- object@ownerPost
-      object@pricePost <- calcPrices(object,preMerger)
-      psCoord  <- calcProducerSurplus(object,preMerger)
+      temp <- rep(0,nprods)
 
-      psDefect <- psPunish
+      temp[coalition] <- discount
+      discount <- temp
+      rm(temp)
 
-      for(c in coalition){
-        object@ownerPost <- ownerCoalition
-        object@ownerPost[c,] <- ownerPost[c,]
-        object@pricePost <- calcPrices(object,preMerger)
-        psDefect[c] <- calcProducerSurplus(object,preMerger)[c]
+
+      psPunish <- calcProducerSurplus(object,preMerger)
+      owner    <- ownerToVec(object,preMerger)
+
+      if(preMerger){
+          ownerPre <- object@ownerPre
+          object@ownerPre[coalition,coalition] <- 1
+          ownerCoalition <- object@ownerPre
+          object@pricePre <- calcPrices(object,preMerger,...)
+          psCoord  <- calcProducerSurplus(object,preMerger)
+
+          psDefect <- psPunish
+
+          ##compute the producer surplus from defecting
+          for(c in unique(owner[coalition])){
+              thisOwner <- c==owner
+              object@ownerPre <- ownerCoalition
+              object@ownerPre[thisOwner,] <- ownerPre[thisOwner,]
+              object@pricePre <- calcPrices(object,preMerger,...)
+              psDefect[thisOwner] <- calcProducerSurplus(object,preMerger)[thisOwner]
+          }
+
+
+          ## Determine if the firm finds it profitable to cooperate or defect under
+          ## GRIM TRIGGER
+          IC <- as.vector(ownerPre %*% ifelse(discount>0 & !is.na(psCoord),psCoord*discount/(1-discount),0)) >
+                as.vector(ownerPre %*% ifelse(discount>0 & !is.na(psDefect),psDefect + (psPunish*discount/(1-discount)),0))
+
       }
-    }
+      else{
 
-    result<-cbind(Discount=discount,Coord=psCoord,Defect=psDefect,Punish=psPunish)
-    rownames(result) <- object@labels
+          ownerPost <- object@ownerPost
+          object@ownerPost[coalition,coalition] <- 1
+          ownerCoalition <- object@ownerPost
+          object@pricePost <- calcPrices(object,preMerger,subset=subset,...)
+          psCoord  <- calcProducerSurplus(object,preMerger)
 
-    result <- result[coalition,]
+          psDefect <- psPunish
 
-    result <- cbind(result,IC=result[,"Coord"] > result[,"Defect"]*(1-discount) + result[,"Punish"]*discount)
-    return(result)
+          ##compute the producer surplus from defecting
+          for(c in unique(owner[coalition])){
+              thisOwner <- c==owner
+              object@ownerPost <- ownerCoalition
+              object@ownerPost[thisOwner,] <- ownerPost[thisOwner,]
+              object@pricePost <- calcPrices(object,preMerger,subset=subset,...)
+              psDefect[thisOwner] <- calcProducerSurplus(object,preMerger)[thisOwner]
+          }
+
+
+          IC <- as.vector(ownerPost %*% ifelse(discount>0 & !is.na(psCoord),psCoord*discount/(1-discount),0)) >
+                as.vector(ownerPost %*% ifelse(discount>0 & !is.na(psCoord),psDefect + (psPunish*discount/(1-discount)),0))
+
+
+      }
+
+      result <- data.frame(Discount=discount,Coord=psCoord,Defect=psDefect,Punish=psPunish,IC=IC)
+      rownames(result) <- object@labels
+      result <- result[coalition,]
+
+
+      return(result)
   }
-)
+    )
 
 
 
@@ -371,6 +397,12 @@ setMethod(
     nprods=length(object@labels)
     pricePre=object@pricePre
     pricePost=object@pricePost
+
+    if(all(is.na(pricePre)) ||
+       all(is.na(pricePost))){
+        stop("'pricePre' or 'pricePost' are all NA")
+    }
+
     mcPre=object@mcPre
     mcPost=object@mcPost
     labels=object@labels
@@ -401,7 +433,7 @@ setMethod(
               }
 
     for(i in 1:nprods){
-      thesePrices=seq((1-scale)*min(mcPre[i],mcPost[i]),(1+scale)*max(pricePre[i],pricePost[i]),length.out=100)
+      thesePrices=seq((1-scale)*min(mcPre[i],mcPost[i],na.rm=TRUE),(1+scale)*max(pricePre[i],pricePost[i],na.rm=TRUE),length.out=100)
       quantPre=c(quantPre,sapply(thesePrices,plotThis,idx=i,preMerger=TRUE))
       quantPost=c(quantPost,sapply(thesePrices,plotThis,idx=i,preMerger=FALSE))
       prices=c(prices,thesePrices)
@@ -567,7 +599,7 @@ setMethod(
 
      labels  <- object@labels
      output  <-  calcShares(object,preMerger,revenue)
-     
+
 
      elasticity <- elast(object,preMerger)
 

@@ -13,6 +13,7 @@
 aids(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
                  mcDelta=rep(0, length(shares)),
+                 subset=rep(TRUE, length(shares)),
                  priceStart=runif(length(shares)),
                  isMax=FALSE,
                  labels=paste("Prod",1:length(shares),sep=""),
@@ -23,6 +24,7 @@ pcaids(shares,knownElast,mktElast=-1,
               ownerPre,ownerPost,
               knownElastIndex=1,
               mcDelta=rep(0, length(shares)),
+              subset=rep(TRUE, length(shares)),
               priceStart=runif(length(shares)),
               isMax=FALSE,
               labels=paste("Prod",1:length(shares),sep=""),
@@ -33,6 +35,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
               nests=rep(1,length(shares)),
               knownElastIndex=1,
               mcDelta=rep(0, length(shares)),
+              subset=rep(TRUE, length(shares)),
               priceStart=runif(length(shares)),
               isMax=FALSE,
               nestsParmStart,
@@ -71,7 +74,11 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   \item{mcDelta}{A vector of length k where each element equals the
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
-  affect any products' marginal cost.}
+    affect any products' marginal cost.}
+  \item{subset}{A vector of length k where each element equals TRUE if
+  the product indexed by that element should be included in the
+  post-merger simulation and FALSE if it should be excluded.Default is a
+  length k vector of TRUE.}
   \item{priceStart}{A vector of length k who elements equal to an
   initial guess of the proportional change in price caused by the
   merger. The default is to draw k random elements from a [0,1] uniform

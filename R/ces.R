@@ -105,10 +105,10 @@ setMethod(
 
      outVal <- ifelse(sum(object@shares)<1, object@priceOutside^(1-gamma), 0)
      shares <- meanval*prices^(1-gamma)
-     shares <- shares/(sum(shares) + outVal)
+     shares <- shares/(sum(shares,na.rm=TRUE) + outVal)
 
      ##transform revenue shares to quantity shares
-     if(!revenue){shares <- (shares/prices)/sum(shares/prices)}
+     if(!revenue){shares <- (shares/prices)/sum(shares/prices,na.rm=TRUE)}
 
      names(shares) <- object@labels
 
@@ -194,6 +194,7 @@ ces <- function(prices,shares,margins,
                 shareInside = 1,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
+                subset=rep(TRUE,length(prices)),
                 priceOutside=1,
                 priceStart = prices,
                 isMax=FALSE,
@@ -208,6 +209,7 @@ ces <- function(prices,shares,margins,
     result <- new("CES",prices=prices, shares=shares, margins=margins,
                   normIndex=normIndex,
                   mcDelta=mcDelta,
+                  subset=subset,
                   priceOutside=priceOutside,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
@@ -228,7 +230,7 @@ ces <- function(prices,shares,margins,
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
-    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,subset=subset,...)
 
     return(result)
 

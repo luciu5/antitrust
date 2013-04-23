@@ -25,7 +25,7 @@ setClass(
              nestCnt   <- tapply(object@prices,object@nests,length)
              nestCnt   <- nestCnt[object@nests]
              isSingleton <- nestCnt==1
-             
+
              nNestParm <- nNestParm - sum(isSingleton) #singleton nests are not identified
 
              if(nNestParm==1) stop("'logit.nests', 'logit.nests.alm' may not be used for non-nested problems or problems with only singleton nests. Use 'logit', 'logit.alm' instead")
@@ -220,9 +220,9 @@ setMethod(
 
      sharesIn     <- exp((meanval+alpha*prices)/sigma[nests])
 
-     inclusiveValue <- log(tapply(sharesIn,nests,sum))
+     inclusiveValue <- log(tapply(sharesIn,nests,sum,na.rm=TRUE))
      sharesAcross <-   exp(sigma*inclusiveValue)
-     sharesAcross <- sharesAcross/(outVal + sum(sharesAcross))
+     sharesAcross <- sharesAcross/(outVal + sum(sharesAcross,na.rm=TRUE))
 
 
      sharesIn     <- sharesIn/exp(inclusiveValue)[nests]
@@ -230,7 +230,7 @@ setMethod(
 
      shares       <- sharesIn * sharesAcross[nests]
 
-     if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares))}
+     if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares,na.rm=TRUE),na.rm=TRUE)}
 
      names(shares) <- object@labels
 
@@ -265,7 +265,7 @@ setMethod(
 
      else{
 
-         sharesNests <- shares/tapply(shares,nests,sum)[nests]
+         sharesNests <- shares/tapply(shares,nests,sum,na.rm=TRUE)[nests]
 
 
 
@@ -319,6 +319,7 @@ logit.nests <- function(prices,shares,margins,
                         nests=rep(1,length(shares)),
                         normIndex=ifelse(sum(shares) < 1,NA,1),
                         mcDelta=rep(0,length(prices)),
+                        subset=rep(TRUE,length(prices)),
                         priceOutside=0,
                         priceStart = prices,
                         isMax=FALSE,
@@ -361,6 +362,7 @@ logit.nests <- function(prices,shares,margins,
     ## Create LogitNests  container to store relevant data
     result <- new("LogitNests",prices=prices, margins=margins,
                   shares=shares,mcDelta=mcDelta,
+                  subset=subset,
                   priceOutside=priceOutside,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
@@ -386,7 +388,7 @@ logit.nests <- function(prices,shares,margins,
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
-    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,subset=subset,...)
 
 
     return(result)

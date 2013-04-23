@@ -154,6 +154,7 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
                          nests=rep(1,length(shares)),
                          knownElastIndex=1,
                          mcDelta=rep(0, length(shares)),
+                         subset=rep(TRUE, length(shares)),
                          priceStart=runif(length(shares)),
                          isMax=FALSE,
                          nestsParmStart,
@@ -168,7 +169,7 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
         nestsParmStart <- runif(nNests*(nNests -1)/2)
                             }
 
-      if(missing(prices)){ prices <- rep(NA,length(shares))}
+      if(missing(prices)){ prices <- rep(NA_real_,length(shares))}
 
     diversions <- tcrossprod(1/(1-shares),shares);diag(diversions) <- -1 #'diversions' slot not used by pcaids.nests
 
@@ -177,7 +178,7 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
     result <- new("PCAIDSNests",shares=shares,
                   prices=prices,
                   quantities=shares,
-                  margins=margins,mcDelta=mcDelta
+                  margins=margins,mcDelta=mcDelta,subset=subset,
                   ,knownElast=knownElast,mktElast=mktElast,nests=nests,
                   nestsParms=nestsParmStart, diversion=diversions,
                   ownerPre=ownerPre,ownerPost=ownerPost,knownElastIndex=knownElastIndex,
@@ -192,12 +193,12 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
 
 
     ## Solve Non-Linear System for Price Changes
-    result@priceDelta <- calcPriceDelta(result,isMax=isMax,...)
+    result@priceDelta <- calcPriceDelta(result,isMax=isMax,subset=subset,...)
 
     ## Calculate marginal cost
     result@mcPre <-  calcMC(result,TRUE)
     result@mcPost <- calcMC(result,FALSE)
-    
+
 
     ## Calculate Pre and Post merger equilibrium prices
     result@pricePre  <- calcPrices(result,TRUE)

@@ -112,10 +112,16 @@ setMethod(
 setMethod(
  f= "calcPriceDelta",
  signature= "AIDS",
- definition=function(object,isMax=FALSE,...){
+ definition=function(object,isMax=FALSE,subset=TRUE,...){
 
 
      ownerPost <- object@ownerPost
+
+      nprods <- length(object@shares)
+     if(missing(subset)){subset <- rep(TRUE,nprods)}
+
+     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
+
 
      ##Define system of FOC as a function of priceDelta
      FOC <- function(priceDelta){
@@ -128,6 +134,7 @@ setMethod(
 
 
          thisFOC <- sharePost*diag(ownerPost) + as.vector((elastPost*ownerPost) %*% (sharePost*marginPost))
+         thisFOC[!subset] <- sharePost[!subset]
          return(thisFOC)
 
      }
@@ -534,11 +541,10 @@ setMethod(
 
 
 
-
-
 aids <- function(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
                  mcDelta=rep(0, length(shares)),
+                 subset=rep(TRUE, length(shares)),
                  priceStart=runif(length(shares)),
                  isMax=FALSE,
                  labels=paste("Prod",1:length(shares),sep=""),
@@ -546,7 +552,7 @@ aids <- function(shares,margins,prices,diversions,
 
 
 
-    if(missing(prices)){ prices <- rep(NA,length(shares))}
+    if(missing(prices)){ prices <- rep(NA_real_,length(shares))}
 
     if(missing(diversions)){
         diversions <- tcrossprod(1/(1-shares),shares)
@@ -556,8 +562,8 @@ aids <- function(shares,margins,prices,diversions,
 
 
     ## Create AIDS container to store relevant data
-    result <- new("AIDS",shares=shares,mcDelta=mcDelta
-                  ,margins=margins, prices=prices, quantities=shares,
+    result <- new("AIDS",shares=shares,mcDelta=mcDelta,subset=subset,
+                  margins=margins, prices=prices, quantities=shares,
                   ownerPre=ownerPre,ownerPost=ownerPost,
                   diversion=diversions,
                   priceStart=priceStart,labels=labels)
@@ -570,7 +576,7 @@ aids <- function(shares,margins,prices,diversions,
     result <- calcSlopes(result)
 
     ## Solve Non-Linear System for Price Changes
-    result@priceDelta <- calcPriceDelta(result,isMax=isMax,...)
+    result@priceDelta <- calcPriceDelta(result,isMax=isMax,subset=subset,...)
 
 
     ## Calculate marginal cost

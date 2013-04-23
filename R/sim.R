@@ -1,9 +1,10 @@
 sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap"),demand.param,
-                     ownerPre,ownerPost,nests, capacities,
-                     mcDelta=rep(0,length(prices)),
-                     priceOutside,
-                     priceStart,
-                     labels=paste("Prod",1:length(prices),sep=""),...){
+                ownerPre,ownerPost,nests, capacities,
+                mcDelta=rep(0,length(prices)),
+                subset=rep(TRUE,length(prices)),
+                priceOutside,
+                priceStart,
+                labels=paste("Prod",1:length(prices),sep=""),...){
 
     demand <- match.arg(demand)
     nprods <- length(prices)
@@ -169,6 +170,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
          result <- new(demand,prices=prices, shares=shares,margins=margins,
                        mcDelta=mcDelta,
+                       subset=subset,
                        ownerPre=ownerPre,
                        ownerPost=ownerPost,
                        nests=nests,
@@ -184,6 +186,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
         result <- new(demand,prices=prices, shares=shares,margins=margins,
                       mcDelta=mcDelta,
+                      subset=subset,
                       ownerPre=ownerPre,
                       ownerPost=ownerPost,
                       nests=nests,
@@ -203,6 +206,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
                       margins=margins,
                       normIndex=normIndex,
                       mcDelta=mcDelta,
+                      subset=subset,
                       ownerPre=ownerPre,
                       ownerPost=ownerPost,
                       priceStart=priceStart,shareInside=shareInside,
@@ -232,6 +236,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
                       ownerPre=ownerPre,
                       ownerPost=ownerPost,
                       mcDelta=mcDelta,
+                      subset=subset,
                       priceStart=priceStart,shareInside=shareInside,
                       labels=labels)
     }
@@ -242,7 +247,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
 
         result <- new(demand,prices=prices, quantities=shares,margins=margins,
-                      shares=shares,mcDelta=mcDelta,
+                      shares=shares,mcDelta=mcDelta,  subset=subset,
                       ownerPre=ownerPre,diversion=-diag(nprods),
                       symmetry=identical(demand.param$slopes,t(demand.param$slopes)),
                       ownerPost=ownerPost, priceStart=priceStart,labels=labels)
@@ -259,7 +264,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
         result <- new(demand,prices=prices, quantities=shares,margins=margins,
                       shares=aidsShares,
-                      mcDelta=mcDelta, mktElast=demand.param$mktElast,
+                      mcDelta=mcDelta,  subset=subset,mktElast=demand.param$mktElast,
                       ownerPre=ownerPre,diversion=aidsDiv,
                       priceStart=priceStart,
                       ownerPost=ownerPost, labels=labels)
@@ -272,7 +277,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
 
         result <- new(demand,prices=prices, quantities=shares,margins=margins,
-                      shares=shares,mcDelta=mcDelta, priceStart=priceStart,
+                      shares=shares,mcDelta=mcDelta, subset=subset, priceStart=priceStart,
                       ownerPre=ownerPre,diversion=-diag(nprods),
                       ownerPost=ownerPost, labels=labels)
 
@@ -302,7 +307,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,TRUE,...)
-    result@pricePost <- calcPrices(result,FALSE,...)
+    result@pricePost <- calcPrices(result,FALSE,subset=subset,...)
 
 
     return(result)

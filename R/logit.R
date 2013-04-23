@@ -236,10 +236,10 @@ setMethod(
  signature= "Logit",
  definition=function(object,preMerger=TRUE,revenue=FALSE){
 
-   
+
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
-                     
+
 
      alpha    <- object@slopes$alpha
      meanval  <- object@slopes$meanval
@@ -248,7 +248,7 @@ setMethod(
 
      shares <- exp(meanval + alpha*prices)
      shares <- shares/(outVal+ sum(shares,na.rm=TRUE))
-    
+
      if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares,na.rm=TRUE),na.rm=TRUE)}
 
      names(shares) <- object@labels
@@ -268,7 +268,7 @@ setMethod(
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
 
-    
+
      labels <- object@labels
 
      alpha    <- object@slopes$alpha

@@ -29,7 +29,7 @@ setClass(
              nestCnt   <- tapply(object@prices,object@nests,length)
              nestCnt   <- nestCnt[object@nests]
              isSingleton <- nestCnt==1
-             
+
              nNestParm <- nNestParm - sum(isSingleton) #singleton nests are not identified
 
              if(nNestParm==1) stop("'ces.nests' cannot be used for non-nested problems or problems with only singleton nests. Use 'ces' instead")
@@ -243,15 +243,15 @@ setMethod(
      outVal <- ifelse(sum(object@shares)<1, object@priceOutside^(1-gamma), 0)
 
      sharesIn     <- meanval*prices^(1-sigma[nests])
-     sharesAcross <- tapply(sharesIn,nests,sum)
+     sharesAcross <- tapply(sharesIn,nests,sum,na.rm=TRUE)
      sharesIn     <- sharesIn / sharesAcross[nests]
      sharesAcross <- sharesAcross^((1-gamma)/(1-sigma))
-     sharesAcross <- sharesAcross / (sum(sharesAcross) + outVal)
+     sharesAcross <- sharesAcross / (sum(sharesAcross,na.rm=TRUE) + outVal)
 
      shares       <- sharesIn * sharesAcross[nests]
 
      ##transform revenue shares to quantity shares
-     if(!revenue){shares <- (shares/prices)/sum(shares/prices)}
+     if(!revenue){shares <- (shares/prices)/sum(shares/prices,na.rm=TRUE)}
 
      names(shares) <- object@labels
 
@@ -273,7 +273,7 @@ setMethod(
      meanval  <- object@slopes$meanval
 
      shares <- calcShares(object,preMerger,revenue=TRUE)
-     sharesNests <- shares/tapply(shares,nests,sum)[nests]
+     sharesNests <- shares/tapply(shares,nests,sum,na.rm=TRUE)[nests]
 
        if(market){
 
@@ -352,6 +352,7 @@ ces.nests <- function(prices,shares,margins,
                       shareInside = 1,
                       normIndex=ifelse(sum(shares) < 1,NA,1),
                       mcDelta=rep(0,length(prices)),
+                      subset=rep(TRUE,length(prices)),
                       priceOutside=1,
                       priceStart = prices,
                       isMax=FALSE,
@@ -376,6 +377,7 @@ ces.nests <- function(prices,shares,margins,
     ## Create CESNests  container to store relevant data
     result <- new("CESNests",prices=prices, shares=shares,margins=margins,
                   mcDelta=mcDelta,
+                  subset=subset,
                   priceOutside=priceOutside,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
@@ -399,7 +401,7 @@ ces.nests <- function(prices,shares,margins,
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
-    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,subset=subset,...)
 
 
     return(result)

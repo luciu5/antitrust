@@ -155,7 +155,7 @@ setMethod(
 setMethod(
  f= "calcPrices",
  signature= "LogitCap",
- definition=function(object,preMerger=TRUE,isMax=FALSE,...){
+ definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
 
 
      capacities <- object@capacities
@@ -169,19 +169,34 @@ setMethod(
        mc    <- object@mcPost
      }
 
+     nprods <- length(object@shares)
+     if(missing(subset)){
+        subset <- rep(TRUE,nprods)
+     }
 
+     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
+
+     if(any(!subset)){
+         owner <- owner[subset,subset]
+         mc    <- mc[subset]
+         priceStart <- priceStart[subset]
+         capacities <- capacities[subset]
+         }
+
+
+     priceEst <- rep(NA,nprods)
 
      ##Define system of FOC as a function of prices
      FOC <- function(priceCand){
 
-         if(preMerger){ object@pricePre <- priceCand}
-         else{          object@pricePost <- priceCand}
+         if(preMerger){ object@pricePre[subset] <- priceCand}
+         else{          object@pricePost[subset] <- priceCand}
 
 
          margins          <- 1 - mc/priceCand
-         quantities       <- calcQuantities(object,preMerger)
+         quantities       <- calcQuantities(object,preMerger)[subset]
          revenues         <- quantities * priceCand
-         elasticities     <- elast(object,preMerger)
+         elasticities     <- elast(object,preMerger)[subset,subset]
 
          thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
          constraint <- quantities - capacities
@@ -197,11 +212,12 @@ setMethod(
 
       if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
 
-     priceEst        <- minResult$par
+     priceEst[subset]        <- minResult$par
      names(priceEst) <- object@labels
+
   if(isMax){
 
-         hess <- genD(FOC,priceEst) #compute the numerical approximation of the FOC hessian at optimium
+         hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
          hess <- hess$D[,1:hess$p]
          hess <- hess * (owner>0)   #0 terms not under the control of a common owner
 
@@ -231,14 +247,12 @@ setMethod(
           thisPrice <- pricePre
           thisPrice[prodIndex] <- priceCand
 
-          if(preMerger){ object@pricePre <- thisPrice}
-          else{          object@pricePost <- thisPrice}
-
+          object@pricePre <- thisPrice
 
           margins          <- 1 - mc/priceCand
-          quantities       <- calcQuantities(object,preMerger)[prodIndex]
+          quantities       <- calcQuantities(object,preMerger=TRUE)[prodIndex]
           revenues         <- quantities * priceCand
-          elasticities     <- elast(object,preMerger)[prodIndex,prodIndex]
+          elasticities     <- elast(object,preMerger=TRUE)[prodIndex,prodIndex]
 
           thisFOC <- revenues + as.vector(t(elasticities) %*% (margins * revenues))
           constraint <- quantities - object@capacities[prodIndex]
@@ -273,7 +287,8 @@ logit.cap <- function(prices,shares,margins,
                       mktSize=sum(capacities),
                       normIndex=ifelse(sum(shares)<1,NA,1),
                       mcDelta=rep(0,length(prices)),
-                       priceOutside=0,
+                      subset=rep(TRUE,length(prices)),
+                      priceOutside=0,
                       priceStart = prices,
                       isMax=FALSE,
                       labels=paste("Prod",1:length(prices),sep=""),
@@ -288,6 +303,7 @@ logit.cap <- function(prices,shares,margins,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   mcDelta=mcDelta,
+                  subset=subset,
                   priceOutside=priceOutside,
                   priceStart=priceStart,shareInside=sum(shares),
                   labels=labels)
@@ -306,7 +322,7 @@ logit.cap <- function(prices,shares,margins,
 
     ## Solve Non-Linear System for Price Changes
     result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
-    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,subset=subset,...)
 
 
     return(result)

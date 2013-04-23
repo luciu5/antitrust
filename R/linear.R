@@ -144,10 +144,11 @@ setMethod(
 setMethod(
  f= "calcPrices",
  signature= "Linear",
- definition=function(object,preMerger=TRUE,...){
+ definition=function(object,preMerger=TRUE,subset,...){
 
      slopes    <- t(object@slopes) #transpose slopes for FOCs
      intercept <- object@intercepts
+     priceStart<- object@priceStart
 
      if(preMerger){
        owner <- object@ownerPre
@@ -158,30 +159,40 @@ setMethod(
      }
 
 
-     ##first try the analytic solution
-     prices <-
-         solve((t(slopes)*diag(owner)) + (slopes*owner)) %*%
-             ((slopes*owner) %*% mc - (intercept*diag(owner)))
+     nprods <- length(object@quantities)
+     if(missing(subset)){
+        subset <- rep(TRUE,nprods)
+     }
 
-     prices <- as.vector(prices)
-     quantities <- as.vector(intercept + slopes %*% prices)
+     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'quantities'")}
+
+
+
+     ##first try the analytic solution
+     ##prices <-
+     ##    solve((t(slopes)*diag(owner)) + (slopes*owner)) %*%
+     ##        ((slopes*owner) %*% mc - (intercept*diag(owner)))
+
+     ## prices <- as.vector(prices)
+     ## quantities <- as.vector(intercept + slopes %*% prices)
 
      ##use the numeric solution if analytic solution yields negative quantities
-     if(any(quantities<0)){
+     ##if(any(quantities<0)){
 
-         warning("Equilibrium prices yield negative equilibrium quantities. Recomputing equilibrium prices  under the restriction that equilbrium quantities must be non-negative")
+     ##    warning("Equilibrium prices yield negative equilibrium quantities. Recomputing equilibrium prices  under the restriction that equilbrium quantities must be non-negative")
 
 
 
          FOC <- function(priceCand){
 
-             if(preMerger){ object@pricePre <- priceCand}
+             if(preMerger){ object@pricePre  <- priceCand}
              else{          object@pricePost <- priceCand}
 
              margins   <- priceCand - mc
              quantities  <- calcQuantities(object,preMerger)
 
              thisFOC <- quantities*diag(owner) + (slopes*owner) %*% margins
+             thisFOC[!subset] <- quantities[!subset] #set quantity equal to 0 for firms not in subset
 
              return(as.vector(crossprod(thisFOC)))
 
@@ -196,7 +207,7 @@ setMethod(
 
          prices <- minResult$par
 
-     }
+    # }
 
      names(prices) <- object@labels
 
@@ -365,6 +376,7 @@ setMethod(
 linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
                    ownerPre,ownerPost,
                    mcDelta=rep(0,length(prices)),
+                   subset=rep(TRUE,length(prices)),
                    priceStart=prices,
                    labels=paste("Prod",1:length(prices),sep=""),
                    ...
@@ -379,7 +391,7 @@ linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
 
 
      result <- new("Linear",prices=prices, quantities=quantities,margins=margins,
-                   shares=shares,mcDelta=mcDelta,
+                   shares=shares,mcDelta=mcDelta, subset=subset,
                    ownerPre=ownerPre,diversion=diversions, symmetry=symmetry,
                    ownerPost=ownerPost, priceStart=priceStart,labels=labels)
 
@@ -391,13 +403,13 @@ linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
     ## Calculate Demand Slope Coefficients and Intercepts
     result <- calcSlopes(result)
 
-    
+
     ## Calculate marginal cost
     result@mcPre <-  calcMC(result,TRUE)
     result@mcPost <- calcMC(result,FALSE)
-    
+
     result@pricePre  <- calcPrices(result,TRUE,...)
-    result@pricePost <- calcPrices(result,FALSE,...)
+    result@pricePost <- calcPrices(result,FALSE,subset=subset,...)
 
 
    return(result)
