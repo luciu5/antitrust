@@ -251,7 +251,7 @@ setMethod(
      shares       <- sharesIn * sharesAcross[nests]
 
      ##transform revenue shares to quantity shares
-     if(!revenue){shares <- (shares/prices)/sum(shares/prices,na.rm=TRUE)}
+     if(!revenue){shares <- (shares/prices)/sum((1-sum(shares,na.rm=TRUE))/object@priceOutside,shares/prices,na.rm=TRUE)}
 
      names(shares) <- object@labels
 

@@ -230,7 +230,7 @@ setMethod(
 
      shares       <- sharesIn * sharesAcross[nests]
 
-     if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares,na.rm=TRUE),na.rm=TRUE)}
+     if(revenue){shares <- prices*shares/sum(prices*shares,object@priceOutside*(1-sum(shares,na.rm=TRUE)),na.rm=TRUE)}
 
      names(shares) <- object@labels
 

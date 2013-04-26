@@ -249,7 +249,7 @@ setMethod(
      shares <- exp(meanval + alpha*prices)
      shares <- shares/(outVal+ sum(shares,na.rm=TRUE))
 
-     if(revenue){shares <- prices*shares/sum(prices*shares,1-sum(shares,na.rm=TRUE),na.rm=TRUE)}
+     if(revenue){shares <- prices*shares/sum(prices*shares,object@priceOutside*(1-sum(shares,na.rm=TRUE)),na.rm=TRUE)}
 
      names(shares) <- object@labels
 

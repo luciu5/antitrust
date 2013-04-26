@@ -108,7 +108,7 @@ setMethod(
      shares <- shares/(sum(shares,na.rm=TRUE) + outVal)
 
      ##transform revenue shares to quantity shares
-     if(!revenue){shares <- (shares/prices)/sum(shares/prices,na.rm=TRUE)}
+     if(!revenue){shares <- (shares/prices)/sum((1-sum(shares,na.rm=TRUE))/object@priceOutside,shares/prices,na.rm=TRUE)}
 
      names(shares) <- object@labels
 
