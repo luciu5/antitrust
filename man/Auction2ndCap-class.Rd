@@ -2,11 +2,28 @@
 \Rdversion{1.0}
 \docType{class}
 \alias{Auction2ndCap-class}
-%\alias{calcPrices,Auction2ndCap-method}
-%\alias{calcShares,Auction2ndCap-method}
-%\alias{calcSlopes,Auction2ndCap-method}
-%\alias{CV,Auction2ndCap-method}
-%\alias{elast,Auction2ndCap-method}
+\alias{calcBuyerExpectedCost}
+\alias{calcBuyerValuation}
+\alias{calcExpectedLowestCost}
+\alias{calcExpectedPrice}
+\alias{calcOptimalReserve}
+\alias{calcSellerCostParms}
+\alias{cdfG}
+\alias{calcBuyerExpectedCost,Auction2ndCap-method}
+\alias{calcBuyerValuation,Auction2ndCap-method}
+\alias{calcExpectedLowestCost,Auction2ndCap-method}
+\alias{calcExpectedPrice,Auction2ndCap-method}
+\alias{calcOptimalReserve,Auction2ndCap-method}
+\alias{calcSellerCostParms,Auction2ndCap-method}
+\alias{cdfG,Auction2ndCap-method}
+\alias{calcMC,Auction2ndCap-method}
+\alias{calcMargins,Auction2ndCap-method}
+\alias{calcShares,Auction2ndCap-method}
+\alias{calcPrices,Auction2ndCap-method}
+\alias{calcProducerSurplus,Auction2ndCap-method}
+\alias{summary,Auction2ndCap-method}
+
+
 
 \title{Class "Auction2ndCap"}
 \description{
@@ -18,13 +35,14 @@
 Objects can be created by using the constructor function \code{\link{auction2nd.cap}}.
 %%  ~~ describe objects here ~~
 }
+
 \section{Slots}{
   Let k denote the number of firms.
   \describe{
     \item{\code{capacities}:}{A length k vector of firm capacities.}
-    \item{\code{prices}:}{A length k vector of product prices.}
     \item{\code{margins}:}{A length k vector of product margins, some of which may
       equal NA.}
+    \item{\code{prices}:}{A length k vector of product prices.}
     \item{\code{reserve}:}{A length 1 vector equal to observed buyer's
       reserve price. May equal NA.}
      \item{\code{shareInside}:}{A length 1 vector equal to the
@@ -37,7 +55,7 @@ Objects can be created by using the constructor function \code{\link{auction2nd.
     \item{\code{sellerCostPDF}:}{A function returning the Probability Density
       of Seller Costs.}
     \item{\code{sellerCostBounds}:}{The bounds on the seller's CDF.}
-    \item{\code{sellerCostParameter}:}{The parameters of the seller's CDF.}
+    \item{\code{sellerCostParms}:}{The parameters of the seller's CDF.}
     \item{\code{buyerValuation}:}{Buyer's self-supply cost.}
     \item{\code{reservePre}:}{Buyer's optimal pre-merger reservation price.}
     \item{\code{reservePost}:}{Buyer's optimal post-merger reservation
@@ -67,8 +85,8 @@ Class \code{\linkS4class{Antitrust}}, directly.
     \item{\code{calcExpectedLowestCost}}{\code{signature(object = Auction2ndCap, preMerger = TRUE)}}{Computes the expected lowest cost of the winning bid.}
     \item{\code{calcExpectedPrice}}{\code{signature(object = Auction2ndCap, preMerger = TRUE)}}{Computes the expected price paid by the buyer.}
     \item{\code{calcProducerSurplus}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,exAnte=TRUE)}}{Computes the expected profits of each supplier}
-    \item{\code{calcMC}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,exAnte=TRUE)}}{Computes the expected marginal cost of
-      each supplier.}
+    \item{\code{calcMC}}{\code{signature(object = Auction2ndCap, t, preMerger = TRUE,exAnte=TRUE)}}{Computes the expected marginal cost of
+      each supplier for a given capacity profile 't'. Default is 'preMerger' capacities.}
     \item{\code{calcMargins}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,exAnte=TRUE)}}{Compute each firm's expected margin.}
     \item{\code{calcOptimalReserve}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,lower,upper)}}{Computes the bidder's optimal reserve price.}
     \item{\code{calcPrices}}{\code{signature(object = Auction2ndCap, preMerger = TRUE,exAnte=TRUE)}}{Computes the expected price that the buyer pays,

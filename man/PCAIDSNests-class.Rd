@@ -3,7 +3,8 @@
 \docType{class}
 \alias{PCAIDSNests-class}
 %\alias{calcSlopes,PCAIDSNests-method}
-%\alias{getNestsParms,PCAIDSNests-method}
+\alias{getNestsParms}
+\alias{getNestsParms,PCAIDSNests-method}
 
 
 \title{Class "PCAIDSNests"}

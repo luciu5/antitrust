@@ -10,6 +10,8 @@
                      demand.param,
                      ownerPre,ownerPost,nests, capacities,
                      mcDelta=rep(0,length(prices)),
+                     subset=rep(TRUE,length(prices)),
+                     priceOutside,
                      priceStart,
                      labels=paste("Prod",1:length(prices),sep=""),...
              )
@@ -39,6 +41,12 @@
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
     affect any products' marginal cost.}
+  \item{subset}{A vector of length k where each element equals TRUE if
+     the product indexed by that element should be included in the
+     post-merger simulation and FALSE if it should be excluded.Default is a
+     length k vector of TRUE.}
+   \item{priceOutside}{A length 1 vector indicating the price of the
+    outside good. This option only applies to the "Logit" class and  its child classes     Default for 'Logit','LogitNests', and 'LogitCap' is 0, and for 'CES' and 'CesNests' is 1. }
   \item{priceStart}{A length k vector of starting values used to solve for
     equilibrium price. Default is the `prices' vector for all values of
   demand except for "AIDS", which is set equal to a vector of 0s.}

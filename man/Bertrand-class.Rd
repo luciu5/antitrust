@@ -27,6 +27,9 @@ Objects can be created by calls of the form \code{new("Bertrand", ...)}.
     proportional change in a product's marginal costs due to
     the merger.}
     \item{\code{slopes}:}{A k x (k+1) matrix of linear demand intercepts and slope coefficients}
+    \item{subset}{A vector of length k where each element equals TRUE if
+     the product indexed by that element should be included in the
+     post-merger simulation and FALSE if it should be excluded.}
   }
 }
  \section{Extends}{

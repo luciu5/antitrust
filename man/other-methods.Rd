@@ -9,7 +9,6 @@
 \alias{calcShares,Linear-method}
 \alias{calcShares,Logit-method}
 \alias{calcShares,LogitNests-method}
-\alias{calcShares,Auction2ndCap-method}
 \alias{calcQuantities}
 \alias{calcQuantities,ANY-method}
 \alias{calcQuantities,Linear-method}
@@ -22,7 +21,6 @@
 \alias{calcPrices,LogLin-method}
 \alias{calcPrices,Logit-method}
 \alias{calcPrices,LogitCap-method}
-\alias{calcPrices,Auction2ndCap-method}
 \alias{calcPriceDelta}
 \alias{calcPriceDelta,ANY-method}
 \alias{calcPriceDelta,Antitrust-method}
@@ -30,17 +28,14 @@
 \alias{calcProducerSurplus}
 \alias{calcProducerSurplus,ANY-method}
 \alias{calcProducerSurplus,Bertrand-method}
-\alias{calcProducerSurplus,Auction2ndCap-method}
 \alias{calcMargins}
 \alias{calcMargins,ANY-method}
 \alias{calcMargins,AIDS-method}
 \alias{calcMargins,Bertrand-method}
 \alias{calcMargins,LogitCap-method}
-\alias{calcMargins,Auction2ndCap-method}
 \alias{calcMC}
 \alias{calcMC,ANY-method}
 \alias{calcMC,Bertrand-method}
-\alias{calcMC,Auction2ndCap-method}
 \alias{calcSlopes}
 \alias{calcSlopes,ANY-method}
 \alias{calcSlopes,AIDS-method}
@@ -55,9 +50,6 @@
 \alias{calcSlopes,LogitNestsALM-method}
 \alias{calcSlopes,PCAIDS-method}
 \alias{calcSlopes,PCAIDSNests-method}
-\alias{getNestsParms}
-\alias{getNestsParms,ANY-method}
-\alias{getNestsParms,PCAIDSNests-method}
 \alias{hhi}
 \alias{hhi,ANY-method}
 \alias{hhi,Bertrand-method}
@@ -72,47 +64,43 @@
 \alias{summary,ANY-method}
 \alias{summary,AIDS-method}
 \alias{summary,Bertrand-method}
-\alias{summary,Auction2ndCap-method}
-\title{Other Useful Methods}
+\title{Other Useful 'Bertrand' Methods}
 \description{
- Below is a description of methods that users may find helpful.
+ Methods defined for the 'Bertrand' class and its child classes.
 }
 \usage{
 \S4method{calcShares}{ANY}(object,preMerger=TRUE,revenue=FALSE)
 \S4method{calcQuantities}{ANY}(object,preMerger=TRUE)
-\S4method{calcPrices}{ANY}(object,preMerger=TRUE,...)
-\S4method{calcPrices}{Auction2ndCap}(object,preMerger=TRUE,exAnte=TRUE)
+\S4method{calcPrices}{ANY}(object,preMerger=TRUE,subset,...)
 \S4method{calcPriceDelta}{Antitrust}(object)
-\S4method{calcPriceDelta}{AIDS}(object,isMax=FALSE,...)
+\S4method{calcPriceDelta}{AIDS}(object,isMax=FALSE,subset,...)
 \S4method{calcProducerSurplus}{Bertrand}(object,preMerger=TRUE)
-\S4method{calcProducerSurplus}{Auction2ndCap}(object,preMerger=TRUE,exAnte=TRUE)
 \S4method{calcMargins}{ANY}(object,preMerger=TRUE)
-\S4method{calcMargins}{Auction2ndCap}(object,preMerger=TRUE,exAnte=TRUE)
 \S4method{calcMC}{Bertrand}(object,preMerger=TRUE)
-\S4method{calcMC}{Auction2ndCap}(object,preMerger=TRUE,exAnte=TRUE)
 \S4method{calcSlopes}{ANY}(object,preMerger=TRUE)
-\S4method{getNestsParms}{PCAIDSNests}(object)
 \S4method{hhi}{Bertrand}(object,preMerger=TRUE,revenue=FALSE)
 \S4method{ownerToMatrix}{Antitrust}(object,preMerger=TRUE)
 \S4method{ownerToVec}{Antitrust}(object,preMerger=TRUE)
 \S4method{plot}{Bertrand}(x,scale=.1)
 \S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2,...)
-\S4method{summary}{Auction2ndCap}(object,exAnte=TRUE,parameters=FALSE,digits=2)
+
 
 }
 
 \arguments{
+\item{}{Let k denote the number of products}
   \item{object}{An instance of one of the classes listed above.}
   \item{x}{Used only in plot method. Should always be set equal to object}
   \item{preMerger}{If TRUE, returns pre-merger outcome. If
     FALSE, returns post-merger outcome.  Default is TRUE.}
-  \item{exAnte}{If TRUE, returns \emph{ex ante} expected result for each
-  firm. If FALSE, returns expected result, conditional on each firm
-  winning. Default is TRUE.}
   \item{isMax}{If TRUE, uses numerical derivatives to determine if
   equilibrium price vector is a local maximum. Default is FALSE.}
   \item{revenue}{If TRUE, returns revenues. If FALSE,
     returns quantities. Default is TRUE}
+   \item{subset}{A vector of length k where each element equals TRUE if
+     the product indexed by that element should be included in the
+     post-merger simulation and FALSE if it should be excluded.Default is a
+     length k vector of TRUE.}  
   \item{shares}{If TRUE, returns shares. If FALSE,
     returns levels. Default is TRUE}
   \item{parameters}{If TRUE, reports demand and cost parameters. Default
@@ -135,10 +123,6 @@
     on a value of TRUE or FALSE, where TRUE calculates revenue shares,
     while FALSE calculates quantity shares.
   }
-  \item{calcShares}{\code{signature(object=Auction2ndCap,
-	preMerger=TRUE, exAnte=TRUE)}}{
-    Computes the probability that a firm wins the auction.
-  }
   \item{calcQuantities}{\code{signature(object=c(Linear,LogLin,LogitCap),preMerger=TRUE)}}{
 
     Computes equilibrium product quantities assuming that firms are playing a
@@ -150,10 +134,6 @@
     options to the optimizer responsible for computing equilibrium
     prices. Typically, \code{\link[BB]{BBsolve}} is used, but see
     the appropriate document for further details.
-  }
-  \item{calcPrices}{\code{signature(object=Auction2ndCap,preMerger=TRUE,exAnte=TRUE)}}{
-    Computes equilibrium expected price paid by the buyer when a
-    particular firm wins the auction.
   }
    \item{calcPriceDelta}{\code{signature(object=Antitrust)}}{
     Computes equilibrium price changes due to a merger assuming that firms are playing a
@@ -169,9 +149,6 @@
    \item{calcProducerSurplus}{\code{signature(object=Bertrand,preMerger=TRUE)}}{
     Computes equilibrium producer surplus.
   }
-  \item{calcProducerSurplus}{\code{signature(object=Auction2ndCap,preMerger=TRUE,exAnte=TRUE)}}{
-    Computes equilibrium expected producer surplus.
-  }
   \item{calcMargins}{\code{signature(object=c(Bertrand,LogitCap),preMerger=TRUE)}}{
     Computes equilibrium product margins assuming that firms are playing a
     Nash-Bertrand pricing game. For "LogitCap", assumes firms are
@@ -184,18 +161,10 @@
     vector of marginal cost changes. `mcDelta' will typically be between 0
     and 1.
   }
-  \item{calcMC}{\code{signature(object=Auction2ndCap,preMerger=TRUE,exAnte=TRUE)}}{
-    Computes either pre- or post-merger marginal costs.
-  }
    \item{calcSlopes}{\code{signature(object=c(Linear,LogLin,AIDS,PCAIDSNests,Logit,LogitNests,LogitCap,CES,CESNests),preMerger=TRUE)}}{
 
     Computes demand parameters assuming that firms are playing a
     Nash-Bertrand pricing game.
-  }
-  \item{getNestsParms}{\code{signature(object=PCAIDSNests)}}{
-
-    Returns a vector a matrix  of
-    calibrated nesting parameters.
   }
    \item{hhi}{\code{signature(object=Bertrand,preMerger=TRUE,revenue=FALSE)}}{
 
@@ -227,14 +196,6 @@ Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and 
     all demand parameters. `digits' controls the number of significant
     digits reported in output. `...' allows other arguments to be passed
     to a \code{CV} method.
-  }
-  \item{summary}{\code{signature(object=Auction2ndCap,exAnte=FALSE,parameters=FALSE,digits=2,)}}{
-    Summarizes the effect of the merger, including price and share changes
-    changes. Setting `exAnte' equal to TRUE reports \emph{ex ante}
-   expected results  rather than the expected results conditional on a
-   firm winning. Setting `parameters' equal to TRUE reports
-    all demand parameters. `digits' controls the number of significant
-    digits reported in output.
   }
   \item{upp}{\code{signature(object)}}{
     Calculate the Upwards Pricing Pressure (upp) index.

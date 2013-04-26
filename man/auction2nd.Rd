@@ -1,7 +1,6 @@
 \name{auction2nd}
 \alias{auction2nd}
 \alias{auction2nd.cap}
-\
 \title{(Capacity Constrained) 2nd Price Auction Model}
 
 \description{Calibrates the parameters of bidder cost distributions and
@@ -16,7 +15,7 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
                            ownerPre,ownerPost,
                            mcDelta=rep(0,length(capacities)),
                            constrain.reserve=TRUE, parmsStart,
-                           labels=ownerPre,...
+                           labels=as.character(ownerPre),...
                           )
 
              }
@@ -77,12 +76,11 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
   price, and if 'constrain.reserve' is FALSE, computes the buyer's
   optimal post-merger reservation price (setting 'constrain.reserve' to
   TRUE sets the buyer's post-merger optimal reserve equal to the buyer's
-  pre-merger optimal reserve). The pre- and post-merger \emph{ex ante}
-  prices for each bidder are then computed.
+  pre-merger optimal reserve). The pre- and post-merger expected price, conditional on a particular bidder winning, are then calculated.
 
   Currently, the common distribution from which costs may be drawn is
   restricted to be either: Uniform ("punif"), Exponential ("pexp"), Weibull
-  ("pweibull"), Gumbel ("pgumbel"), and Frechet ("pfrechet"). Note that
+  ("pweibull"), Gumbel ("pgumbel"), or Frechet ("pfrechet"). Note that
   the Exponential is a single parameter distribution, the Uniform and
   Weibull are two parameter distributions, and the Gumbel and Frechet
   are 3 parameter distributions. Accordingly, sufficient price, margin,
@@ -137,5 +135,12 @@ result.unif = auction2nd.cap(
 
 print(result.unif)
 summary(result.unif)
+
+## Get a detailed description of the 'Auction2ndCap' class slots
+showClass("Auction2ndCap")
+
+## Show all methods attached to the 'Auction2ndCap' Class
+showMethods(classes="Auction2ndCap")
+
 
 }

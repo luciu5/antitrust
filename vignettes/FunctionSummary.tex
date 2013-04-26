@@ -5,15 +5,10 @@
 \label{tab:functionsum}
 \begin{tabular}{llccccll}
   \hline
-Name & Demand& Price & Margin & Diversion & Quantity/ & Capacity& Cite \\
+Name & Model& Price & Margin & Diversion & Quantity/ & Capacity& Cite \\
 & & & & & Share & \\
   \hline\hline
-  \verb@cmcr.bertrand@ & any                              & M & M & M &                     &  & \cite{Werden1996} \\
-  \verb@cmcr.cournot@           & any                              &  & 1 &  &M                     & & \cite{Froeb1998} \\
-  \verb@upp.bertrand@ & any                              & M & M & M & &
-  &   \cite{Farrell2010a} \\
-& & & & &  & & \cite{Jaffe2012} \\
-  \verb@HHI@           & any                              &  &  &  & A                     &&  \cite{Salop2000} \\\hline
+  \multicolumn{8}{c}{Bertrand} \\ \hline
   \verb@linear@ & Linear                         & A & 1+ & O & A && \cite{Haefen2002} \\
    \verb@loglin@ & Log-linear & A & A & O & A &&
    \cite{Haefen2002} \\
@@ -36,7 +31,19 @@ Name & Demand& Price & Margin & Diversion & Quantity/ & Capacity& Cite \\
    \verb@ces.nests@ & Nested Constant Elasticity       & A & 2+ &               & A && \cite{Sheu2011} \\
    \hline
    \verb@sim@ &             & A & &               &  && \\
-   \hline
+   \hline\hline
+   \multicolumn{8}{c}{Auctions} \\\hline
+   \verb@auction2nd.cap@ &    2nd price, single unit     & 1+ & 1+ &  &
+   & A & \cite{WaehrP2003} \\
+   \hline\hline
+   \multicolumn{8}{c}{Other Tools} \\ \hline
+  \verb@cmcr.bertrand@ & any                              & M & M & M &                     &  & \cite{Werden1996} \\
+  \verb@cmcr.cournot@           & any                              &  & 1 &  &M                     & & \cite{Froeb1998} \\
+  \verb@upp.bertrand@ & any                              & M & M & M & &
+  &   \cite{Farrell2010a} \\
+& & & & &  & & \cite{Jaffe2012} \\
+  \verb@HHI@           & any                              &  &  &  & A
+  &&  \cite{Salop2000} \\\hline
  \end{tabular}
 \end{center}
 `M': data on merging parties' products,\\
