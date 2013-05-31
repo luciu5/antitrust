@@ -667,7 +667,7 @@ setMethod(
 
              mcPre       <- object@mcPre[isParty]
              mcPost      <- object@mcPost[isParty]
-             mcDelta     <- mcPost - mcPre
+             #mcDelta     <- mcPost - mcPre
 
              margin      <- 1 - mcPre/price
 
@@ -688,7 +688,7 @@ setMethod(
              upp[is1]  <- -as.vector(D1)
              upp[is2] <- -as.vector(D2)
 
-             result[isParty] <- upp*price + mcDelta #net UPP
+             result[isParty] <- upp*price - mcPost #net UPP
 
              names(result) <- object@labels
 

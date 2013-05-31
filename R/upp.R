@@ -91,8 +91,8 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
     result[is1]  <- -as.vector(D1)
     result[is2] <- -as.vector(D2)
 
-    result <- result*prices + (mcPost - mcPre)
-
+    #result <- result*prices + (mcPost - mcPre)
+    result <- result*prices - mcPost
     names(result) <- labels
 
     return(result) #net UPP
