@@ -153,15 +153,7 @@ Incomplete Demand System Models.''
 n <- 3 #number of firms in market
 price    <- c(2.9,3.4,2.2)
 quantity <- c(650,998,1801)
-
-
-slopes <- matrix(
-c(-2.3,	  0.18,	0.28,
-   0.11, -2.4,	0.1,
-   0.13,   .16,-2.7),ncol=n)
-
-
-margin <- -1/diag(slopes)
+margin <- c(.435,.417,.370)
 
 
 #simulate merger between firms 1 and 2
