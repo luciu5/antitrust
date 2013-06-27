@@ -2,7 +2,7 @@
 \usepackage[letterpaper]{geometry}
 \usepackage{natbib}
 \usepackage{graphics}
-\usepackage{amsmath}
+\usepackage{amsmath,amsthm}
 \usepackage{indentfirst}
 \usepackage{rotating}
 \usepackage[hyperfootnotes=FALSE]{hyperref}
@@ -1347,7 +1347,9 @@ disparate market shares, or supplying the market elasticity parameter directly.
 
 \chapter{Auction Models}
 Currently \atr{} only supports calibrating model parameters and simulating the effects of a merger in a
-2nd price procurement auction where the buyer sets a reserve price.
+2nd price procurement auction where the buyer sets a reserve price and
+capacity constrained bidders offer  a single unit of a homogenous
+product\footnote{See \cite{WaehrP2003} for further details.}.
 
 \section{The Game}
 Suppose that a buyer is interested in either purchasing a single unit of a
@@ -1374,7 +1376,7 @@ is also less than the buyer's reserve price wins the auction
 but is paid the 2nd lowest bid.\footnote{If the second lowest bid is
   greater than the reserve price, the winner receives the reserve.} It can be shown that in a 2nd price
 auction, each firm has a weakly dominant strategy to bid it's
-marginal cost. It can also be shown that
+marginal cost. \cite{WaehrP2003} also be shown that
 
 \begin{itemize}
   \label{eqn:auc1.1}
