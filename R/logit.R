@@ -43,8 +43,11 @@ setClass(
              else{ownerPre <- object@ownerPre}
 
 
-             margins[is.na(margins)]=0
-             if(isTRUE(all.equal(max(as.vector(ownerPre %*% margins)),0))) stop("Insufficient margin information to calibrate demand parameters.")
+              isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
+              isMargin[ownerPre==0]=0
+              isMargin    <- !is.na(rowSums(isMargin))
+
+             if(!any(isMargin)) stop("Insufficient margin information to calibrate demand parameters.")
 
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'shares'")}
@@ -72,7 +75,7 @@ setClass(
              }
 
              if(object@priceOutside<0 ||
-                length(object@priceOutside) != 1){stop('priceOutside must be a non-negative number')}
+                length(object@priceOutside) != 1){stop("'priceOutside' must be a non-negative number")}
 
              return(TRUE)
 

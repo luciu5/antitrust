@@ -179,7 +179,7 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
                   prices=prices,
                   quantities=shares,
                   margins=margins,mcDelta=mcDelta,subset=subset,
-                  ,knownElast=knownElast,mktElast=mktElast,nests=nests,
+                  knownElast=knownElast,mktElast=mktElast,nests=nests,
                   nestsParms=nestsParmStart, diversion=diversions,
                   ownerPre=ownerPre,ownerPost=ownerPost,knownElastIndex=knownElastIndex,
                   priceStart=priceStart,labels=labels)

@@ -200,7 +200,7 @@ setMethod(
          shares <-  shares + as.vector(object@slopes %*% log(object@priceDelta + 1))
      }
 
-      if(!revenue){shares <- prices*shares/sum(prices*shares)}
+      if(!revenue){shares <- (shares/prices)/sum(shares/prices)}
 
      names(shares) <- object@labels
      return(shares)
