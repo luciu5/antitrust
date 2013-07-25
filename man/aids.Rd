@@ -216,6 +216,7 @@ ownerPost <- c("A","A","C")
 result.aids <- aids(shares,margins,prices,ownerPre=ownerPre,ownerPost=ownerPost,labels=ownerPre)
 
 
+
 print(result.aids)           # return predicted price change
 summary(result.aids)         # summarize merger simulation
 
@@ -258,7 +259,7 @@ getMethod("elast","AIDS")
 
 
 
-## AIDS: the following assumes that only one product's elasticity is
+## PCAIDS: the following assumes that only one product's elasticity is
 ##       known as well as the market elasticity.
 
 
@@ -281,7 +282,19 @@ cmcr(result.pcaids)            #calculate compensating marginal cost reduction
 ## Implement the Hypothetical Monopolist Test
 ## for products A and B using a 5\% SSNIP
 
-HypoMonTest(result.aids,prodIndex=1:2)
+HypoMonTest(result.pcaids,prodIndex=1:2)
+
+
+
+## Nested PCAIDS: in addition to the PCAIDS information requirements,
+##                users must supply the nesting structure as well as margin infromation.
+
+nests <- c('H','L','L') # product A assigned to nest H, products B and C assigned to net L
+
+
+result.pcaids.nests <- pcaids.nests(shares,knownElast,mktElast,margins=margins,nests=nests,ownerPre=ownerPre,ownerPost=ownerPost,labels=ownerPre)
+
+
 
 
 }

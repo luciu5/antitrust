@@ -9,7 +9,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{makeidx}
 \makeindex
-%\include{``C:/Documents and Settings/taragic/My Documents/R/R-2.14.0/share/texmf/Sweave.sty''}
+%\include{``C:/Documents and Settings/taragic/My Documents/R/R-2.3.0/share/texmf/Sweave.sty''}
 
 
 % Definitions
@@ -37,15 +37,14 @@ Jeitschko and Conor Ryan. Address: Economic Analysis Group, Antitrust Division, 
 %\VignetteIndexEntry{manual}
 
 \begin{document}
+\SweaveOpts{concordance=TRUE}
 
 \maketitle
 
 <<echo=FALSE, results=hide>>=
-
 library(antitrust)
 ps.options(pointsize=12)
 options(width=60)
-
 @
 
 \tableofcontents
@@ -1351,7 +1350,7 @@ Currently \atr{} only supports calibrating model parameters and simulating the e
 capacity constrained bidders offer  a single unit of a homogenous
 product\footnote{See \cite{WaehrP2003} for further details.}.
 
-\section{The Game}
+\section{The Game \label{sec:BertrandGame}}
 Suppose that a buyer is interested in either purchasing a single unit of a
 homogeneous product from one of the $K$ firms who supply the product,
 or supplying the product herself. Although the product is homogeneous,
@@ -1629,6 +1628,66 @@ partial control-- where one firm has the (partial) ability to control
 how much of another firm's product is produced.
 
 \part{Coordinated Effects}
+
+\chapter{A Tacit Collusion Game}
+
+The basic idea behind tacit collusion is that when firms interact with
+one another repeatedly -- either across different product or geographic
+markets, or over time -- firms may reach an agreement that reduces the
+extent to which they compete with one another. This agreement may be
+\emph{tacit}  in the sense that a firm can coordinate its behavior
+with that of its rivals by first unilaterally adopting a strategy that
+would be mutually beneficial to itself and its rivals, and then
+observing whether its rivals subsequently choose to either \emph{cooperate}
+by adopting a mutually beneficial strategy or \emph{defect} by adopting a
+strategy that is only beneficial to themselves. A number of factors
+can influence a firm's decision to collude including:
+
+\begin{itemize}
+\item how willing a firm is to sacrifice short term for long term gain,
+\item the ease in which a firm can implement a mutually beneficial strategy,
+\item the ease in which a firm can observe its rivals' response to its.
+\end{itemize}
+
+Our aim here is to explore how a horizontal merger might affect the
+incentives of firms to collude. In particular, a horizontal merger can
+facilitate collusion if a firm with an incentive to collude acquires a
+\emph{maverick}, or a firm without such incentive. By doing this, the
+acquiring firm makes it easier to sustain cooperation amongst some of the
+remaining firms. On the other hand, a horizontal merger can retard
+collusion if after the acquisition, a firm believes that it can make
+greater profits by not cooperating with  some of the remaining
+firms.
+\section{The Game}
+
+Suppose that there are $K$ firms in a
+market, and that each of the $k \in K$ firms produces $n_k$
+products.\footnote{Throughout, we abuse the notation slightly by
+  treating variables like $K$ as both the set of firms as well as the
+  number of firms.} Let  $n=\sum\limits_{k\in K}n_k$ denote the number of products sold
+by all $K$ firms. These firms are playing an infinitely repeated
+supergame, where in each period of the game the $K$ firms play the
+Bertrand pricing game described in section
+\ref{sec:BertrandGame}. Mathematically, firm $k$ solves:
+
+\begin{align*}
+  \max_{\{p_{kt}\}_{t=1}^{\infty}} &\sum_{t=1}^{\infty}\tau_k^{t-1}\Pi^b_{kt},\\
+  \intertext{where $p_{kt}$ is the vector of prices set on all of
+    $k$'s products in period $t$, $0<\tau_k<1$ is a firm-specific,
+    time-invariant discount factor reflecting the rate at which $k$ is
+  willing to forgoe earning profits today for future profits, and
+  $\Pi^b_{kt}$  are the profits that $k$ earns in the stage game at
+  time period $t$. The latter can be expressed mathematically as}
+\Pi^b_{kt}&=\sum_{i=1}^{n}\omega_{ik}(p_{it} - c_i)q_{it},\\
+\intertext{where, as in the Bertrand Model, $\omega_{ik}$ is the share of product $i$'s profits earned by
+  firm $k$, so that $\sum\limits_{k\in K} \omega_{ik}\le 1$.
+  $q_{it}$, the quantity sold of product $i$ at time $t$,  is assumed to
+be a twice differentiable function of \emph{all} product prices. Note
+that $\omega_{ik}$ and marginal cost $c_i$ are assumed to be constant
+over time.}
+\end{align*}
+
+
 
 \part{Under The Hood}
 \chapter{Getting Help}
