@@ -300,7 +300,7 @@ setMethod(
 setMethod(
   f= "calcProducerSurplusGrimTrigger",
   signature= "Bertrand",
-  definition= function(object,coalition,discount,preMerger=TRUE,...){
+  definition= function(object,coalition,discount,preMerger=TRUE,isCollusion=FALSE...){
 
       subset <- object@subset
       nprod  <- length(object@labels)
@@ -320,6 +320,21 @@ setMethod(
       temp[coalition] <- discount
       discount <- temp
       rm(temp)
+
+      ## re-calibrate demand and cost parameters under the assumption
+      ## that firms are currently colluding
+      if(isCollusion){
+
+          ownerPre <- object@ownerPre
+          object@ownerPre[coalition,coalition] <- 1
+          ## Calculate Demand Slope Coefficients
+          object <- calcSlopes(object)
+          ## Calculate marginal cost
+          object@mcPre <-  calcMC(object,TRUE)
+          object@mcPost <- calcMC(object,FALSE)
+          object@ownerPre <- ownerPre
+          }
+
 
 
       psPunish <- calcProducerSurplus(object,preMerger)
