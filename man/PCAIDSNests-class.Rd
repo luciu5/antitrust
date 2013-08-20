@@ -7,9 +7,9 @@
 \alias{getNestsParms,PCAIDSNests-method}
 
 
-\title{Class "PCAIDSNests"}
+\title{Class ``PCAIDSNests"}
 \description{
-  The "PCAIDSNests" class contains all the information needed to
+  The ``PCAIDSNests" class contains all the information needed to
   calibrate a nested PCAIDS
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated Bertrand products pricing game.
@@ -31,10 +31,10 @@ Objects can be created by using the constructor \code{\link{pcaids.nests}}.
 }
 \section{Extends}{
   Class \code{\linkS4class{PCAIDS}}, directly.
-  Class \code{\linkS4class{AIDS}}, by class "PCAIDS", distance 2.
-  Class \code{\linkS4class{Linear}}, by class "AIDS", distance 3.
-  Class \code{\linkS4class{Bertrand}}, by class "Linear", distance 4.
-  Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 5.
+  Class \code{\linkS4class{AIDS}}, by class \code{\linkS4class{PCAIDS}}, distance 2.
+  Class \code{\linkS4class{Linear}}, by class \code{\linkS4class{AIDS}}, distance 3.
+  Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Linear}}, distance 4.
+  Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 5.
 }
 \section{Methods}{
 

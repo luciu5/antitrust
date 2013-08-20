@@ -8,9 +8,9 @@
 %%\alias{CV,CES-method}
 %%\alias{elast,CES-method}
 
-\title{Class "CES"}
+\title{Class ``CES"}
 \description{
-  The "CES" class contains all the information needed to calibrate a CES
+  The ``CES" class contains all the information needed to calibrate a CES
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated Bertrand pricing game.
 %%  ~~ A concise (1-5 lines) description of what the class is. ~~
@@ -31,8 +31,8 @@ Objects can be created by using the constructor function \code{\link{ces}}.
 }
 \section{Extends}{
   Class \code{\linkS4class{Logit}}, directly.
-  Class \code{\linkS4class{Bertrand}}, by class "Logit", distance 2.
-  Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 3.
+  Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Logit}}, distance 2.
+  Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 3.
 }
 \section{Methods}{
   For all of methods containing the `preMerger' argument, `preMerger' takes

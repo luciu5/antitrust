@@ -8,9 +8,9 @@
 %\alias{CV,Logit-method}
 %\alias{elast,Logit-method}
 
-\title{Class "Logit"}
+\title{Class ``Logit"}
 \description{
-   The "Logit" class contains all the information needed to calibrate a Logit
+   The ``Logit" class contains all the information needed to calibrate a Logit
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game.
 %%  ~~ A concise (1-5 lines) description of what the class is. ~~
@@ -42,7 +42,7 @@ Objects can be created by using the constructor function \code{\link{logit}}.
 }
 \section{Extends}{
 Class \code{\linkS4class{Bertrand}}, directly.
-Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 2.
+Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 2.
 }
 \section{Methods}{
   For all of methods containing the `preMerger' argument, `preMerger' takes

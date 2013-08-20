@@ -11,9 +11,9 @@
 %\alias{summary,Antitrust-method}
 
 
-\title{Class "Antitrust"}
+\title{Class ``Antitrust"}
 \description{
-  The "Antitrust" class is a building block used to create other classes
+  The ``Antitrust" class is a building block used to create other classes
   in this package. As such, it is most likely to be useful for developers
   who wish to code their own calibration/simulation routines.
 
@@ -21,7 +21,7 @@
 }
 \section{Objects from the Class}{
 
-Objects can be created by calls of the form \code{new("Antitrust", ...)}.
+Objects can be created by calls of the form \code{new(``Antitrust", ...)}.
 
 }
 \section{Slots}{
@@ -53,11 +53,11 @@ Objects can be created by calls of the form \code{new("Antitrust", ...)}.
       the percentage change in prices due to the merger. }
      }}
 
-\section{The "matrixOrList" and "matrixOrVector" Classes}{
-The "matrixOrList" and "matrixOrVector" classes are
+\section{The ``matrixOrList" and ``matrixOrVector" Classes}{
+The ``matrixOrList" and ``matrixOrVector" classes are
 virtual classes used for validity checking in the `ownerPre' and
-`ownerPost' slots of "Antitrust" and the `slopes' slot in
-"Bertrand".
+`ownerPost' slots of ``Antitrust" and the `slopes' slot in
+``Bertrand".
 }
 
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}

@@ -25,9 +25,9 @@
 
 
 
-\title{Class "Auction2ndCap"}
+\title{Class ``Auction2ndCap"}
 \description{
-   The "Auction2ndCap" class contains all the information needed to
+   The ``Auction2ndCap" class contains all the information needed to
    calibrate a 2nd price auction with capacity constraints
 %%  ~~ A concise (1-5 lines) description of what the class is. ~~
 }

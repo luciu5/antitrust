@@ -26,7 +26,7 @@
 
 
   \item{\code{signature(object = c(CES, CESNests), revenueInside)}}{
-    The CV method for the "CES" and nested "CES" classes has an additional
+    The CV method for the ``CES" and nested ``CES" classes has an additional
     parameter, `revenueInside', which must be set equal to
     the total amount that consumers have spent on
     products  inside the market in order for CV to be calculated.
@@ -34,7 +34,7 @@
 
 
   \item{\code{signature(object = AIDS , totalRevenue)}}{
-    The CV method for "AIDS" has an additional parameter, `totalRevenue',
+    The CV method for ``AIDS" has an additional parameter, `totalRevenue',
     which should aggregate income (e.g. GDP). If supplied computes CV in terms of dollars. If missing, CV is
     calculated as a percentage change in aggregate in income. must be set equal to the vector of pre-merger prices for all
     products in the market in order for CV to be calculated.
@@ -42,7 +42,7 @@
 
   \item{\code{signature(object = c(Linear,LogLin))}}{
     Although no additional information is needed to calculate CV for
-    either the "Linear" or "LogLin" classes, The CV method will fail if
+    either the ``Linear" or ``LogLin" classes, The CV method will fail if
     the appropriate restrictions on the demand parameters have not been imposed.
   }
 }}

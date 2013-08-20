@@ -13,8 +13,8 @@ Antitrust Library
 \tabular{ll}{
 Package: \tab antitrust\cr
 Type: \tab Package\cr
-Version: \tab 0.9.1\cr
-Date: \tab 2013-01-03\cr
+Version: \tab 0.93\cr
+Date: \tab 2013-08-20\cr
 License: \tab Unlimited \cr
 LazyLoad: \tab yes\cr
 }

@@ -4,9 +4,9 @@
 \alias{Bertrand-class}
 
 
-\title{Class "Bertrand"}
+\title{Class ``Bertrand"}
 \description{
-  The "Bertrand" class is a building block used to create other classes
+  The ``Bertrand" class is a building block used to create other classes
   in this package. As such, it is most likely to be useful for developers
   who wish to code their own merger calibration/simulation routines.
 
@@ -14,7 +14,7 @@
 }
 \section{Objects from the Class}{
 
-Objects can be created by calls of the form \code{new("Bertrand", ...)}.
+Objects can be created by calls of the form \code{new(``Bertrand", ...)}.
 
 }
 \section{Slots}{
@@ -83,7 +83,7 @@ Objects can be created by calls of the form \code{new("Bertrand", ...)}.
       digits reported in output.}
      \item{\code{plot}}{\code{signature(x=object,scale=.1}}{
       Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. `scale' controls the amount above marginal cost and below equilbrium price that is plotted.
-    }  
+    }
     \item{\code{upp}}{\code{signature(object)}}{
       Calculate the Upwards Pricing Pressure (upp) index.
     }

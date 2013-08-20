@@ -5,9 +5,9 @@
 %\alias{calcSlopes,PCAIDS-method}
 
 
-\title{Class "PCAIDS"}
+\title{Class ``PCAIDS"}
 \description{
-  The "PCAIDS" class contains all the information needed to
+  The ``PCAIDS" class contains all the information needed to
   calibrate a PCAIDS
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated Bertrand products pricing game.
@@ -30,9 +30,9 @@ Objects can be created by using the constructor \code{\link{pcaids}}.
 }
 \section{Extends}{
   Class \code{\linkS4class{AIDS}}, directly.
-  Class \code{\linkS4class{Linear}}, by class "AIDS", distance 2.
-  Class \code{\linkS4class{Bertrand}}, by class "Linear", distance 3.
-  Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 4.
+  Class \code{\linkS4class{Linear}}, by class \code{\linkS4class{AIDS}}, distance 2.
+  Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Linear}}, distance 3.
+  Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 4.
 }
 \section{Methods}{
 

@@ -7,9 +7,9 @@
 %\alias{CV,CESNests-method}
 %\alias{elast,CESNests-method}
 
-\title{Class "CESNests"}
+\title{Class ``CESNests"}
 \description{
-  The "CESNests" class contains all the information needed to
+  The ``CESNests" class contains all the information needed to
   calibrate a nested CES
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game.
@@ -33,9 +33,9 @@ Objects can be created by using the constructor function \code{\link{ces.nests}}
 }
 \section{Extends}{
   Class \code{\linkS4class{CES}}, directly.
-  Class \code{\linkS4class{Logit}}, by class "CES", distance 2.
-  Class \code{\linkS4class{Bertrand}}, by class "CES", distance 3.
-  Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 4.
+  Class \code{\linkS4class{Logit}}, by class \code{\linkS4class{CES}}, distance 2.
+  Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Logit}}, distance 3.
+  Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 4.
 }
 \section{Methods}{
   For all of methods containing the `preMerger' argument, `preMerger' takes

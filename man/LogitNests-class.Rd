@@ -8,9 +8,9 @@
 %%\alias{CV,LogitNests-method}
 %%\alias{elast,LogitNests-method}
 
-\title{Class "LogitNests"}
+\title{Class ``LogitNests"}
 \description{
-  The "LogitNests" class contains all the information needed to
+  The ``LogitNests" class contains all the information needed to
   calibrate a nested Logit
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game.
@@ -34,7 +34,7 @@ Objects can be created by using the constructor function \code{\link{logit.nests
 }
 \section{Extends}{
 Class \code{\linkS4class{Logit}}, directly.
-Class \code{\linkS4class{Bertrand}}, by class "Logit", distance 2.
+Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Logit}}, distance 2.
 }
 \section{Methods}{
     For all of methods containing the `preMerger' argument, `preMerger' takes

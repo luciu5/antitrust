@@ -8,9 +8,9 @@
 %%\alias{CV,LogitCap-method}
 %%\alias{elast,LogitCap-method}
 
-\title{Class "LogitCap"}
+\title{Class ``LogitCap"}
 \description{
-  The "LogitCap" class contains all the information needed to
+  The ``LogitCap" class contains all the information needed to
   calibrate a Logit
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game with
@@ -33,8 +33,8 @@ Objects can be created by using the constructor function \code{\link{logit.cap}}
 }
 \section{Extends}{
 Class \code{\linkS4class{Logit}}, directly.
-Class \code{\linkS4class{Bertrand}}, by class "Logit", distance 2.
-Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 3.
+Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Logit}}, distance 2.
+Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 3.
 }
 \section{Methods}{
     For all of methods containing the `preMerger' argument, `preMerger' takes

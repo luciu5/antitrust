@@ -7,9 +7,9 @@
 %\alias{calcShares,Linear-method}
 %\alias{calcSlopes,Linear-method}
 
-\title{Class "Linear"}
+\title{Class ``Linear"}
 \description{
-   The "Linear" class contains all the information needed to
+   The ``Linear" class contains all the information needed to
   calibrate a Linear
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated Bertrand products pricing game.
@@ -38,7 +38,7 @@ Objects can be created by using the constructor function \code{\link{linear}}.
  }
  \section{Extends}{
    Class \code{\linkS4class{Bertrand}}, directly.
-   Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 2.
+   Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 2.
  }
  \section{Methods}{
    For all of methods containing the `preMerger' argument, `preMerger' takes
@@ -67,7 +67,7 @@ Objects can be created by using the constructor function \code{\link{linear}}.
        slopes and intercept from a Linear demand system. Assumes that firms are currently at equilibrium  in a
        differentiated product Bertrand Nash pricing game.}
      \item{\code{\link{CV}}}{\code{signature(object =
-	 "Linear")}}{ Calculate the amount of money a representative consumer would need to
+	 ``Linear")}}{ Calculate the amount of money a representative consumer would need to
        be paid to be just as well off as they were before the merger.}
      \item{\code{\link{elast}}}{\code{signature(object, preMerger
 	 = TRUE)}}{ Computes a k x k matrix of own and cross-price elasticities.}

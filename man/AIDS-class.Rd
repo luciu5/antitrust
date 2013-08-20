@@ -13,9 +13,9 @@
 \alias{show,AIDS-method}
 %\alias{summary,AIDS-method}
 
-\title{Class "AIDS"}
+\title{Class ``AIDS"}
 \description{
-  The "AIDS" class contains all the information needed to
+  The ``AIDS" class contains all the information needed to
   calibrate a AIDS
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game.
@@ -39,7 +39,7 @@ Objects can be created by using the constructor function \code{\link{aids}}.
 }
 \section{Extends}{
   Class \code{\linkS4class{Linear}}, directly.
-  Class \code{\linkS4class{Bertrand}}, by class "Linear", distance 2.
+  Class \code{\linkS4class{Bertrand}}, by class ``Linear", distance 2.
 }
 \section{Methods}{
   For all of methods containing the `preMerger' argument, `preMerger' takes

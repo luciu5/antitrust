@@ -8,9 +8,9 @@
 %%\alias{CV,LogitNests-method}
 %%\alias{elast,LogitNests-method}
 
-\title{Class "LogitNestsALM"}
+\title{Class ``LogitNestsALM"}
 \description{
-  The "LogitNestsALM" class contains all the information needed to
+  The ``LogitNestsALM" class contains all the information needed to
   calibrate a nested Logit
   demand system under the assumption that the share of the outside
   product is not known. Once the model parameters have been calibrated,
@@ -25,9 +25,9 @@ Objects can be created by using the constructor function \code{\link{logit.nests
 
 \section{Extends}{
   Class \code{\linkS4class{LogitNests}}, directly.
-  Class \code{\linkS4class{Logit}}, by class "LogitNests", distance 2.
-  Class \code{\linkS4class{Bertrand}}, by class "Logit", distance 3.
-  Class \code{\linkS4class{Antitrust}}, by class "Bertrand", distance 4.
+  Class \code{\linkS4class{Logit}}, by class \code{\linkS4class{LogitNests}}, distance 2.
+  Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Logit}}, distance 3.
+  Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 4.
 
 }
 \section{Methods}{
