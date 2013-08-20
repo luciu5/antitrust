@@ -124,6 +124,7 @@ margins    <- c(.228, .209, 0.197)  # average margin earned by each firm
 ownerPre   <- ownerPost   <-c("A","B","C")
 ownerPost[ownerPost=="B"] <- "A"
 
+##assume costs are uniformly distributed with unknown bounds
 result.unif = auction2nd.cap(
           capacities=caps,
           margins=margins,prices=prices,reserve=NA,

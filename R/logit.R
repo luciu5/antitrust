@@ -74,8 +74,8 @@ setClass(
                       " if 'shares' sum to 1 , or NA if the sum of shares is less than 1")
              }
 
-             if(object@priceOutside<0 ||
-                length(object@priceOutside) != 1){stop("'priceOutside' must be a non-negative number")}
+             if(length(object@priceOutside) != 1 || object@priceOutside<0
+                ){stop("'priceOutside' must be a non-negative number")}
 
              return(TRUE)
 

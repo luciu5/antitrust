@@ -295,7 +295,7 @@ setMethod(
 
 )
 ## Coordinated effects using Grim Trigger strategies
-## and optimal deffection
+## and optimal defection
 
 setMethod(
   f= "calcProducerSurplusGrimTrigger",
@@ -385,7 +385,7 @@ setMethod(
           }
 
 
-          IC <- as.vector(ownerPost %*% ifelse(discount>0 & !is.na(psCoord),psCoord*discount/(1-discount),0)) >
+          IC <- as.vector(ownerPost %*% ifelse(discount>0 & !is.na(psCoord),psCoord*discount/(1-discount),0)) >=
                 as.vector(ownerPost %*% ifelse(discount>0 & !is.na(psCoord),psDefect + (psPunish*discount/(1-discount)),0))
 
 
