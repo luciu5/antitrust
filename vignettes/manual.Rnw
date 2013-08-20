@@ -1378,7 +1378,7 @@ information, supplying margin information for products with
 disparate market shares, or supplying the market elasticity parameter directly.
 
 \chapter{Auction Models}
-Currently \atr{} only supports calibrating model parameters and simulating the effects of a merger in a
+Currently \atr{} supports calibrating model parameters and simulating the effects of a merger in a
 2nd price procurement auction where the buyer sets a reserve price and
 capacity constrained bidders offer  a single unit of a homogeneous
 product\footnote{See \cite{WaehrP2003} for further details.}.
@@ -1406,9 +1406,14 @@ price to determine who will supply the product. In this auction
 format, each firm submits a bid and the firm with the lowest bid that
 is also less than the buyer's reserve price wins the auction
 but is paid the 2nd lowest bid.\footnote{If the second lowest bid is
-  greater than the reserve price, the winner receives the reserve.} It can be shown that in a 2nd price
+  greater than the reserve price, the winner receives the reserve.}
+The buyer's reserve reflects the fact that the buyer has the ability
+to \emph{self-supply} at cost $c_0$, and so is only willing to purchase
+the product from a bidder whose bid is is less than $c_0$.
+
+It can be shown that in a 2nd price
 auction, each firm has a weakly dominant strategy to bid it's
-marginal cost. \cite{WaehrP2003} also be shown that
+marginal cost. \cite{WaehrP2003} also show that
 
 \begin{itemize}
   \label{eqn:auc1.1}
@@ -1455,8 +1460,11 @@ p(r,t)&\equiv
 \frac{\int_{\underline{c}}^rcdG(c;\bar{t})}{G(r;\bar{t})} +
 \frac{\sum\limits_{k\in K}\Pi_k(r;t)}{G(r;\bar{t})} \nonumber\\
 \intertext{which is minimized at}
-c_0 &=  r^{\ast} + \frac{[1-F(r^{\ast})]^{\bar{t}-t_k} - [1-F(r^{\ast})]^{\bar{t}}}{\bar{t}f(r^{\ast})[1-F(r^{\ast})]^{\bar{t}}}
+c_0 &=  r^{\ast} + \frac{\sum\limits_{k\in K} ([1-F(r^{\ast})]^{\bar{t}-t_k} - [1-F(r^{\ast})]^{\bar{t}})}{\bar{t}f(r^{\ast})[1-F(r^{\ast})]^{\bar{t}-1}}
 \end{align}
+
+Note that this last equation implies that the buyer has an incentive
+to set its optimal reserve below its self-supply cost.
 
 \section{Calibrating Model Parameters}
 In this model, we will assume that the user observes firm capacities,
@@ -1681,7 +1689,7 @@ can influence a firm's decision to collude including:
 \begin{itemize}
 \item how willing a firm is to sacrifice short term for long term gain,
 \item the ease in which a firm can implement a mutually beneficial strategy,
-\item the ease in which a firm can observe its rivals' response to its,
+\item the ease in which a firm can observe its rivals' response,
 \item the costs associated with punishing a defecting rival.
 \end{itemize}
 
@@ -1693,7 +1701,7 @@ acquiring firm makes it easier to sustain cooperation amongst some of the
 remaining firms. On the other hand, a horizontal merger can retard
 collusion if after the acquisition, a firm believes that it can make
 greater profits by not cooperating with  some of the remaining
-firms. the goal of this model is to provide one method for determining
+firms. The goal of this model is to provide one method for determining
 which of these conflicting incentives ultimately prevails.
 
 \section{The Game}
