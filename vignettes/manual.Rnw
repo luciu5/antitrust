@@ -1419,8 +1419,8 @@ marginal cost. \cite{WaehrP2003} also show that
   \label{eqn:auc1.1}
 \item the probability that firm $k$'s cost draw is less than $c$, equals
 \begin{align}
- G(c;t_k)&\equiv 1-[1-F(c)]^{t_k}
-\end{align},
+ G(c;t_k)&\equiv 1-[1-F(c)]^{t_k},
+\end{align}
 \item the probability that firm $k$ wins the auction
   for a given reserve price $r$, is
 \begin{align}
@@ -1428,7 +1428,7 @@ marginal cost. \cite{WaehrP2003} also show that
  s_k(r;\bar{t}) &\equiv \frac{t_k}{\bar{t}}G(r;\bar{t}),
 \end{align}
 \item the probability that firm $k$ wins conditional on $I$, the event
-  that \emph{some} firm wins is
+  that \emph{some} firm wins, is
 \begin{align}
     \label{eqn:auc1.3}
   s_{k|I}(t) &\equiv \frac{t_k}{\bar{t}},
@@ -1670,11 +1670,11 @@ how much of another firm's product is produced.
 
 \part{Coordinated Effects}
 
-\chapter{A Tacit Collusion Game}
+\chapter{A Collusion Game with Bertrand Reversion as Punishment}
 
-The basic idea behind tacit collusion is that when firms interact with
+The basic idea behind collusion is that when firms interact with
 one another repeatedly -- either across different product or geographic
-markets, or over time -- firms may reach an agreement that reduces the
+markets, or over time -- firms may find a way to reach an agreement that reduces the
 extent to which they compete with one another. This agreement may be
 \emph{tacit}  in the sense that a firm can coordinate its behavior
 with that of its rivals by first unilaterally adopting a strategy that
@@ -1719,9 +1719,9 @@ Bertrand pricing game described in section
 \begin{align*}
   \max_{\{p_{kt}\}_{t=1}^{\infty}} &\sum_{t=1}^{\infty}\tau_k^{t-1}\Pi^b_{kt},\\
   \intertext{where $p_{kt}$ is the vector of prices set on all of
-    $k$'s products in period $t$, $0<\tau_k<1$ is a firm-specific,
+    $k$'s products in period $t$; $0<\tau_k<1$ is a firm-specific and
     time-invariant discount factor reflecting the rate at which $k$ is
-  willing to forgo earning profits today for future profits, and
+  willing to forgo earning profits today for future profits; and
   $\Pi^b_{kt}$  are the profits that firm $k$ earns from the Bertrand stage game in
   time period $t$. The latter can be expressed mathematically as}
 \Pi^b_{kt}&=\sum_{i=1}^{n}\omega_{ik}(p_{it} - c_i)q_{it},\\
