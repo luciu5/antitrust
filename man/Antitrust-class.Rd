@@ -11,9 +11,9 @@
 %\alias{summary,Antitrust-method}
 
 
-\title{Class ``Antitrust"}
+\title{Class \dQuote{Antitrust}}
 \description{
-  The ``Antitrust" class is a building block used to create other classes
+  The \dQuote{Antitrust} class is a building block used to create other classes
   in this package. As such, it is most likely to be useful for developers
   who wish to code their own calibration/simulation routines.
 
@@ -21,7 +21,7 @@
 }
 \section{Objects from the Class}{
 
-Objects can be created by calls of the form \code{new(``Antitrust", ...)}.
+Objects can be created by calls of the form \code{new("Antitrust", ...)}.
 
 }
 \section{Slots}{
@@ -36,7 +36,7 @@ Objects can be created by calls of the form \code{new(``Antitrust", ...)}.
   }
 }
 \section{Methods}{
-  Many of the methods described below contain a `preMerger' argument. The `preMerger' takes
+  Many of the methods described below contain a \sQuote{preMerger} argument. The \sQuote{preMerger} takes
   on a value of TRUE or FALSE, where TRUE invokes the method using the
   pre-merger values, while FALSE invokes the method using
   the post-merger ownership structure.
@@ -53,11 +53,11 @@ Objects can be created by calls of the form \code{new(``Antitrust", ...)}.
       the percentage change in prices due to the merger. }
      }}
 
-\section{The ``matrixOrList" and ``matrixOrVector" Classes}{
-The ``matrixOrList" and ``matrixOrVector" classes are
-virtual classes used for validity checking in the `ownerPre' and
-`ownerPost' slots of ``Antitrust" and the `slopes' slot in
-``Bertrand".
+\section{The \dQuote{matrixOrList} and \dQuote{matrixOrVector} Classes}{
+The \dQuote{matrixOrList} and \dQuote{matrixOrVector} classes are
+virtual classes used for validity checking in the \sQuote{ownerPre} and
+\sQuote{ownerPost} slots of \dQuote{Antitrust} and the \sQuote{slopes} slot in
+\dQuote{Bertrand}.
 }
 
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}

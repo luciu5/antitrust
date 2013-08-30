@@ -13,9 +13,9 @@
 \alias{show,AIDS-method}
 %\alias{summary,AIDS-method}
 
-\title{Class ``AIDS"}
+\title{Class \dQuote{AIDS}}
 \description{
-  The ``AIDS" class contains all the information needed to
+  The \dQuote{AIDS} class contains all the information needed to
   calibrate a AIDS
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game.
@@ -39,10 +39,10 @@ Objects can be created by using the constructor function \code{\link{aids}}.
 }
 \section{Extends}{
   Class \code{\linkS4class{Linear}}, directly.
-  Class \code{\linkS4class{Bertrand}}, by class ``Linear", distance 2.
+  Class \code{\linkS4class{Bertrand}}, by class \dQuote{Linear}, distance 2.
 }
 \section{Methods}{
-  For all of methods containing the `preMerger' argument, `preMerger' takes
+  For all of methods containing the \sQuote{preMerger} argument, \sQuote{preMerger} takes
   on a value of TRUE or FALSE, where TRUE invokes the method using the
   pre-merger ownership structure, while FALSE invokes the method using
   the post-merger ownership structure.
@@ -55,7 +55,7 @@ Objects can be created by using the constructor function \code{\link{aids}}.
       merger under the assumptions that consumer demand is AIDS and firms play a differentiated product
       Bertrand Nash pricing game.When isMax equals TRUE, a check is run
       to determine if the calculated equilibrium price vector locally maximizes
-      profits. `...' may be used to change the
+      profits. \sQuote{...} may be used to change the
       default values of \code{\link[BB]{BBsolve}}, the non-linear equation solver.}
     \item{\code{calcPrices}}{\code{signature(object, preMerger
 	= TRUE)}}{ Compute either pre-merger or post-merger equilibrium
@@ -86,9 +86,9 @@ Objects can be created by using the constructor function \code{\link{aids}}.
       the percentage change in prices due to the merger. }
     \item{summary}{\code{signature(object,revenue=TRUE,parameters=FALSE,digits=2,..)}}{ Summarizes
       the effect of the merger, including price and revenue
-      changes. Setting `revenue' equal to FALSE reports quantity rather
-      than revenue changes. Setting `parameters' equal to TRUE reports
-      all demand parameters. `digits' controls the number of significant
+      changes. Setting \sQuote{revenue} equal to FALSE reports quantity rather
+      than revenue changes. Setting \sQuote{parameters} equal to TRUE reports
+      all demand parameters. \sQuote{digits} controls the number of significant
       digits reported in output.}
   }
 }

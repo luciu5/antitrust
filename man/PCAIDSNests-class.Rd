@@ -7,9 +7,9 @@
 \alias{getNestsParms,PCAIDSNests-method}
 
 
-\title{Class ``PCAIDSNests"}
+\title{Class \dQuote{PCAIDSNests}}
 \description{
-  The ``PCAIDSNests" class contains all the information needed to
+  The \dQuote{PCAIDSNests} class contains all the information needed to
   calibrate a nested PCAIDS
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated Bertrand products pricing game.

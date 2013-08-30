@@ -38,8 +38,8 @@ upp.cournot(prices, margins, ownerPre,
 
 }
 
-\details{The `shares' vector must have 2 elements, and all `shares'
-  elements must be between 0 and 1. The `mktElast' vector must
+\details{The \sQuote{shares} vector must have 2 elements, and all \sQuote{shares}
+  elements must be between 0 and 1. The \sQuote{mktElast} vector must
   have 1 non-negative  element.}
 \value{A vector with 1 element whose value equals the percentage change
   in the products' average marginal costs that the merged firms must achieve in order to offset a
@@ -47,8 +47,8 @@ upp.cournot(prices, margins, ownerPre,
 
 \references{
  Froeb, Luke and Werden, Gregory (1998).
-``A robust test for consumer welfare enhancing mergers among sellers
-of a homogeneous product.''
+\dQuote{A robust test for consumer welfare enhancing mergers among sellers
+  of a homogeneous product.}
 \emph{Economics Letters}, \bold{58}(3), pp. 367 - 369.
 }
 

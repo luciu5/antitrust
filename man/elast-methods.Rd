@@ -28,14 +28,14 @@
 
 \details{
 
-  When `market' is FALSE, this method computes the matrix
+  When \sQuote{market} is FALSE, this method computes the matrix
   of own and cross-price elasticities. Element i,j of this matrix is
   the percentage change in the demand for good i from a small change in
-  the price of good j. When `market' is TRUE, this method computes the
+  the price of good j. When \sQuote{market} is TRUE, this method computes the
   market (aggregate) elasticities using share-weighted prices.
 
-  When `preMerger' is TRUE, elasticities are
-  calculated at pre-merger equilibrium prices and shares, and when `preMerger' is FALSE, they
+  When \sQuote{preMerger} is TRUE, elasticities are
+  calculated at pre-merger equilibrium prices and shares, and when \sQuote{preMerger} is FALSE, they
   are calculated at post-merger equilibrium prices and shares.
 }
 

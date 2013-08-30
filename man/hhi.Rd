@@ -23,16 +23,16 @@ HHI(shares,
   indicate which of the merging parties have the ability to make pricing
   or output decisions OR
   a k x k matrix of
-  control shares. Default is a k x k matrix equal to 1 if `owner' > 0
+  control shares. Default is a k x k matrix equal to 1 if \sQuote{owner} > 0
   and 0 otherwise.}
 }
 
-\details{All `shares' must be between 0 and 1. When `owner' is a matrix,
-  the i,jth element of `owner' should equal the percentage of product j's profits earned by the owner
-  of product i. When `owner' is a vector, \code{HHI} generates a k x k
+\details{All \sQuote{shares} must be between 0 and 1. When \sQuote{owner} is a matrix,
+  the i,jth element of \sQuote{owner} should equal the percentage of product j's profits earned by the owner
+  of product i. When \sQuote{owner} is a vector, \code{HHI} generates a k x k
   matrix of whose i,jth element equals 1 if products i and j are
-  commonly owned and 0 otherwise. `control' works in a fashion similar
-  to `owner'.
+  commonly owned and 0 otherwise. \sQuote{control} works in a fashion similar
+  to \sQuote{owner}.
 }
 
 \value{
@@ -41,7 +41,7 @@ HHI(shares,
 
 \references{
   Salop, Steven and O'Brien, Daniel (2000)
-  ``Competitive Effects of Partial Ownership: Financial Interest and Corporate Control''
+  \dQuote{Competitive Effects of Partial Ownership: Financial Interest and Corporate Control}
   67 Antitrust L.J. 559, pp. 559-614.
 }
 

@@ -300,7 +300,7 @@ setMethod(
 setMethod(
   f= "calcProducerSurplusGrimTrigger",
   signature= "Bertrand",
-  definition= function(object,coalition,discount,preMerger=TRUE,isCollusion=FALSE...){
+  definition= function(object,coalition,discount,preMerger=TRUE,isCollusion=FALSE,...){
 
       subset <- object@subset
       nprod  <- length(object@labels)
@@ -309,17 +309,18 @@ setMethod(
          !coalition %in% 1:nprod){
           stop ("'coalition' must be a vector of product indices no greater than the number of products")
       }
-      if(any(discount<=0 | discount>=1) ||
-         length(discount) != length(coalition)){
-          stop ("'discount' must be a vector of values between 0 and 1 and whose length equals that of 'coalition'")
+      if(any(discount<=0 | discount>=1,na.rm=TRUE)){
+          stop ("'discount' must be a vector of values between 0 and 1 or NA")
       }
 
 
-      temp <- rep(0,nprods)
+      if(preMerger){owner <- object@ownerPre}
+      else{owner <- object@ownerPost}
+      anyProds <- as.logical(apply(owner[coalition,]>0,2,max)) # TRUE if a product is made by firm participating in coalition
 
-      temp[coalition] <- discount
-      discount <- temp
-      rm(temp)
+      if(any(is.na(discount[anyProds]))){
+      stop("'discount' must include the discount factors for all products produced by firms with products in the coalition")}
+
 
       ## re-calibrate demand and cost parameters under the assumption
       ## that firms are currently colluding
@@ -361,8 +362,8 @@ setMethod(
 
           ## Determine if the firm finds it profitable to cooperate or defect under
           ## GRIM TRIGGER
-          IC <- as.vector(ownerPre %*% ifelse(discount>0 & !is.na(psCoord),psCoord*discount/(1-discount),0)) >
-                as.vector(ownerPre %*% ifelse(discount>0 & !is.na(psDefect),psDefect + (psPunish*discount/(1-discount)),0))
+          IC <- as.vector(ownerPre %*% (psCoord/(1-discount))) >
+              as.vector(ownerPre %*% (psDefect + (psPunish*discount/(1-discount))))
 
       }
       else{
@@ -385,15 +386,18 @@ setMethod(
           }
 
 
-          IC <- as.vector(ownerPost %*% ifelse(discount>0 & !is.na(psCoord),psCoord*discount/(1-discount),0)) >=
-                as.vector(ownerPost %*% ifelse(discount>0 & !is.na(psCoord),psDefect + (psPunish*discount/(1-discount)),0))
+          IC <- as.vector(ownerPost %*% (psCoord/(1-discount))) >=
+              as.vector(ownerPost %*% (psDefect + (psPunish*discount/(1-discount))))
 
 
       }
 
-      result <- data.frame(Discount=discount,Coord=psCoord,Defect=psDefect,Punish=psPunish,IC=IC)
+
+      result <- data.frame(Coalition=coalition,Discount=discount,Coord=psCoord,Defect=psDefect,Punish=psPunish,IC=IC)
       rownames(result) <- object@labels
-      result <- result[coalition,]
+
+      result <- result[anyProds,]
+
 
 
       return(result)

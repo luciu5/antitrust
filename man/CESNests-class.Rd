@@ -7,9 +7,9 @@
 %\alias{CV,CESNests-method}
 %\alias{elast,CESNests-method}
 
-\title{Class ``CESNests"}
+\title{Class \dQuote{CESNests}}
 \description{
-  The ``CESNests" class contains all the information needed to
+  The \dQuote{CESNests} class contains all the information needed to
   calibrate a nested CES
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game.
@@ -38,7 +38,7 @@ Objects can be created by using the constructor function \code{\link{ces.nests}}
   Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 4.
 }
 \section{Methods}{
-  For all of methods containing the `preMerger' argument, `preMerger' takes
+  For all of methods containing the \sQuote{preMerger} argument, \sQuote{preMerger} takes
   on a value of TRUE or FALSE, where TRUE invokes the method using the
   pre-merger ownership structure, while FALSE invokes the method using
   the post-merger ownership structure.
@@ -46,16 +46,16 @@ Objects can be created by using the constructor function \code{\link{ces.nests}}
     \item{\code{calcShares}}{\code{signature(object, preMerger
 	= TRUE, revenue = FALSE)}}{ Compute either pre-merger or post-merger equilibrium
       revenue shares under the assumptions that consumer demand is nested CES and firms play a differentiated product
-      Bertrand Nash pricing game. `revenue' takes
+      Bertrand Nash pricing game. \sQuote{revenue} takes
       on a value of TRUE or FALSE, where TRUE calculates revenue shares,
       while FALSE calculates quantity shares.}
     \item{\code{calcSlopes}}{\code{signature(object)}}{ Uncover nested CES demand
       parameters. Assumes that firms are currently at equilibrium  in a
       differentiated product Bertrand Nash pricing game.}
     \item{\code{\link{CV}}}{\code{signature(object, revenueInside)}}{
-      Calculates compensating variation. If `revenueInside' is missing, then CV
+      Calculates compensating variation. If \sQuote{revenueInside} is missing, then CV
     returns compensating variation as a percent of the representative
-    consumer's income. If `revenueInside' equals the
+    consumer's income. If \sQuote{revenueInside} equals the
     total expenditure on all products inside the market, then CV returns
     compensating variation in levels.}
     \item{\code{\link{elast}}}{\code{signature(object, preMerger

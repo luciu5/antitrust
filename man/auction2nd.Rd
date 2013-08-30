@@ -29,7 +29,7 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
   \item{reserve}{A length 1 vector equal to the buyer's reserve
     price. Default is NA .}
   \item{shareInside}{A length 1 vector equal to the probability that the
-    buyer selects the outside option. Default is NA. }
+    buyer does not select the outside option. Default is NA. }
   \item{sellerCostCDF}{A length 1 character vector indicating which
     probability distribution will be used  to model bidder cost
     draws. Possible options are "punif", "pexp", "pweibull", "pgumbel",
@@ -49,7 +49,7 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
   \item{parmsStart}{A vector of starting values for calibrated parameters. See below
     for more details}
   \item{labels}{A k-length vector of labels. Default is "Firm", where
-    `#' is a number between 1 and the length of `capacities'.}
+    \sQuote{#} is a number between 1 and the length of \sQuote{capacities}.}
   \item{...}{Additional options to feed to either \code{\link{optim}} or \code{\link{constrOptim}}.}
 }
 
@@ -58,7 +58,7 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
 \details{
   \code{auction2nd.cap} examines how a merger affects equilbrium bidding
   behavior when a single buyer is running a 2nd price procurement
-  auction with bidders whose marginal cost of supplying the product is
+  auction with bidders whose marginal cost of supplying a homogenous product is
   private information. This version of the model assumes that
   bidders are differentiated by their capacities in the sense that firms
   with greater capacity are more likely to have lower costs than firms
@@ -68,13 +68,13 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
   on the auction reserve price as well as the proportion of buyers who
   choose not to purchase from any bidder,  \code{auction2nd.cap}
   calibrates the parameters of the common distribution from which
-  bidder's costs are drawn (and if
-  not supplied the implied reserve price) and then uses these calibrated
+  bidder's costs are drawn (and, if
+  not supplied, the implied reserve price) and then uses these calibrated
   parameters to calibrate the value to the buyer of selecting the
   outside option. Once these parameters have been calibrated,
   \code{auction2nd.cap} computes the buyer's optimal pre-merger reservation
-  price, and if 'constrain.reserve' is FALSE, computes the buyer's
-  optimal post-merger reservation price (setting 'constrain.reserve' to
+  price, and if \sQuote{constrain.reserve} is FALSE, computes the buyer's
+  optimal post-merger reservation price (setting \sQuote{constrain.reserve} to
   TRUE sets the buyer's post-merger optimal reserve equal to the buyer's
   pre-merger optimal reserve). The pre- and post-merger expected price, conditional on a particular bidder winning, are then calculated.
 
@@ -105,7 +105,7 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
 
 \references{
   Keith Waehrer and  Perry, Martin (2003).
-  ``The Effects of Mergers in Open Auction Markets'',
+  \dQuote{The Effects of Mergers in Open Auction Markets},
   \emph{Rand Journal of Economics}, \bold{34(2)}, pp. 287-304.
 }
 
@@ -114,7 +114,7 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
 
 \examples{
 ##Suppose there are 3 firms (A,B,C) participating in a procurement auction with
-## an unknown reservation price and that firms A acquires firm B.
+## an unknown reservation price and that firm A acquires firm B.
 
 caps <- c(0.65,0.30,0.05)           # total capacity normalized to 1 in this example
 inShare    <- .67                   # probability that buyer does not select

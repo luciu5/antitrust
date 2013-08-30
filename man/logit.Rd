@@ -96,7 +96,7 @@ logit.cap(prices,shares,margins,
     individuals who chose that option.}
   \item{normIndex}{An integer equalling the index (position) of the
     inside product whose mean valuation will be normalized to 1. Default
-    is 1, unless `shares' sum to less than 1, in which case the default is
+    is 1, unless \sQuote{shares} sum to less than 1, in which case the default is
     NA and an outside good is assumed to exist.}
   \item{ownerPre}{EITHER a vector of length k whose values
     indicate which firm produced a product pre-merger OR
@@ -119,7 +119,7 @@ logit.cap(prices,shares,margins,
   \item{priceOutside}{A length 1 vector indicating the price of the
     outside good. Default is 0.}
   \item{priceStart}{A length k vector of starting values used to solve for
-    equilibrium price. Default is the `prices' vector.}
+    equilibrium price. Default is the \sQuote{prices} vector.}
   \item{isMax}{If TRUE, checks to see whether computed price equilibrium
     locally maximizes firm profits and returns a warning if not. Default is FALSE.}
   \item{parmsStart}{A vector of starting values used to solve for
@@ -129,7 +129,7 @@ logit.cap(prices,shares,margins,
     greater than the price coefficient. If missing then the random
     draws with the appropriate restrictions are employed.}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
-    `#' is a number between 1 and the length of `prices'.}
+    \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
   \item{...}{Additional options to feed to the \code{\link[BB]{BBsolve}}
     optimizer used to solve for equilibrium prices.}
 
@@ -147,7 +147,7 @@ logit.cap(prices,shares,margins,
   that an outside product exists and uses additional margin
   information to estimate the share of the outside good.
 
-  \code{logit.nests} is identical to \code{logit} except that it includes the `nests'
+  \code{logit.nests} is identical to \code{logit} except that it includes the \sQuote{nests}
   argument which may be used to assign products to different
   nests. Nests are useful because they allow for richer substitution
   patterns between products. Products within the same nest are assumed
@@ -160,7 +160,7 @@ logit.cap(prices,shares,margins,
   by the user.
 
   By default, all non-singleton nests are assumed to have a common value for sigma.
-  This constraint may be relaxed  by setting `constraint' to
+  This constraint may be relaxed  by setting \sQuote{constraint} to
   FALSE. In this case, at least one product margin must be supplied from
   a product within each nest.
 
@@ -171,13 +171,13 @@ logit.cap(prices,shares,margins,
   \code{logit.cap} is identical to  \code{logit}  except that firms are
   playing the Bertrand pricing game under exogenously supplied capacity
   constraints. Unlike \code{logit},  \code{logit.cap} requires users to
-  specify capacity constraints via `capacities' and  the number of
-  potential customers in a market via `mktSize'. `mktSize' is needed to
-  transform `shares' into quantities that must be directly compared to `capacities'.
+  specify capacity constraints via \sQuote{capacities} and  the number of
+  potential customers in a market via \sQuote{mktSize}. \sQuote{mktSize} is needed to
+  transform \sQuote{shares} into quantities that must be directly compared to \sQuote{capacities}.
 
   In \code{logit}, \code{logit.nests} and \code{logit.cap},  if quantity shares sum to 1,
   then one product's mean value is not identified and must be normalized
-  to 0. `normIndex' may be used to specify the index (position) of the
+  to 0. \sQuote{normIndex} may be used to specify the index (position) of the
   product whose mean value is to be normalized. If the sum of revenue shares
   is less than 1, both of these functions assume that the exists a k+1st
   product in the market whose price and mean value are both normalized
@@ -211,20 +211,20 @@ The MIT Press, Cambridge, Mass.
 
 
 Epstein, Roy and Rubinfeld, Daniel (2004).
-``Effects of Mergers Involving Differentiated Products.''
+\dQuote{Effects of Mergers Involving Differentiated Products.}
 
 Werden, Gregory and Froeb, Luke (1994).
-``The Effects of Mergers in
+\dQuote{The Effects of Mergers in
 Differentiated Products Industries: Structural Merger Policy and the
-Logit Model'',
+Logit Model},
 \emph{Journal of Law, Economics, \& Organization}, \bold{10}, pp. 407-426.
 
 Froeb, Luke, Tschantz, Steven  and Phillip Crooke (2003).
-``Bertrand Competition and Capacity Constraints: Mergers Among Parking Lots'',
+\dQuote{Bertrand Competition and Capacity Constraints: Mergers Among Parking Lots},
 \emph{Journal of Econometrics}, \bold{113}, pp. 49-67.
 
 Froeb, Luke and Werden, Greg (1996).
-``Computational Economics and Finance: Modeling and Analysis with Mathematica, Volume 2.''
+\dQuote{Computational Economics and Finance: Modeling and Analysis with Mathematica, Volume 2.}
 In Varian H (ed.), chapter Simulating Mergers among Noncooperative Oligopolists, pp. 177-95.
 Springer-Verlag, New York.
 }
@@ -286,7 +286,7 @@ showClass("Logit")
 ## Show all methods attached to the 'Logit' Class
 showMethods(classes="Logit")
 
-## Show which class have their own 'elast' method
+## Show which classes have their own 'elast' method
 showMethods("elast")
 
 ## Show the method definition for 'elast' and Class 'Logit'

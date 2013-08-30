@@ -64,9 +64,9 @@
 \alias{summary,ANY-method}
 \alias{summary,AIDS-method}
 \alias{summary,Bertrand-method}
-\title{Other Useful 'Bertrand' Methods}
+\title{Other Useful \sQuote{Bertrand} Methods}
 \description{
- Methods defined for the 'Bertrand' class and its child classes.
+ Methods defined for the \sQuote{Bertrand} class and its child classes.
 }
 \usage{
 \S4method{calcShares}{ANY}(object,preMerger=TRUE,revenue=FALSE)
@@ -100,7 +100,7 @@
    \item{subset}{A vector of length k where each element equals TRUE if
      the product indexed by that element should be included in the
      post-merger simulation and FALSE if it should be excluded.Default is a
-     length k vector of TRUE.}  
+     length k vector of TRUE.}
   \item{shares}{If TRUE, returns shares. If FALSE,
     returns levels. Default is TRUE}
   \item{parameters}{If TRUE, reports demand and cost parameters. Default
@@ -119,7 +119,7 @@
 	preMerger=TRUE, revenue=FALSE)}}{
 
     Computes equilibrium product shares assuming that firms are playing a
-    Nash-Bertrand pricing game. `revenue' takes
+    Nash-Bertrand pricing game. \sQuote{revenue} takes
     on a value of TRUE or FALSE, where TRUE calculates revenue shares,
     while FALSE calculates quantity shares.
   }
@@ -130,7 +130,7 @@
   }
   \item{calcPrices}{\code{signature(object=c(Linear,LogLin,AIDS,Logit,LogitNests,LogitCap,CES,CESNests),preMerger=TRUE, ...)}}{
     Computes equilibrium product price levels assuming that firms are playing a
-    Nash-Bertrand pricing game. `...' may be used to feed additional
+    Nash-Bertrand pricing game. \sQuote{...} may be used to feed additional
     options to the optimizer responsible for computing equilibrium
     prices. Typically, \code{\link[BB]{BBsolve}} is used, but see
     the appropriate document for further details.
@@ -157,8 +157,8 @@
    \item{calcMC}{\code{signature(object=Bertrand,preMerger=TRUE)}}{
     Computes either pre- or post-merger marginal costs. Marginal costs
     are assumed to be constant. Post-merger marginal costs are equal to
-    pre-merger marginal costs multiplied by 1+`mcDelta', a length-k
-    vector of marginal cost changes. `mcDelta' will typically be between 0
+    pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a length-k
+    vector of marginal cost changes. \sQuote{mcDelta} will typically be between 0
     and 1.
   }
    \item{calcSlopes}{\code{signature(object=c(Linear,LogLin,AIDS,PCAIDSNests,Logit,LogitNests,LogitCap,CES,CESNests),preMerger=TRUE)}}{
@@ -183,18 +183,18 @@
 
   }
    \item{plot}{\code{signature(x,scale=.1)}}{
-Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. `scale' controls the amount above marginal cost and below equilbrium price that is plotted.
+Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. \sQuote{scale} controls the amount above marginal cost and below equilbrium price that is plotted.
   }
   \item{show}{\code{signature(object=Antitrust)}}{
     Displays the percentage change in prices due to the merger.
   }
   \item{summary}{\code{signature(object=c(Bertrand,AIDS),revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2,...)}}{
     Summarizes the effect of the merger, including price and revenue
-    changes. Setting `revenue' equal to FALSE reports quantities rather
-    than revenues. Setting `shares' to FALSE reports quantities
-    rather than than shares (when possible). Setting `parameters' equal to TRUE reports
-    all demand parameters. `digits' controls the number of significant
-    digits reported in output. `...' allows other arguments to be passed
+    changes. Setting \sQuote{revenue} equal to FALSE reports quantities rather
+    than revenues. Setting \sQuote{shares} to FALSE reports quantities
+    rather than than shares (when possible). Setting \sQuote{parameters} equal to TRUE reports
+    all demand parameters. \sQuote{digits} controls the number of significant
+    digits reported in output. \sQuote{...} allows other arguments to be passed
     to a \code{CV} method.
   }
   \item{upp}{\code{signature(object)}}{

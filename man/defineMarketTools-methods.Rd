@@ -40,28 +40,28 @@ Test described in the 2010 Horizontal Merger Guidelines.
   \item{prodIndex}{A vector of product indices that are to be placed under the control
     of the Hypothetical Monopolist. }
   \item{ssnip}{ A number between 0 and 1 that
-    equals the threshold for a "Small but Significant and
-    Non-transitory Increase in Price" (SSNIP). Default is .05, or 5\%.}
+    equals the threshold for a \dQuote{Small but Significant and
+      Non-transitory Increase in Price} (SSNIP). Default is .05, or 5\%.}
     \item{...}{Pass options to the optimizer used to solve for
       equilibrium prices. }
   }
 
    \details{
      \code{HypoMonTest} is an implementation of the Hypothetical Monopolist Test
-     on the products indexed by `prodIndex' for a `ssnip'. The
+     on the products indexed by \sQuote{prodIndex} for a \sQuote{ssnip}. The
      Hypothetical Monopolist Test determines whether a profit-maximizing
      Hypothetical Monopolist who controls the products indexed by
-     `prodIndex' would increase the price of at least one of the merging
-     parties' products in `prodIndex' by a
+     \sQuote{prodIndex} would increase the price of at least one of the merging
+     parties' products in \sQuote{prodIndex} by a
      small, significant, and non-transitory amount (i.e. impose a SSNIP).
 
       \code{calcPriceDeltaHypoMon} calculates the price changes
       relative to (predicted) pre-merger prices that a
       Hypothetical Monopolist would impose on the products indexed by
-      `prodIndex',
+      \sQuote{prodIndex},
       holding the prices of products not
       controlled by the Hypothetical Monopolist fixed at pre-merger
-      levels. With the exception of "AIDS", the
+      levels. With the exception of \sQuote{AIDS}, the
       \code{calcPriceDeltaHypoMon} for all the classes listed above
        calls \code{calcPricesHypoMon} to compute price
       levels. \code{calcPriceDeltaHypoMon} is in turn called by
@@ -69,26 +69,26 @@ Test described in the 2010 Horizontal Merger Guidelines.
 
       \code{diversionHypoMon} calculates the matrix of revenue
     diversions between all products included in the merger simulation,
-    \emph{irrespective of whether or not they are also included in
-    `prodIndex'}. This matrix is useful for diagnosing whether or not a
-    product not included in 'prodIndex' may have a higher revenue diversion
-    either to or from a product included in `prodIndex'. Note that the "AIDS"
-    \code{diversionHypoMon} method does not contain the `prodIndex'
+    \emph{irrespective} of whether or not they are also included in
+    \sQuote{prodIndex}. This matrix is useful for diagnosing whether or not a
+    product not included in \sQuote{prodIndex} may have a higher revenue diversion
+    either to or from a product included in \sQuote{prodIndex}. Note that the \sQuote{AIDS}
+    \code{diversionHypoMon} method does not contain the \sQuote{prodIndex}
     argument, as AIDS revenue diversions are only a function of demand parameters.
   }
 
     \value{
       \code{HypoMonTest} returns TRUE if a profit-maximizing
       Hypothetical Monopolist who controls the products indexed by
-      `prodIndex' would increase the price of at least one of the merging
-      parties' products in `prodIndex' by a `ssnip', and
-      FALSE otherwise. \code{HypoMonTest} returns an error if `prodIndex'
+      \sQuote{prodIndex} would increase the price of at least one of the merging
+      parties' products in \sQuote{prodIndex} by a \sQuote{ssnip}, and
+      FALSE otherwise. \code{HypoMonTest} returns an error if \sQuote{prodIndex}
       does not contain at least one of the merging parties
       products.
 
       \code{calcPriceDeltaHypoMon} returns a vector of proportional price changes for
       all products placed under the control of the Hypothetical
-      Monopolist (i.e. all products indexed by 'prodIndex').\\
+      Monopolist (i.e. all products indexed by \sQuote{prodIndex}).\\
       \code{calcPricesHypoMon} is identical, but for price levels.
 
       \code{diversionHypoMon} returns a k x k matrix of diversions,

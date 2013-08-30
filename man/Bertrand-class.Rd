@@ -4,9 +4,9 @@
 \alias{Bertrand-class}
 
 
-\title{Class ``Bertrand"}
+\title{Class \dQuote{Bertrand}}
 \description{
-  The ``Bertrand" class is a building block used to create other classes
+  The \dQuote{Bertrand} class is a building block used to create other classes
   in this package. As such, it is most likely to be useful for developers
   who wish to code their own merger calibration/simulation routines.
 
@@ -14,7 +14,7 @@
 }
 \section{Objects from the Class}{
 
-Objects can be created by calls of the form \code{new(``Bertrand", ...)}.
+Objects can be created by calls of the form \code{new("Bertrand", ...)}.
 
 }
 \section{Slots}{
@@ -36,11 +36,11 @@ Objects can be created by calls of the form \code{new(``Bertrand", ...)}.
    Class \code{\linkS4class{Antitrust}}, directly.
  }
 \section{Methods}{
-  Many of the methods described below contain a `preMerger' and
-  `revenue' argument. The `preMerger' takes
+  Many of the methods described below contain a \sQuote{preMerger} and
+  \sQuote{revenue} argument. The \sQuote{preMerger} takes
   on a value of TRUE or FALSE, where TRUE invokes the method using the
   pre-merger values, while FALSE invokes the method using
-  the post-merger ownership structure. The `revenue' argument also takes
+  the post-merger ownership structure. The \sQuote{revenue} argument also takes
   on a value of TRUE or FALSE, where TRUE invokes the method using
   revenues, while FALSE invokes the method using quantities
   \describe{
@@ -56,18 +56,18 @@ Objects can be created by calls of the form \code{new(``Bertrand", ...)}.
       parties' products needed to offset a post-merger price increase.}
     \item{\code{\link{HypoMonTest}}}{\code{signature(object,prodIndex,ssnip=.05,...)}}{
       \code{HypoMonTest} implements the Hypothetical
-      Monopolist Test for a given `ssnip'.}
+      Monopolist Test for a given \sQuote{ssnip}.}
     \item{\code{\link{calcPriceDeltaHypoMon}}}{\code{signature(object,prodIndex,...)}}{
       Compute the proportional difference in product prices between the
-      prices of products in `prodIndex' (i.e. prices set by the
+      prices of products in \sQuote{prodIndex} (i.e. prices set by the
       Hypothetical Monopolist) and prices set in the pre-merger Bertrand
-      equilibrium. `...' may be used to pass arguments to the
+      equilibrium. \sQuote{...} may be used to pass arguments to the
       optimizer.}
     \item{\code{\link{diversionHypoMon}}}{\code{signature(object,prodIndex,...)}}{
       Calculates the matrix of revenue
     diversions between all products included in the merger simulation,
     \emph{irrespective of whether or not they are also included in
-    `prodIndex'}.
+    \sQuote{prodIndex}}.
      }
     \item{\code{hhi}}{\code{signature(object, preMerger= TRUE,revenue=FALSE)}}{ Compute either the pre-merger or
       post-merger Herfindahl-Hirschman Index (HHI) under the assumption
@@ -76,13 +76,13 @@ Objects can be created by calls of the form \code{new(``Bertrand", ...)}.
 	= TRUE)}}{ Computes a k x k matrix of diversion ratios.}
     \item{\code{summary}}{\code{signature(object,revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2)}}{ Summarizes
       the effect of the merger, including price and revenue
-      changes. Setting `revenue' equal to FALSE reports quantities rather
-      than revenues. Setting `shares' to FALSE reports quantities
-      rather than than shares (when possible). Setting `parameters' equal to TRUE reports
-      all demand parameters. `digits' controls the number of significant
+      changes. Setting \sQuote{revenue} equal to FALSE reports quantities rather
+      than revenues. Setting \sQuote{shares} to FALSE reports quantities
+      rather than than shares (when possible). Setting \sQuote{parameters} equal to TRUE reports
+      all demand parameters. \sQuote{digits} controls the number of significant
       digits reported in output.}
      \item{\code{plot}}{\code{signature(x=object,scale=.1}}{
-      Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. `scale' controls the amount above marginal cost and below equilbrium price that is plotted.
+      Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. \sQuote{scale} controls the amount above marginal cost and below equilbrium price that is plotted.
     }
     \item{\code{upp}}{\code{signature(object)}}{
       Calculate the Upwards Pricing Pressure (upp) index.

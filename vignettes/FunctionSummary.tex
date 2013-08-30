@@ -55,8 +55,7 @@ Name & Model& Price & Margin & Diversion & Quantity/ & Capacity& Cite \\
 \begin{table}
 \small
 \begin{center}
-  \caption{Selected \atr{} methods}
-\label{tab:atrmethods}
+
 \begin{tabular}{r|l}
 Name & Description \\ \hline\hline
 
@@ -68,6 +67,8 @@ Name & Description \\ \hline\hline
 \verb@calcPriceDelta@ & Compute \emph{proportional} change in
 equilibrium prices\\
 \verb@calcProducerSurplus@ & Compute pre- and post-merger producer surplus\\
+\verb@calcProducerSurplusGrimTrigger@ & Compare pre- and post-merger surplus from
+colluding to surplus from defecting \\
 \verb@calcShares@ &Compute pre- and post-merger equilibrium shares\\
 \verb@cmcr@& Compute compensating marginal cost reduction (CMCR)\\
 \verb@HypoMonTest@& Use the Hypothetical Monopolist Test to \\
@@ -82,5 +83,9 @@ shares\\
 \verb@plot@ & Plot pre- and post-merger demand, marginal costs, and equilibria \\
 \verb@summary@ & Summarize result\\\hline
 \end{tabular}
+ \caption{Selected \atr{} methods. While all of the above methods are
+   defined for the Bertrand Class and its child classes, not all of
+   these methods are currently defined for the Auction2ndCap class.}
+\label{tab:atrmethods}
 \end{center}
 \end{table}

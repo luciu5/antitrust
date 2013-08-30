@@ -7,9 +7,9 @@
 %\alias{calcShares,Linear-method}
 %\alias{calcSlopes,Linear-method}
 
-\title{Class ``Linear"}
+\title{Class \dQuote{Linear}}
 \description{
-   The ``Linear" class contains all the information needed to
+   The \dQuote{Linear} class contains all the information needed to
   calibrate a Linear
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated Bertrand products pricing game.
@@ -41,7 +41,7 @@ Objects can be created by using the constructor function \code{\link{linear}}.
    Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 2.
  }
  \section{Methods}{
-   For all of methods containing the `preMerger' argument, `preMerger' takes
+   For all of methods containing the \sQuote{preMerger} argument, \sQuote{preMerger} takes
    on a value of TRUE or FALSE, where TRUE invokes the method using the
    pre-merger ownership structure, while FALSE invokes the method using
    the post-merger ownership structure.
@@ -49,7 +49,7 @@ Objects can be created by using the constructor function \code{\link{linear}}.
      \item{\code{calcPrices}}{\code{signature(object, preMerger
 	 = TRUE,...)}}{ Compute either pre-merger or post-merger equilibrium
        prices under the assumptions that consumer demand is Logit and firms play a differentiated product
-       Bertrand Nash pricing game. `...' may be used to change the
+       Bertrand Nash pricing game. \sQuote{...} may be used to change the
        default values of \code{\link{constrOptim}}, the non-linear
        equation solver used to enforce non-negative equilibrium quantities. }
      \item{\code{\link{calcPriceDeltaHypoMon}}}{\code{signature(object,prodIndex,...)}}{ Calculates the price changes that a
@@ -67,7 +67,7 @@ Objects can be created by using the constructor function \code{\link{linear}}.
        slopes and intercept from a Linear demand system. Assumes that firms are currently at equilibrium  in a
        differentiated product Bertrand Nash pricing game.}
      \item{\code{\link{CV}}}{\code{signature(object =
-	 ``Linear")}}{ Calculate the amount of money a representative consumer would need to
+	 "Linear")}}{ Calculate the amount of money a representative consumer would need to
        be paid to be just as well off as they were before the merger.}
      \item{\code{\link{elast}}}{\code{signature(object, preMerger
 	 = TRUE)}}{ Computes a k x k matrix of own and cross-price elasticities.}

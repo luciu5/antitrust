@@ -44,25 +44,25 @@ upp.bertrand(prices, margins, diversions, ownerPre,
   \item{labels}{A length-k vector of product labels.}
 }
 
-\details{All `prices' elements must be positive, all `margins'
-  elements must be between 0 and 1, and all `diversions' elements must be
+\details{All \sQuote{prices} elements must be positive, all \sQuote{margins}
+  elements must be between 0 and 1, and all \sQuote{diversions} elements must be
   between 0 and 1 in absolute value. In
-  addition, off-diagonal elements (i,j) of `diversions'
+  addition, off-diagonal elements (i,j) of \sQuote{diversions}
   must equal an estimate of the diversion ratio from product i to product j
   (i.e. the estimated fraction of i's sales that go to j due to a small
-  increase in i's price). Also, `diversions'
+  increase in i's price). Also, \sQuote{diversions}
   elements are positive if i and j are substitutes and negative if i and j are
   complements.
 
-  `ownerPre' will typically be a vector whose values equal 1 if a product is produced
+  \sQuote{ownerPre} will typically be a vector whose values equal 1 if a product is produced
   by firm 1 and 0 otherwise, though other values including firm name are
-  acceptable.  Optionally, `ownerPre' may be set equal
+  acceptable.  Optionally, \sQuote{ownerPre} may be set equal
   to a matrix of the merging firms pre-merger ownership
   shares. These ownership shares must be between 0 and 1.
 
-  `ownerPost'  is an optional argument that should only be specified if
+  \sQuote{ownerPost}  is an optional argument that should only be specified if
   one party to the acquisition is assuming partial control of the
-  other party's assets.   `ownerPost' elements must be between 0 and
+  other party's assets.   \sQuote{ownerPost} elements must be between 0 and
   1.
 }
 
@@ -79,17 +79,17 @@ upp.bertrand(prices, margins, diversions, ownerPre,
 
 \references{
 Farrell, Joseph and Shapiro, Carl (2010).
-``Antitrust Evaluation of Horizontal Mergers: An Economic Alternative to
-Market Definition.''
+\dQuote{Antitrust Evaluation of Horizontal Mergers: An Economic Alternative to
+  Market Definition.}
 \emph{The B.E. Journal of Theoretical Economics}, \bold{10}(1), pp. 1-39.
 
 Jaffe, Sonia and Weyl Eric (2012).
-``The First-Order Approach to Merger Analysis.''
+\dQuote{The First-Order Approach to Merger Analysis.}
 \emph{SSRN eLibrary}
 
 Werden, Gregory (1996).
-``A Robust Test for Consumer Welfare Enhancing Mergers Among Sellers
-of Differentiated Products.''
+\dQuote{A Robust Test for Consumer Welfare Enhancing Mergers Among Sellers
+  of Differentiated Products.}
 \emph{The Journal of Industrial Economics}, \bold{44}(4), pp. 409-413.
 
 }

@@ -66,7 +66,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
   \item{knownElastIndex}{An integer equal to the position of the
-    `knownElast' product in the `shares' vector. Default is 1, which
+    \sQuote{knownElast} product in the \sQuote{shares} vector. Default is 1, which
     assumes that the own-price elasticity of the first product is
     known. }
   \item{nests}{A length k vector identifying which nest a product
@@ -113,7 +113,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
 
   \code{aids} assumes that diversion between the products
   in the market occurs according to revenue share. This assumption may be relaxed
-  by setting `diversions' equal to a k x k matrix of diversion
+  by setting \sQuote{diversions} equal to a k x k matrix of diversion
   ratios. The diagonal of this matrix must equal -1, the off-diagonal
   elements must be between 0 and 1, and the rows must sum to 1.
 
@@ -128,7 +128,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   \code{pcaids.nests} extends \code{pcaids} by allowing products
   to be grouped into nests. Although products within the same nest still
   have the independence of irrelevant alternatives (IIA) property,
-  products in different nests do not. Note that the `diversions'
+  products in different nests do not. Note that the \sQuote{diversions}
   argument is absent from \code{pcaids.nests}.
 
   \code{pcaids.nests}  assumes that the share diversion between nests is symmetric
@@ -143,8 +143,8 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
  The nesting parameters are constrained to be between 0 and
  1. Therefore, one way to test the validity of the nesting structure is
  to check whether the nesting parameters are between 0 and 1. The value
- of the nesting parameters may be obtained from calling either the `summary' or
- `getNestsParms' functions.
+ of the nesting parameters may be obtained from calling either the \sQuote{summary} or
+ \sQuote{getNestsParms} functions.
 
 
 
@@ -167,12 +167,12 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
 
 \references{
   Epstein, Roy and  Rubinfeld, Daniel (2004).
-``Merger Simulation with Brand-Level Margin Data: Extending PCAIDS
-with Nests.''
+\dQuote{Merger Simulation with Brand-Level Margin Data: Extending PCAIDS
+  with Nests.}
 \emph{The B.E. Journal of Economic Analysis \& Policy}, \bold{advances.4}(1), pp. 2.
 
   Epstein, Roy and Rubinfeld, Daniel (2004).
-  ``Effects of Mergers Involving Differentiated Products.''
+  \dQuote{Effects of Mergers Involving Differentiated Products.}
 }
 
 
@@ -289,7 +289,7 @@ HypoMonTest(result.pcaids,prodIndex=1:2)
 ## Nested PCAIDS: in addition to the PCAIDS information requirements,
 ##                users must supply the nesting structure as well as margin infromation.
 
-nests <- c('H','L','L') # product A assigned to nest H, products B and C assigned to net L
+nests <- c('H','L','L') # product A assigned to nest H, products B and C assigned to nest L
 
 
 result.pcaids.nests <- pcaids.nests(shares,knownElast,mktElast,margins=margins,nests=nests,ownerPre=ownerPre,ownerPost=ownerPost,labels=ownerPre)

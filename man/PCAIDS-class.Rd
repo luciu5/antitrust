@@ -5,9 +5,9 @@
 %\alias{calcSlopes,PCAIDS-method}
 
 
-\title{Class ``PCAIDS"}
+\title{Class \dQuote{PCAIDS}}
 \description{
-  The ``PCAIDS" class contains all the information needed to
+  The \dQuote{PCAIDS} class contains all the information needed to
   calibrate a PCAIDS
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated Bertrand products pricing game.
@@ -24,7 +24,7 @@ Objects can be created by using the constructor \code{\link{pcaids}}.
     \item{\code{knownElast}:}{A negative number equal to the pre-merger own-price
       elasticity for any of the k products.}
     \item{\code{knownElastIndex}:}{An integer equal to the position of the
-      `knownElast' product in the `shares' vector.}
+      `knownElast' product in the \sQuote{shares} vector.}
 
   }
 }

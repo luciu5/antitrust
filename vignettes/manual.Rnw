@@ -158,12 +158,12 @@ illustrating how to use the function.
 Much of \atr{}'s functionality is built around the Bertrand pricing
 game. This version of the game assumes that firms producing multiple
 differentiated products with distinct, constant, marginal costs
-simultaneously set their product's prices to maximize their
+simultaneously set their products' prices to maximize their
 profits. In this model, prices are \emph{strategic complements} in the sense that increasing the price of
 one product causes some customers to switch to other products, raising
-the quantities sold and therefore the prices of these other
+the quantities sold and therefore the profit-maximizing prices of these other
 products. Ultimately, it is the magnitude of these lost sales that, at
-the margin, dissuades firms from raising their prices.
+the margin, dissuades firms from raising their prices further .
 
 Mergers are modeled by assuming that the merging parties'
 products are placed under common ownership, which, if the
@@ -176,12 +176,12 @@ production, the prices of all of the merging parties' products will
 increase, and the price of all other products in the market will not
 decrease.
 
-Currently, this Bertrand model does not allow firms to add or
+Currently, this version of the Bertrand model does not allow firms to add or
 reposition products, or allow firms to engage in some forms of price
 discrimination.\footnote{In particular, this version of the Bertrand
   model does not accommodate non-linear pricing, such as is used in 2nd
   or 3rd degree price discrimination.}
-\section{The Game}
+\section{The Game\label{sec:BertrandGame}}
 
 
 Suppose that there are $K$ firms in a
@@ -1192,7 +1192,7 @@ increase. See the \verb@cmcr@ help page for further details.
 By default, the Bertrand model calculates a merger's effects
 under the assumption that the acquisition does not change the set of
 products available to consumers. A merger's effects, however, may
-differ if the merger induces either the merging parties' or another
+differ if the merger induces either the merging parties or another
 market participant to eliminate some products from their portfolio.
 
 To accommodate the possibility that some products may be removed from
@@ -1332,11 +1332,10 @@ the \verb@sim@ help page for further details.
 
 
 \section{Gotchas}
-While in many instances, \atr{} functions produce reasonable
-predictions, we have noticed that at times \atr{} functions will
-either fail to produce a result, or produces results that are not
-intuitive. Here, we highlight some instances where \atr{} produces
-seemingly unintuitive results, and explain the likely cause of this behavior.
+
+This section alerts users to some instances where \atr{} may produce
+seemingly surprising results, and provides some potential explanations
+for these behaviors.
 
 \subsection{Market Definition}
 As discussed above, \verb@HypoMon@ method is a post-simulation
@@ -1370,20 +1369,20 @@ As discussed earlier, \verb@aids@ attempts to calibrate $\epsilon$, the
 market elasticity parameter, by using the FOCs, LA-AIDS demand, and
 additional margins. For some combinations of margins and shares,
 however, this procedure can yield a very large market elasticity estimate, which
-in turn will yield small price effects from the merger. This problem
+in turn will yield small price effects from the merger. This issue
 appears to occur because the set of FOCs that are being used to
-calibrate this parameter are nearly co-linear. This co-linearity problem
+calibrate this parameter are nearly co-linear. Issues arising from co-linearity
 can be often be remedied by supplying additional margin
 information, supplying margin information for products with
 disparate market shares, or supplying the market elasticity parameter directly.
 
 \chapter{Auction Models}
-Currently \atr{} supports calibrating model parameters and simulating the effects of a merger in a
+The current auction capabilities of \atr{} support calibrating model parameters and simulating the effects of a merger in a
 2nd price procurement auction where the buyer sets a reserve price and
 capacity constrained bidders offer  a single unit of a homogeneous
 product\footnote{See \cite{WaehrP2003} for further details.}.
 
-\section{The Game \label{sec:BertrandGame}}
+\section{The Game}
 Suppose that a buyer is interested in either purchasing a single unit of a
 homogeneous product from one of the $K$ firms who supply the product,
 or supplying the product herself. Although the product is homogeneous,
@@ -1489,14 +1488,16 @@ functional form are the
     \begin{table}[htps]
       \centering
       \begin{tabular}{cccccc}
-        Name        & Bounds                         & Location  & Scale & Shape & \# Params\\ \hline\hline
+        Name        & Bounds                         & Location  & Scale & Shape & \# Params\\
+                    &                                & Parameter & Parameter & Parameter & \\ \hline\hline
         Uniform     & $[\underline{c},\overline{c}]$ &           &       &       &    2     \\
         Exponential & $[0,\infty)$                   &           &   X   &       &    1     \\
         Weibull     & $[0,\infty)$                   &           &   X   &   X   &    2     \\
      Gumbel         & $(-\infty,\infty)$             &    X      &   X   &       &    2     \\
      Frechet        & $[Location,\infty)$            &    X      &   X   &   X   &    3     \\\hline
 \end{tabular}
-      \caption{Cost Distributions}
+      \caption{Five Cost Distributions that satisfy this model's
+        assumptions. An `X' indicates a parameter that must be calibrated.}
       \label{tab:CostDistributions}
     \end{table}
 
@@ -1533,7 +1534,7 @@ of distribution parameters plus the reservation price (if not supplied).
 The auction model's \verb@summary@ method may be used to summarize the results of a
 merger between two firms for a given cost distribution. By default, the \verb@summary@ method
 reports pre- and post-merger equilibrium prices and \emph{quantity}
-shares, conditional on a firm winning the auction. The unconditional
+shares, conditional on \emph{some} firm winning the auction. The unconditional
 pre- and post-merger equilibrium prices and quantities may be reported by setting  \verb@summary@'s
 `exAnte' argument equal to TRUE. Calibrated distribution parameters may be reported by setting
 \verb@summary@'s `parameters' argument equal to TRUE. The number of significant digits can be
@@ -1541,7 +1542,7 @@ altered using the `digits' argument.
 \subsection{Simulating Price Effects With Efficiencies}
 By default,  \verb@auction2nd.cap@ assumes that a merger places the
 parties' capacities under common ownership and that the capacities of
-all firms in the market are unaffected by the acquisition. Both of these
+all other firms in the market are unaffected by the acquisition. Both of these
 assumptions may be modified with the `mcDelta' argument, which allows users to specify the proportional changes in each firm's
 capacities due to the merger.
 
@@ -1677,7 +1678,7 @@ one another repeatedly -- either across different product or geographic
 markets, or over time -- firms may find a way to reach an agreement that reduces the
 extent to which they compete with one another. This agreement may be
 \emph{tacit}  in the sense that a firm can coordinate its behavior
-with that of its rivals by first unilaterally adopting a strategy that
+with that of its rivals by for example, first unilaterally adopting a strategy that
 would be mutually beneficial to itself and its rivals, and then
 observing whether its rivals subsequently choose to either \emph{cooperate}
 by adopting a mutually beneficial strategy or \emph{defect} by adopting a
@@ -1688,8 +1689,8 @@ can influence a firm's decision to collude including:
 
 \begin{itemize}
 \item how willing a firm is to sacrifice short term for long term gain,
-\item the ease in which a firm can implement a mutually beneficial strategy,
-\item the ease in which a firm can observe its rivals' response,
+\item the ease with which a firm can implement a mutually beneficial strategy,
+\item the ease with which a firm can observe its rivals' response,
 \item the costs associated with punishing a defecting rival.
 \end{itemize}
 
@@ -1700,8 +1701,8 @@ facilitate collusion if a firm with an incentive to collude acquires a
 acquiring firm makes it easier to sustain cooperation amongst some of the
 remaining firms. On the other hand, a horizontal merger can retard
 collusion if after the acquisition, a firm believes that it can make
-greater profits by not cooperating with  some of the remaining
-firms. The goal of this model is to provide one method for determining
+greater surplus by not cooperating with  some of the remaining
+firms. The goal of this model is to provide one method for exploring
 which of these conflicting incentives ultimately prevails.
 
 \section{The Game}
@@ -1709,7 +1710,7 @@ which of these conflicting incentives ultimately prevails.
 Suppose that there are $K$ firms in a
 market, and that each of the $k \in K$ firms produces $n_k$
 products.\footnote{Throughout, we abuse the notation slightly by
-  treating variables like $K$ as both the set of firms as well as the
+  treating variables like $K$ and $n_k$ as both the set of firms as well as the
   number of firms.} Let  $n=\sum\limits_{k\in K}n_k$ denote the number of products sold
 by all $K$ firms. These firms are playing an infinitely repeated
 supergame, where in each period of the game the $K$ firms play the
@@ -1717,28 +1718,37 @@ Bertrand pricing game described in section
 \ref{sec:BertrandGame}. Mathematically, firm $k$ solves:
 
 \begin{align*}
-  \max_{\{p_{kt}\}_{t=1}^{\infty}} &\sum_{t=1}^{\infty}\tau_k^{t-1}\Pi^b_{kt},\\
+  \max_{\{p_{kt}\}_{t=1}^{\infty}} &\sum_{t=1}^{\infty}\sum_{i=1}^{n} \tau_i^{t-1}\Pi^b_{ikt},\\
   \intertext{where $p_{kt}$ is the vector of prices set on all of
-    $k$'s products in period $t$; $0<\tau_k<1$ is a firm-specific and
-    time-invariant discount factor reflecting the rate at which $k$ is
-  willing to forgo earning profits today for future profits; and
-  $\Pi^b_{kt}$  are the profits that firm $k$ earns from the Bertrand stage game in
-  time period $t$. The latter can be expressed mathematically as}
-\Pi^b_{kt}&=\sum_{i=1}^{n}\omega_{ik}(p_{it} - c_i)q_{it},\\
+$k$'s products in period $t$; $0<\tau_i<1$ is a product-specific and
+time-invariant discount factor reflecting the rate at which an
+owner of $i$ is willing to forgo earning surplus today on $i$ for future
+surplus; and $\Pi^b_{ikt}$ is the surplus earned by firm $k$ on product $i$ in period $t$. Mathematically,}
+  \Pi^b_{ikt}&= \omega_{ik}(p_{it} - c_i)q_{it},
 \end{align*}
-where, as in the Bertrand Model, $\omega_{ik}$ is the share of product $i$'s profits earned by
-  firm $k$ absent collusion, so that $\sum\limits_{k\in K} \omega_{ik}\le 1$.
-  $q_{it}$, the quantity sold of product $i$ at time $t$,  is assumed to
+
+where  as in the Bertrand Model, $\omega_{ik}$ is the share of product $i$'s surplus earned by
+firm $k$ absent collusion, so that $\sum\limits_{k\in K} \omega_{ik}\le 1$.
+$q_{it}$, the quantity sold of product $i$ at time $t$,  is assumed to
 be a twice differentiable function of \emph{all} product prices. Note
 that $\omega_{ik}$ and marginal cost $c_i$ are assumed to be constant
 over time.
-Further, suppose that some subset of firms $Z\subseteq K$ wish to collude by
-setting prices to jointly maximize profits. We assume that firms within
+
+
+Further, suppose that some subset of firms $Z\subseteq K$ wish to
+collude such that each firm $z\in Z$ selects a subset $J_z \subseteq n_z$ of their
+products over which to jointly maximize surplus. We assume that firms within
 this $Z$ coalition cannot make side-payments to one another. In other
-words, firms inside the coalition only earn profits on the products
-that they produce.  Let $\Pi^c_{rt}$ denote the profits that firm $r\in Z$ earns
-from selling its products at the jointly surplus maximizing price in
-period $t$.
+words, firms inside the coalition only earn surplus on the products
+that they produce.\footnote{Future versions of \atr{} may extend this model to
+  allow for side payments.}  Let $\Pi^c_{jzt}$ denote the surplus that
+firm $z\in Z$ earns from selling product $j\in J_z$ at the jointly surplus maximizing price in
+period $t$, and let $\Pi^c_{lzt}$ denote the surplus that firm $z$
+earns from product $l\not\in J_z$ in period $t$. Note that for a given
+product $l\not\in J_z$, the profits that $z$ earns on $l$ under
+collusion ($\Pi^c_{lzt}$) will typically differ from the profits that $z$ earns
+under Bertrand reversion ($\Pi^b_{lzt}$), even though in both
+instances $l$ is not included in the coalition.
 
    %%    Mathematically, a firm $r\in Z$ sets prices
 %% to solve:
@@ -1748,7 +1758,7 @@ period $t$.
 %%   \intertext{where $p_{rt}$ is the vector of prices set on all of
 %%     $r$'s products in period $t$, $0<\tau_r<1$ is firm $r$'s discount
 %%     factor, and
-%%     $\Pi^z_{rt}$  are the \emph{coalition} profits on firm $r$'s
+%%     $\Pi^z_{rt}$  are the \emph{coalition} surplus on firm $r$'s
 %%     products earned in
 %%     time period $t$. The latter can be expressed mathematically as}
 %%   \Pi^z_{rt}&=\sum_{i=1}^{n}\omega^\ast_{ir}(p_{it} - c_i)q_{it},\\
@@ -1758,7 +1768,7 @@ period $t$.
 %%     \intertext{It is important to emphasize that while firms are
 %%       assumed to set
 %%       prices so as to maximize the surplus of all firms in $Z$, they
-%%       only earn profits on products for which they (partially)
+%%       only earn surplus on products for which they (partially)
 %%       own.}
 %% \end{align*}
 
@@ -1769,71 +1779,93 @@ until they observe a single defection from any other firm in $Z$, and then
 ``punishes'' by forever reverting the prices of its products back to those
 from the Bertrand game.
 
-All that remains is to describe a firm's profits from defecting from
-the coalition. It is important to note that under the assumption that
-all firms are playing Grim Trigger strategies,  i) only a single
-firm will be able to earn the defector's profits, and ii) that firm
-will only be able to earn the defector's profits for a single period.
+All that remains is to describe a firm's surplus from defecting from
+the coalition. It is important to note that under the assumptions that
+all firms are playing Grim Trigger strategies \emph{and} at most one
+firm can defect in a turn,  i) only a single
+firm will be able to earn the defector's surplus, and ii) that firm
+will only be able to earn the defector's surplus for a single period.
 Here, we assume that when a firm defects it sets the
-prices of its products to maximize only the profits of its products,
+prices of its products to maximize only the surplus of its products,
 conditional on every other firm in $Z$ setting prices to maximize the
-coalition's profits. Let  $\Pi^d_{rt}$ denote the profits that firm $r
-\in Z$ earns in period $t$ from setting its products' prices to only
+coalition's surplus. Let  $\Pi^d_{jzt}$ denote the surplus that firm $z
+\in Z$ earns on product $j$ in period $t$ from setting its products' prices to only
 maximize the surplus of its products, subject to the other firms
 in $Z$ setting  prices to maximize joint surplus.
 
-\subsection{The Incentive to Collude}
-Firm $k$ has an incentive to collude with the other firms in the $Z$
+\subsection{The Incentive to Collude Under Grim Trigger}
+In this model, Firm $z$ has an incentive to collude with the other firms in the $Z$
 coalition only if the discounted value of the surplus it gains from colluding is greater than
 the discounted value of the surplus it receives from defecting from coalition prices for a single
 period, followed by the discounted value of surplus it receives from all firms earning
-profits from the Bertrand game for all subsequent
+surplus from the Bertrand game for all subsequent
 periods. Mathematically, this condition can be written as:
 
 \begin{align}
-  \nonumber\sum_{t=1}^{\infty}\tau_k^{t-1}\Pi^c_{kt} &\ge \Pi^d_{kt} + \sum_{t=2}^{\infty}\tau_k^{t-1}\Pi^b_{kt}\\
-  \intertext{Since we are assuming that firms cannot enter or exit, or
-    add or remove products, $\Pi^c_{kt}$, $\Pi^d_{kt}$, and $\Pi^b_{kt}$ are
-    constant over time and therefore may be rewritten as}
-  \frac{\Pi^c_{kt}}{1-\tau_k} &\ge \Pi^d_{kt} +  \frac{\tau_k}{1-\tau_k}\Pi^b_{kt}\label{eqn:IC}
+  \nonumber\underbrace{\sum_{t=1}^{\infty}\sum_{j=1}^{n} \tau_j^{t-1}\Pi^b_{jzt}}_\text{collusion
+    surplus} &\ge \underbrace{\sum_{j=1}^{n}\Pi^d_{jzt}}_\text{defection surplus} +
+  \underbrace{\sum_{t=2}^{\infty}\sum_{j=1}^{n}\tau_j^{t-1}\Pi^b_{jzt}}_\text{reversion
+    surplus}\label{eqn:IC}\\
+  \intertext{Since we are assuming that outside of the  merger firms cannot enter or exit, or
+    add or remove products, equilibrium prices and quantities are the
+    same across all periods, and the above simplifies to}
+  \sum_{j=1}^n\frac{\Pi^c_{jzt}}{1-\tau_j}&\ge \sum_{j=1}^n\Pi^d_{jzt}
+  + \sum_{j=1}^n\frac{\tau_j\Pi^b_{jzt}}{1-\tau_j}
 \end{align}
 
-\section{Determining Whether a Firm has an Incentive to Collude  (\textbf{experimental})}
+\section{Comparing Incentives to Collude and Defect  Under Grim
+  Trigger (\textbf{experimental})}
 
 Inequality \eqref{eqn:IC} indicates that five pieces of information must be
-identified in order to determine if firm $r\in Z$ has an incentive to
-collude under the model here: the set of firms involved in the $Z$ coalition,
-a firm's discount rate ($\tau_r$), the surplus a firm earns from
-colluding ($\Pi^c_{rt}$), the surplus a firm earns upon defecting from
-the $Z$ coalition ($\Pi^d_{rt}$), and the surplus a firm earns after
-all firms have ``punished'' by reverting to Bertrand pricing $\Pi^b_{rt}$.
+identified in order to determine if firm $z\in Z$ has an incentive to
+collude under the model here: the set of products involved in the $Z$ coalition,
+the discount rates $\tau_j$ for all products produced by firms with at least one
+product in the coalition (i.e for each $j\in n_z$); the surplus firm
+$z$ earns from each product  $j\in n_z$ from
+colluding ($\Pi^c_{jzt}$) in period $t$, the surplus firm $z$ earns
+from each product  $j\in n_z$ upon defecting from
+the $Z$ coalition ($\Pi^d_{jzt}$)  in period $t$, and the preiod $t$ surplus a firm earns from
+each product  $j\in n_z$ after
+all firms have ``punished'' by reverting to Bertrand pricing $\Pi^b_{jzt}$.
 
 
 The \verb@calcProducerSurplusGrimTrigger@ method assumes that the
 user has supplied the indices for all products involved in the coalition
-to the `coalition' argument, as well as the discount rates $\tau_r$ to
-the `discount' argument. This method then computes $\Pi^c_{rt}$,
-$\Pi^d_{rt}$, and $\Pi^b_{rt}$ for each firm and then returns a data
+to the `coalition' argument, as well as the discount rates $\tau_j$ to
+the `discount' argument. This method then computes `preMerger' product
+profits $\Pi^c_{jzt}$, $\Pi^d_{jzt}$, and  $\Pi^b_{jzt}$ for
+products owned by firms participating in the `coalition'
+and then returns a data
 frame containing the inputted discount rates, these surplus
 calculations, and a field labeled ``IC'' which equals TRUE if
-inequality \eqref{eqn:IC} holds and FALSE otherwise.
+inequality \eqref{eqn:IC} holds and FALSE otherwise. Note that ``IC''
+is a firm-level calculation whose value will be replicated across all
+products owned by the same firm.
+
+\verb@calcProducerSurplusGrimTrigger@ is designed to be run twice: once
+with `preMerger' equal TRUE in order to evaluate whether, under this
+model's assumptions members of the specified coalition have an
+incentive to collude; and a second time with `preMerger' equal to
+FALSE in order to evaluate how a merger affects these
+incentives.
+
 
 \part{Under The Hood}
 \chapter{Getting Help}
 
-A man page has been written for each class, method, and function
+A manual page has been written for each class, method, and function
 contained in \atr . These pages describe the relevant object, its
 inputs and outputs, and typically contain at least one example of how
 it is used. See the \verb@help@ function for assistance on how to
 access these pages.
 
-In addition to the man pages, \rlan's S4 system includes a number of
+In addition to the manual pages, \rlan's S4 system includes a number of
 ways to investigate the properties of the classes and methods
 contained in \atr. To learn more about a particular instance of an
 \atr class, use the \texttt{str} command. To learn more about the class itself
 (e.g. class slots, who its parent and child classes are) use the
 \texttt{showClass} function. To show which methods are defined for a
-class, or which class have a particular method, use the \texttt{showMethods} function. To see how a method has
+class, or which classes have a particular method, use the \texttt{showMethods} function. To see how a method has
 been defined, use the \texttt{getMethod} function.
 
 \chapter{Modifying and Extending \atr{}}

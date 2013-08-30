@@ -8,9 +8,9 @@
 %%\alias{CV,LogitNests-method}
 %%\alias{elast,LogitNests-method}
 
-\title{Class ``LogitNestsALM"}
+\title{Class \dQuote{LogitNestsALM}}
 \description{
-  The ``LogitNestsALM" class contains all the information needed to
+  The \dQuote{LogitNestsALM} class contains all the information needed to
   calibrate a nested Logit
   demand system under the assumption that the share of the outside
   product is not known. Once the model parameters have been calibrated,
@@ -31,7 +31,7 @@ Objects can be created by using the constructor function \code{\link{logit.nests
 
 }
 \section{Methods}{
-    For all of methods containing the `preMerger' argument, `preMerger' takes
+    For all of methods containing the \sQuote{preMerger} argument, \sQuote{preMerger} takes
   on a value of TRUE or FALSE, where TRUE invokes the method using the
   pre-merger ownership structure, while FALSE invokes the method using
   the post-merger ownership structure.
