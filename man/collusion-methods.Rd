@@ -37,7 +37,7 @@ affects firms' incentives to collude.
   assumption that firms are playing
   an N-player iterated Prisoner's Dilemma where in each period a
   coalition of firms decides whether to \emph{cooperate} with
-  one another by setting the joint profit maximizing price on some
+  one another by setting the joint surplus maximizing price on some
   \sQuote{coalition} of their products, or \emph{defect} from the coalition by setting all
   of their products'
   prices to optimally undercut the prices of the coalition's
@@ -45,9 +45,9 @@ affects firms' incentives to collude.
   to play Grim Trigger strategies where each firm cooperates in the
   current period so long as \emph{every} firm in the coalition cooperated last period and
   defects otherwise. product level \sQuote{discount} rates are then employed to determine
-  whether a firm's discounted profits from remaining in the coalition are greater than
-  its profits from optimally undercutting the coalition prices' for one
-  period plus its discounted profits when all firms set Nash-Bertrand prices in
+  whether a firm's discounted surplus from remaining in the coalition are greater than
+  its surplus from optimally undercutting the coalition prices' for one
+  period plus its discounted surplus when all firms set Nash-Bertrand prices in
   all subsequent periods.
 
 }
@@ -65,7 +65,7 @@ affects firms' incentives to collude.
     \item{IC:}{TRUE if the discounted producer surplus from coordinating
     across all firm products are
       greater than the surplus from defecting across all firm products for one period and receiving
-      discounted Bertrand profits for all subsequent periods under Grim Trigger.}
+      discounted Bertrand surplus for all subsequent periods under Grim Trigger.}
   }
 
 }

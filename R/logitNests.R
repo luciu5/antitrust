@@ -28,7 +28,7 @@ setClass(
 
              nNestParm <- nNestParm - sum(isSingleton) #singleton nests are not identified
 
-             if(nNestParm==1) stop("'logit.nests', 'logit.nests.alm' may not be used for non-nested problems or problems with only singleton nests. Use 'logit', 'logit.alm' instead")
+             if(identical(nNestParm,1)) stop("'logit.nests', 'logit.nests.alm' may not be used for non-nested problems or problems with only singleton nests. Use 'logit', 'logit.alm' instead")
 
              if(nprods != length(object@nests)){
                  stop("'nests' length must equal the number of products")}
@@ -66,8 +66,8 @@ setMethod(
 
               margins      <-  object@margins
 
-              ## identify which products have enough margin
-              ## information to impute Bertrand margins
+              ## identify which products have enough margin information
+              ##  to impute Bertrand margins
               isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
               isMargin[ownerPre==0]=0
               isMargin    <- !is.na(rowSums(isMargin))

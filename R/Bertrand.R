@@ -751,7 +751,7 @@ setMethod(
 
               isParty <- rowSums( abs(object@ownerPost - ownerPre) )>0 #identify which products belong to the merging parties
 
-              if(length(intersect(which(isParty),prodIndex))==0){
+              if(identical(length(intersect(which(isParty),prodIndex)),0)){
                   stop("'prodIndex' does not contain any of the merging parties' products. Add at least one of the following indices: ",
                        paste(which(isParty),collapse=","))
                   }

@@ -29,7 +29,7 @@ setClass(
 
              if(any(object@mktSize*object@shares > object@capacities)){stop("utilization is greater than capacity")}
 
-             if(all(object@mktSize*object@shares == object@capacities)){stop("utilization cannot equal capacity for all products")}
+             if(identical(object@mktSize*object@shares,object@capacities)){stop("utilization cannot equal capacity for all products")}
 
              if(any(is.na(object@margins[object@mktSize*object@shares == object@capacities]))){
                  stop("'margins' cannot equal NA for capacity constrained products")

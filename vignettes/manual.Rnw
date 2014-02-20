@@ -1,3 +1,5 @@
+%\VignetteIndexEntry{Manual}
+
 \documentclass[11pt,numbers=noenddot,pointlessnumbers]{scrreprt}
 \usepackage[letterpaper]{geometry}
 \usepackage{natbib}
@@ -37,7 +39,6 @@ and
 \href{mailto:michael.sandfort@usdoj.gov}{michael.sandfort@usdoj.gov}.}\and
 Michael Sandfort\samethanks}
 
-%\VignetteIndexEntry{manual}
 
 \begin{document}
 \SweaveOpts{concordance=TRUE}

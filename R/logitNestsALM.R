@@ -7,7 +7,7 @@ setClass(
           validity=function(object){
 
 
-             if(object@shareInside!=1){
+              if(!identical(object@shareInside,1)){
                  stop(" sum of 'shares' must equal 1")
              }
 

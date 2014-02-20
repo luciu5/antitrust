@@ -112,8 +112,8 @@ setMethod(
               nprods <- length(shares)
               revenues <- shares * prices
 
-              ## identify which products have enough margin
-              ## information to impute Bertrand margins
+              ## identify which products have enough margin information
+              ##  to impute Bertrand margins
               isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
               isMargin[ownerPre==0]=0
               isMargin    <- !is.na(rowSums(isMargin))

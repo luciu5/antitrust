@@ -67,7 +67,7 @@ setClass(
              }
 
 
-             if( cdf=="punif"){
+             if( identical(cdf,"punif")){
                  if(length(parmsStart)!=2){
                      if(is.na(object@reserve)){stop("parmsStart must be a length 3 vector whose first element is the starting value for 'reserve'")}
                      else{stop("For the Uniform distribution, 'parmsStart' must be a numeric vector of length 2")}
@@ -77,7 +77,7 @@ setClass(
                 }
              }
 
-             else if( cdf=="pexp"){
+             else if( identical(cdf,"pexp")){
                  if(length(parmsStart)!=1){
                      if(is.na(object@reserve)){stop("parmsStart must be a length 2 vector whose first element is the starting value for 'reserve'")}
                      else{stop("For the Exponential distribution, 'parmsStart' must be a numeric vector of length 1")}
@@ -88,7 +88,7 @@ setClass(
                  }
              }
 
-             else if( cdf=="pweibull"){
+             else if( identical(cdf,"pweibull")){
                    if(length(parmsStart)!=2){
                        if(is.na(object@reserve)){stop("parmsStart must be a length 3 vector whose first element is the starting value for 'reserve'")}
                        else{stop("For the Weibull distribution, 'parmsStart' must be a numeric vector of length 2")}
@@ -100,7 +100,7 @@ setClass(
                    }
                }
 
-             else if( cdf=="pgumbel"){
+             else if( identical(cdf,"pgumbel")){
                  if(length(parmsStart)!=2){
                      if(is.na(object@reserve)){stop("parmsStart must be a length 3 vector whose first element is the starting value for 'reserve'")}
                      else{stop("For the Gumbel distribution, 'parmsStart' must be a numeric vector of length 2")}
@@ -110,7 +110,7 @@ setClass(
                           2 + is.na(object@reserve)," whose final element must be greater than 0")
                  }
              }
-             else if( cdf=="pfrechet"){
+             else if( identical(cdf,"pfrechet")){
                 if(length(parmsStart)!=3){
                     if(is.na(object@reserve)){stop("parmsStart must be a length 4 vector whose first element is the starting value for 'reserve'")}
                     else{stop("For the Frechet distribution, 'parmsStart' must be a numeric vector of length 3")}
@@ -196,9 +196,9 @@ setMethod(
             ## For uniform, frechet,  distribution bounds are a function
             ## of distribution parameters
 
-            if(cdf == "punif"){
+            if(identical(cdf,"punif")){
                 object@sellerCostBounds <- parmsStart }
-           else if(cdf == "pfrechet"){
+            else if(identical(cdf,"pfrechet")){
                object@sellerCostBounds[1] <- parmsStart[1] }
 
 
@@ -220,7 +220,7 @@ setMethod(
         }
 
 
-    if(cdf == "punif") {
+        if(identical(cdf,"punif")) {
 
          ui = diag(length(parmsStart))
          if(is.na(reserve)){ui[1,nrow(ui)-1]=-1} #constrain reserve to be greater than cLower
@@ -234,10 +234,10 @@ setMethod(
         else{
           lb <- ub <- rep(Inf,length(parmsStart))
 
-          if( cdf=="pexp"){lb[1] <- 1e-20}
-          else if( cdf=="pweibull"){ lb[1:2] <- 1e-20} #shape,scale must be positive
-          else if( cdf=="pgumbel"){  lb[2] <- 1e-20} #scale must be positive
-          else if( cdf=="pfrechet"){ lb[2] <- 1e-20; lb[3] <- 2}  #scale must be positive, shape must be > 2 for finite variance
+          if( identical(cdf,"pexp")){lb[1] <- 1e-20}
+          else if( identical(cdf,"pweibull")){ lb[1:2] <- 1e-20} #shape,scale must be positive
+          else if( identical(cdf,"pgumbel")){  lb[2] <- 1e-20} #scale must be positive
+          else if( identical(cdf,"pfrechet")){ lb[2] <- 1e-20; lb[3] <- 2}  #scale must be positive, shape must be > 2 for finite variance
 
           if(is.na(reserve)){lb <- c(0,lb); ub <- c(Inf,ub)}
 
@@ -252,9 +252,9 @@ setMethod(
         if(is.na(reserve)){object@reserve <- result[1]; result <- result[-1]}
         object@sellerCostParms <- result
 
-        if(cdf == "punif"){
+        if(identical(cdf, "punif")){
           object@sellerCostBounds <- result }
-        else if(cdf == "pfrechet"){
+        else if(identical(cdf,"pfrechet")){
           object@sellerCostBounds[1] <- result[1] }
 
 
@@ -699,15 +699,15 @@ auction2nd.cap <- function(capacities, margins,prices,reserve=NA,shareInside=NA,
       maxPrice =  max(prices,na.rm=TRUE)
 
 
-      if(sellerCostCDF=="punif"){
+      if(identical(sellerCostCDF,"punif")){
           if(maxPrice > minPrice){
               parmsStart <- sellerCostBounds <- c(minPrice,maxPrice)} #uniform on price range
           else{parmsStart <- sellerCostBounds <- c(1e-20,maxPrice)}
       }
-      else if(sellerCostCDF=="pexp"){parmsStart=1/avgPrice; }
-      else if(sellerCostCDF=="pweibull"){ parmsStart=c(avgPrice,avgPrice)}
-      else if(sellerCostCDF=="pgumbel"){parmsStart=c(avgPrice,sqrt(avgPrice)) }
-      else if(sellerCostCDF=="pfrechet"){parmsStart=c(0,sqrt(avgPrice),2) }
+      else if(identical(sellerCostCDF,"pexp")){parmsStart=1/avgPrice; }
+      else if(identical(sellerCostCDF,"pweibull")){ parmsStart=c(avgPrice,avgPrice)}
+      else if(identical(sellerCostCDF,"pgumbel")){parmsStart=c(avgPrice,sqrt(avgPrice)) }
+      else if(identical(sellerCostCDF,"pfrechet")){parmsStart=c(0,sqrt(avgPrice),2) }
 
 
       if(is.na(reserve) || missing(reserve)){
@@ -718,11 +718,11 @@ auction2nd.cap <- function(capacities, margins,prices,reserve=NA,shareInside=NA,
     ##remove any names from parmStart
     names(parmsStart) <- NULL
 
-    if(sellerCostCDF=="punif"){sellerCostBounds <- parmsStart[-1]}
-    else if(sellerCostCDF=="pexp"){sellerCostBounds=c(0,Inf)}
-    else if(sellerCostCDF=="pweibull"){ sellerCostBounds=c(0,Inf)}
-    else if(sellerCostCDF=="pgumbel"){ sellerCostBounds=c(-Inf,Inf) ;lower.tail=FALSE}
-    else if(sellerCostCDF=="pfrechet"){ sellerCostBounds=c(parmsStart[2],Inf) ; lower.tail=FALSE}
+    if(identical(sellerCostCDF,"punif")){sellerCostBounds <- parmsStart[-1]}
+    else if(identical(sellerCostCDF,"pexp")){sellerCostBounds=c(0,Inf)}
+    else if(identical(sellerCostCDF,"pweibull")){ sellerCostBounds=c(0,Inf)}
+    else if(identical(sellerCostCDF,"pgumbel")){ sellerCostBounds=c(-Inf,Inf) ;lower.tail=FALSE}
+    else if(identical(sellerCostCDF,"pfrechet")){ sellerCostBounds=c(parmsStart[2],Inf) ; lower.tail=FALSE}
 
 
 

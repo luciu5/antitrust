@@ -14,7 +14,7 @@ Antitrust Library
 Package: \tab antitrust\cr
 Type: \tab Package\cr
 Version: \tab 0.93\cr
-Date: \tab 2013-08-20\cr
+Date: \tab 2014-02-19\cr
 License: \tab Unlimited \cr
 LazyLoad: \tab yes\cr
 }

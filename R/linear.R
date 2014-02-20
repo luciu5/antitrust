@@ -30,7 +30,7 @@ setClass(
              if(any(object@quantities<0,na.rm=TRUE))          stop("'quantities' values must be positive")
              if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
 
-             if(!all(diag(object@diversion) == -1)){ stop("'diversion' diagonal elements must all equal -1")}
+             if(!identical(diag(object@diversion),rep(-1,nprods))){ stop("'diversion' diagonal elements must all equal -1")}
 
              if(any(abs(object@diversion[upper.tri(object@diversion)]) > 1) ||
                 any(abs(object@diversion[lower.tri(object@diversion)]) > 1)
@@ -146,7 +146,7 @@ setMethod(
  signature= "Linear",
  definition=function(object,preMerger=TRUE,subset,...){
 
-     slopes    <- t(object@slopes) #transpose slopes for FOCs
+     slopes    <- object@slopes
      intercept <- object@intercepts
      priceStart<- object@priceStart
 
@@ -155,7 +155,7 @@ setMethod(
        mc    <- object@mcPre
      }
      else{owner <- object@ownerPost
-          mc    <- object@mcPre
+          mc    <- object@mcPost
      }
 
 
@@ -169,19 +169,22 @@ setMethod(
 
 
      ##first try the analytic solution
-     ##prices <-
-     ##    solve((t(slopes)*diag(owner)) + (slopes*owner)) %*%
-     ##        ((slopes*owner) %*% mc - (intercept*diag(owner)))
-
-     ## prices <- as.vector(prices)
-     ## quantities <- as.vector(intercept + slopes %*% prices)
-
-     ##use the numeric solution if analytic solution yields negative quantities
-     ##if(any(quantities<0)){
-
-     ##    warning("Equilibrium prices yield negative equilibrium quantities. Recomputing equilibrium prices  under the restriction that equilbrium quantities must be non-negative")
-
-
+#      prices <-
+#          solve((slopes*diag(owner)) + (t(slopes)*owner)) %*%
+#              ((t(slopes)*owner) %*% mc - (intercept*diag(owner)))
+#
+#       prices <- as.vector(prices)
+#       quantities <- as.vector(intercept + t(slopes) %*% prices)
+#
+#      ##use the numeric solution if analytic solution yields negative quantities
+#      if(any(subset) || any(quantities<0)){
+#
+#          if(any(quantities<0)){
+#           warning("Equilibrium prices yield negative equilibrium quantities. Recomputing equilibrium prices  under the restriction that equilbrium quantities must be non-negative")
+#                               }
+#          else if(any(subset)){
+#            warning("Elements of 'subset' are  FALSE. Computing equilbrium under the restriction that these products have 0 sales")
+#          }
 
          FOC <- function(priceCand){
 
@@ -191,7 +194,7 @@ setMethod(
              margins   <- priceCand - mc
              quantities  <- calcQuantities(object,preMerger)
 
-             thisFOC <- quantities*diag(owner) + (slopes*owner) %*% margins
+             thisFOC <- quantities*diag(owner) + (t(slopes)*owner) %*% margins
              thisFOC[!subset] <- quantities[!subset] #set quantity equal to 0 for firms not in subset
 
              return(as.vector(crossprod(thisFOC)))
@@ -207,7 +210,7 @@ setMethod(
 
          prices <- minResult$par
 
-    # }
+     #}
 
      names(prices) <- object@labels
 

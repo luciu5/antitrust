@@ -32,7 +32,7 @@ setClass(
 
              nNestParm <- nNestParm - sum(isSingleton) #singleton nests are not identified
 
-             if(nNestParm==1) stop("'ces.nests' cannot be used for non-nested problems or problems with only singleton nests. Use 'ces' instead")
+             if(identical(nNestParm,1)) stop("'ces.nests' cannot be used for non-nested problems or problems with only singleton nests. Use 'ces' instead")
 
              if(nprods != length(object@nests)){
                  stop("'nests' length must equal the number of products")

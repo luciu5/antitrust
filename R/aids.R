@@ -79,7 +79,7 @@ setMethod(
          return(measure)
      }
 
-     ##constrain mktElast, coef to be negative and mktElast to be less than the own price elasticity
+     ##constrain mktElast, coef to be negative and mktElast to be less than the own price elasticity in absolute value
      ui <- matrix(c(-1/shares[k],0,-1,1 - shares[k],-1,0),ncol=2,nrow=3)
      ci <- c(shares[k] - 1,0,0)
 
