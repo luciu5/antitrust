@@ -1,2 +1,3 @@
+import(methods, MASS, evd, BB, numDeriv, ggplot2)
 exportPattern("*")
 

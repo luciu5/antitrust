@@ -5,8 +5,8 @@ Version: 0.93
 Date: 2014-02-19
 Author: Charles Taragin and Michael Sandfort
 Maintainer: Charles Taragin <charles.taragin@usdoj.gov>
-Depends: R (>= 2.15.0),  methods, MASS, evd, BB, numDeriv, ggplot2
+Imports:  methods, MASS, evd, BB, numDeriv, ggplot2
 Description: A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects mergers under different competitive regimes.
-License: Unlimited
+License:  file LICENSE
 LazyLoad: yes
 Collate: Antitrust.R Bertrand.R logit.R linear.R loglin.R logitALM.R logitNests.R logitNestsALM.R logitCap.R ces.R cesNests.R aids.R pcaids.R pcaidsNests.R  cmcr.R upp.R hhi.R sim.R auction2ndcap.R
