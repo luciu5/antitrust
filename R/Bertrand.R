@@ -567,7 +567,7 @@ setMethod(
      ##Only compute upp if prices are supplied
      thisUPP <- tryCatch(upp(object),error=function(e) FALSE)
      if(!is.logical(thisUPP)){
-     cat("\nShare-Weighted Net UPP:",round(sum(thisUPP*sharesPost[isParty=="*"],na.rm=TRUE)/sum(sharesPost[isParty=="*"],na.rm=TRUE),digits),sep="\t")}
+     cat("\nShare-Weighted Pricing Pressure:",round(sum(thisUPP*sharesPost[isParty=="*"],na.rm=TRUE)/sum(sharesPost[isParty=="*"],na.rm=TRUE),digits),sep="\t")}
 
      ##Only compute CV if prices  are supplied
      thisCV <- tryCatch(CV(object,...),error=function(e) FALSE)
@@ -672,42 +672,26 @@ setMethod(
 
              isParty     <- rowSums( abs(object@ownerPost  - object@ownerPre) ) > 0
 
-             ownerPre    <- object@ownerPre[isParty,isParty,drop=FALSE]
-             ownerPost   <- object@ownerPost[isParty,isParty,drop=FALSE] #this will typically be a matrix of ones
+             ownerPre    <- object@ownerPre
+             ownerPost   <- object@ownerPost
 
-             is1         <- unique(ceiling(ownerPre))[1,] > 0 # identify which products belong to the first merging party listed
-             is2         <- unique(ceiling(ownerPre))[2,] > 0 # identify which products belong to the 2nd   merging party listed
+             
+             elastPre       <- elast(object,preMerger=TRUE)
+             pricesPre       <- object@pricePre
+             sharesPre      <- calcShares(object,preMerger=TRUE)
 
-             upp         <- rep(NA,length(is1))
-             result      <- rep(0,length(isParty))
+             mcPre       <- object@mcPre
+             mcPost      <- object@mcPost
+            
 
-             div         <- diversion(object,preMerger=TRUE)[isParty,isParty]
-             price       <- object@pricePre[isParty]
+             marginsPre      <-  1 - mcPre/pricesPre
+             marginsPost      <- 1 - mcPost/pricesPre
 
-             mcPre       <- object@mcPre[isParty]
-             mcPost      <- object@mcPost[isParty]
-             #mcDelta     <- mcPost - mcPre
-
-             margin      <- 1 - mcPre/price
-
-
-             ## weight diversion ratios by price ratios and ownership matrices ##
-             priceRatio = tcrossprod(1/price, price)
-             Bpre  =  -1 * div * priceRatio * ownerPre
-             Bpost =  -1 * div * priceRatio * ownerPost
+             focPre  <-  sharesPre*diag(ownerPre) +(t(elastPre)*ownerPre)  %*% (sharesPre*marginsPre)
+             focPost <-  sharesPre*diag(ownerPost)+(t(elastPre)*ownerPost) %*% (sharesPre*marginsPre)
 
 
-             D1 <- (ginv(Bpre[is1,is1,drop=FALSE])   %*%
-                    ((diag(ownerPre)[is1]/diag(ownerPost)[is1]) * as.vector(Bpost[is1,is2,drop=FALSE] %*%
-                                                                            margin[is2]))) # owner 1 gross upp
-             D2 <- (ginv(Bpre[is2,is2,drop=FALSE]) %*%
-                    ((diag(ownerPre)[is2]/diag(ownerPost)[is2]) * as.vector(Bpost[is2,is1,drop=FALSE] %*%
-                                                                              margin[is1])))  # owner 2 gross upp
-
-             upp[is1]  <- -as.vector(D1)
-             upp[is2] <- -as.vector(D2)
-
-             result[isParty] <- upp*price - mcPost #net UPP
+             result <- as.vector(focPost-focPre) #Generalized Pricing Pressure
 
              names(result) <- object@labels
 

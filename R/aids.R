@@ -499,6 +499,13 @@ setMethod(
 
      cat("\n\nShare-Weighted Price Change:",round(sum(outPost/100*priceDelta),digits),sep="\t")
      cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*outPost[isParty=="*"])/sum(outPost[isParty=="*"]),digits),sep="\t")
+    
+     ##Only compute upp if prices are supplied
+     thisUPP <- tryCatch(upp(object),error=function(e) FALSE)
+     if(!is.logical(thisUPP)){
+       cat("\nShare-Weighted Pricing Pressure:",round(sum(thisUPP*outPost[isParty=="*"],na.rm=TRUE)/sum(outPost[isParty=="*"],na.rm=TRUE),digits),sep="\t")}
+     
+     
      if(!any(is.na(pricePre))){
          cat("\nCompensating Variation (CV):",round(CV(object,...),digits),sep="\t")
          }

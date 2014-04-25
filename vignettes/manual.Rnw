@@ -1613,34 +1613,20 @@ expected to yield efficiencies that are larger than CMCR,
 while others are expected to yield
 efficiencies that are smaller than CMCR.
 
-\section{Net UPP}
-Another measure included in \atr{} is net Upward Pricing Pressure
-(UPP). Net UPP measures how a merger would affect the merging parties'
+\section{Generalized Pricing Pressure}
+Another measure included in \atr{} is Generalized Pricing Pressure (GePP).\footnote{GePP (\cite{Jaffe2012}) extends Upward Pricing Pressure (UPP) -- introduced in \cite{Farrell2010a}--  to accommodate multi-product merging firms.} GePP   measures how a merger would affect the merging parties'
 incentives to change the prices of their products, after
-accounting for any merger-specific efficiencies.  The net UPP for all of firm $k$'s products following
-a merger with firm $l$ may be written as
+accounting for any merger-specific efficiencies.  The GePP for the merging parties' products may be written as
 
-\begin{align*}
-  UPP_k=&B_{kk,pre}^{-1}\left(\frac{diag(\Omega_{kl,pre})}{diag(\Omega_{kl,post})}\circ
-  B_{kl,post}(m_l\circ p_l)\right) - (1-m_k)\circ p_k\circ\Delta mc_k&&\\
-  B_{fg,s}=&D^q_{fg,pre}\circ((1/p_{f,pre})p_{g,pre}')\circ\Omega_{fg,s},& s
-  \in \{pre,post\};& f,g\in \{k,l\}\\
-\end{align*}
+\begin{equation*}
+  GePP=& (B_{post}m_{post})/diag(\Omega_{post}) - (B_{pre}m_{pre})/diag(\Omega_{pre})
+\end{equation*}
 
-where $D^q_{fg,pre}$ is an $n_f\times n_g$ matrix whose
-$f,g$th element is the pre-merger quantity diversion from product $f\in n_f$ to product
-$g\in n_g$, $p_{f,pre}$ and $p_{g,pre}$
-are length-$n_f$ and length-$n_g$ vectors of prices, and
-$\Omega_{fg,s}$ is an $n_f\times n_g$ matrix of either pre- or
-post-merger ownership shares (typically equal to 1).
-$\Delta mc_k$ a length-$n_k$ vector containing the anticipated proportional changes in
-the marginal costs of firm $k$'s products due to the merger. Net UPP
+where $B_{pre},B_{post}$ and $m_{pre}$ are the same as in CMCR,and $m_{post}$ are pre-merger margins that incorporate anticipated cost reductions. GePP
 predicts that the acquiring firm will have an incentive to raise the
-price of product $i\in n_k$ when $UPP_k>0$.\footnote{\cite{Farrell2010a} introduce net UPP. \cite{Jaffe2012}
-demonstrate how net UPP can be extended to accommodate multi-product
-merging firms.}
+price of merging party product $i$ when $GePP_i>0$.
 
-\verb@upp.bertrand@ may be used to compute UPP under the assumption
+\verb@upp.bertrand@ may be used to compute GePP under the assumption
 that the merging parties are playing the Bertrand pricing game
 described earlier. Like \verb@cmcr.bertrand@, this function requires
 users to supply price and margin information for all of the merging parties' products, as well

@@ -65,34 +65,21 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
 
 
 
-
-
-      ## identify which products belong to the first merging party listed
-      is1         <- unique(ceiling(ownerPre))[1,] > 0 # identify which products belong to the first merging party listed
-      is2         <- unique(ceiling(ownerPre))[2,] > 0 # identify which products belong to the 2nd   merging party listed
-
-    result <- rep(NA,nprod)
-
     mcPre  <- prices*(1-margins)
     mcPost <- mcPre*(1+mcDelta)
 
+    marginsPre <- margins
+    marginsPost <- 1 - mcPost/prices
+
     ## weight diversion ratios by price ratios and ownership matrices ##
     priceRatio = tcrossprod(1/prices, prices)
-    Bpre =   -1 * diversions * priceRatio * ownerPre
-    Bpost =  -1 * diversions * priceRatio * ownerPost
+    Bpre =   diversions * priceRatio * ownerPre
+    Bpost =  diversions * priceRatio * ownerPost
 
-    D1 <- (solve(Bpre[is1,is1,drop=FALSE])   %*%
-           ((diag(ownerPre)[is1]/diag(ownerPost)[is1]) * as.vector(Bpost[is1,is2,drop=FALSE] %*%
-                                             margins[is2]))) # owner 1 gross upp
-    D2 <- (solve(Bpre[is2,is2,drop=FALSE]) %*%
-          ((diag(ownerPre)[is2]/diag(ownerPost)[is2]) * as.vector(Bpost[is2,is1,drop=FALSE] %*%
-                                           margins[is1])))  # owner 2 gross upp
+   
+   
+    result <- as.vector((Bpost %*% marginsPost)/diag(ownerPost) - (Bpre %*% marginsPre)/diag(ownerPre))
 
-    result[is1]  <- -as.vector(D1)
-    result[is2] <- -as.vector(D2)
-
-    #result <- result*prices + (mcPost - mcPre)
-    result <- result*prices - mcPost
     names(result) <- labels
 
     return(result) #net UPP
