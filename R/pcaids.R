@@ -46,17 +46,41 @@ setMethod(
      diversion <- object@diversion
      labels    <- object@labels
 
-     idx        <- object@knownElastIndex
+     nprod    <- length(shares)
+     
+     idx      <- object@knownElastIndex
+     
      shareKnown <- shares[idx]
-
-     nprod <- length(shares)
-
-     bKnown <- shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
-
+     
+     minD <- function(s){
+    
+        m1 <- s - shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
+        b <- s*diversion[idx,]/diversion[,idx]
+        B  <- -diversion * b
+        m2=rowSums(t(B)/diag(B)) # row sums of diversion matrix must sum to 0
+        m3=B[upper.tri(B)] - t(B)[upper.tri(B)] # slope coefficients must be symmetry
+        
+        measure=c(m1,m2,m3)
+        
+       return(sum(measure^2))
+     }
+     
+     
+     bKnown <- optimize(minD,c(-1e12,0))$minimum
+     
      b <- bKnown*diversion[idx,]/diversion[,idx]
-
+     
      B <- -diversion * b
-
+     
+     if(!isTRUE(all.equal(B[upper.tri(B)],t(B)[upper.tri(B)]))){
+       stop("Matrix of calibrated slope parameters is not symmetric. User-supplied 'diversions' may be inconsistent with model.")
+     }
+     
+     if(!isTRUE(all.equal(sum(t(B)/diag(B)),0))){
+       stop("Matrix of calibrated slope parameters yields a diversion matrix whose rows do not sum to 0. User-supplied 'diversions' may be inconsistent with model.")
+     }
+     
+    
      dimnames(B) <- list(labels,labels)
      object@slopes <- B
      object@intercepts <- as.vector(shares - B%*%log(object@prices))
