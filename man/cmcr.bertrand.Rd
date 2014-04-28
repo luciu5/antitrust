@@ -73,8 +73,7 @@ upp.bertrand(prices, margins, diversions, ownerPre,
   price increase.
 
   \code{upp.bertrand} returns a length-k vector whose values equal
-  upwards pricing pressure for each of the merging's parties' products ,
-  net any efficiency claims.
+  the generalized pricing pressure (GePP) for each of the merging's parties' products, net any efficiency claims. GePP is a generalization of Upwards Pricing Pressure (UPP) that accomodates multi-product firms.
 }
 
 \references{
