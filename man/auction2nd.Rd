@@ -11,11 +11,11 @@
 \usage{
 
 auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
-                           sellerCostCDF=c("punif","pexp","pweibull","pgumbel","pfrechet"),
-                           ownerPre,ownerPost,
-                           mcDelta=rep(0,length(capacities)),
-                           constrain.reserve=TRUE, parmsStart,
-                           labels=as.character(ownerPre),...
+               sellerCostCDF=c("punif","pexp","pweibull","pgumbel","pfrechet"),
+               ownerPre,ownerPost,
+               mcDelta=rep(0,length(capacities)),
+               constrain.reserve=TRUE, parmsStart,
+               labels=as.character(ownerPre),...
                           )
 
              }

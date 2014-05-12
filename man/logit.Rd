@@ -300,7 +300,9 @@ getMethod("elast","Logit")
 
 mktSize <- 1000
 cap     <- c(66,200,300,200,99,300) # BUD and OTHER-LITE are capacity constrained
-result.cap <- logit.cap(price,shares,margins,capacities=cap,mktSize=mktSize,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+result.cap <- logit.cap(price,shares,margins,capacities=cap,
+                        mktSize=mktSize,ownerPre=ownerPre,
+                        ownerPost=ownerPost,labels=prodNames)
 print(result.cap)
 
 }

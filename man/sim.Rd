@@ -6,7 +6,10 @@
   with user-supplied demand parameters under the assumption that all firms in the market are playing a
   differentiated products Bertrand pricing game.}
 
-\usage{sim(prices, demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap"),
+\usage{sim(prices, 
+           demand=c( "Linear","AIDS","LogLin",
+                     "Logit","CES","LogitNests",
+                     "CESNests","LogitCap"),
                      demand.param,
                      ownerPre,ownerPost,nests, capacities,
                      mcDelta=rep(0,length(prices)),

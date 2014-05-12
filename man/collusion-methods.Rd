@@ -11,7 +11,8 @@ affects firms' incentives to collude.
 }
 
 \usage{
-\S4method{calcProducerSurplusGrimTrigger}{Bertrand}(object,coalition,discount,preMerger=TRUE,isCollusion=FALSE,...)
+\S4method{calcProducerSurplusGrimTrigger}{Bertrand}(object,coalition,
+          discount,preMerger=TRUE,isCollusion=FALSE,...)
 }
 
 \arguments{
