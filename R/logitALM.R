@@ -75,10 +75,12 @@ setMethod(
 
                ## Constrain optimizer to look  alpha <0,  0 < sOut < 1
               lowerB <- c(-Inf,0)
-              upperB <- c(0,1)
+              upperB <- c(-1e-10,.99999)
 
               minTheta <- optim(object@parmsStart,minD,method="L-BFGS-B",lower= lowerB,upper=upperB)$par
 
+              if(isTRUE(all.equal(minTheta[[2]],0))){stop("Estimated outside share is close to 0. Use `logit' function instead")}
+              
               meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) - minTheta[1] * (prices - object@priceOutside)
 
               names(meanval)   <- object@labels
@@ -139,8 +141,8 @@ logit.alm <- function(prices,shares,margins,
 
 
     ## Solve Non-Linear System for Price Changes
-    #result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
-    #result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,subset=subset,...)
+    result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
+    result@pricePost <- calcPrices(result,preMerger=FALSE,isMax=isMax,subset=subset,...)
 
     return(result)
 
