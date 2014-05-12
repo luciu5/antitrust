@@ -52,35 +52,57 @@ setMethod(
      
      shareKnown <- shares[idx]
      
-     minD <- function(s){
-    
-        m1 <- s - shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
-        b <- s*diversion[idx,]/diversion[,idx]
-        B  <- -diversion * b
-        m2=rowSums(t(B)/diag(B)) # row sums of diversion matrix must sum to 0
-        m3=B[upper.tri(B)] - t(B)[upper.tri(B)] # slope coefficients must be symmetry
+     
+     minD <- function(betas){
+       
+       #enforce symmetry
+       bknown = betas[idx]
+       betas  =  betas[-idx]
+       
+      
+        B = diag(nprod)
         
-        measure=c(m1,m2,m3)
-        
+       B[upper.tri(B)] <- betas
+       B=t(B)
+       B[upper.tri(B)] <- betas
+       diag(B)= 1-rowSums(B)
+       
+       
+       
+       m1 = bknown - shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
+       m2 = as.vector(diversion +  t(B)/diag(B)) #observed diversion should match predicted diversion
+       
+      
+       measure=c(m1,m2)
+       
        return(sum(measure^2))
-     }
+     } 
      
      
-     bKnown <- optimize(minD,c(-1e12,0))$minimum
+     ## Create starting values for optimizer
+     bKnown = shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
+     bStart <- bKnown*diversion[idx,]/diversion[,idx]
+     bStart = -diversion*bStart
+     bStart = c(bKnown,bStart[upper.tri(bStart)])
      
-     b <- bKnown*diversion[idx,]/diversion[,idx]
      
-     B <- -diversion * b
+     ## create bounds for optimizer
+     upper<-lower<-bStart
+     upper[1]=0
+     upper[-(1)]=Inf
+     lower[1]=-Inf
+     lower[-(1)]=0
      
-     if(!isTRUE(all.equal(B[upper.tri(B)],t(B)[upper.tri(B)]))){
-       stop("Matrix of calibrated slope parameters is not symmetric. User-supplied 'diversions' may be inconsistent with model.")
-     }
+     bestBetas=optim(bStart,minD,method="L-BFGS-B",upper=upper,lower=lower)
      
-     if(!isTRUE(all.equal(sum(t(B)/diag(B)),0))){
-       stop("Matrix of calibrated slope parameters yields a diversion matrix whose rows do not sum to 0. User-supplied 'diversions' may be inconsistent with model.")
-     }
      
-    
+     B = diag(nprod)
+     B[upper.tri(B)] <- bestBetas$par[-(1)]
+     B=t(B)
+     B[upper.tri(B)] <- bestBetas$par[-(1)]
+     diag(B)= 1-rowSums(B)
+     
+     
      dimnames(B) <- list(labels,labels)
      object@slopes <- B
      object@intercepts <- as.vector(shares - B%*%log(object@prices))
