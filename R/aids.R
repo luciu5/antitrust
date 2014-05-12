@@ -24,9 +24,7 @@ setClass(
                  stop("'margins' must contain at least two non-missing margins in order to calibrate demand parameters")
              }
 
-             if(!isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods)))){ stop("'diversion' rows must sum to 0")}
-
-
+             
              ## Need to write a check that tests if the margins for all the firm's products is present
 
          }
@@ -54,49 +52,77 @@ setMethod(
      labels     <- object@labels
      ownerPre   <- object@ownerPre
 
+     nprod=length(shares)
+     
      existMargins <- which(!is.na(margins))
-
+     
      k <- existMargins[1] # choose a diagonal demand parameter corresponding to a provided margin
-
+     
+     
      minD <- function(s){
-
-
-         coefCand <- s[1]
-         mktElast <- s[2]
-
-         diagCand <- coefCand*diversion[k,]/diversion[,k]
-         slopesCand <- -diversion*diagCand # slopes symmetric, no need to transpose
-
-
-         elast <- t(slopesCand/shares) + shares * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
-         diag(elast) <- diag(elast) - 1
-
-         marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
-
-
-         measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
-
-         return(measure)
-     }
-
-     ##constrain mktElast, coef to be negative and mktElast to be less than the own price elasticity in absolute value
-     ui <- matrix(c(-1/shares[k],0,-1,1 - shares[k],-1,0),ncol=2,nrow=3)
-     ci <- c(shares[k] - 1,0,0)
-
-     parmsStart <- c(-1 - shares[k]*(1-shares[k]),-2) # These starting values always satisfy constraints
-
-     minParam <- constrOptim(parmsStart,minD,ui=ui,ci=ci,grad=NULL)$par
-
-     diagB <- minParam[1]*diversion[k,]/diversion[,k]
-     B       <- -diversion*diagB # slopes symmetric, no need to transpose
-
+       
+       #enforce symmetry
+       mktElast = s[1]
+       betas  =   s[-1]
+       
+       
+       B = diag(nprod)
+       
+       B[upper.tri(B)] <- betas
+       B=t(B)
+       B[upper.tri(B)] <- betas
+       diag(B)= 1-rowSums(B)
+       
+       elast <- t(B/shares) + shares * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
+       diag(elast) <- diag(elast) - 1
+       
+       marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
+       
+       
+       m1 <- margins - marginsCand
+       m2 <- as.vector(diversion +  t(B)/diag(B)) #observed diversion should match predicted diversion
+       
+       
+       measure=c(m1,m2)
+       
+       return(sum(measure^2,na.rm=TRUE))
+     } 
+     
+     
+     ## Create starting values for optimizer
+     mktElast = -2
+     bKnown   =  shares[k] * (-1/margins[k] + 1 -shares[k]* (mktElast+1))
+     bStart   = bKnown*diversion[k,]/diversion[,k]
+     bStart   = -diversion*bStart
+     parmStart   = c(mktElast,bStart[upper.tri(bStart)])
+     
+     
+     
+     ## create bounds for optimizer
+      ui=diag(length(parmStart))
+      ui[1,1]   = -1 #mktElast constrained to be non-positive
+      shareProd =  tcrossprod(shares)
+      # cross-price elastictities constrained non-negative
+      ui[1,-1]  =  shareProd[upper.tri(shareProd)]   
+      ci        =  rep(0,length(parmStart))
+      ci[-1]    = -shareProd[upper.tri(shareProd)] 
+     
+     bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci)
+     
+     B = diag(nprod)
+     
+     B[upper.tri(B)] <- bestParms$par[-1]
+     B=t(B)
+     B[upper.tri(B)] <- bestParms$par[-1]
+     diag(B)= 1-rowSums(B)
+     
 
      dimnames(B) <- list(object@labels,object@labels)
 
      object@slopes <- B
 
-     if(abs(minParam[2])>5){warning("'mktElast' estimate is large.")}
-     object@mktElast <- minParam[2]
+     if(abs(bestParms$par[1])>5){warning("'mktElast' estimate is large: ",bestParms$par[1])}
+     object@mktElast <- bestParms$par[1]
      object@intercepts <- as.vector(shares - B%*%log(prices))
      names(object@intercepts) <- object@labels
 
@@ -231,7 +257,7 @@ setMethod(
 
                    return(t(elast))
 
-               }
+               }     
            }
           )
 
