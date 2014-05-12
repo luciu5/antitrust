@@ -264,7 +264,9 @@ getMethod("elast","AIDS")
 
 
 
-result.pcaids <- pcaids(shares,knownElast,mktElast,ownerPre=ownerPre,ownerPost=ownerPost,labels=ownerPre)
+result.pcaids <- pcaids(shares,knownElast,mktElast,
+                        ownerPre=ownerPre,ownerPost=ownerPost,
+                        labels=ownerPre)
 
 print(result.pcaids)           # return predicted price change
 summary(result.pcaids)         # summarize merger simulation
@@ -292,7 +294,9 @@ HypoMonTest(result.pcaids,prodIndex=1:2)
 nests <- c('H','L','L') # product A assigned to nest H, products B and C assigned to nest L
 
 
-result.pcaids.nests <- pcaids.nests(shares,knownElast,mktElast,margins=margins,nests=nests,ownerPre=ownerPre,ownerPost=ownerPost,labels=ownerPre)
+result.pcaids.nests <- pcaids.nests(shares,knownElast,mktElast,margins=margins,
+                                    nests=nests,ownerPre=ownerPre,
+                                    ownerPost=ownerPost,labels=ownerPre)
 
 
 
