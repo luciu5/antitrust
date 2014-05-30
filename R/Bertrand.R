@@ -35,11 +35,9 @@ setClass(
                  stop("The sum of 'shares' values must be less than or equal to 1")}
 
 
-             ## if(any(object@mcDelta < 0 | object@mcDelta > 1,na.rm=TRUE)){
-             ##    stop("'mcDelta' values must be between 0 and 1")}
-
-             if(nprods != length(object@mcDelta)){
-                 stop("'mcDelta' must have the same length as 'shares'")}
+             if(nprods != length(object@mcDelta) ||
+                any(is.na(object@mcDelta))){
+                 stop("'mcDelta' must be a numeric vector with the same length as 'shares' and no element of 'mcDelta' can equal NA")}
 
              if(any(object@mcDelta>0,na.rm=TRUE)){
                  warning("positive values of 'mcDelta' imply an INCREASE in marginal costs")}
@@ -675,14 +673,14 @@ setMethod(
              ownerPre    <- object@ownerPre
              ownerPost   <- object@ownerPost
 
-             
+
              elastPre       <- elast(object,preMerger=TRUE)
              pricesPre       <- object@pricePre
              sharesPre      <- calcShares(object,preMerger=TRUE)
 
              mcPre       <- object@mcPre
              mcPost      <- object@mcPost
-            
+
 
              marginsPre      <-  1 - mcPre/pricesPre
              marginsPost      <- 1 - mcPost/pricesPre
