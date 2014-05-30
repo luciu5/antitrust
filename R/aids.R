@@ -17,6 +17,8 @@ setClass(
 
              nprods <- length(object@shares)
 
+             if(!isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods)))){ stop("'diversions' rows must sum to 0")}
+
              if(!isTRUE(all.equal(sum(object@shares),1))){
                  stop("The sum of 'shares' values must equal 1")}
 
@@ -24,7 +26,7 @@ setClass(
                  stop("'margins' must contain at least two non-missing margins in order to calibrate demand parameters")
              }
 
-             
+
              ## Need to write a check that tests if the margins for all the firm's products is present
 
          }
@@ -53,69 +55,63 @@ setMethod(
      ownerPre   <- object@ownerPre
 
      nprod=length(shares)
-     
-     existMargins <- which(!is.na(margins))
-     
-     k <- existMargins[1] # choose a diagonal demand parameter corresponding to a provided margin
-     
-     
+
+    
      minD <- function(s){
-       
+
        #enforce symmetry
        mktElast = s[1]
        betas  =   s[-1]
-       
-       
+
+
        B = diag(nprod)
-       
+
        B[upper.tri(B)] <- betas
        B=t(B)
        B[upper.tri(B)] <- betas
-       diag(B)= 1-rowSums(B)
-       
+       diag(B)= 1-rowSums(B) #enforce homogeneity of degree zero
+
        elast <- t(B/shares) + shares * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
        diag(elast) <- diag(elast) - 1
-       
+
        marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
-       
-       
+
+
        m1 <- margins - marginsCand
-       m2 <- as.vector(diversion +  t(B)/diag(B)) #observed diversion should match predicted diversion
-       
-       
+       m2 <- as.vector(diversion +  t(B)/diag(B)) #measure distance between observed and predicted diversion
+
+
        measure=c(m1,m2)
-       
+
        return(sum(measure^2,na.rm=TRUE))
-     } 
-     
-     
+     }
+
+
      ## Create starting values for optimizer
      mktElast = -2
-     bKnown   =  shares[k] * (-1/margins[k] + 1 -shares[k]* (mktElast+1))
-     bStart   = bKnown*diversion[k,]/diversion[,k]
-     bStart   = -diversion*bStart
-     parmStart   = c(mktElast,bStart[upper.tri(bStart)])
-     
-     
-     
+     shareProd =  tcrossprod(shares)
+     parmStart=c(mktElast,-shareProd[upper.tri(shareProd)]*(1+mktElast) + 1)
+
+
+
      ## create bounds for optimizer
       ui=diag(length(parmStart))
       ui[1,1]   = -1 #mktElast constrained to be non-positive
-      shareProd =  tcrossprod(shares)
+     
       # cross-price elastictities constrained non-negative
-      ui[1,-1]  =  shareProd[upper.tri(shareProd)]   
+      ui[-1,1]  =  shareProd[upper.tri(shareProd)]
       ci        =  rep(0,length(parmStart))
-      ci[-1]    = -shareProd[upper.tri(shareProd)] 
-     
+      ci[-1]    = -shareProd[upper.tri(shareProd)]
+
      bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci)
-     
+
      B = diag(nprod)
-     
+
      B[upper.tri(B)] <- bestParms$par[-1]
      B=t(B)
      B[upper.tri(B)] <- bestParms$par[-1]
      diag(B)= 1-rowSums(B)
-     
+
 
      dimnames(B) <- list(object@labels,object@labels)
 
@@ -138,7 +134,7 @@ setMethod(
 setMethod(
  f= "calcPriceDelta",
  signature= "AIDS",
- definition=function(object,isMax=FALSE,subset=TRUE,...){
+ definition=function(object,isMax=FALSE,subset,...){
 
 
      ownerPost <- object@ownerPost
@@ -257,7 +253,7 @@ setMethod(
 
                    return(t(elast))
 
-               }     
+               }
            }
           )
 
@@ -525,13 +521,13 @@ setMethod(
 
      cat("\n\nShare-Weighted Price Change:",round(sum(outPost/100*priceDelta),digits),sep="\t")
      cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*outPost[isParty=="*"])/sum(outPost[isParty=="*"]),digits),sep="\t")
-    
+
      ##Only compute upp if prices are supplied
      thisUPP <- tryCatch(upp(object),error=function(e) FALSE)
      if(!is.logical(thisUPP)){
        cat("\nShare-Weighted Pricing Pressure:",round(sum(thisUPP*outPost[isParty=="*"],na.rm=TRUE)/sum(outPost[isParty=="*"],na.rm=TRUE),digits),sep="\t")}
-     
-     
+
+
      if(!any(is.na(pricePre))){
          cat("\nCompensating Variation (CV):",round(CV(object,...),digits),sep="\t")
          }
@@ -589,7 +585,9 @@ aids <- function(shares,margins,prices,diversions,
 
     if(missing(diversions)){
         diversions <- tcrossprod(1/(1-shares),shares)
-        diag(diversions) <- -1
+        diag(diversions) <- -1.000000001 #correct potential floating point issue
+        
+        
     }
 
 
