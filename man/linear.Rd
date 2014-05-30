@@ -43,8 +43,10 @@
   \item{diversions}{A k x k matrix of diversion ratios with diagonal
     elements equal to -1. Default is missing, in which case diversion
     according to quantity share is assumed.}
-  \item{symmetry}{If TRUE, requires the matrix of demand slope coefficients to be
-    consistent with utility maximization theory. Default is TRUE.}
+  \item{symmetry}{If TRUE, requires the matrix of demand slope coefficients 
+    to be symmetric and homogeneous of degree 0 in prices, both of which 
+    suffice to make demand consistent with utility maximization theory. 
+    Default is TRUE.}
   \item{ownerPre}{EITHER a vector of length k whose values
     indicate which firm produced a product pre-merger OR
     a k x k matrix of pre-merger ownership shares.}
@@ -78,20 +80,17 @@
   differentiated Bertrand pricing game.
 
   \code{loglinear} uses the same information as \code{linear} to uncover the
-  slopes and intercepts in a Log-Log demand system, and then uses these
-  demand parameters to simulate the price effects of a merger two firms under the
+  slopes and intercepts in a Log-Linear demand system, and then uses these
+  demand parameters to simulate the price effects of a merger of two firms under the
   assumption that the firms are playing a
   differentiated Bertrand pricing game.
 
 
-  \sQuote{diversion} must equal a square matrix whose elements are be between
-  -1 and 1. If \sQuote{diversion} is missing, then diversion according to quantity share is assumed. If
-  a square matrix is supplied, the off-diagonal elements [i,j] of \sQuote{diversion}
-  must equal an estimate of the diversion ratio from product i to product j
+  \sQuote{diversion} must be a square matrix whose off-diagonal elements [i,j] estimate the diversion ratio from product i to product j
   (i.e. the estimated fraction of i's sales that go to j due to a small
   increase in i's price). Off-diagonal elements are restricted to be
-  positive (products are assumed to be substitutes).  Diagonal elements
-  must equal -1.
+  non-negative (products are assumed to be substitutes), diagonal elements
+  must equal -1, and rows must sum to 0 (negative if you wish to include an outside good) . If \sQuote{diversion} is missing, then diversion according to quantity share is assumed.
 
 
 
