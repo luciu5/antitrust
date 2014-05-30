@@ -221,7 +221,7 @@ loglinear <- function(prices,quantities,margins,diversions,
 
     if(missing(diversions)){
         diversions <-  tcrossprod(1/(1-shares),shares)
-        diag(diversions) <- -1
+        diag(diversions) <- -1.000000001 #correct potential floating point issue
     }
 
 
