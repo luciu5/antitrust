@@ -359,7 +359,7 @@ d^r_{ij}=&-\frac{\frac{\partial p_jq_j}{\partial p_i}}{\frac{\partial
 \end{align}
 
 Note that $d^q_{ij},d^r_{ij}$ are restricted to be between -1 and 1,
-and are positive if products $i$ and $j$ are substitutes and negative if they are complements. Additionally, conditional on customers switching from product $i$, they must switch to another product (i.e. $\sum_{j}d_{ij}\le 0$). For all the models included in \atr{} , we assume that $i$ and $j$ are not complements ($d_{ij}\ge 0$) and for some demand models (i.e. linear, loglinear, and AIDS) we will assume that   $\sum_{j}d_{ij} = 0$.
+and are positive if products $i$ and $j$ are substitutes and negative if they are complements. Additionally, conditional on customers switching from product $i$, they must switch to another product (i.e. $\sum_{j}d_{ij}\le 0$). For all the models included in \atr{} , we assume that $i$ and $j$ are not complements ($d_{ij}\ge 0$) and for some demand models (i.e. AIDS) we will assume that   $\sum_{j}d_{ij} = 0$.
 
 Although diversion ratios are not present in either equation
 \ref{eqn:FOC} or \ref{eqn:FOCC}, these definitions indicate that diversion ratios may
@@ -418,17 +418,17 @@ in the market is given by
 
 \begin{align*}
   q_i=& \alpha_i + \sum_{j\in n}\beta_{ij} p_j \mbox{ for all $i\in
-    n$},& \beta_{ii}<0\\
+    n$},&\\
   \intertext{ which may be written in matrix notation as }\\
   q=&\alpha + Bp,&
 \end{align*}
 
-where $q,p$ are vectors of product quantities and prices, $\alpha$ is a vector of product specific demand intercepts and
+where $q\ge 0,p>0$ are vectors of product quantities and prices, $\alpha$ is a vector of product specific demand intercepts and
 $B$ is a matrix of slopes. This demand system yields the following
 own- and cross-price elasticities:
 \begin{align*}
   \epsilon_{ii}=&\beta_{ii}\frac{p_i}{q_i},& \epsilon_{ii}<0\\
-  \epsilon_{ij}=&\beta_{ij}\frac{p_i}{q_j},& \epsilon_{ij}<\ge 0
+  \epsilon_{ij}=&\beta_{ij}\frac{p_i}{q_j},& \epsilon_{ij} \ge 0
 \end{align*}
 
 
@@ -452,21 +452,30 @@ One known issue with the linear demand system is that, while
 analytically tractable, it is not rooted in consumer choice
 theory. Indeed, it has been shown
 that the linear demand system without income effects is consistent
-with the axioms of consumer choice if and only if $B$ is
-a symmetric matrix.\footnote{See \cite{Haefen2002}.} Imposing this additional assumption reduces the number
+with the axioms of consumer choice if $B$ is
+a symmetric matrix and satisfies homogeneity of degree 0 in prices.\footnote{See \cite[pp. 283]{Haefen2002}.} Imposing these additional assumptions reduces the number
 of unknown parameters to $\frac{n(n+3)}{2}$ ($\frac{n(n+1)}{2}$ elements of $B$ and $n$ intercepts), which means that the system is
 over-identified.\footnote{In fact, it turns out that only one element of $B$ must be estimated.To see why, note that under symmetry, $\beta_{jj}=\frac{d_{ij}}{d_{ji}}\beta_{ii}$. Hence, if $\beta_{ii}$ is known, then the preceding equation indicates that all the $\beta_{jj}$s may be recovered. From here, the definition of diversion may be used to recover all the $\beta_{ij}s$.}
 
-
+The linear demand system can be modified to allow for substitution to an outside (numeraire) good. To accomplish this, assume that the price of the outside product is not set strategically (i.e. not set as part of the Nash-Bertrand game played by the manufacturers of the $n$ products included in the simulation). It can be shown that if $B$ is symmetric and satisfies homogeneity of degree 0 in prices when the outside good is included, then $\sum_{j\in n}d_{ij}<0$.\footnote{To see this, note:
+\begin{align*}
+&\sum_{i \in n } \beta_{ij} <0 & \text{(homogeneity of degree 0 with outside good)} \\
+\Leftrightarrow& \beta_{ii}+\sum_{j\ne i}\beta_{ji} < 0 & \text{(symmetry)}\\
+\Leftrightarrow& \beta_{ii}-\sum_{j\ne i}d_{ij}\beta_{ii}<0 \\
+\Leftrightarrow& \beta_{ii}(1-\sum_{j\ne i}d_{ij})<0 \\
+\Rightarrow & \sum_{j \in n } d_{ij} <0\\
+\end{align*}
+where the last line follows since $\beta_{ii}<0\Rightarrow 1-\sum_{j\ne i}d_{ij}>0$.
+}. In other words, under symmetry and homogeneity of degree 0, users may include a non-strategically priced outside good by simply allowing the rows of the diversion matrix to sum to less than zero. The extent to which consumers substitute from product $i$ to the outside good may be controlled by increasing the magnitude of $\sum_{j \in n } d_{ij}$. 
 
 By default, the \verb@calcSlopes@ method, called by the \verb@linear@
-function to calibrate the linear demand parameters, assumes that the above two
-assumptions hold and uses a minimum distance algorithm to find the off-diagonal elements of $B$ that best satisfy i) all the FOCs for which there is sufficient information and ii) the diversion equations $d_{ij}=-\frac{\beta_{ji}}{\beta_{ii}}$. The $\beta_{ii}$s are recovered from the fact that $\sum_{j}d_{ij}=0$; customers must switch to a product included in the model. The model intercepts can then be recovered from the linear demand equations.
+function to calibrate the linear demand parameters, assumes that the above
+assumptions hold and uses a minimum distance algorithm to find the elements of $B$ that best satisfy i) all the FOCs for which there is sufficient information and ii) the diversion equations $d_{ij}=-\frac{\beta_{ji}}{\beta_{ii}}$, subject to the constraints that $\beta_{ij}\ge 0$ for all $i\ne j$ and $\sum_j b_{ij}\le 0$ for all $i$. The model intercepts can then be recovered from the linear demand equations.
 
 
 For completeness, \verb@linear@ includes the `symmetry' argument that,
 when set equal to FALSE, instructs \verb@calcSlopes@ to calibrate demand parameters without imposing
-symmetry on $B$. Note that when `symmetry' is FALSE, the system of
+symmetry and homogeneity of degree zero in prices on $B$. Note that when `symmetry' is FALSE, the system of
 equations is just-identified, which means that prices, quantities, and
 margins must be observed for all products. Also, note that when
 `symmetry' is FALSE, Linear demand is unlikely to be consistent with
@@ -554,7 +563,7 @@ The LA-AIDS model yields the following own- and cross-price elasticities:
 where $\epsilon$ is the market elasticity of demand.
 
 As with the linear  demand system,
-the LA-AIDS model assumes that $B$ is symmetric and that diversion is
+the LA-AIDS model assumes that $B$ is symmetric, satisfies homogeneity of degree zero in prices, and that diversion is
 known. The LA-AIDS model, however,
 assumes that \emph{revenue} diversion, rather than \emph{quantity}
 diversion is observed.\footnote{If the `diversion' argument to \texttt{aids}
@@ -564,7 +573,7 @@ demand parameters ($\frac{n(n-1)}{2}$ diagonal elements in $B$, $n$ diagonal ele
 in which case the system is over-identified.\footnote{In fact, it turns out that only one element of $B$ must be estimated.To see why, note that under symmetry, $\beta_{jj}=\frac{d_{ij}}{d_{ji}}\beta_{ii}$. Hence, if $\beta_{ii}$ is known, then the preceding equation indicates that all the $\beta_{jj}$s may be recovered. From here, the definition of diversion may be used to recover all the $\beta_{ij}s$.}
 
 One interesting feature of the LA-AIDS that distinguishes
-it from the linear and log-linear demand systems included in
+it from the linear and log-linear demand systems included in \atr{}
 is that LA-AIDS elasticities incorporate $\epsilon$, the
 market elasticity. Roughly speaking, $\epsilon$ controls
 the extent to which consumers substitute to products outside
@@ -1112,8 +1121,7 @@ compensating variation.\footnote{For some demand systems (e.g. Logit
   reported. Compensating variation as well as equilibrium price levels
   for LA-AIDS models are reported only
   if the user supplied pre-merger prices. Compensating variation is
-  only reported for the Linear model if the matrix of slope
-  coefficients is symmetric.} \emph{Quantity} shares rather than
+  only reported for the Linear model if `symmetry' equals TRUE.} \emph{Quantity} shares rather than
 \emph{revenue} shares may be reported by setting \verb@summary@'s
 `revenue' argument equal to
  FALSE. Likewise, levels, either in units or in revenues, rather than shares may
@@ -1206,7 +1214,7 @@ to satisfy consumer choice theory will typically not satisfy the
 parameter restrictions implied by the Bertrand model. Consequently,
 there is no \verb@CV@ method defined for the Log-linear demand
 system. Similarly, the \verb@CV@ method returns an error if Linear
-demand is calibrated without imposing symmetry on the matrix of slope
+demand is calibrated without imposing symmetry and homogeneity of degree 0 in prices on the matrix of slope
 coefficients $B$ (i.e. setting `symmetry' equal to FALSE). Lastly,
 the \verb@CV@ method for LA-AIDS demand will return an error if LA-AIDS
 demand is calibrated without prices. This occurs because prices are
