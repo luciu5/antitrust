@@ -128,7 +128,7 @@
     Computes equilibrium product quantities assuming that firms are playing a
     Nash-Bertrand pricing game.
   }
-  \item{calcPrices}{\code{signature(object=c(Linear,LogLin,AIDS,Logit,LogitNests,LogitCap,CES,CESNests),preMerger=TRUE, ...)}}{
+  \item{calcPrices}{\code{signature(object=c(Linear,LogLin,AIDS,Logit,LogitNests,LogitCap,CES,CESNests),preMerger=TRUE,subset,...)}}{
     Computes equilibrium product price levels assuming that firms are playing a
     Nash-Bertrand pricing game. \sQuote{...} may be used to feed additional
     options to the optimizer responsible for computing equilibrium
@@ -140,9 +140,9 @@
     Nash-Bertrand pricing game. This is a wrapper method for computing
     the difference between pre- and post-merger equilbrium prices
   }
-   \item{calcPriceDelta}{\code{signature(object=AIDS,isMax=FALSE,...)}}{
+   \item{calcPriceDelta}{\code{signature(object=AIDS,isMax=FALSE,subset,...)}}{
     Computes equilibrium price changes due to a merger assuming that firms are playing a
-    Nash-Bertrand pricing game. This method calls a non-linear
+    Nash-Bertrand pricing game and LA-AIDS. This method calls a non-linear
     equations solver to find a sequence of price changes that satisfy
     the Bertrand FOCs.
   }
