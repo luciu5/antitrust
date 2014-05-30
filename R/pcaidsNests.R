@@ -171,7 +171,7 @@ pcaids.nests <- function(shares,margins,knownElast,mktElast=-1,
 
       if(missing(prices)){ prices <- rep(NA_real_,length(shares))}
 
-    diversions <- tcrossprod(1/(1-shares),shares);diag(diversions) <- -1 #'diversions' slot not used by pcaids.nests
+    diversions <- tcrossprod(1/(1-shares),shares);diag(diversions) <- -1.000000001 #'diversions' slot not used by pcaids.nests
 
 
     ## Create PCAIDS Nests  container to store relevant data

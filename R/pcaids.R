@@ -47,62 +47,62 @@ setMethod(
      labels    <- object@labels
 
      nprod    <- length(shares)
-     
+
      idx      <- object@knownElastIndex
-     
+
      shareKnown <- shares[idx]
-     
-     
+
+
      minD <- function(betas){
-       
+
        #enforce symmetry
        bknown = betas[idx]
        betas  =  betas[-idx]
-       
-      
+
+
         B = diag(nprod)
-        
+
        B[upper.tri(B)] <- betas
        B=t(B)
        B[upper.tri(B)] <- betas
        diag(B)= 1-rowSums(B)
-       
-       
-       
+
+
+
        m1 = bknown - shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
-       m2 = as.vector(diversion +  t(B)/diag(B)) #observed diversion should match predicted diversion
-       
-      
+       m2 = as.vector(diversion +  t(B)/diag(B)) #measure distance between observed and predicted diversion
+
+
        measure=c(m1,m2)
-       
+
        return(sum(measure^2))
-     } 
-     
-     
+     }
+
+
      ## Create starting values for optimizer
      bKnown = shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
      bStart <- bKnown*diversion[idx,]/diversion[,idx]
      bStart = -diversion*bStart
      bStart = c(bKnown,bStart[upper.tri(bStart)])
-     
-     
+
+
      ## create bounds for optimizer
      upper<-lower<-bStart
      upper[1]=0
      upper[-(1)]=Inf
      lower[1]=-Inf
      lower[-(1)]=0
-     
+
      bestBetas=optim(bStart,minD,method="L-BFGS-B",upper=upper,lower=lower)
-     
-     
+
+
      B = diag(nprod)
      B[upper.tri(B)] <- bestBetas$par[-(1)]
      B=t(B)
      B[upper.tri(B)] <- bestBetas$par[-(1)]
      diag(B)= 1-rowSums(B)
-     
-     
+
+
      dimnames(B) <- list(labels,labels)
      object@slopes <- B
      object@intercepts <- as.vector(shares - B%*%log(object@prices))
@@ -138,7 +138,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
 
     if(missing(diversions)){
         diversions <- tcrossprod(1/(1-shares),shares)
-        diag(diversions) <- -1
+        diag(diversions) <- -1.000000001 #correct potential floating point issue
     }
 
   ## Create PCAIDS container to store relevant data
