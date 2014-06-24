@@ -56,7 +56,7 @@ setMethod(
 
      nprod=length(shares)
 
-    
+
      minD <- function(s){
 
        #enforce symmetry
@@ -97,7 +97,7 @@ setMethod(
      ## create bounds for optimizer
       ui=diag(length(parmStart))
       ui[1,1]   = -1 #mktElast constrained to be non-positive
-     
+
       # cross-price elastictities constrained non-negative
       ui[-1,1]  =  shareProd[upper.tri(shareProd)]
       ci        =  rep(0,length(parmStart))
@@ -486,7 +486,7 @@ setMethod(
      outPre  <-  calcShares(object,TRUE,revenue) * 100
      outPost <-  calcShares(object,FALSE,revenue) * 100
 
-     mcDelta <- object@mcDelta
+     mcDelta <- object@mcDelta * 100
 
      outDelta <- (outPost/outPre - 1) * 100
 
@@ -586,8 +586,8 @@ aids <- function(shares,margins,prices,diversions,
     if(missing(diversions)){
         diversions <- tcrossprod(1/(1-shares),shares)
         diag(diversions) <- -1.000000001 #correct potential floating point issue
-        
-        
+
+
     }
 
 
