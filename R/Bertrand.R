@@ -526,7 +526,7 @@ setMethod(
          sumlabels=paste("shares",c("Pre","Post"),sep="")
      }
 
-     mcDelta <- object@mcDelta
+     mcDelta <- object@mcDelta * 100
 
      outDelta <- (outPost/outPre - 1) * 100
 
@@ -686,7 +686,7 @@ setMethod(
              marginsPost      <- 1 - mcPost/pricesPre
 
              focPre  <-  sharesPre*diag(ownerPre) +(t(elastPre)*ownerPre)  %*% (sharesPre*marginsPre)
-             focPost <-  sharesPre*diag(ownerPost)+(t(elastPre)*ownerPost) %*% (sharesPre*marginsPre)
+             focPost <-  sharesPre*diag(ownerPost)+(t(elastPre)*ownerPost) %*% (sharesPre*marginsPost)
 
 
              result <- as.vector(focPost-focPre) #Generalized Pricing Pressure
