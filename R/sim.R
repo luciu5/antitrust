@@ -138,8 +138,7 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
         if(!("slopes" %in% names(demand.param))){stop("'demand.param' does not contain 'slopes'")}
         if(!("intercepts" %in% names(demand.param))){stop("'demand.param' does not contain 'intercepts'")}
 
-        if(!(is.matrix(demand.param$slopes)    ||
-             is(demand.param$slopes,"Matrix")) ||
+        if(!(is.matrix(demand.param$slopes))   ||
            ncol(demand.param$slopes)!=nprods   ||
            nrow(demand.param$slopes)!=nprods   ||
            any(diag(demand.param$slopes)>0)){

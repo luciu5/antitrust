@@ -1,5 +1,4 @@
-##setClassUnion("anyMatrix", c("matrix", "Matrix"))
-setClassUnion("matrixOrVector", c("matrix", "numeric","factor"))
+setClassUnion("matrixOrVector", c("matrix", "numeric","character","factor"))
 setClassUnion("matrixOrList", c("matrix", "list"))
 
 setClass(

@@ -37,7 +37,7 @@ setClass(
 
              if(any(margins<0 | margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
 
-             if(!(is.matrix(object@ownerPre) || is(object@ownerPre,"Matrix"))){
+             if(!(is.matrix(object@ownerPre))){
                  ownerPre <- ownerToMatrix(object,TRUE)
              }
              else{ownerPre <- object@ownerPre}
