@@ -1,3 +1,4 @@
 import(methods, MASS, evd, BB, numDeriv, ggplot2)
+importFrom("stats", "constrOptim", "integrate", "optim", "optimize","runif")
 exportPattern("*")
 

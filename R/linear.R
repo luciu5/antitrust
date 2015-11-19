@@ -190,7 +190,8 @@ setMethod(
        owner <- object@ownerPre
        mc    <- object@mcPre
      }
-     else{owner <- object@ownerPost
+     else{
+       owner <- object@ownerPost
           mc    <- object@mcPost
      }
 
@@ -241,8 +242,10 @@ setMethod(
          ##startParm <- as.vector(solve(slopes) %*% (-intercept + 1))
 
          minResult <- constrOptim(object@priceStart,FOC,grad=NULL,ui=slopes,ci=-intercept,...)
-         if(minResult$convergence != 0){
-             warning("'calcPrices' solver may not have successfully converged. Returning unconstrained result. 'constrOptim' reports: '",minResult$message,"'")}
+         
+         if(!isTRUE(all.equal(minResult$convergence,0))){
+             warning("'calcPrices' solver may not have successfully converged.'constrOptim' reports: '",minResult$message,"'")
+           }
 
          prices <- minResult$par
 
