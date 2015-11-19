@@ -1468,7 +1468,7 @@ functional form are the
 \href{http://en.wikipedia.org/wiki/Frechet\_distribution}{Frechet}.
  Table \ref{tab:CostDistributions} summarizes these distributions.
 
-    \begin{table}[htps]
+    \begin{table}[htp]
       \centering
       \begin{tabular}{cccccc}
         Name        & Bounds                         & Location  & Scale & Shape & \# Params\\

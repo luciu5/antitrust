@@ -471,14 +471,14 @@ setMethod(
     equilibria$Cost=equilibria$Demand
 
 
-    thisPlot=ggplot(result,(aes(output,price,color=Demand,group=Demand))) + geom_line() + theme_bw() + theme(legend.position="bottom", legend.direction="horizontal",legend.title=element_blank())
+    thisPlot=ggplot(result,(aes_string(x='output',y='price',color='Demand',group='Demand'))) + geom_line() + theme_bw() + theme(legend.position="bottom", legend.direction="horizontal",legend.title=element_blank())
     thisPlot=thisPlot + facet_wrap(~prod,scales="free_x")
 
-    thisPlot=thisPlot + geom_vline(aes(xintercept = output,group=Demand,colour=Demand),linetype=3,equilibria[,c("output","Demand","prod")] )
-    thisPlot=thisPlot + geom_hline(aes(yintercept = price,group=Demand,colour=Demand),linetype=3,equilibria[,c("price","Demand","prod")] )
-    thisPlot=thisPlot + geom_point(aes(y=price,x=output,color=Demand,group=Demand),equilibria)
+    thisPlot=thisPlot + geom_vline(aes_string(xintercept = "output",group="Demand",colour="Demand"),linetype=3,equilibria[,c("output","Demand","prod")] )
+    thisPlot=thisPlot + geom_hline(aes_string(yintercept = "price",group="Demand",colour="Demand"),linetype=3,equilibria[,c("price","Demand","prod")] )
+    thisPlot=thisPlot + geom_point(aes_string(y="price",x="output",color="Demand",group="Demand"),equilibria)
 
-    thisPlot=thisPlot + geom_hline(aes(yintercept = mc,group=Cost,color=Cost),data=equilibria[,c("mc","Cost","prod")],show_guide=TRUE)
+    thisPlot=thisPlot + geom_hline(aes_string(yintercept = "mc",group="Cost",color="Cost"),data=equilibria[,c("mc","Cost","prod")],show_guide=TRUE)
 
     #if(!isTRUE(all.equal(mcPre,mcPost))){
     #  thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="orange",data=data.frame(mc=mcPost[mcPost!=mcPre],prod=labels[mcPost!=mcPre]),show_guide=TRUE)
