@@ -1360,12 +1360,45 @@ information, supplying margin information for products with
 disparate market shares, or supplying the market elasticity parameter directly.
 
 \chapter{Auction Models}
-The current auction capabilities of \atr{} support calibrating model parameters and simulating the effects of a merger in a
-2nd price procurement auction where the buyer sets a reserve price and
-capacity constrained bidders offer  a single unit of a homogeneous
-product\footnote{See \cite{WaehrP2003} for further details.}.
+Currently, \atr{} has the ability to calibrate model parameters and simulate the effects of a merger in a:
 
-\section{The Game}
+\begin{itemize}
+\item 2nd price procurement auction where the buyer sets a reserve price and
+capacity constrained bidders offer  a single unit of a homogeneous
+product,
+\item 2nd score procurement auction with differentiated products, and a 
+\item 1st score procurement auction with differentiated products. 
+\end{itemize}
+
+In a \href{https://en.wikipedia.org/wiki/Vickrey_auction}{2nd \emph{price} procurement auction}, sellers submit their offers to supply a \emph{homogenous} product and the seller with the lowest offer wins but is paid the next lowest offer. 2nd price auctions have a number of interesting properties. In particular, it can be shown that:
+
+\begin{itemize}
+\item the dominant strategy in a 2nd price auction is for each seller to offer their product at marginal cost,
+\item the dominant strategy for a seller with a portfolio of products is to only offer the buyer the product in their portfolio with the lowest cost,
+\item the winner of the 2nd price auction is always the product with the lowest cost,
+\item the incremental surplus of the winning product, defined as the difference in cost between the least costly and next-most costly products, goes entirely to the seller. 
+\end{itemize}
+
+A 2nd \emph{score} procurement auction generalizes a 2nd price auction by allowing sellers to offer \emph{differentiated} products and allowing buyers to choose the product with the highest score. Instead of being paid the 2nd lowest cost, the seller with the highest score is paid the difference between the value of her product and the surplus (value less manufacturing cost) of the product with the next highest score. All the functions in \atr{} assume that the non-price characteristics of a seller's products are fixed, which means that sellers can only bid price.
+
+All of the properties of a 2nd price auction generalize to a 2nd score auction. In particular:
+
+\begin{itemize}
+\item the dominant strategy in a 2nd score auction is for each seller to offer their product at marginal cost,
+\item the dominant strategy for a seller with a portfolio of products is to only offer the buyer the product in their portfolio with the highest surplus,
+\item the winner of the 2nd price auction is always the product with the highest surplus,
+\item the incremental surplus of the winning product, defined as the difference in surplus between the highest scored and next-most highest scored products, goes entirely to the seller. 
+\end{itemize}
+
+In contrast to a 2nd score procurement auction, sellers in a 1st score procurement auction simply recieve their offer if they win. It can be shown that a first score auction where non-price product characteristics are fixed is equivalent to a Nash-Bertrand pricing game where buyers purchase only a single product.\footnote{See \cite{miller2014} for further details.} Consequently, the models discussed in the chapter on the Bertrand Pricing Game, may also be used to explore the effects of mergers in first price auctions.
+
+The remainder of this chapter explores \atr{}'s implementation of 2nd score auctions
+
+\section{2nd Price Auction with Capacity Contraints}
+Here, we describe a 2nd price procurement auction where the buyer sets a reserve price and capacity constrained bidders offer  a single unit of a homogeneous
+product.\footnote{\cite{WaehrP2003} for further details.}
+
+\subsection{The Game}
 Suppose that a buyer is interested in either purchasing a single unit of a
 homogeneous product from one of the $K$ firms who supply the product,
 or supplying the product herself. Although the product is homogeneous,
@@ -1448,7 +1481,7 @@ c_0 &=  r^{\ast} + \frac{\sum\limits_{k\in K} ([1-F(r^{\ast})]^{\bar{t}-t_k} - [
 Note that this last equation implies that the buyer has an incentive
 to set its optimal reserve below its self-supply cost.
 
-\section{Calibrating Model Parameters}
+\subsection{Calibrating Model Parameters}
 In this model, we will assume that the user observes firm capacities,
 \emph{some} price and margin information, and possibly the auction
 reserve price or the proportion of times a buyer opts to
@@ -1456,7 +1489,7 @@ self-supply. The unknowns are the seller cost distribution
 $F(c)$, the buyer's cost of self-supply $c_0$, and if not observed,
 the auction's reserve price.
 
-\subsection{Selecting a Cost Distribution}
+\subsubsection{Selecting a Cost Distribution}
 
 It can be shown that under this models' assumptions, it must be the
 case that $F(c)=1-\exp{k(c)}$. Common distributions that satisfy this
@@ -1492,7 +1525,7 @@ distributions with fewer parameters. This flexibility comes at a
 cost; the user must supply additional information in order to
 calibrate these additional parameters.
 
-\subsection{Identifying Moments}
+\subsubsection{Identifying Moments}
 Once a distribution has been selected, the distribution parameters as
 well as the reserve price (if not supplied) must be calibrated from
 user-supplied prices and margins.  To accomplish this, first let $\hat{p_k}$ and $\hat{c_k}$ denote firm $k$'s
@@ -1512,8 +1545,9 @@ s_0&= 1-G(r;\bar{t})
 Note that in order to calibrate the model parameters, the number of
 moments with user-supplied information must be greater than the number
 of distribution parameters plus the reservation price (if not supplied).
-\section{Simulating Merger Effects  (\textbf{experimental})}
-\subsection{Summarizing Results}
+
+\subsection{Simulating Merger Effects  (\textbf{experimental})}
+\subsubsection{Summarizing Results}
 The auction model's \verb@summary@ method may be used to summarize the results of a
 merger between two firms for a given cost distribution. By default, the \verb@summary@ method
 reports pre- and post-merger equilibrium prices and \emph{quantity}
@@ -1522,12 +1556,39 @@ pre- and post-merger equilibrium prices and quantities may be reported by settin
 `exAnte' argument equal to TRUE. Calibrated distribution parameters may be reported by setting
 \verb@summary@'s `parameters' argument equal to TRUE. The number of significant digits can be
 altered using the `digits' argument.
-\subsection{Simulating Price Effects With Efficiencies}
+\subsubsection{Simulating Price Effects With Efficiencies}
 By default,  \verb@auction2nd.cap@ assumes that a merger places the
 parties' capacities under common ownership and that the capacities of
 all other firms in the market are unaffected by the acquisition. Both of these
 assumptions may be modified with the `mcDelta' argument, which allows users to specify the proportional changes in each firm's
 capacities due to the merger.
+
+
+
+\section{2nd Price Auction with Differentiated Products}
+Here, we describe a 2nd price procurement auction where the features of the products -- including cost -- are both horizontally and vertically differentiated. This section is largely based on \cite{miller2014}.
+
+\subsection{The Game}
+Suppose that a buyer is interested in either purchasing a single unit of a
+differentiated product from one of the $K$ firms, each of whom manufacture  $J_k,k\in K$ variants of the product,
+or in supplying the product herself. Let $J=\bigcup_k^KJ_k$ denote the set of all products produced by any of the $K$ firms. Not only do each of the variants have different characteristics, the cost of producing these products may also differ. In particular, suppose that variant $J_k,k\in K$  uses constant marginal
+cost technology $c_{J_k}\ge 0$ to produce the product.\footnote{Throughout, we abuse the notation slightly by
+  treating variables like $K$ as both the set of firms as well as the
+  number of firms.} Likewise, suppose that the cost to the buyer of
+self-supply is $c_0$. 
+
+Let the utility that a buyer receives from product $j\in J$ with offer $p_j$ equal  to 
+\begin{align*}
+  V_j=& \overline{V_j} + \epsilon_j &\\
+ \overline{V_j} =& \delta_j + \alpha p_j,&\alpha<0,\\
+\end{align*}
+
+where, $\overline{V_j}$ represents an index of ``vertical" quality differentiation that decomposed into a non-price component $\delta_j$ and a price component $\alpha p_j$.  In addition, $\epsilon_j$ represents a buyer-specific idiosyncratic shock to utility (i.e. ``horizontal" quality differentiation). We will assume that these  shocks are independently drawn from  the distribution $F$. We will also assume that at the start of the auction, $\epsilon_j$ is known to $j$'s manufacturer but is not known to  any other sellers.
+
+The buyer is assumed to employ a 2nd score auction to determine which product she will purchase. In this auction
+format, each firm submits a bid and the firm with the highest score (which may be the buyer if the buyer self-supplies)  wins the auction
+but pays the difference between the value of the highest scoring product and the value of the next-highest scoring product, less that seller's offer on that product.
+
 
 \chapter{Other Tools}
 For some acquisitions, there may be insufficient information available
