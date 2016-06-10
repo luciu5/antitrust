@@ -1583,11 +1583,17 @@ Let the utility that a buyer receives from product $j\in J$ with offer $p_j$ equ
  \overline{V_j} =& \delta_j + \alpha p_j,&\alpha<0,\\
 \end{align*}
 
-where, $\overline{V_j}$ represents an index of ``vertical" quality differentiation that decomposed into a non-price component $\delta_j$ and a price component $\alpha p_j$.  In addition, $\epsilon_j$ represents a buyer-specific idiosyncratic shock to utility (i.e. ``horizontal" quality differentiation). We will assume that these  shocks are independently drawn from  the distribution $F$. We will also assume that at the start of the auction, $\epsilon_j$ is known to $j$'s manufacturer but is not known to  any other sellers.
+where, $\overline{V_j}$ represents an index of ``vertical" quality differentiation that is decomposed into a non-price component $\delta_j$ and a price component $\alpha p_j$.  In addition, $\epsilon_j$ represents a buyer-specific idiosyncratic shock to utility (i.e. ``horizontal" quality differentiation). We will assume that these  shocks are independently drawn from  the distribution $F$. We will also assume that at the start of the auction, $\epsilon_j$ is known to $j$'s manufacturer but is not known to  any other sellers.
 
 The buyer is assumed to employ a 2nd score auction to determine which product she will purchase. In this auction
 format, each firm submits a bid and the firm with the highest score (which may be the buyer if the buyer self-supplies)  wins the auction
-but pays the difference between the value of the highest scoring product and the value of the next-highest scoring product, less that seller's offer on that product.
+but pays the difference between the value of the highest scoring product and the value of the next-highest scoring product, less that seller's offer on that product. It can be shown that the dominant strategy equilibrium of this game is for each firm to offer a the highest surplus cost.
+
+Suppose that seller $k\in K$'s $j_k$th variant of a product wins the auction. Then it can be shown that the \emph{ex ante} price of product $j_k$, conditional on $j_k$ winning is 
+
+\begin{align*}
+E[P_{j_k}|V_{j_k}>]
+\end{align*}
 
 
 \chapter{Other Tools}
