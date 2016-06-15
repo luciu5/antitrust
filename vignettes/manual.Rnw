@@ -254,6 +254,7 @@ and 0 otherwise. Under partial ownership, the columns of the matrix formed from 
 unique rows of $\Omega$ must sum to 1.
 `$diag$' returns the diagonal of a square matrix and `$\circ$' is the Hadamard (entry-wise) product operator.
 
+The solution to system \ref{eqn:FOC} yields equilbrium prices conditional on the ownership structure $\Omega$. A (partial) merger is modelled as the solution to system  \ref{eqn:FOC} where $\Omega$ is changed to reflect the change in ownership.  
 
 \subsection{Adding Exogenous Capacity Constraints}
 The Bertrand model described above assumes that products are produced
@@ -1376,10 +1377,11 @@ In a \href{https://en.wikipedia.org/wiki/Vickrey_auction}{2nd \emph{price} procu
 \item the dominant strategy in a 2nd price auction is for each seller to offer their product at marginal cost,
 \item the dominant strategy for a seller with a portfolio of products is to only offer the buyer the product in their portfolio with the lowest cost,
 \item the winner of the 2nd price auction is always the product with the lowest cost,
-\item the incremental surplus of the winning product, defined as the difference in cost between the least costly and next-most costly products, goes entirely to the seller. 
+\item the incremental surplus of the winning product, defined as the difference in cost between the least costly and next-most costly products, goes entirely to the seller,
+\item \textbf{horizontal mergers do no affect total surplus only consumer surplus.}
 \end{itemize}
 
-A 2nd \emph{score} procurement auction generalizes a 2nd price auction by allowing sellers to offer \emph{differentiated} products and allowing buyers to choose the product with the highest score. Instead of being paid the 2nd lowest cost, the seller with the highest score is paid the difference between the value of her product and the surplus (value less manufacturing cost) of the product with the next highest score. All the functions in \atr{} assume that the non-price characteristics of a seller's products are fixed, which means that sellers can only bid price.
+A 2nd \emph{score} procurement auction generalizes a 2nd price auction by allowing sellers to offer \emph{differentiated} products and allowing buyers to choose the product with the highest score. Instead of being paid the 2nd lowest cost, the seller with the highest score is paid the difference between the value of her product and the surplus (value less manufacturing cost) of the product with the next highest score. All the functions in \atr{} assume that the non-price characteristics of a seller's products are fixed, which means that sellers  strategies are restricted to i) which products to offer a particular buyer and ii) what price to offer the products at.
 
 All of the properties of a 2nd price auction generalize to a 2nd score auction. In particular:
 
@@ -1387,7 +1389,8 @@ All of the properties of a 2nd price auction generalize to a 2nd score auction. 
 \item the dominant strategy in a 2nd score auction is for each seller to offer their product at marginal cost,
 \item the dominant strategy for a seller with a portfolio of products is to only offer the buyer the product in their portfolio with the highest surplus,
 \item the winner of the 2nd price auction is always the product with the highest surplus,
-\item the incremental surplus of the winning product, defined as the difference in surplus between the highest scored and next-most highest scored products, goes entirely to the seller. 
+\item the incremental surplus of the winning product, defined as the difference in surplus between the highest scored and next-most highest scored products, goes entirely to the seller,
+\item \textbf{horizontal mergers do no affect total surplus only consumer surplus.}
 \end{itemize}
 
 In contrast to a 2nd score procurement auction, sellers in a 1st score procurement auction simply receive their offer if they win. It can be shown that a first score auction where non-price product characteristics are fixed is equivalent to a Nash-Bertrand pricing game where buyers purchase only a single product.\footnote{See \cite{miller2014} for further details.} Consequently, the models discussed in the chapter on the Bertrand Pricing Game, may also be used to explore the effects of mergers in first price auctions.
@@ -1565,18 +1568,17 @@ capacities due to the merger.
 
 
 
-\section{2nd Price Auction with Differentiated Products}
+\section{2nd Score Auction with Differentiated Products}
 
-Here, we describe a 2nd price procurement auction where the features of the products -- including cost -- are both horizontally and vertically differentiated. This section is largely based on \cite{miller2014}.
+Here, we describe a 2nd score procurement auction where the features of the products -- including cost -- are both horizontally and vertically differentiated. This section is largely based on \cite{miller2014}.
 
 \subsection{The Game}
 Suppose that a buyer is interested in either purchasing a single unit of a
-differentiated product from one of the $K$ firms, each of whom manufacture  $J_k,k\in K$ variants of the product,
+differentiated product from one of $K$ firms, each of whom manufacture  $J_k,k\in K$ variants of the product,
 or in supplying the product herself. Let $J=\bigcup_k^KJ_k$ denote the set of all products produced by any of the $K$ firms. Not only do each of the variants have different characteristics, the cost of producing these products may also differ. In particular, suppose that variant $J_k,k\in K$  uses constant marginal
 cost technology $c_{J_k}\ge 0$ to produce the product.\footnote{Throughout, we abuse the notation slightly by
   treating variables like $K$ as both the set of firms as well as the
-  number of firms.} Likewise, suppose that the cost to the buyer of
-self-supply is $c_0$. 
+  number of firms.}  
 
 Let the utility that a buyer receives from product $j\in J$ with offer $p_j$ equal  to 
 \begin{align*}
@@ -1584,37 +1586,37 @@ Let the utility that a buyer receives from product $j\in J$ with offer $p_j$ equ
  \overline{V}_j(p_j) =& \delta_j + \alpha p_j,&\alpha<0,\\
 \end{align*}
 
-where, $\overline{V}_j$ represents an index of ``vertical" quality differentiation that decomposed into a non-offer component $\delta_j$ and an offer component $\alpha p_j$.  In addition, $\epsilon_j$ represents a buyer-specific idiosyncratic shock to utility (i.e. ``horizontal" quality differentiation). Without loss of generality, We will assume that these  shocks are independently drawn from  the distribution $F$, with mean 0 and variance 1.\footnote{Equivalently, with mean $\overline{V}_j(p_j)$ and variance $-\frac{1}{\alpha}$.} We will also assume that at the start of the auction, $\epsilon_j$ is known to $j$'s manufacturer but is not known to  any other sellers.
+where, $\overline{V}_j$ represents an index of ``vertical" quality differentiation that decomposed into a non-offer component $\delta_j$ and an offer component $\alpha p_j$.  In addition, $\epsilon_j$ represents a buyer-specific idiosyncratic shock to utility (i.e. ``horizontal" quality differentiation). Without loss of generality, We will assume that these  shocks are independently drawn from  the distribution $F$, with mean 0 and variance 1.\footnote{Equivalently, $-\frac{V_j(p_j)}{\alpha}$ is a random variable with mean $-\frac{\overline{V}_j(p_j)}{\alpha}$ and standard deviation $-\frac{1}{\alpha}$.} We will also assume that at the start of the auction, $\epsilon_j$ is known to $j$'s manufacturer but is not known to  any other sellers.
 
 The buyer is assumed to employ a 2nd score auction to determine which product she will purchase. In this auction
 format, each firm submits an offer and the firm with the highest score (which may be the buyer if the buyer self-supplies)  wins the auction
-but pays the difference between the value of the highest scoring product and the value of the next-highest scoring product, less that seller's offer on that product. It can be shown that it is a \emph{dominant strategy for each firm to offer the product with the highest surplus to the buyer at cost}.  
+but pays the difference between the value of the highest scoring product and the value of the next-highest scoring product, less that seller's offer on that product. It can be shown that it is a \emph{dominant strategy for each firm to offer the product with the highest surplus in its portfolio to the buyer at cost}.  
 
 Let $z_A=max_{k\in A}{V_k(c_k)}$ denote the the maximum surplus available from any product $k\in A\subseteq J$. \cite{miller2014} demonstrates that the following must hold when firm $k\in K$ wins with variant $j\in J_k$
 
 \begin{itemize}
-  \label{eqn:auc2.1}
 \item the probability that $j$ wins is
 \begin{align}
+ \label{eqn:auc2.1}
  s_j &\equiv 1-Pr(V_j < z_{k \not\in J_k});
 \end{align}
- \label{eqn:auc2.2}
 \item the expected price conditional on $j$ winning is
 \begin{align}
+\label{eqn:auc2.2}
  E[p_j|V_j(c_j) > z_{k \not\in J_k}]= c_j + E[z_J] - E[z_{k \not\in J_k}]; 
 \end{align}
- \label{eqn:auc2.3}
 \item subtracting $c_j$ from both sides of \ref{eqn:auc2.2} yields the expected profit margin conditional on $j$ winning:
 \begin{align}
+\label{eqn:auc2.3}
  E[m_j|V_j(c_j) > z_{k \not\in J_k}]= E[z_J] - E[z_{k \not\in J_k}] 
 \end{align}
 \end{itemize}
 
 \subsubsection{Merger analysis}
-Suppose that firm $k\in K $ acquires the portfolio of products $J_r$ produced by firm $r\in K$. 
+Suppose that firm $k\in K $ acquires a portfolio of products $J_r$ produced by firm $r\in K$.\footnote{Note that $k$ could either acquire $r$'s entire product line or just a subset. } 
 
 \paragraph{Retention of all products.}
-If post-merger $k$ does not discontinue any of $r$'s products, then it can be shown that it is still a dominant strategy for $k$ to only offer a buyer the highest surplus product, and that consequently, the acquisition does not affect which product will ultimately be selected \emph{ex-ante}. Consequently,  the merger does not the decrease \emph{ex-ante} output and therefore leaves total surplus unchanged. The merger, will, absent variable cost efficiencies lead to a price increase and therefore a decrease in consumer surplus. The \emph{ex-ante} magnitude of the price increase (and corresponding decrease in consumer surplus) when $j\in J_k \cup J_r$ win the auction is:
+If post-merger $k$ does not discontinue any of $r$'s products, then it can be shown that it is still a dominant strategy for $k$ to only offer a buyer the highest surplus product, and that consequently, the acquisition does not affect which product will ultimately be selected \emph{ex-ante}. Consequently,  the merger does not the decrease \emph{ex-ante} output and therefore leaves total surplus unchanged. The merger, will, absent variable cost efficiencies lead to a price increase that exactly equals the  decrease in consumer surplus. The \emph{ex-ante} magnitude of the price increase (and corresponding decrease in consumer surplus) when $j\in J_k \cup J_r$ win the auction is:
 
 
 \begin{align}
@@ -1622,35 +1624,36 @@ If post-merger $k$ does not discontinue any of $r$'s products, then it can be sh
 E[\Delta p_j|\text{$j$ wins}] = E[z_{k \not\in J_k} - z_{k \not\in J_k \cup J_r}].
 \end{align}
 
-The expected change in consumer surplus, which also equals the weighted average price effect may be calculated by taking the weighted average of equation \ref{eqn:auc2.pricedeltacond}:
+The expected change in consumer surplus-- which also equals the weighted average price effect-- may be calculated by taking the share- weighted average of equation \ref{eqn:auc2.pricedeltacond}:
 
 \begin{align}
  \label{eqn:auc2.pricedelta}
-E[\Delta p_j] = \sum\limits_{j\in J_k\cup J_r}s_jE[\Delta p_j|V_j(c_j) > z_{k \ne j}]
+E[\Delta p] = \sum\limits_{j\in J_k\cup J_r}s_jE[\Delta p_j|\text{$j$ wins}]
 \end{align}
 
 
+where $s_j$ is given by \ref{eqn:auc2.2}
 
 
 \paragraph{Elimination of some products.}
 Next, suppose that post-merger, firm $k\in K$ discontinues a subset of products $L \subseteq J_k \cup J_r$.
 
 \subsection{Calibrating Model Demand and Cost Parameters}
-In this model, we will assume that the user observes firm shares,
+For this model, we will assume that users observe firm shares,
 prices, and \emph{some} margin information. From the user's perspective, the unknowns are the buyers'  distribution of valuations ($F$), the constant marginal costs ($c_j$) and the components of a buyer's mean valuation (i.e. the $\delta_j$s and $\alpha$).
 
 In order to calibrate this model with the limited information available, we will need to assume a functional form for $F$. Currently, \atr{} assumes that $F$ follows a \href{http://en.wikipedia.org/wiki/Gumbel\_distribution}{Gumbel} distribution. Under this distributional assumption, 
 
 
 \begin{itemize}
- \label{eqn:auc2.4}
 \item the probability that $j$ wins is
 \begin{align}
+ \label{eqn:auc2.4}
  s_j = \frac{\exp(\overline{V}_j(c_j))}{\sum\limits_{k \in J}\exp(\overline{V}_k(c_k))}
 \end{align}
- \label{eqn:auc2.5}
 \item the expected value of the maximum for products in $A \subseteq J $ is
 \begin{align}
+\label{eqn:auc2.5}
  E[z_A]=-\alpha^{-1}\log\sum\limits_{j\in A}\exp(\overline{V}_j(c_j))
 \end{align}
 \end{itemize}
@@ -1661,7 +1664,7 @@ First, note that for product $h\ne j$, equation \ref{eqn:auc2.4} indicates
                      &= \delta_j-\delta_h - \alpha(c_j -c_h) \label{eqn:auc2.6}
 \end{align}
 
-Equation \ref{eqn:auc2.4} implies that at least one of the $V_j$s is not separately identified. Therefore, one valuation must be normalized to 0, so that all the other valuations are \emph{relative} to the normalized product.\footnote{Typically, the value of self-supply ($V_0$) is normalized to 0, but in instances where self-supply is not an option \atr{}'s default is to normalize $V_1$ to 0. This default may be changed with the XXXX option.}  
+Equation \ref{eqn:auc2.4} implies that at least one of the $V_j$s is not separately identified. Therefore, one valuation must be normalized to 0, so that all the other valuations are \emph{relative} to the normalized product.\footnote{Typically, the value of self-supply ($V_0$) is normalized to 0, but in instances where self-supply is not an option \atr{}'s default is to normalize $V_1$ to 0. This default may be changed with the `normIndex' option.}  
 
 Next, substituting equation \ref{eqn:auc2.5} into equation \ref{eqn:auc2.3} yields the following closed form expression for margins:
 
@@ -1669,9 +1672,9 @@ Next, substituting equation \ref{eqn:auc2.5} into equation \ref{eqn:auc2.3} yiel
  E[m_j|V_j(c_j) > z_{k \not\in J_k}]= -\alpha^{-1}\log\left(\frac{1}{1-\sum\limits_{j\in J_k}s_j}\right) \label{eqn:auc2.7}
 \end{align}
 
-Equations \ref{eqn:auc2.6} and \ref{eqn:auc2.7} form the basis of the calibration strategy. All the model parameters may be calibrated with just a single margin, market shares and prices. For example, suppose that the margin for product $j\in J_k$ is known. Equation \ref{eqn:auc2.7} implies that $\alpha$ may be recovered using $j$'s margin as well as the sum of the shares for all of firm $k$'s products. This estimate of $\alpha$, in conjunction with the observed prices of all the other products  and equation \ref{eqn:auc2.7} may then be used to estimate marginal costs for all the other products in the market. These marginal cost estimates, along with equation \ref{eqn:auc2.6}, may then be used to estimate each products' non-offer mean valuations ($\delta$s).
+Equations \ref{eqn:auc2.6} and \ref{eqn:auc2.7} form the basis of the calibration strategy. All the model parameters may be calibrated with just a single margin, market shares and prices. For example, suppose that the margin for product $j\in J_k$ is known. Equation \ref{eqn:auc2.7} implies that $\alpha$ may be recovered using only $j$'s margin as well as the sum of the shares for all of firm $k$'s products. This estimate of $\alpha$, in conjunction with the observed prices of all the other products  and equation \ref{eqn:auc2.7} may then be used to estimate marginal costs for all the other products in the market. These marginal cost estimates, along with equation \ref{eqn:auc2.6}, may then be used to estimate each products' non-offer mean valuations ($\delta$s).
 
-In some instances, there may be more than one margin available. In these cases a minimum distance algorithm  is used to find the value of $\alpha$ that best satisfies all the margin equations for which there is data. 
+In some instances, there may be more than one margin available. In these cases a minimum distance algorithm  is used to find the value of $\alpha$ that best satisfies all the margin equations (\ref{eqn:auc2.7}) for which there is data. 
 
 \chapter{Other Tools}
 For some acquisitions, there may be insufficient information available
