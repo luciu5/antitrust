@@ -1618,6 +1618,8 @@ Suppose that firm $k\in K $ acquires the portfolio of products $J_r$ produced by
 E[\Delta p_j|V_j(c_j) > z_{k \ne j}] = E[z_{k \not\in J_k} - z_{k \not\in J_k \cup J_r}].
 \end{align}
 
+
+
 Next, suppose that post-merger, firm $k\in K$ discontinues a subset of products $L \subseteq J_k \cup J_r$.
 
 \subsection{Calibrating Model Demand and Cost Parameters}
