@@ -1390,11 +1390,11 @@ All of the properties of a 2nd price auction generalize to a 2nd score auction. 
 \item the incremental surplus of the winning product, defined as the difference in surplus between the highest scored and next-most highest scored products, goes entirely to the seller. 
 \end{itemize}
 
-In contrast to a 2nd score procurement auction, sellers in a 1st score procurement auction simply recieve their offer if they win. It can be shown that a first score auction where non-price product characteristics are fixed is equivalent to a Nash-Bertrand pricing game where buyers purchase only a single product.\footnote{See \cite{miller2014} for further details.} Consequently, the models discussed in the chapter on the Bertrand Pricing Game, may also be used to explore the effects of mergers in first price auctions.
+In contrast to a 2nd score procurement auction, sellers in a 1st score procurement auction simply receive their offer if they win. It can be shown that a first score auction where non-price product characteristics are fixed is equivalent to a Nash-Bertrand pricing game where buyers purchase only a single product.\footnote{See \cite{miller2014} for further details.} Consequently, the models discussed in the chapter on the Bertrand Pricing Game, may also be used to explore the effects of mergers in first price auctions.
 
 The remainder of this chapter explores \atr{}'s implementation of 2nd score auctions
 
-\section{2nd Price Auction with Capacity Contraints}
+\section{2nd Price Auction with Capacity Constraints}
 Here, we describe a 2nd price procurement auction where the buyer sets a reserve price and capacity constrained bidders offer  a single unit of a homogeneous
 product.\footnote{\cite{WaehrP2003} for further details.}
 
@@ -1610,16 +1610,29 @@ Let $z_A=max_{k\in A}{V_k(c_k)}$ denote the the maximum surplus available from a
 \end{align}
 \end{itemize}
 
-Suppose that firm $k\in K $ acquires the portfolio of products $J_r$ produced by firm $r\in K$. If post-merger $k$ does not discontinue any of $r$'s products, then it can be shown that it is still a dominant strategy for $k$ to only offer a buyer the highest surplus product, and that consequently, the acquisition does not affect which product will ultimately be selected \emph{ex-ante} (i.e. the merger does not decrease \emph{ex-ante} output). The merger, however, will, absent variable cost efficiencie,s lead to a price increase. The \emph{ex-ante} magnitude of the price increase when $j\in J_k$ generates the most surplus is determined by:
+\subsubsection{Merger analysis}
+Suppose that firm $k\in K $ acquires the portfolio of products $J_r$ produced by firm $r\in K$. 
+
+\paragraph{Retention of all products.}
+If post-merger $k$ does not discontinue any of $r$'s products, then it can be shown that it is still a dominant strategy for $k$ to only offer a buyer the highest surplus product, and that consequently, the acquisition does not affect which product will ultimately be selected \emph{ex-ante}. Consequently,  the merger does not the decrease \emph{ex-ante} output and therefore leaves total surplus unchanged. The merger, will, absent variable cost efficiencies lead to a price increase and therefore a decrease in consumer surplus. The \emph{ex-ante} magnitude of the price increase (and corresponding decrease in consumer surplus) when $j\in J_k \cup J_r$ win the auction is:
 
 
 \begin{align}
+ \label{eqn:auc2.pricedeltacond}
+E[\Delta p_j|\text{$j$ wins}] = E[z_{k \not\in J_k} - z_{k \not\in J_k \cup J_r}].
+\end{align}
+
+The expected change in consumer surplus, which also equals the weighted average price effect may be calculated by taking the weighted average of equation \ref{eqn:auc2.pricedeltacond}:
+
+\begin{align}
  \label{eqn:auc2.pricedelta}
-E[\Delta p_j|V_j(c_j) > z_{k \ne j}] = E[z_{k \not\in J_k} - z_{k \not\in J_k \cup J_r}].
+E[\Delta p_j] = \sum\limits_{j\in J_k\cup J_r}s_jE[\Delta p_j|V_j(c_j) > z_{k \ne j}]
 \end{align}
 
 
 
+
+\paragraph{Elimination of some products.}
 Next, suppose that post-merger, firm $k\in K$ discontinues a subset of products $L \subseteq J_k \cup J_r$.
 
 \subsection{Calibrating Model Demand and Cost Parameters}
@@ -1636,7 +1649,7 @@ In order to calibrate this model with the limited information available, we will
  s_j = \frac{\exp(\overline{V}_j(c_j))}{\sum\limits_{k \in J}\exp(\overline{V}_k(c_k))}
 \end{align}
  \label{eqn:auc2.5}
-\item the expected value of the maximum for product $j\in A \subseteq J $ is
+\item the expected value of the maximum for products in $A \subseteq J $ is
 \begin{align}
  E[z_A]=-\alpha^{-1}\log\sum\limits_{j\in A}\exp(\overline{V}_j(c_j))
 \end{align}
@@ -1813,7 +1826,7 @@ products.\footnote{Throughout, we abuse the notation slightly by
   treating variables like $K$ and $n_k$ as both the set of firms as well as the
   number of firms.} Let  $n=\sum\limits_{k\in K}n_k$ denote the number of products sold
 by all $K$ firms. These firms are playing an infinitely repeated
-supergame, where in each period of the game the $K$ firms play the
+super-game, where in each period of the game the $K$ firms play the
 Bertrand pricing game described in section
 \ref{sec:BertrandGame}. Mathematically, firm $k$ solves:
 
