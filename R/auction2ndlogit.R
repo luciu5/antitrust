@@ -84,24 +84,25 @@ setMethod(
     
     nprods <- length(object@shares)
     
-    if( preMerger) {
-      object@pricePre <- object@mcPre
-      owner  <- object@ownerPre}
-    else{
-      object@pricePost <- object@mcPost
-      owner  <- object@ownerPost}
-     
     if(missing(subset)){
       subset <- rep(TRUE,nprods)
     }
     
     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
     
+    mc <- margins <- rep(NA,nprods)
+    
+    if( preMerger) {
+      mc[subset] <- object@mcPre[subset] 
+      object@pricePre <- mc
+      owner  <- object@ownerPre}
+    else{
+      mc[subset] <- object@mcPost[subset]
+      object@pricePost <- mc
+      owner  <- object@ownerPost}
     
     
-    margins <- rep(NA,nprods)
-  
-    owner <- owner[subset,subset]
+      owner <- owner[subset,subset]
     
      
     alpha <- object@slopes$alpha
