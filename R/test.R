@@ -22,6 +22,7 @@ source("pcaids.R")
 source("pcaidsNests.R")
 source("sim.R")
 source("auction2ndcap.R")
+source("auction2ndlogit.R")
 setwd(currentdir)
 
 
@@ -150,6 +151,9 @@ demand.parm$mktSize=mktSize
 sim11    <- sim(price,demand="LogitCap",demand.parm,ownerPre=ownerPre,capacities=cap,ownerPost=ownerPost,labels=prodNames)
 
 
+## 2nd score auction with logit demand
+
+result13 <- auction2nd.logit(price,shares.quantity,margins.logit*price,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 
 
 

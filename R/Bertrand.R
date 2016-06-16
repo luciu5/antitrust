@@ -506,8 +506,8 @@ setMethod(
      priceDelta <- (pricePost/pricePre - 1) * 100
 
      if(!shares && hasMethod("calcQuantities",class(object))){
-         outPre  <-  calcQuantities(object,TRUE)
-         outPost <-  calcQuantities(object,FALSE)
+         outPre  <-  calcQuantities(object,preMerger=TRUE)
+         outPost <-  calcQuantities(object,preMerger=FALSE)
 
          if(revenue){
              outPre <- pricePre*outPre
@@ -520,8 +520,8 @@ setMethod(
      else{
          if(!shares){warning("'shares' equals FALSE but 'calcQuantities' not defined. Reporting shares instead of quantities")}
 
-         outPre  <-  calcShares(object,TRUE,revenue) * 100
-         outPost <-  calcShares(object,FALSE,revenue) * 100
+         outPre  <-  calcShares(object,preMerger=TRUE,revenue=revenue) * 100
+         outPost <-  calcShares(object,preMerger=FALSE,revenue=revenue) * 100
 
          sumlabels=paste("shares",c("Pre","Post"),sep="")
      }
