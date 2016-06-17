@@ -1,5 +1,4 @@
-\name{auction2nd}
-\alias{auction2nd}
+\name{auction2nd.cap}
 \alias{auction2nd.cap}
 \title{(Capacity Constrained) 2nd Price Auction Model}
 
