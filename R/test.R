@@ -155,6 +155,28 @@ sim11    <- sim(price,demand="LogitCap",demand.parm,ownerPre=ownerPre,capacities
 
 result13 <- auction2nd.logit(price,shares.quantity,margins.logit*price,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
 
+## test of 2nd score from Miller 2014
+share.miller  = c(0.29,0.40,0.28,0.03)
+
+
+## original data
+#price     = c(NA,154,NA,NA)
+#cost      = c(NA,101,50,50)
+
+## Used Nate's model to solve for prices.
+## Use these as inputs, plus a single cost,
+## rather than all costs and a single price.
+price.miller = c(35.53,  154, 84.08, 53.16)
+cost.miller =  c(NA, 101, NA, NA)
+
+ownerPre <- ownerPost <- diag(length(share.miller))
+
+#Suppose products 2 and 3 merge
+ownerPost[2,3] <- ownerPost[3,2] <- 1 
+
+margin.miller =price.miller - cost.miller
+
+result14 <- auction2nd.logit(price.miller,share.miller,margin.miller/price.miller,ownerPre=ownerPre,ownerPost=ownerPost)
 
 
 ## Simulate a merger between two single-product firms in a

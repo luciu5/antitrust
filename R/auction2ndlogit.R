@@ -18,6 +18,8 @@ setMethod(
               margins      <-  object@margins
               prices       <-  object@prices
               idx          <-  object@normIndex
+              
+              margins <- margins*prices
 
              
               ## Uncover price coefficient and mean valuation from margins and revenue shares
@@ -43,7 +45,7 @@ setMethod(
                   margins    <- margins[isMargin]
                   
                   measure <- margins + log(1/(1-firmShares))/alpha
-                  measure <- sum(measure^2,na.rm=TRUE)
+                  measure <- sum((measure/prices)^2,na.rm=TRUE)
 
                   return(measure)
               }
@@ -244,6 +246,31 @@ setMethod(
 
  })
 
+
+## account for the fact that calcMargins method for 2nd price 
+## is in dollars rather than %
+setMethod(
+  f= "cmcr",
+  signature= "Auction2ndLogit",
+  definition=function(object){
+   
+    isParty <- rowSums( abs(object@ownerPost - object@ownerPre) ) > 0
+    
+    ##Compute pre-merger margins
+    marginPre  <- calcMargins(object,TRUE)
+    
+    
+    ##compute post-merger margins evaluated at pre-merger prices
+    object@ownerPre <- object@ownerPost
+    marginPost <- calcMargins(object,TRUE)
+    
+    cmcr <- (marginPost - marginPre)/(object@pricePre - marginPre)
+    names(cmcr) <- object@labels
+    
+    cmcr <- cmcr[isParty]
+    return(cmcr * 100)
+  }
+)
 
 setMethod(
   f= "CV",
