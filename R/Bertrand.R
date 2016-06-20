@@ -559,9 +559,13 @@ setMethod(
 
      results <- cbind(isParty, results)
 
+     ##Only compute cmcr if cmcr method doesn't yield an error
+     thisCMCR <- tryCatch(cmcr(object),error=function(e) FALSE)
+     if(!is.logical(thisCMCR)){
      cat("\n\nShare-Weighted Price Change:",round(sum(sharesPost*priceDelta,na.rm=TRUE),digits),sep="\t")
      cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*sharesPost[isParty=="*"],na.rm=TRUE)/sum(sharesPost[isParty=="*"],na.rm=TRUE),digits),sep="\t")
-
+     } 
+     
      ##Only compute upp if prices are supplied
      thisUPP <- tryCatch(upp(object),error=function(e) FALSE)
      if(!is.logical(thisUPP)){

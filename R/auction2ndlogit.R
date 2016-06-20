@@ -217,29 +217,15 @@ setMethod(
  definition=function(object,prodIndex){
 
 
-     mc       <- object@mcPre[prodIndex]
-     pricePre <- object@pricePre
-
-     calcMonopolySurplus <- function(priceCand){
-
-         pricePre[prodIndex] <- priceCand #keep prices of products not included in HM fixed at premerger levels
-         object@pricePre     <- pricePre
-         sharesCand          <- calcShares(object,TRUE,revenue=FALSE)
-
-         surplus             <- (priceCand-mc)*sharesCand[prodIndex]
-
-         return(sum(surplus,na.rm=TRUE))
-     }
-
-
-     maxResult <- optim(object@prices[prodIndex],calcMonopolySurplus,
-                              method = "L-BFGS-B",lower = 0,
-                              control=list(fnscale=-1))
-
-     pricesHM <- maxResult$par
-
-     #priceDelta <- pricesHM/pricePre[prodIndex] - 1
-     #names(priceDelta) <- object@labels[prodIndex]
+     ownerMon <- object@ownerPre
+     ownerMon[prodIndex,] <- 0
+     ownerMon[,prodIndex] <- 0
+     ownerMon <- ownerMon[prodIndex,prodIndex] <- 1
+     
+     object@ownerPre <- ownerMon
+  
+     pricesHM <- calcPrices(object,preMerger=TRUE)
+     pricesHM <- pricesHM[prodIndex]
      names(pricesHM) <- object@labels[prodIndex]
 
      return(pricesHM)
@@ -247,28 +233,14 @@ setMethod(
  })
 
 
-## account for the fact that calcMargins method for 2nd price 
-## is in dollars rather than %
+## CMCR does not make sense in 2nd score auction
+## delete
 setMethod(
   f= "cmcr",
   signature= "Auction2ndLogit",
   definition=function(object){
    
-    isParty <- rowSums( abs(object@ownerPost - object@ownerPre) ) > 0
-    
-    ##Compute pre-merger margins
-    marginPre  <- calcMargins(object,TRUE)
-    
-    
-    ##compute post-merger margins evaluated at pre-merger prices
-    object@ownerPre <- object@ownerPost
-    marginPost <- calcMargins(object,TRUE)
-    
-    cmcr <- (marginPost - marginPre)/(object@pricePre - marginPre)
-    names(cmcr) <- object@labels
-    
-    cmcr <- cmcr[isParty]
-    return(cmcr * 100)
+    stop("'cmcr' is not defined for a 2nd-score auction")
   }
 )
 

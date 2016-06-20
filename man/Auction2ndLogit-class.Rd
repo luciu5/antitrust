@@ -1,35 +1,26 @@
-\name{LogitALM-class}
-\Rdversion{1.1}
+\name{Auction2ndLogit-class}
+\Rdversion{1.0}
 \docType{class}
-\alias{LogitALM-class}
+\alias{Auction2ndLogit-class}
 %\alias{calcShares,LogitALM-method}
 %\alias{calcSlopes,LogitALM-method}
 %\alias{getNestsParms,LogitALM-method}
 %%\alias{CV,LogitALM-method}
 %%\alias{elast,LogitALM-method}
 
-\title{Class \dQuote{LogitALM}}
+\title{Class \dQuote{Auction2ndLogit}}
 \description{
-  The \dQuote{LogitALM} class contains all the information needed to
+  The \dQuote{Auction2ndLogit} class contains all the information needed to
   calibrate a Logit
   demand system and perform a merger analysis under the assumption that
-  firms are playing a differentiated products Bertrand pricing game with
-  capacity constraints.
+  firms are setting offers in a 2nd-score auction.
 %%  ~~ A concise (1-5 lines) description of what the class is. ~~
 }
 \section{Objects from the Class}{
-Objects can be created by using the constructor function \code{\link{logit.cap}}.
+Objects can be created by using the constructor function \code{\link{auction2nd.logit}}.
 %%  ~~ describe objects here ~~
 }
-\section{Slots}{
-  \describe{
-     \item{\code{parmsStart}:}{A length 2 vector whose first element equals an
-      initial guess of the price coefficient and whose second
-      element equals an initial guess of the outside share. The price
-      coefficient's initial value must be negative and the outside share's
-      initial value must be between 0 and 1 .}
-  }
-}
+
 \section{Extends}{
 Class \code{\linkS4class{Logit}}, directly.
 Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Logit}}, distance 2.
@@ -43,7 +34,17 @@ Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, di
   \describe{
     \item{\code{calcSlopes}}{\code{signature(object)}}{ Uncover Logit
       ALM demand parameters. Assumes that firms are currently at
-      equilibrium  in a differentiated product Bertrand Nash pricing game with capacity constraints.}
+      equilibrium  in a 2nd-score auction.}
+    \item{\code{calcMargins}}{\code{signature(object)}}{ Compute model margins.}
+    \item{\code{calcMC}}{\code{signature(object)}}{ Compute constant marginal costs impied by the model.}
+    \item{\code{calcShares}}{\code{signature(object)}}{ Compute logit shares using cost estimates.}
+    \item{\code{calcSlopes}}{\code{signature(object)}}{ Uncover Logit
+      ALM demand parameters. Assumes that firms are currently at
+      equilibrium  in a 2nd-score auction.}
+    \item{\code{cmcr}}{\code{signature(object)}}{ Compensating marginal cost reduction is not sensible in a 2nd-score auction. Method returns error.}
+    \item{\code{CV}}{\code{signature(object)}}{ Compensating variation is simply the weighted average of the price changes.}
+        \item{\code{calcPricesHypoMon}}{\code{signature(object)}}{Computes prices for a subset of firms under the control of a hypothetical monopolist playing a 2nd score auction.}
+      
   }
 
 }
