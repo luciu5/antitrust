@@ -10,6 +10,7 @@
 \alias{calcPricesHypoMon,LogLin-method}
 \alias{calcPricesHypoMon,Logit-method}
 \alias{calcPricesHypoMon,LogitCap-method}
+\alias{calcPricesHypoMon,Auction2ndLogit-method}
 \alias{calcPriceDeltaHypoMon}
 \alias{calcPriceDeltaHypoMon,ANY-method}
 \alias{calcPriceDeltaHypoMon,AIDS-method}

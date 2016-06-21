@@ -9,6 +9,7 @@
 \alias{calcShares,Linear-method}
 \alias{calcShares,Logit-method}
 \alias{calcShares,LogitNests-method}
+\alias{calcShares,Auction2ndLogit-method}
 \alias{calcQuantities}
 \alias{calcQuantities,ANY-method}
 \alias{calcQuantities,Linear-method}
@@ -21,6 +22,7 @@
 \alias{calcPrices,LogLin-method}
 \alias{calcPrices,Logit-method}
 \alias{calcPrices,LogitCap-method}
+\alias{calcPrices,Auction2ndLogit-method}
 \alias{calcPriceDelta}
 \alias{calcPriceDelta,ANY-method}
 \alias{calcPriceDelta,Antitrust-method}
@@ -33,9 +35,11 @@
 \alias{calcMargins,AIDS-method}
 \alias{calcMargins,Bertrand-method}
 \alias{calcMargins,LogitCap-method}
+\alias{calcMargins,Auction2ndLogit-method}
 \alias{calcMC}
 \alias{calcMC,ANY-method}
 \alias{calcMC,Bertrand-method}
+\alias{calcMC,Auction2ndLogit-method}
 \alias{calcSlopes}
 \alias{calcSlopes,ANY-method}
 \alias{calcSlopes,AIDS-method}
@@ -50,6 +54,7 @@
 \alias{calcSlopes,LogitNestsALM-method}
 \alias{calcSlopes,PCAIDS-method}
 \alias{calcSlopes,PCAIDSNests-method}
+\alias{calcSlopes,Auction2ndLogit-method}
 \alias{hhi}
 \alias{hhi,ANY-method}
 \alias{hhi,Bertrand-method}
