@@ -1664,7 +1664,7 @@ First, note that for product $h\ne j$, equation \ref{eqn:auc2.4} indicates
                      &= \delta_j-\delta_h - \alpha(c_j -c_h) \label{eqn:auc2.6}
 \end{align}
 
-Equation \ref{eqn:auc2.4} implies that at least one of the $V_j$s is not separately identified. Therefore, one valuation must be normalized to 0, so that all the other valuations are \emph{relative} to the normalized product.\footnote{Typically, the value of self-supply ($V_0$) is normalized to 0, but in instances where self-supply is not an option \atr{}'s default is to normalize $V_1$ to 0. This default may be changed with the `normIndex' option.}  
+Equation \ref{eqn:auc2.4} implies that at least one of the $V_j$s is not separately identified. Therefore, one product must be selected as the \emph{numeraire} so that all the other valuations are \emph{relative} to the normalized product.\footnote{Specifically, suppose $k$ is the \emph{numeriare} product, and that $V_k=\delta_k +\alpha p_k$. When supplied 'shares' sum to 1, the first product is by default set to be the numeraire product. This may be changed with the `normIndex' option.}  
 
 Next, substituting equation \ref{eqn:auc2.5} into equation \ref{eqn:auc2.3} yields the following closed form expression for margins:
 

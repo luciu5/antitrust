@@ -28,21 +28,14 @@ setMethod(
               nprods <- length(shares)
         
 
-              ## identify which products have enough margin information
-              ##  to impute model margins
-              isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
-              isMargin[ownerPre==0]=0
-              isMargin    <- !is.na(rowSums(isMargin))
-
-
               firmShares <- drop(ownerPre %*% shares)
               
               ## Minimize the distance between observed and predicted margins
               minD <- function(alpha){
 
                  
-                  firmShares <- firmShares[isMargin]
-                  margins    <- margins[isMargin]
+                  firmShares <- firmShares
+                  margins    <- margins
                   
                   measure <- margins + log(1/(1-firmShares))/alpha
                   measure <- sum((measure/prices)^2,na.rm=TRUE)
@@ -178,7 +171,7 @@ setMethod(
     outVal <- ifelse(object@shareInside<1, exp(alpha*object@priceOutside), 0)
     
     shares <- exp(meanval + alpha*mc)
-    shares <- shares/(outVal+ sum(shares,na.rm=TRUE))
+    shares <- shares/(outVal + sum(shares,na.rm=TRUE))
     
     if(revenue){shares <- prices*shares/sum(prices*shares,object@priceOutside*(1-sum(shares,na.rm=TRUE)),na.rm=TRUE)}
     
@@ -244,13 +237,26 @@ setMethod(
   }
 )
 
+
+setMethod(
+  f= "upp",
+  signature= "Auction2ndLogit",
+  definition=function(object){
+    
+    stop("'upp' is not defined for a 2nd-score auction")
+  }
+)
+
+
+
+
 setMethod(
   f= "CV",
   signature= "Auction2ndLogit",
   definition=function(object){
     
-    priceDelta <-  object@pricePost - object@pricePre 
-    sharesPost <- calcShares(object)
+    priceDelta <- object@pricePost - object@pricePre  
+    sharesPost <- calcShares(object, preMerger=FALSE)
     
     result <- sum(priceDelta*sharesPost, na.rm = TRUE)
     

@@ -42,6 +42,7 @@ Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, di
       ALM demand parameters. Assumes that firms are currently at
       equilibrium  in a 2nd-score auction.}
     \item{\code{cmcr}}{\code{signature(object)}}{ Compensating marginal cost reduction is not sensible in a 2nd-score auction. Method returns error.}
+        \item{\code{upp}}{\code{signature(object)}}{ upward pricing pressure is not sensible in a 2nd-score auction. Method returns error.}
     \item{\code{CV}}{\code{signature(object)}}{ Compensating variation is simply the weighted average of the price changes.}
         \item{\code{calcPricesHypoMon}}{\code{signature(object)}}{Computes prices for a subset of firms under the control of a hypothetical monopolist playing a 2nd score auction.}
       

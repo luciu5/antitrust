@@ -9,6 +9,8 @@
 \alias{upp,ANY-method}
 \alias{upp,Bertrand-method}
 \alias{upp,AIDS-method}
+\alias{upp,Auction2ndLogit-method}
+
 
 \title{Methods For Calculating Compensating Marginal Cost Reductions and
 Upwards Pricing Pressure Index (Bertrand)}
