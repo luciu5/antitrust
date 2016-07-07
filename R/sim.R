@@ -114,17 +114,20 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
 
              if(!("sigma" %in% names(demand.param))){
                  stop("'demand.param' does not contain 'sigma'.")
-            }
-             if(length(demand.param$sigma)==1){constraint=TRUE}
+             }
+           
+           if(missing(nests) ||
+              length(nests)!= nprods ){stop("When 'demand' equals 'CESNests' or 'LogitNests', 'nests' must equal a vector whose length equals the number of products.")}
+           
+             if(length(demand.param$sigma)==1){
+               constraint=TRUE
+               demand.param$sigma <- rep(demand.param$sigma,nlevels(nests))
+               }
              else{constraint=FALSE}
 
 
-             if(missing(nests) ||
-                length(nests)!= nprods ){stop("When 'demand' equals 'CESNests' or 'LogitNests', 'nests' must equal a vector whose length equals the number of products.")}
-
-             if(nlevels(nests) != length(demand.param$sigma) &&
-                length(demand.param$sigma) != 1){
-                 stop("The number of nests in 'nests' must either equal 1 or the number of nesting parameters in 'demand.param$sigma'.")}
+             if(nlevels(nests) != length(demand.param$sigma)){
+                 stop("The number of nests in 'nests' must either equal the number of nesting parameters in 'demand.param$sigma'.")}
 
          }
 
