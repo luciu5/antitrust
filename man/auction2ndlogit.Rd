@@ -101,11 +101,22 @@ ownerPost[2,3] <- ownerPost[3,2] <- 1
 
 margin = 1 - cost/price
 
-result <- auction2nd.logit(price,share,margin,ownerPre=ownerPre,ownerPost=ownerPost)
+result <- auction2nd.logit(price,share,margin,
+ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
 
 
 print(result)
 summary(result,revenue=FALSE)
+
+##re-run without any price information except Firm 2
+
+price[-2] <- NA
+
+result.noprice <- auction2nd.logit(price,share,margin,
+ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
+
+print(result.noprice)
+summary(result.noprice,revenue=FALSE)
 
 ## Get a detailed description of the 'Auction2ndLogit' class slots
 showClass("Auction2ndLogit")

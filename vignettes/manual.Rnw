@@ -641,7 +641,7 @@ products.\footnote{Note that these margins are in addition to the margin
 %argument to specify  a length-n vector identifying which nest each
 %product falls into.
 
-\subsection{Logit Demand}
+\subsection{Logit Demand\label{subsec:nblogit}}
 The Bertrand model with Logit demand may be implemented using the
 \verb@logit@ function.
 
@@ -1378,7 +1378,7 @@ In a \href{https://en.wikipedia.org/wiki/Vickrey_auction}{2nd \emph{price} procu
 \item the dominant strategy for a seller with a portfolio of products is to only offer the buyer the product in their portfolio with the lowest cost,
 \item the winner of the 2nd price auction is always the product with the lowest cost,
 \item the incremental surplus of the winning product, defined as the difference in cost between the least costly and next-most costly products, goes entirely to the seller,
-\item \textbf{horizontal mergers do no affect total surplus only consumer surplus.}
+\item \textbf{absent efficiencies, horizontal mergers do no affect total surplus only consumer surplus.}
 \end{itemize}
 
 A 2nd \emph{score} procurement auction generalizes a 2nd price auction by allowing sellers to offer \emph{differentiated} products and allowing buyers to choose the product with the highest score. Instead of being paid the 2nd lowest cost, the seller with the highest score is paid the difference between the value of her product and the surplus (value less manufacturing cost) of the product with the next highest score. All the functions in \atr{} assume that the non-price characteristics of a seller's products are fixed, which means that sellers  strategies are restricted to i) which products to offer a particular buyer and ii) what price to offer the products at.
@@ -1390,7 +1390,7 @@ All of the properties of a 2nd price auction generalize to a 2nd score auction. 
 \item the dominant strategy for a seller with a portfolio of products is to only offer the buyer the product in their portfolio with the highest surplus,
 \item the winner of the 2nd price auction is always the product with the highest surplus,
 \item the incremental surplus of the winning product, defined as the difference in surplus between the highest scored and next-most highest scored products, goes entirely to the seller,
-\item \textbf{horizontal mergers do no affect total surplus only consumer surplus.}
+\item \textbf{absent efficiencies, horizontal mergers do no affect total surplus only consumer surplus.}
 \end{itemize}
 
 In contrast to a 2nd score procurement auction, sellers in a 1st score procurement auction simply receive their offer if they win. It can be shown that a first score auction where non-price product characteristics are fixed is equivalent to a Nash-Bertrand pricing game where buyers purchase only a single product.\footnote{See \cite{miller2014} for further details.} Consequently, the models discussed in the chapter on the Bertrand Pricing Game, may also be used to explore the effects of mergers in first price auctions.
@@ -1399,7 +1399,7 @@ The remainder of this chapter explores \atr{}'s implementation of 2nd score auct
 
 \section{2nd Price Auction with Capacity Constraints}
 Here, we describe a 2nd price procurement auction where the buyer sets a reserve price and capacity constrained bidders offer  a single unit of a homogeneous
-product.\footnote{\cite{WaehrP2003} for further details.}
+product.\footnote{\cite{WaehrP2003} for further details.}. This auction model may be executed using \atr{}'s \verb@auction2nd.cap@ function.
 
 \subsection{The Game}
 Suppose that a buyer is interested in either purchasing a single unit of a
@@ -1550,7 +1550,7 @@ moments with user-supplied information must be greater than the number
 of distribution parameters plus the reservation price (if not supplied).
 
 \subsection{Simulating Merger Effects  (\textbf{experimental})}
-\subsubsection{Summarizing Results}
+\subsubsection{Summarizing Results\label{subsec:nbsummary}}
 The auction model's \verb@summary@ method may be used to summarize the results of a
 merger between two firms for a given cost distribution. By default, the \verb@summary@ method
 reports pre- and post-merger equilibrium prices and \emph{quantity}
@@ -1570,7 +1570,7 @@ capacities due to the merger.
 
 \section{2nd Score Auction with Differentiated Products}
 
-Here, we describe a 2nd score procurement auction where the features of the products -- including cost -- are both horizontally and vertically differentiated. This section is largely based on \cite{miller2014}.
+Here, we describe a 2nd score procurement auction where the features of the products -- including cost -- are both horizontally and vertically differentiated. This section is largely based on \cite{miller2014}. This auction model may be executed using \atr{}'s \verb@auction2nd.logit@ function.
 
 \subsection{The Game}
 Suppose that a buyer is interested in either purchasing a single unit of a
@@ -1635,9 +1635,6 @@ E[\Delta p] = \sum\limits_{j\in J_k\cup J_r}s_jE[\Delta p_j|\text{$j$ wins}]
 where $s_j$ is given by \ref{eqn:auc2.2}
 
 
-\paragraph{Elimination of some products.}
-Next, suppose that post-merger, firm $k\in K$ discontinues a subset of products $L \subseteq J_k \cup J_r$.
-
 \subsection{Calibrating Model Demand and Cost Parameters}
 For this model, we will assume that users observe firm shares,
 prices, and \emph{some} margin information. From the user's perspective, the unknowns are the buyers'  distribution of valuations ($F$), the constant marginal costs ($c_j$) and the components of a buyer's mean valuation (i.e. the $\delta_j$s and $\alpha$).
@@ -1672,9 +1669,30 @@ Next, substituting equation \ref{eqn:auc2.5} into equation \ref{eqn:auc2.3} yiel
  E[m_j|V_j(c_j) > z_{k \not\in J_k}]= -\alpha^{-1}\log\left(\frac{1}{1-\sum\limits_{j\in J_k}s_j}\right) \label{eqn:auc2.7}
 \end{align}
 
-Equations \ref{eqn:auc2.6} and \ref{eqn:auc2.7} form the basis of the calibration strategy. All the model parameters may be calibrated with just a single margin, market shares and prices. For example, suppose that the margin for product $j\in J_k$ is known. Equation \ref{eqn:auc2.7} implies that $\alpha$ may be recovered using only $j$'s margin as well as the sum of the shares for all of firm $k$'s products. This estimate of $\alpha$, in conjunction with the observed prices of all the other products  and equation \ref{eqn:auc2.7} may then be used to estimate marginal costs for all the other products in the market. These marginal cost estimates, along with equation \ref{eqn:auc2.6}, may then be used to estimate each products' non-offer mean valuations ($\delta$s).
+Equations \ref{eqn:auc2.6} and \ref{eqn:auc2.7} form the basis of the calibration strategy. All the model parameters may be calibrated with just a single margin and market shares. Product prices only need to to be supplied for products whose marginal costs are assumed to change post-merger (i.e. products for which `mcDelta' is not equal to 0). 
+
+For example, suppose that the margin for product $j\in J_k$ is known. Equation \ref{eqn:auc2.7} implies that $\alpha$ may be recovered using only $j$'s margin as well as the sum of the shares for all of firm $j$'s products. This estimate of $\alpha$, in conjunction with equation \ref{eqn:auc2.7} may then be used to estimate margins for all the other products in the market. Absent post-merger cost changes, these margin estimates, along with equation \ref{eqn:auc2.6}, may then be used to estimate each products' non-offer mean valuations ($\delta$s). 
+
+When post-merger cost changes are included in the model, it becomes necessary to estimate marginal costs, \emph{but only for the products whose costs are changing due to the merger}.\footnote{This occurs because in a 2nd score auction, it is a dominant strategy to bid costs. Consequently, if product $j$'s costs do not change, then $V_j$ is the same for product $j$ both pre- and post-merger. This is in contrast to the Nash-Bertrand pricing game described in Section \ref{subsec:nblogit}, where a firm's pricing strategy for product $j$ depends on the pricing behavior of all other products, making it necessary to use pricing information to decompose $V_j$  into its price and non-price components.} This is accomplished by including price information for these products. Products whose costs are not assumed to change do not require pricing data (i.e. `prices' may be NA for products where `mcDelta' is 0). 
 
 In some instances, there may be more than one margin available. In these cases a minimum distance algorithm  is used to find the value of $\alpha$ that best satisfies all the margin equations (\ref{eqn:auc2.7}) for which there is data. 
+
+\subsection{Simulating Merger Effects}
+
+
+\subsubsection{Summarizing Results}
+The \verb@summary@ method for \verb@Auction2ndLogit@ is similar to the method described in section \ref{subsec:nbsummary}. The main difference is that by default, this method reports changes in levels rather than percentages and output in quantity shares rather than in revenue shares. These alterations were made because prices are not a pre-requisite for this model, but when prices are not supplied, only level changes are identified. Regardless, these defaults can be changed by apropriately setting the methods `revenue' and `levels' arguments.
+
+\subsubsection{Simulating Price Effects With Efficiencies}
+\verb@auction2nd.logit@'s `mcDelta' argument may be used to specify the anticipated proportional change in marginal costs that will likely occur from a merger. See \verb@auction2nd.logit@'s help page for further details.
+
+\subsubsection{Excluding Products From the Market}
+\verb@auction2nd.logit@'s `subset' argument may be used to simulate a merger's effect when a product is assumed to be elSiminated from the market post-merger. See \verb@auction2nd.logit@'s help page for further details.
+
+\subsubsection{Measuring Changes In Consumer Welfare}
+The \verb@CV@ method may be used to calculate compensating variation from a merger.
+
+
 
 \chapter{Other Tools}
 For some acquisitions, there may be insufficient information available
@@ -2038,8 +2056,9 @@ the behavior of existing methods may then be overridden.
 
 
 \section{The Auction Models}
-Currently, \emph{Auction2ndCap} is the only auction class available in
-\atr{}. The constructor function for this class is
+Currently, the two auction classes available in \atr{} are \emph{Auction2ndLogit} and \emph{Auction2ndCap}. \emph{Auction2ndLogit} is a child class of \emph{Logit} and therefore follows the same pattern as the Bertrand Model described above. 
+
+ In constrast, the constructor function for \emph{Auction2ndLogit} is
 \verb@auction2nd.cap@, which initializes a class instance with
 sensible default values and then does the following:
 

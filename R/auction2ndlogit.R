@@ -1,7 +1,23 @@
 
 setClass(
          Class   = "Auction2ndLogit",
-         contains="Logit"
+         contains="Logit",
+         validity=function(object){
+           
+           idx <- object@normIndex
+           
+           if(any(is.na(object@prices) & 
+                  !is.na(object@mcDelta) &
+                  object@mcDelta!=0)){
+             stop("'prices'  cannot equal NA when 'mcDelta' supplied")
+           }
+           
+           if(is.na(object@prices[idx]) &&
+              any(!is.na(object@prices[-idx]))){
+             stop("'prices' for index 'normIndex' cannot be NA")
+           }
+           
+         }
         )
 
 
@@ -56,10 +72,12 @@ setMethod(
                 idxShare <- shares[idx]
                 idxPrice <- mcPre[idx]
               }
-              
+
+              mcPre[is.na(mcPre)] <- 0             
 
               meanval <- log(shares) - log(idxShare) - minAlpha * (mcPre - idxPrice)
-
+              
+              
               names(meanval)   <- object@labels
 
               object@slopes    <- list(alpha=minAlpha,meanval=meanval)
@@ -165,6 +183,8 @@ setMethod(
       }
     
     
+    mc <- ifelse(is.na(mc) & subset, 0, mc)
+    
     alpha    <- object@slopes$alpha
     meanval  <- object@slopes$meanval
     
@@ -173,7 +193,11 @@ setMethod(
     shares <- exp(meanval + alpha*mc)
     shares <- shares/(outVal + sum(shares,na.rm=TRUE))
     
-    if(revenue){shares <- prices*shares/sum(prices*shares,object@priceOutside*(1-sum(shares,na.rm=TRUE)),na.rm=TRUE)}
+    if(revenue){
+      res <- rep(NA,nprods)
+      res[subset] <- prices[subset]*shares[subset]/sum(prices[subset]*shares[subset],object@priceOutside*(1-sum(shares[subset])))
+      shares <- res
+      }
     
     names(shares) <- object@labels
     
@@ -226,6 +250,35 @@ setMethod(
  })
 
 
+setMethod(
+  f= "calcPriceDelta",
+  signature= "Auction2ndLogit",
+  definition=function(object,levels=TRUE){
+    
+    subset <- object@subset
+    
+    result <- callNextMethod(object,levels)
+    
+    if(levels){
+      marginDelta <- calcMargins(object, FALSE) - calcMargins(object, TRUE)
+      result[is.na(result) & subset] <- marginDelta[is.na(result) & subset]
+    }
+    
+    return(result)
+  }
+)
+    
+
+setMethod(
+  f= "summary",
+  signature= "Auction2ndLogit",
+  definition=function(object,levels=TRUE,revenue=FALSE,...){
+  
+    callNextMethod(object,levels=levels,revenue=revenue,...)
+  }
+    
+)  
+
 ## CMCR does not make sense in 2nd score auction
 ## delete
 setMethod(
@@ -255,7 +308,9 @@ setMethod(
   signature= "Auction2ndLogit",
   definition=function(object){
     
-    priceDelta <- object@pricePost - object@pricePre  
+    priceDelta <- object@pricePost - object@pricePre
+    marginDelta <- calcMargins(object, FALSE) - calcMargins(object, TRUE)
+    priceDelta <- ifelse(is.na(priceDelta), marginDelta, priceDelta)
     sharesPost <- calcShares(object, preMerger=FALSE)
     
     result <- sum(priceDelta*sharesPost, na.rm = TRUE)
