@@ -9,3 +9,4 @@
 .Rproj.user
 *.tex
 antitrust.Rproj
+.Rbuildignore

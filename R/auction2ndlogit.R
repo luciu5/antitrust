@@ -54,12 +54,12 @@ setMethod(
                   margins    <- margins
                   
                   measure <- margins + log(1/(1-firmShares))/alpha
-                  measure <- sum((measure/prices)^2,na.rm=TRUE)
+                  measure <- sum((measure)^2,na.rm=TRUE)
 
                   return(measure)
               }
 
-              minAlpha <- optimize(minD,c(-1e6,0))$minimum
+              minAlpha <- optimize(minD,c(-1e6,0),tol=.Machine$double.eps^0.5)$minimum
 
               marginsPre <- - log(1/(1-firmShares))/minAlpha
               mcPre <- prices - marginsPre 
@@ -308,9 +308,7 @@ setMethod(
   signature= "Auction2ndLogit",
   definition=function(object){
     
-    priceDelta <- object@pricePost - object@pricePre
-    marginDelta <- calcMargins(object, FALSE) - calcMargins(object, TRUE)
-    priceDelta <- ifelse(is.na(priceDelta), marginDelta, priceDelta)
+    priceDelta <- calcPriceDelta(object,levels=TRUE)
     sharesPost <- calcShares(object, preMerger=FALSE)
     
     result <- sum(priceDelta*sharesPost, na.rm = TRUE)
