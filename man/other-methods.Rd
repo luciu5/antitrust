@@ -27,6 +27,7 @@
 \alias{calcPriceDelta,ANY-method}
 \alias{calcPriceDelta,Antitrust-method}
 \alias{calcPriceDelta,AIDS-method}
+\alias{calcPriceDelta,Auction2ndLogit-method}
 \alias{calcProducerSurplus}
 \alias{calcProducerSurplus,ANY-method}
 \alias{calcProducerSurplus,Bertrand-method}
@@ -77,8 +78,8 @@
 \S4method{calcShares}{ANY}(object,preMerger=TRUE,revenue=FALSE)
 \S4method{calcQuantities}{ANY}(object,preMerger=TRUE)
 \S4method{calcPrices}{ANY}(object,preMerger=TRUE,subset,...)
-\S4method{calcPriceDelta}{Antitrust}(object)
-\S4method{calcPriceDelta}{AIDS}(object,isMax=FALSE,subset,...)
+\S4method{calcPriceDelta}{Antitrust}(object,levels=FALSE)
+\S4method{calcPriceDelta}{AIDS}(object,isMax=FALSE,levels=FALSE,subset,...)
 \S4method{calcProducerSurplus}{Bertrand}(object,preMerger=TRUE)
 \S4method{calcMargins}{ANY}(object,preMerger=TRUE)
 \S4method{calcMC}{Bertrand}(object,preMerger=TRUE)
@@ -87,7 +88,7 @@
 \S4method{ownerToMatrix}{Antitrust}(object,preMerger=TRUE)
 \S4method{ownerToVec}{Antitrust}(object,preMerger=TRUE)
 \S4method{plot}{Bertrand}(x,scale=.1)
-\S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2,...)
+\S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,digits=2,...)
 
 
 }
@@ -110,6 +111,7 @@
     returns levels. Default is TRUE}
   \item{parameters}{If TRUE, reports demand and cost parameters. Default
     is FALSE}
+     \item{levels}{If TRUE, report results in levels. If FALSE, report results in percents. Default is FALSE}
     \item{digits}{The number of significant digits to round
   printed results. Default is 2}
   \item{scale}{The proportion below marginal cost and above equilbrium price that should be plotted. Default is .1 }

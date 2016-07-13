@@ -134,7 +134,7 @@ setMethod(
 setMethod(
  f= "calcPriceDelta",
  signature= "AIDS",
- definition=function(object,isMax=FALSE,subset,...){
+ definition=function(object,isMax=FALSE,levels=FALSE,subset,...){
 
 
      ownerPost <- object@ownerPost
@@ -182,6 +182,8 @@ setMethod(
      deltaPrice <- exp(minResult$par)-1
      names(deltaPrice) <- object@labels
 
+     if(levels){deltaPrice <- calcPrices(object,FALSE) - calcPrices(object,TRUE)}
+     
      return(deltaPrice)
  }
           )

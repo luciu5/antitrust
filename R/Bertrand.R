@@ -496,14 +496,15 @@ setMethod(
 setMethod(
  f= "summary",
  signature= "Bertrand",
- definition=function(object,revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2,...){
+ definition=function(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,digits=2,...){
 
      curWidth <-  getOption("width")
 
 
      pricePre   <-  object@pricePre
      pricePost  <-  object@pricePost
-     priceDelta <- (pricePost/pricePre - 1) * 100
+     priceDelta <- calcPriceDelta(object,levels=levels)
+     if(!levels) priceDelta <- priceDelta *100
 
      if(!shares && hasMethod("calcQuantities",class(object))){
          outPre  <-  calcQuantities(object,preMerger=TRUE)
@@ -528,7 +529,8 @@ setMethod(
 
      mcDelta <- object@mcDelta * 100
 
-     outDelta <- (outPost/outPre - 1) * 100
+     if(levels){outDelta <- outPost - outPre}
+     else{outDelta <- (outPost/outPre - 1) * 100}
 
 
      isParty <- as.numeric(rowSums( abs(object@ownerPost - object@ownerPre))>0)
@@ -553,7 +555,9 @@ setMethod(
      print(round(results,digits),digits=digits)
      options("width"=curWidth) #restore to current width
 
-     cat("\n\tNotes: '*' indicates merging parties' products. Deltas are percent changes.\n")
+     cat("\n\tNotes: '*' indicates merging parties' products.\n ")
+     if(levels){cat("\tDeltas are level changes.\n")}
+     else{cat("\tDeltas are percent changes.\n")}
      if(revenue){cat("\tOutput is based on revenues.\n")}
      else{cat("\tOutput is based on units sold.\n")}
 

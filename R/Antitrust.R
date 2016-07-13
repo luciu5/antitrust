@@ -106,12 +106,13 @@ setMethod(
 setMethod(
           f= "calcPriceDelta",
           signature= "Antitrust",
-          definition=function(object){
+          definition=function(object,levels=FALSE){
 
               pricePre  <- object@pricePre
               pricePost <- object@pricePost
 
-              priceDelta <- pricePost/pricePre - 1
+              if(levels){priceDelta <- pricePost - pricePre}
+              else{priceDelta <- pricePost/pricePre - 1}
               #names(priceDelta) <- object@labels
 
               return(priceDelta)
