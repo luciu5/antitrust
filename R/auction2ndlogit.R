@@ -311,18 +311,18 @@ setMethod(
     
     sharesPost <- calcShares(object, preMerger=FALSE)
     
-    if(all(object@mcDelta==0,na.rm=TRUE)){
+    if(all(object@mcDelta==0,na.rm=TRUE) && any(is.na(object@pricePre))){
       
       priceDelta <- calcPriceDelta(object,levels=TRUE)
       
       result <- sum(priceDelta*sharesPost, na.rm = TRUE)
+      return(result)
     }
     else{
-      sharesPre <- calcShares(object, preMerger=TRUE)
-      result <- object@pricePost * sharesPost - object@pricePre * sharesPre
+    callNextMethod(object)  
     }
     
-    return(result)
+   
     
   })
 
