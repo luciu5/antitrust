@@ -140,7 +140,8 @@ setMethod(
        
        
        
-       bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci)
+       bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci,
+                             control=object@control.slopes)
 
        slopes = diag(bestParms$par[1:nprod])
 
@@ -420,6 +421,7 @@ linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
                    mcDelta=rep(0,length(prices)),
                    subset=rep(TRUE,length(prices)),
                    priceStart=prices,
+                   control.slopes,
                    labels=paste("Prod",1:length(prices),sep=""),
                    ...
                      ){
@@ -439,6 +441,11 @@ linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
                    ownerPost=ownerPost, priceStart=priceStart,labels=labels)
 
 
+     if(!missing(control.slopes)){
+       result@control.slopes <- control.slopes
+     }
+
+     
      ## Convert ownership vectors to ownership matrices
      result@ownerPre  <- ownerToMatrix(result,TRUE)
      result@ownerPost <- ownerToMatrix(result,FALSE)

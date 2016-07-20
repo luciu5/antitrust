@@ -12,6 +12,7 @@ auction2nd.logit(prices,shares,margins,
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
                   mcOutside = 0,
+                  control.slopes,
                   labels=paste("Prod",1:length(prices),sep="")
                   )
 
@@ -45,6 +46,7 @@ auction2nd.logit(prices,shares,margins,
      length k vector of TRUE.}
   \item{mcOutside}{A length 1 vector indicating the marginal cost of the
     outside good. Default is 0.}
+   \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where
     \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
 }

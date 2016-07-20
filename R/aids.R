@@ -103,7 +103,8 @@ setMethod(
       ci        =  rep(0,length(parmStart))
       ci[-1]    = -shareProd[upper.tri(shareProd)]
 
-     bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci)
+     bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci,
+                           control=object@control.slopes)
 
      B = diag(nprod)
 
@@ -165,7 +166,7 @@ setMethod(
 
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,...)
+     minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
 
 
      if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
@@ -578,6 +579,8 @@ aids <- function(shares,margins,prices,diversions,
                  subset=rep(TRUE, length(shares)),
                  priceStart=runif(length(shares)),
                  isMax=FALSE,
+                 control.slopes,
+                 control.equ,
                  labels=paste("Prod",1:length(shares),sep=""),
                  ...){
 
@@ -601,6 +604,13 @@ aids <- function(shares,margins,prices,diversions,
                   diversion=diversions,
                   priceStart=priceStart,labels=labels)
 
+    if(!missing(control.slopes)){
+      result@control.slopes <- control.slopes
+    }
+    if(!missing(control.equ)){
+      result@control.equ <- control.equ
+    }
+    
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)

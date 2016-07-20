@@ -228,7 +228,8 @@ setMethod(
          ci = rep(0,length(parmsStart))
 
 
-         result <- constrOptim(parmsStart,minD,grad=NULL,ui=ui,ci=ci,...)
+         result <- constrOptim(parmsStart,minD,grad=NULL,ui=ui,ci=ci,
+                               control=object@control.slopes,...)
 
        }
         else{
@@ -244,7 +245,8 @@ setMethod(
           if(length(parmsStart)>1){method="L-BFGS-B"}
           else{method="Brent"; ub=1e12} #'Brent' is equivalent to using optimize for 1D problems
 
-          result <- optim(parmsStart,minD,method=method,lower=lb,upper=ub,...)
+          result <- optim(parmsStart,minD,method=method,lower=lb,upper=ub,
+                          control=object@control.slopes,...)
 
         }
 
@@ -314,6 +316,7 @@ setMethod(
               f  = minD,
               lower = lower,
               upper = upper,
+              tol=object@control.slopes$reltol
             )
 
 
@@ -682,13 +685,14 @@ auction2nd.cap <- function(capacities, margins,prices,reserve=NA,shareInside=NA,
                            ownerPre,ownerPost,
                            mcDelta=rep(0,length(capacities)),
                            constrain.reserve=TRUE, parmsStart,
+                           control.slopes,
                            labels=as.character(ownerPre),...
                           ){
 
 
     sellerCostCDF <- match.arg(sellerCostCDF)
     lower.tail    <- TRUE
-    sellerCostPDF <- match.fun(paste("d",substring(sellerCostCDF,2,),sep=""))
+    sellerCostPDF <- match.fun(paste("d",substring(sellerCostCDF,2),sep=""))
 
     if(is.na(reserve)){reserve <- NA_real_}
     if(is.na(shareInside)){shareInside <- NA_real_}
@@ -740,6 +744,9 @@ auction2nd.cap <- function(capacities, margins,prices,reserve=NA,shareInside=NA,
                   parmsStart=parmsStart,
                   labels=labels)
 
+    if(!missing(control.slopes)){
+      result@control.slopes <- control.slopes
+    }
 
     ## Calibrate seller cost parameters
     result                 <- calcSellerCostParms(result,...)

@@ -147,7 +147,9 @@ Normalizing these parameters to 1.")
 
               upperB[-1] <- 1
 
-              minTheta <- optim(parmsStart,minD,method="L-BFGS-B",lower= lowerB,upper=upperB)
+              minTheta <- optim(parmsStart,minD,method="L-BFGS-B",
+                                lower= lowerB,upper=upperB,
+                                control=object@control.slopes)
 
 
               if(minTheta$convergence != 0){
@@ -325,6 +327,8 @@ logit.nests <- function(prices,shares,margins,
                         isMax=FALSE,
                         constraint = TRUE,
                         parmsStart,
+                        control.slopes,
+                        control.equ,
                         labels=paste("Prod",1:length(prices),sep=""),
                         ...
                         ){
@@ -373,6 +377,14 @@ logit.nests <- function(prices,shares,margins,
                   priceStart=priceStart,shareInside=sum(shares),
                   labels=labels)
 
+    
+    if(!missing(control.slopes)){
+      result@control.slopes <- control.slopes
+    }
+    if(!missing(control.equ)){
+      result@control.equ <- control.equ
+    }
+    
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)

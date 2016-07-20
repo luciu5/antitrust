@@ -18,6 +18,7 @@
                      mcDelta=rep(0,length(prices)),
                      subset=rep(TRUE, length(prices)),
                      priceStart=prices,
+                     control.slopes,
                      labels=paste("Prod",1:length(prices),sep=""),
                      ...
                      )
@@ -29,6 +30,7 @@
                      mcDelta=rep(0,length(prices)),
                      subset=rep(TRUE, length(prices)),
                      priceStart=prices,
+                     control.equ,
                      labels=paste("Prod",1:length(prices),sep=""),
                      ...
              )
@@ -63,6 +65,8 @@
      length k vector of TRUE.}
    \item{priceStart}{A length k vector of prices used as the initial guess
      in the nonlinear equation solver. Default is \sQuote{prices}.}
+      \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
+    \item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters passed to the non-linear equation solver (typically the \code{calcPrices} method).}
    \item{labels}{A k-length vector of labels. Default is "Prod#", where
      \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
    \item{...}{Additional options to feed to the solver. See below.}

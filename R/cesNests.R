@@ -167,7 +167,8 @@ Normalizing these parameters to 1.")
               constrB <- rep(0,length(parmsStart))
               constrB[1] <- 1
 
-              minTheta <- constrOptim(parmsStart,minD,grad=NULL,ui=constrA,ci=constrB)
+              minTheta <- constrOptim(parmsStart,minD,grad=NULL,ui=constrA,ci=constrB,
+                                      control=object@control.slopes)
 
 
               if(minTheta$convergence != 0){
@@ -358,6 +359,8 @@ ces.nests <- function(prices,shares,margins,
                       isMax=FALSE,
                       constraint = TRUE,
                       parmsStart,
+                      control.slopes,
+                      control.equ,
                       labels=paste("Prod",1:length(prices),sep=""),
                       ...
                       ){
@@ -388,6 +391,14 @@ ces.nests <- function(prices,shares,margins,
                   constraint=constraint,
                   shareInside=shareInside,labels=labels)
 
+    
+    if(!missing(control.slopes)){
+      result@control.slopes <- control.slopes
+    }
+    if(!missing(control.equ)){
+      result@control.equ <- control.equ
+    }
+    
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)

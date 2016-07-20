@@ -72,7 +72,8 @@ setMethod(
                   return(measure)
               }
 
-              minGamma <- optimize(minD,c(1,1e6))$minimum
+              minGamma <- optimize(minD,c(1,1e6),
+                                   tol=object@control.slopes$reltol)$minimum
 
 
               meanval <- log(shares) - log(idxShare) + (minGamma - 1) * (log(prices) - log(idxPrice))
@@ -198,6 +199,8 @@ ces <- function(prices,shares,margins,
                 priceOutside=1,
                 priceStart = prices,
                 isMax=FALSE,
+                control.slopes,
+                control.equ,
                 labels=paste("Prod",1:length(prices),sep=""),
                 ...
                 ){
@@ -216,6 +219,13 @@ ces <- function(prices,shares,margins,
                   priceStart=priceStart,
                   shareInside=shareInside,labels=labels)
 
+    if(!missing(control.slopes)){
+      result@control.slopes <- control.slopes
+    }
+    if(!missing(control.equ)){
+      result@control.equ <- control.equ
+    }
+    
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)

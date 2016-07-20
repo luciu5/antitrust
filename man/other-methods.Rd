@@ -70,6 +70,7 @@
 \alias{summary,ANY-method}
 \alias{summary,AIDS-method}
 \alias{summary,Bertrand-method}
+\alias{summary,Auction2ndLogit-method}
 \title{Other Useful \sQuote{Bertrand} Methods}
 \description{
  Methods defined for the \sQuote{Bertrand} class and its child classes.

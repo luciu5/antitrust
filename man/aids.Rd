@@ -16,6 +16,8 @@ aids(shares,margins,prices,diversions,
                  subset=rep(TRUE, length(shares)),
                  priceStart=runif(length(shares)),
                  isMax=FALSE,
+                 control.slopes,
+                 control.equ,
                  labels=paste("Prod",1:length(shares),sep=""),
                  ...)
 
@@ -27,6 +29,8 @@ pcaids(shares,knownElast,mktElast=-1,
               subset=rep(TRUE, length(shares)),
               priceStart=runif(length(shares)),
               isMax=FALSE,
+              control.slopes,
+              control.equ,
               labels=paste("Prod",1:length(shares),sep=""),
               ...)
 
@@ -39,6 +43,8 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
               priceStart=runif(length(shares)),
               isMax=FALSE,
               nestsParmStart,
+              control.slopes,
+              control.equ,
               labels=paste("Prod",1:length(shares),sep=""),
               ...)
 
@@ -88,6 +94,8 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
 \item{nestsParmStart}{A vector of starting values used to solve for
   price coefficient and nest parameters. If missing then the random
   draws with the appropriate restrictions are employed.}
+    \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
+    \item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters passed to the non-linear equation solver (typically the \code{calcPrices} method).}
   \item{labels}{A k-length vector of labels.}
   \item{...}{Additional options to feed to the \code{\link[BB]{BBsolve}}
   optimizer used to solve for equilibrium prices.}

@@ -93,7 +93,9 @@ setMethod(
      lower[1]=-Inf
      lower[-(1)]=0
 
-     bestBetas=optim(bStart,minD,method="L-BFGS-B",upper=upper,lower=lower)
+     bestBetas=optim(bStart,minD,method="L-BFGS-B",
+                     upper=upper,lower=lower,
+                     control=object@control.slopes)
 
 
      B = diag(nprod)
@@ -129,6 +131,8 @@ pcaids <- function(shares,knownElast,mktElast=-1,
                    subset=rep(TRUE, length(shares)),
                    priceStart=runif(length(shares)),
                    isMax=FALSE,
+                   control.slopes,
+                   control.equ,
                    labels=paste("Prod",1:length(shares),sep=""),
                    ...){
 
@@ -151,6 +155,13 @@ pcaids <- function(shares,knownElast,mktElast=-1,
                   diversion=diversions,
                   priceStart=priceStart,labels=labels)
 
+    if(!missing(control.slopes)){
+      result@control.slopes <- control.slopes
+    }
+    if(!missing(control.equ)){
+      result@control.equ <- control.equ
+    }
+    
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)

@@ -14,6 +14,7 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
                ownerPre,ownerPost,
                mcDelta=rep(0,length(capacities)),
                constrain.reserve=TRUE, parmsStart,
+               control.slopes,
                labels=as.character(ownerPre),...
                           )
 
@@ -47,6 +48,7 @@ auction2nd.cap(capacities, margins,prices,reserve=NA,shareInside=NA,
     price post-merger.}
   \item{parmsStart}{A vector of starting values for calibrated parameters. See below
     for more details}
+   \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
   \item{labels}{A k-length vector of labels. Default is "Firm", where
     \sQuote{#} is a number between 1 and the length of \sQuote{capacities}.}
   \item{...}{Additional options to feed to either \code{\link{optim}} or \code{\link{constrOptim}}.}

@@ -77,7 +77,10 @@ setMethod(
               lowerB <- c(-Inf,0)
               upperB <- c(-1e-10,.99999)
 
-              minTheta <- optim(object@parmsStart,minD,method="L-BFGS-B",lower= lowerB,upper=upperB)$par
+              minTheta <- optim(object@parmsStart,minD,
+                                method="L-BFGS-B",
+                                lower= lowerB,upper=upperB,
+                                control=object@control.slopes)$par
 
               if(isTRUE(all.equal(minTheta[[2]],0))){stop("Estimated outside share is close to 0. Use `logit' function instead")}
               
@@ -104,6 +107,8 @@ logit.alm <- function(prices,shares,margins,
                       priceStart = prices,
                       isMax=FALSE,
                       parmsStart,
+                      control.slopes,
+                      control.equ,
                       labels=paste("Prod",1:length(prices),sep=""),
                       ...
                       ){
@@ -114,6 +119,8 @@ logit.alm <- function(prices,shares,margins,
         parmsStart[1] <- -1* parmsStart[1] # price coefficient is assumed to be negative
     }
 
+   
+  
     ## Create Logit  container to store relevant data
     result <- new("LogitALM",prices=prices, shares=shares,
                   margins=margins,
@@ -127,6 +134,13 @@ logit.alm <- function(prices,shares,margins,
                   parmsStart=parmsStart,
                   labels=labels)
 
+    if(!missing(control.slopes)){
+      result@control.slopes <- control.slopes
+    }
+    if(!missing(control.equ)){
+      result@control.equ <- control.equ
+    }
+    
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)

@@ -141,8 +141,8 @@ setMethod(
                   return(measure)
               }
 
-              minAlpha <- optimize(minD,c(-1e6,0))$minimum
-
+              minAlpha <- optimize(minD,c(-1e6,0),
+                                   tol=object@control.slopes$reltol)$minimum
 
               meanval <- log(shares) - log(idxShare) - minAlpha * (prices - idxPrice)
 
@@ -208,7 +208,7 @@ setMethod(
      }
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- BBsolve(priceStart,FOC,quiet=TRUE,...)
+     minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
 
       if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
 
@@ -358,9 +358,6 @@ setMethod(
 
  })
 
-
-
-
 logit <- function(prices,shares,margins,
                   ownerPre,ownerPost,
                   normIndex=ifelse(sum(shares)<1,NA,1),
@@ -369,6 +366,8 @@ logit <- function(prices,shares,margins,
                   priceOutside = 0,
                   priceStart = prices,
                   isMax=FALSE,
+                  control.slopes,
+                  control.equ,
                   labels=paste("Prod",1:length(prices),sep=""),
                   ...
                   ){
@@ -386,6 +385,13 @@ logit <- function(prices,shares,margins,
                   priceStart=priceStart,shareInside=sum(shares),
                   labels=labels)
 
+    if(!missing(control.slopes)){
+      result@control.slopes <- control.slopes
+    }
+    if(!missing(control.equ)){
+      result@control.equ <- control.equ
+    }
+    
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)

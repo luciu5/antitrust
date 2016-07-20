@@ -96,7 +96,7 @@ setMethod(
      return(thisFOC)
  }
 
- minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,...)
+ minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
 
 if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBSolve' reports: '",minResult$message,"'")}
 
@@ -210,6 +210,7 @@ loglinear <- function(prices,quantities,margins,diversions,
                       mcDelta=rep(0,length(prices)),
                       subset=rep(TRUE,length(prices)),
                       priceStart=prices,
+                      control.equ,
                       labels=paste("Prod",1:length(prices),sep=""),...
                      ){
 
@@ -231,6 +232,10 @@ loglinear <- function(prices,quantities,margins,diversions,
                   ownerPost=ownerPost, labels=labels)
 
 
+    if(!missing(control.equ)){
+      result@control.equ <- control.equ
+    }
+    
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)

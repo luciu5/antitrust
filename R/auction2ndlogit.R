@@ -59,7 +59,8 @@ setMethod(
                   return(measure)
               }
 
-              minAlpha <- optimize(minD,c(-1e6,0),tol=.Machine$double.eps^0.5)$minimum
+              minAlpha <- optimize(minD,c(-1e6,0),
+                                   tol=object@control.slopes$reltol)$minimum
 
               marginsPre <- - log(1/(1-firmShares))/minAlpha
               mcPre <- prices - marginsPre 
@@ -308,10 +309,18 @@ setMethod(
   signature= "Auction2ndLogit",
   definition=function(object){
     
-    priceDelta <- calcPriceDelta(object,levels=TRUE)
     sharesPost <- calcShares(object, preMerger=FALSE)
     
-    result <- sum(priceDelta*sharesPost, na.rm = TRUE)
+    if(all(object@mcDelta==0,na.rm=TRUE)){
+      
+      priceDelta <- calcPriceDelta(object,levels=TRUE)
+      
+      result <- sum(priceDelta*sharesPost, na.rm = TRUE)
+    }
+    else{
+      sharesPre <- calcShares(object, preMerger=TRUE)
+      result <- object@pricePost * sharesPost - object@pricePre * sharesPre
+    }
     
     return(result)
     
@@ -324,6 +333,7 @@ auction2nd.logit <- function(prices,shares,margins,
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
                   mcOutside = 0,
+                  control.slopes,
                   labels=paste("Prod",1:length(prices),sep="")
                   ){
 
@@ -341,6 +351,10 @@ auction2nd.logit <- function(prices,shares,margins,
                   priceStart=rep(0,length(shares)),
                   labels=labels)
 
+    if(!missing(control.slopes)){
+      result@control.slopes <- control.slopes
+    }
+    
     ## Convert ownership vectors to ownership matrices
     result@ownerPre  <- ownerToMatrix(result,TRUE)
     result@ownerPost <- ownerToMatrix(result,FALSE)
