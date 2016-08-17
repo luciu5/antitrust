@@ -313,7 +313,7 @@ setMethod(
               subset <- object@subset
 
 
-              VPre  <- sum(exp(meanval + object@pricePre*alpha)[subset])
+              VPre  <- sum(exp(meanval + object@pricePre*alpha))
               VPost <- sum(exp(meanval + object@pricePost*alpha)[subset])
 
               result <- log(VPost/VPre)/alpha
