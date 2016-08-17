@@ -1608,7 +1608,8 @@ Let $z_A=max_{k\in A}{V_k(c_k)}$ denote the the maximum surplus available from a
 \item subtracting $c_j$ from both sides of \ref{eqn:auc2.2} yields the expected profit margin conditional on $j$ winning:
 \begin{align}
 \label{eqn:auc2.3}
- E[m_j|V_j(c_j) > z_{k \not\in J_k}]= E[z_J] - E[z_{k \not\in J_k}] 
+ E[m_j|V_j(c_j) > z_{k \not\in J_k}]=& E[z_J|V_j(c_j) > z_{k \not\in J_k}] - E[z_{k \not\in J_k}|V_j(c_j) > z_{k \not\in J_k}]\\ \nonumber
+ =& (E[z_J] - E[z_{k \not\in J_k}])s_j^{-1}
 \end{align}
 \end{itemize}
 
@@ -1621,10 +1622,10 @@ If post-merger $k$ does not discontinue any of $r$'s products, then it can be sh
 
 \begin{align}
  \label{eqn:auc2.pricedeltacond}
-E[\Delta p_j|\text{$j$ wins}] = E[z_{k \not\in J_k} - z_{k \not\in J_k \cup J_r}].
+E[\Delta p_j|\text{$j$ wins}] = E[z_{k \not\in J_k} - z_{k \not\in J_k \cup J_r}|\text{$j$ wins}].
 \end{align}
 
-The expected change in consumer surplus-- which also equals the weighted average price effect-- may be calculated by taking the share- weighted average of equation \ref{eqn:auc2.pricedeltacond}:
+The expected change in consumer surplus-- which, absent efficiencies  also equals the weighted average price effect-- may be calculated by taking the share- weighted average of equation \ref{eqn:auc2.pricedeltacond}:
 
 \begin{align}
  \label{eqn:auc2.pricedelta}
@@ -1666,7 +1667,7 @@ Equation \ref{eqn:auc2.4} implies that at least one of the $V_j$s is not separat
 Next, substituting equation \ref{eqn:auc2.5} into equation \ref{eqn:auc2.3} yields the following closed form expression for margins:
 
 \begin{align}
- E[m_j|V_j(c_j) > z_{k \not\in J_k}]= -\alpha^{-1}\log\left(\frac{1}{1-\sum\limits_{j\in J_k}s_j}\right) \label{eqn:auc2.7}
+ E[m_j|V_j(c_j) > z_{k \not\in J_k}]= -(\alpha s_j)^{-1}\log\left(\frac{1}{1-\sum\limits_{r\in J_k}s_r}\right) \label{eqn:auc2.7}
 \end{align}
 
 Equations \ref{eqn:auc2.6} and \ref{eqn:auc2.7} form the basis of the calibration strategy. All the model parameters may be calibrated with just a single margin and market shares. Product prices only need to to be supplied for products whose marginal costs are assumed to change post-merger (i.e. products for which `mcDelta' is not equal to 0). 
@@ -1690,7 +1691,7 @@ The \verb@summary@ method for \verb@Auction2ndLogit@ is similar to the method de
 \verb@auction2nd.logit@'s `subset' argument may be used to simulate a merger's effect when a product is assumed to be elSiminated from the market post-merger. See \verb@auction2nd.logit@'s help page for further details.
 
 \subsubsection{Measuring Changes In Consumer Welfare}
-The \verb@CV@ method may be used to calculate compensating variation from a merger.
+The \verb@CV@ method may be used to calculate compensating variation from a merger. This method will return `NA' if pre-merger prices were not supplied for all products included in the simulation.
 
 
 

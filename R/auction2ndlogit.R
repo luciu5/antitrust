@@ -53,7 +53,7 @@ setMethod(
                   firmShares <- firmShares
                   margins    <- margins
                   
-                  measure <- margins + log(1/(1-firmShares))/alpha
+                  measure <- margins + log(1/(1-firmShares))/(alpha * shares)
                   measure <- sum((measure)^2,na.rm=TRUE)
 
                   return(measure)
@@ -62,7 +62,7 @@ setMethod(
               minAlpha <- optimize(minD,c(-1e6,0),
                                    tol=object@control.slopes$reltol)$minimum
 
-              marginsPre <- - log(1/(1-firmShares))/minAlpha
+              marginsPre <- - log(1/(1-firmShares))/(minAlpha * shares)
               mcPre <- prices - marginsPre 
               
               if(is.na(idx)){
@@ -121,7 +121,7 @@ setMethod(
     shares <- calcShares(object,preMerger,revenue=FALSE)
     shares <- shares[subset]
     firmShares <- drop(owner %*% shares)
-    margins[subset] <-  -log(1/(1-firmShares))/alpha 
+    margins[subset] <-  -log(1/(1-firmShares))/(alpha * shares) 
     
     names(margins) <- object@labels
     
@@ -145,7 +145,7 @@ setMethod(
     
     firmShares <- drop(ownerPre %*% shares)
     
-    marginPre <- - log(1/(1-firmShares))/alpha
+    marginPre <- - log(1/(1-firmShares))/(alpha * shares)
     
     mc <-  prices - marginPre
     
