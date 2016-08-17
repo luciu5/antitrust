@@ -108,7 +108,7 @@ setMethod(
  signature= "Antitrust",
  definition=function(object){
 
-    print(calcPriceDelta(object)*100)
+    print(calcPriceDelta(object))
 
 }
           )
