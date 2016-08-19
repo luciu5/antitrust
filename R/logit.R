@@ -47,7 +47,8 @@ setClass(
               isMargin[ownerPre==0]=0
               isMargin    <- !is.na(rowSums(isMargin))
 
-             if(!any(isMargin)) stop("Insufficient margin information to calibrate demand parameters.")
+             if(object@cls != "Auction2ndLogit" &&
+                !any(isMargin)){ stop("Insufficient margin information to calibrate demand parameters.")}
 
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'shares'")}

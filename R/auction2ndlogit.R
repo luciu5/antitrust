@@ -349,7 +349,8 @@ auction2nd.logit <- function(prices,shares,margins,
                   priceOutside=mcOutside,
                   shareInside=sum(shares),
                   priceStart=rep(0,length(shares)),
-                  labels=labels)
+                  labels=labels,
+                  cls = "Auction2ndLogit")
 
     if(!missing(control.slopes)){
       result@control.slopes <- control.slopes

@@ -12,6 +12,7 @@ setClass(
          mcPre        = "numeric",
          mcPost       = "numeric",
          labels       = "character",
+         cls        = "character",
          control.slopes = "list",
          control.equ = "list"
          ),
@@ -20,6 +21,7 @@ setClass(
          pricePost = numeric(),
          mcPre     = numeric(),
          mcPost    = numeric(),
+         cls  =    character(),
          ##copied from 'optim' definition:
          control.slopes = list( 
                                reltol = sqrt(.Machine$double.eps) 
