@@ -45,15 +45,15 @@ setMethod(
         
 
               firmShares <- drop(ownerPre %*% shares)
+              firmMargins <- drop(ownerPre %*% (margins * shares))
               
               ## Minimize the distance between observed and predicted margins
               minD <- function(alpha){
 
                  
-                  firmShares <- firmShares
-                  margins    <- margins
                   
-                  measure <- margins + log(1/(1-firmShares))/(alpha * shares)
+                  measure <- firmMargins + log(1/(1-firmShares))/alpha
+                  measure <- unique(measure)
                   measure <- sum((measure)^2,na.rm=TRUE)
 
                   return(measure)
