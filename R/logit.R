@@ -361,7 +361,7 @@ setMethod(
 
 logit <- function(prices,shares,margins,
                   ownerPre,ownerPost,
-                  normIndex=ifelse(sum(shares)<1,NA,1),
+                  normIndex=ifelse(isTRUE(all.equal(sum(shares),1)),NA,1),
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
                   priceOutside = 0,
@@ -383,7 +383,8 @@ logit <- function(prices,shares,margins,
                   mcDelta=mcDelta,
                   subset=subset,
                   priceOutside=priceOutside,
-                  priceStart=priceStart,shareInside=sum(shares),
+                  priceStart=priceStart,
+                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1)),1,sum(shares)),
                   labels=labels)
 
     if(!missing(control.slopes)){
