@@ -42,10 +42,7 @@ setClass(
 
              if(any(object@mcDelta>0,na.rm=TRUE)){
                  warning("positive values of 'mcDelta' imply an INCREASE in marginal costs")}
-             if(any(abs(object@mcDelta)>1,na.rm=TRUE)){
-                 warning("Values of 'mcDelta' greater than 1 in absolute value imply a marginal cost change greater than 100%")}
-
-
+             
              return(TRUE)
 
          }
