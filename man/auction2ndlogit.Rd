@@ -8,10 +8,10 @@
 \usage{
 auction2nd.logit(prices,shares,margins,
                   ownerPre,ownerPost,
-                  normIndex=ifelse(sum(shares)<1,NA,1),
+                  normIndex=ifelse(isTRUE(all.equal(sum(shares), 1)), 1, NA),
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
-                  mcOutside = 0,
+                  mcDeltaOutside=0,
                   control.slopes,
                   labels=paste("Prod",1:length(prices),sep="")
                   )
@@ -24,7 +24,7 @@ auction2nd.logit(prices,shares,margins,
   \item{prices}{A length k vector of product prices.}
   \item{shares}{A length k vector of product (quantity) shares. Values must be
     between 0 and 1.}
-  \item{margins}{A length k vector of product margins, some of which may
+  \item{margins}{A length k vector of product margins (in levels, not percents), some of which may
     equal NA.}
   \item{normIndex}{An integer equalling the index (position) of the
     inside product whose mean valuation will be normalized to 1. Default
@@ -37,14 +37,14 @@ auction2nd.logit(prices,shares,margins,
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
   \item{mcDelta}{A vector of length k where each element equals the
-    proportional change in a product's marginal costs due to
+    (level) change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
     affect any products' marginal cost.}
   \item{subset}{A vector of length k where each element equals TRUE if
      the product indexed by that element should be included in the
      post-merger simulation and FALSE if it should be excluded.Default is a
      length k vector of TRUE.}
-  \item{mcOutside}{A length 1 vector indicating the marginal cost of the
+  \item{mcDeltaOutside}{A length 1 vector indicating the change in the marginal cost of the
     outside good. Default is 0.}
    \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
   \item{labels}{A k-length vector of labels. Default is "Prod#", where

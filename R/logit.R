@@ -35,7 +35,7 @@ setClass(
              if(any(object@prices<0,na.rm=TRUE))             stop("'prices' values must be positive")
 
 
-             if(any(margins<0 | margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
+             if(any(margins<0,na.rm=TRUE)) stop("'margins' values must be positive")
 
              if(!(is.matrix(object@ownerPre))){
                  ownerPre <- ownerToMatrix(object,TRUE)
@@ -362,7 +362,7 @@ setMethod(
 
 logit <- function(prices,shares,margins,
                   ownerPre,ownerPost,
-                  normIndex=ifelse(sum(shares)<1,NA,1),
+                  normIndex=ifelse(isTRUE(all.equal(sum(shares),1)),1, NA),
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
                   priceOutside = 0,
@@ -384,7 +384,8 @@ logit <- function(prices,shares,margins,
                   mcDelta=mcDelta,
                   subset=subset,
                   priceOutside=priceOutside,
-                  priceStart=priceStart,shareInside=sum(shares),
+                  priceStart=priceStart,
+                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1)),1,sum(shares)),
                   labels=labels)
 
     if(!missing(control.slopes)){

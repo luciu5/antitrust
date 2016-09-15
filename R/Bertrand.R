@@ -31,7 +31,8 @@ setClass(
              if(any(object@shares < 0 | object@shares > 1,na.rm=TRUE)){
                  stop("'shares' values must be between 0 and 1")}
 
-             if(sum(object@shares) > 1){
+             if(!(sum(object@shares) < 1 ||
+                  isTRUE(all.equal(sum(object@shares),1)))){
                  stop("The sum of 'shares' values must be less than or equal to 1")}
 
 
@@ -41,10 +42,7 @@ setClass(
 
              if(any(object@mcDelta>0,na.rm=TRUE)){
                  warning("positive values of 'mcDelta' imply an INCREASE in marginal costs")}
-             if(any(abs(object@mcDelta)>1,na.rm=TRUE)){
-                 warning("Values of 'mcDelta' greater than 1 in absolute value imply a marginal cost change greater than 100%")}
-
-
+             
              return(TRUE)
 
          }

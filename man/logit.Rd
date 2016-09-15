@@ -13,7 +13,7 @@
 \usage{
 logit(prices,shares,margins,
                 ownerPre,ownerPost,
-                normIndex=ifelse(sum(shares)<1,NA,1),
+                normIndex=ifelse(isTRUE(all.equal(sum(shares), 1)), 1 , NA ),
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
                 priceOutside = 0,

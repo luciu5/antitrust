@@ -1,23 +1,9 @@
-
 setClass(
          Class   = "Auction2ndLogit",
          contains="Logit",
-         validity=function(object){
-           
-           idx <- object@normIndex
-           
-           if(any(is.na(object@prices) & 
-                  !is.na(object@mcDelta) &
-                  object@mcDelta!=0)){
-             stop("'prices'  cannot equal NA when 'mcDelta' supplied")
-           }
-           
-           if(is.na(object@prices[idx]) &&
-              any(!is.na(object@prices[-idx]))){
-             stop("'prices' for index 'normIndex' cannot be NA")
-           }
-           
-         }
+         prototype=prototype(
+           priceStart  = numeric()
+         )
         )
 
 
@@ -35,25 +21,24 @@ setMethod(
               prices       <-  object@prices
               idx          <-  object@normIndex
               
-              margins <- margins*prices
+  
 
              
               ## Uncover price coefficient and mean valuation from margins and revenue shares
 
 
               nprods <- length(shares)
-        
 
+              
+             
               firmShares <- drop(ownerPre %*% shares)
               
-              ## Minimize the distance between observed and predicted margins
+              
+              ## Minimize the distance between observed and predicted  ex Ante margins
               minD <- function(alpha){
 
+                  measure <- margins + log(1 / (1-firmShares))/( alpha * firmShares)
                  
-                  firmShares <- firmShares
-                  margins    <- margins
-                  
-                  measure <- margins + log(1/(1-firmShares))/(alpha * shares)
                   measure <- sum((measure)^2,na.rm=TRUE)
 
                   return(measure)
@@ -62,22 +47,20 @@ setMethod(
               minAlpha <- optimize(minD,c(-1e6,0),
                                    tol=object@control.slopes$reltol)$minimum
 
-              marginsPre <- - log(1/(1-firmShares))/(minAlpha * shares)
-              mcPre <- prices - marginsPre 
+              ## calculate costs conditional on a product winning
+              marginsPre <- - log(1 /(1-firmShares))/(minAlpha * firmShares)
               
               if(is.na(idx)){
                 idxShare <- 1 - object@shareInside
-                idxPrice <- object@priceOutside
+                
               }
               else{
                 idxShare <- shares[idx]
-                idxPrice <- mcPre[idx]
+               
               }
 
-              mcPre[is.na(mcPre)] <- 0             
-
-              meanval <- log(shares) - log(idxShare) - minAlpha * (mcPre - idxPrice)
-              
+             
+              meanval <- log(shares) - log(idxShare)
               
               names(meanval)   <- object@labels
 
@@ -95,13 +78,13 @@ setMethod(
 setMethod(
   f= "calcMargins",
   signature= "Auction2ndLogit",
-  definition=function(object,preMerger=TRUE,subset){
+  definition=function(object,preMerger=TRUE,exAnte=FALSE,subset){
     
     
     nprods <- length(object@shares)
     
     if(missing(subset)){
-      subset <- object@subset
+      subset <- rep(TRUE,nprods)
     }
     
     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
@@ -118,10 +101,12 @@ setMethod(
     
      
     alpha <- object@slopes$alpha
-    shares <- calcShares(object,preMerger,revenue=FALSE)
+    shares <- calcShares(object,preMerger=preMerger,revenue=FALSE)
     shares <- shares[subset]
     firmShares <- drop(owner %*% shares)
-    margins[subset] <-  -log(1/(1-firmShares))/(alpha * shares) 
+    margins[subset] <-  -log(1/(1-firmShares))/(alpha * firmShares) 
+    
+    if(exAnte){ margins <-  margins * shares}
     
     names(margins) <- object@labels
     
@@ -136,22 +121,19 @@ setMethod(
 setMethod(
   f= "calcMC",
   signature= "Auction2ndLogit",
-  definition= function(object,preMerger=TRUE){
+  definition= function(object,preMerger=TRUE,exAnte=FALSE){
     
     prices <- object@prices
-    ownerPre <- object@ownerPre
-    shares <- object@shares
-    alpha <- object@slopes$alpha
     
-    firmShares <- drop(ownerPre %*% shares)
-    
-    marginPre <- - log(1/(1-firmShares))/(alpha * shares)
+    marginPre <- calcMargins(object, preMerger = TRUE)
     
     mc <-  prices - marginPre
     
     if(!preMerger){
-      mc <- mc*(1+object@mcDelta)
+      mc <- mc + object@mcDelta
     }
+    
+    if(exAnte){mc <- mc*shares}
     
     names(mc) <- object@labels
     
@@ -167,36 +149,46 @@ setMethod(
     nprods <- length(object@shares)
     
     if(missing(subset)){
-      subset <- object@subset
+      subset <- rep(TRUE,nprods)
     }
     
     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
     
-    mc <- rep(NA,nprods)
     
-    if( preMerger) {
-      prices <- object@pricePre
-      mc[subset] <- object@mcPre[subset]
-      }
-    else{
-      prices <- object@pricePost
-      mc[subset] <- object@mcPost[subset]
-      }
-    
-    
-    mc <- ifelse(is.na(mc) & subset, 0, mc)
-    
+    idx <- object@normIndex
     alpha    <- object@slopes$alpha
     meanval  <- object@slopes$meanval
     
-    outVal <- ifelse(object@shareInside<1, exp(alpha*object@priceOutside), 0)
     
-    shares <- exp(meanval + alpha*mc)
+    
+    if(is.na(idx)){
+      outVal <- 1
+      mcDeltaOut <- object@priceOutside
+    }
+    
+    else{
+      outVal <- 0
+      mcDeltaOut <- object@mcDelta[idx]
+    }
+  
+    
+    if( preMerger) {
+      prices <- object@pricePre
+      
+      }
+    else{
+      prices <- object@pricePost
+      meanval <- meanval + alpha * (object@mcDelta - mcDeltaOut)
+      }
+    
+    
+    
+    shares <- exp(meanval)
     shares <- shares/(outVal + sum(shares,na.rm=TRUE))
     
     if(revenue){
       res <- rep(NA,nprods)
-      res[subset] <- prices[subset]*shares[subset]/sum(prices[subset]*shares[subset],object@priceOutside*(1-sum(shares[subset])))
+      res[subset] <- prices[subset]*shares[subset]/sum(prices[subset]*shares[subset],mcDeltaOut*(1-sum(shares[subset])))
       shares <- res
       }
     
@@ -212,16 +204,31 @@ setMethod(
 setMethod(
  f= "calcPrices",
  signature= "Auction2ndLogit",
- definition=function(object,preMerger=TRUE,subset){
+ definition=function(object,preMerger=TRUE,exAnte=FALSE,subset){
 
+   nprods <- length(object@shares)
+   if(missing(subset)){subset <- rep(TRUE,nprods)}   
 
-   if(preMerger){mc <- object@mcPre}
-   else{mc <- object@mcPost}
+   if(preMerger){
+     owner <- object@ownerPre
+     mc <- object@mcPre
+     }
+   else{
+     owner <- object@ownerPost
+     mc <- object@mcPost}
    
-   margins <- calcMargins(object,preMerger,subset)
+   margins <- calcMargins(object,preMerger,exAnte=FALSE,subset=subset)
    
    prices <- margins + mc 
    
+   if(exAnte){ 
+     
+     
+     prices <- prices * calcShares(object, preMerger=preMerger,revenue=FALSE)
+     }
+   
+   
+   names(prices) <- object@labels
    return(prices)
   }
  )
@@ -254,17 +261,22 @@ setMethod(
 setMethod(
   f= "calcPriceDelta",
   signature= "Auction2ndLogit",
-  definition=function(object,levels=TRUE){
+  definition=function(object,exAnte=FALSE,levels=TRUE){
     
     subset <- object@subset
     
-    result <- callNextMethod(object,levels)
+    mcDelta <- object@mcDelta
+    
+    if(exAnte){sharesPost <- calcShares(object, preMerger=FALSE)}
+    else{sharesPost <- rep(1,length(subset))}
     
     if(levels){
-      marginDelta <- calcMargins(object, FALSE) - calcMargins(object, TRUE)
-      result[is.na(result) & subset] <- marginDelta[is.na(result) & subset]
+      result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte,subset=subset) + mcDelta*sharesPost -
+        calcMargins(object, preMerger=TRUE,exAnte=exAnte)
     }
+    else{result <- result/calcPrices(object,preMerger = TRUE, exAnte = exAnte )}
     
+    names(result) <- object@labels
     return(result)
   }
 )
@@ -287,7 +299,7 @@ setMethod(
   signature= "Auction2ndLogit",
   definition=function(object){
    
-    stop("'cmcr' is not defined for a 2nd-score auction")
+    stop("'cmcr' is currently not available")
   }
 )
 
@@ -297,7 +309,7 @@ setMethod(
   signature= "Auction2ndLogit",
   definition=function(object){
     
-    stop("'upp' is not defined for a 2nd-score auction")
+    stop("'upp' is currently not available")
   }
 )
 
@@ -309,30 +321,60 @@ setMethod(
   signature= "Auction2ndLogit",
   definition=function(object){
     
-    sharesPost <- calcShares(object, preMerger=FALSE)
+  meanvalPre <-   meanvalPost <- object@slopes$meanval
+  alpha <- object@slopes$alpha
+  sigma <- -1/alpha
+  
+  mcDelta <- object@mcDelta
+  mcDelta[is.na(mcDelta)] <- 0
+  
+  idx <- object@normIndex
+  if(is.na(idx)){
+    mcDeltaOut <- object@priceOutside
+  }
+  
+  else{
+    mcDeltaOut <- object@mcDelta[idx]
+  }
+
+  meanvalPost <-   meanvalPre + alpha*(mcDelta - mcDeltaOut)
+  
+  sharePre <- calcShares(object,preMerger=TRUE)
+  sharePost <- calcShares(object,preMerger=FALSE)
+  
+  firmSharePre <- drop(object@ownerPre %*% sharePre)  
+  firmSharePost <- drop(object@ownerPost %*% sharePost)
+  
+  incValPre <- log(sum(exp(meanvalPre)))
+  incValPost <- log(sum(exp(meanvalPost)))
+  
+  firmIncVal <- function(x, preMerger = TRUE){
+    x <- x == 0
     
-    if(all(object@mcDelta==0,na.rm=TRUE) && any(is.na(object@pricePre))){
-      
-      priceDelta <- calcPriceDelta(object,levels=TRUE)
-      
-      result <- sum(priceDelta*sharesPost, na.rm = TRUE)
-      return(result)
+    if(preMerger){return(log(sum(exp(meanvalPre[x]))))}
+    else{return(log(sum(exp(meanvalPost[x]))))}
+    
     }
-    else{
-    callNextMethod(object)  
-    }
-    
-   
-    
+  
+  csPre <- apply(object@ownerPre, 1,firmIncVal,preMerger=TRUE )
+  csPost <- apply(object@ownerPost, 1,firmIncVal,preMerger=FALSE )  
+  
+  csPre <- (sigma/firmSharePre) * (csPre - (1-firmSharePre)*incValPre)
+  
+  csPost <- (sigma/firmSharePost) * (csPost - (1-firmSharePost)*incValPost)
+  
+  result <-  mcDeltaOut + sum(csPre*sharePre) - sum(csPost*sharePost)
+  
+  return(result)
   })
 
 
 auction2nd.logit <- function(prices,shares,margins,
                   ownerPre,ownerPost,
-                  normIndex=ifelse(sum(shares)<1,NA,1),
+                  normIndex=ifelse(isTRUE(all.equal(sum(shares),1)),1, NA),
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
-                  mcOutside = 0,
+                  mcDeltaOutside=0,
                   control.slopes,
                   labels=paste("Prod",1:length(prices),sep="")
                   ){
@@ -346,8 +388,8 @@ auction2nd.logit <- function(prices,shares,margins,
                   ownerPost=ownerPost,
                   mcDelta=mcDelta,
                   subset=subset,
-                  priceOutside=mcOutside,
-                  shareInside=sum(shares),
+                  priceOutside=mcDeltaOutside,
+                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1)),1,sum(shares)),
                   priceStart=rep(0,length(shares)),
                   labels=labels,
                   cls = "Auction2ndLogit")
