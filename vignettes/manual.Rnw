@@ -1586,13 +1586,13 @@ Let the utility that a buyer receives from product $j\in J$ with offer $p_j$ equ
  \overline{V}_j(p_j) =& \delta_j + \alpha p_j,&\alpha<0,\\
 \end{align*}
 
-where, $\overline{V}_j$ represents an index of ``vertical" quality differentiation that decomposed into a non-offer component $\delta_j$ and an offer component $\alpha p_j$.  In addition, $\epsilon_j$ represents a buyer-specific idiosyncratic shock to utility (i.e. ``horizontal" quality differentiation). Without loss of generality, We will assume that these  shocks are independently drawn from  the distribution $F$, with mean 0 and variance 1.\footnote{Equivalently, $-\frac{V_j(p_j)}{\alpha}$ is a random variable with mean $-\frac{\overline{V}_j(p_j)}{\alpha}$ and standard deviation $-\frac{1}{\alpha}$.} We will also assume that at the start of the auction, $\epsilon_j$ is known to $j$'s manufacturer but is not known to  any other sellers.
+where, $\overline{V}_j$ represents an index of ``vertical" quality differentiation that decomposed into a non-offer component $\delta_j$ and an offer component $\alpha p_j$.  In addition, $\epsilon_j$ represents a buyer-specific idiosyncratic shock to utility (i.e. ``horizontal" quality differentiation). Without loss of generality, We will assume that these  shocks are independently drawn from  the distribution $F$, with mean 0 and variance 1.\footnote{Equivalently, $-\frac{V_j(p_j)}{\alpha}$ is a random variable with location $-\frac{\overline{V}_j(p_j)}{\alpha}$ and scale $-\frac{1}{\alpha}$.} We will also assume that at the start of the auction, $\epsilon_j$ is known to $j$'s manufacturer but is not known to  any other sellers.
 
 The buyer is assumed to employ a 2nd score auction to determine which product she will purchase. In this auction
 format, each firm submits an offer and the firm with the highest score (which may be the buyer if the buyer self-supplies)  wins the auction
 but pays the difference between the value of the highest scoring product and the value of the next-highest scoring product, less that seller's offer on that product. It can be shown that it is a \emph{dominant strategy for each firm to offer the product with the highest surplus in its portfolio to the buyer at cost}.  
 
-Let $z_A=max_{k\in A}{V_k(c_k)}$ denote the the maximum surplus available from any product $k\in A\subseteq J$. \cite{miller2014} demonstrates that the following must hold when firm $k\in K$ wins with variant $j\in J_k$
+Let $z_A=\max_{k\in A}{V_k(c_k)}$ denote the the maximum surplus available from any product $k\in A\subseteq J$. It can be shown that the following must hold when firm $k\in K$ wins with variant $j\in J_k$
 
 \begin{itemize}
 \item the probability that $j$ wins is
@@ -1603,13 +1603,12 @@ Let $z_A=max_{k\in A}{V_k(c_k)}$ denote the the maximum surplus available from a
 \item the expected price conditional on $j$ winning is
 \begin{align}
 \label{eqn:auc2.2}
- E[p_j|V_j(c_j) > z_{k \not\in J_k}]= c_j + E[z_J] - E[z_{k \not\in J_k}]; 
+ E[p_j|\text{$j$ wins}]= c_j + E[z_J|\text{$j$ wins}] - E[z_{k \not\in J_k}|\text{$j$ wins}]; 
 \end{align}
 \item subtracting $c_j$ from both sides of \ref{eqn:auc2.2} yields the expected profit margin conditional on $j$ winning:
 \begin{align}
 \label{eqn:auc2.3}
- E[m_j|V_j(c_j) > z_{k \not\in J_k}]=& E[z_J|V_j(c_j) > z_{k \not\in J_k}] - E[z_{k \not\in J_k}|V_j(c_j) > z_{k \not\in J_k}]\\ \nonumber
- =& (E[z_J] - E[z_{k \not\in J_k}])s_j^{-1}
+ E[m_j|\text{$j$ wins}]=& E[z_J|\text{$j$ wins}] - E[z_{k \not\in J_k}|\text{$j$ wins}] 
 \end{align}
 \end{itemize}
 
@@ -1622,7 +1621,7 @@ If post-merger $k$ does not discontinue any of $r$'s products, then it can be sh
 
 \begin{align}
  \label{eqn:auc2.pricedeltacond}
-E[\Delta p_j|\text{$j$ wins}] = E[z_{k \not\in J_k} - z_{k \not\in J_k \cup J_r}|\text{$j$ wins}].
+E[\Delta p_j|\text{j wins}] = E[m_j^{post}|\text{j wins}] - E[m_j^{pre}|\text{j wins}].
 \end{align}
 
 The expected change in consumer surplus-- which, absent efficiencies  also equals the weighted average price effect-- may be calculated by taking the share- weighted average of equation \ref{eqn:auc2.pricedeltacond}:
@@ -1667,7 +1666,7 @@ Equation \ref{eqn:auc2.4} implies that at least one of the $V_j$s is not separat
 Next, substituting equation \ref{eqn:auc2.5} into equation \ref{eqn:auc2.3} yields the following closed form expression for margins:
 
 \begin{align}
- E[m_j|V_j(c_j) > z_{k \not\in J_k}]= -(\alpha s_j)^{-1}\log\left(\frac{1}{1-\sum\limits_{r\in J_k}s_r}\right) \label{eqn:auc2.7}
+ E[m_j|V_j(c_j) > z_{k \not\in J_k}]= -\frac{1}{\alpha\sum\limits_{r\in J_k}s_r}\log\left(\frac{1}{1-\sum\limits_{r\in J_k}s_r}\right) \label{eqn:auc2.7}
 \end{align}
 
 Equations \ref{eqn:auc2.6} and \ref{eqn:auc2.7} form the basis of the calibration strategy. All the model parameters may be calibrated with just a single margin and market shares. Product prices only need to to be supplied for products whose marginal costs are assumed to change post-merger (i.e. products for which `mcDelta' is not equal to 0). 
