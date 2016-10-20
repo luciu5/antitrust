@@ -5,7 +5,7 @@ setClass(
           parmsStart="numeric"
          ),
          prototype=prototype(
-         normIndex         =  1
+         normIndex         =  NA
          ),
 
          validity=function(object){
