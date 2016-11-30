@@ -309,7 +309,28 @@ setMethod(
   signature= "Auction2ndLogit",
   definition=function(object){
     
-    stop("'upp' is currently not available")
+    shares <- calcShares(object,preMerger=TRUE,revenue=FALSE)
+    diversion <- t(tcrossprod(shares,1/(1-shares)))
+    diag(diversion) <- -1
+    
+    mcDelta <- object@mcDelta
+    
+    margins <- calcMargins(object,preMerger=TRUE)
+    
+    isParty <- abs(object@ownerPost - object@ownerPre)
+    
+    gross <- margins * shares * diversion * isParty
+    gross <- sum(gross) 
+    
+    isParty <- rowSums(isParty) > 0 
+    dpp <-  sum(mcDelta * diversion[,isParty], na.rm=TRUE)
+
+
+    result <- gross + dpp
+    
+    
+    return(result)
+    
   }
 )
 
