@@ -28,7 +28,7 @@ setClass(
 
              nNestParm <- nNestParm - sum(isSingleton) #singleton nests are not identified
 
-             if(identical(nNestParm,1)) stop("'auction2ndlogit.nest' may not be used for non-nested problems or problems with only singleton nests. Use 'logit', 'logit.alm' instead")
+             if(identical(nNestParm,1)) stop("'auction2ndlogit.nest' may not be used for non-nested problems or problems with only singleton nests. Use 'auction2ndlogit' instead")
 
              if(nprods != length(object@nests)){
                  stop("'nests' length must equal the number of products")}
@@ -67,7 +67,7 @@ setMethod(
               margins      <-  object@margins
 
               ## identify which products have enough margin information
-              ##  to impute Bertrand margins
+              ##  to impute model margins
               isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
               isMargin[ownerPre==0]=0
               isMargin    <- !is.na(rowSums(isMargin))
@@ -100,10 +100,13 @@ Normalizing these parameters to 1.")
 
 
 
-              sharesNests <- tapply(shares,nests,sum)[nests]
+              sharesNests <- tapply(shares,nests,sum)
 
-              sharesNests <- shares / sharesNests
-
+              sharesCond <- shares / sharesNests[nests]
+              
+              sharesCond <- matrix(sharesCond,nrow = nprods, ncol = nprods,byrow = TRUE)
+              sharesCond <- sharesCond * ownerPre
+              
               revenues <- prices * shares
 
 
@@ -117,6 +120,15 @@ Normalizing these parameters to 1.")
                   sigma <- as.numeric(isSingletonNest)
                   sigma[!isSingletonNest] <- theta[-1]
 
+                  marg <- apply(sharesCond, 1, 
+                                   function(x){
+                                     x <- tapply(x,nests,sum)
+                                     x <- (1 - x) ^sigma
+                                     x <- x * sharesNests
+                                     return(x)
+                                   }
+                                   )
+                  
                   ## The following returns the transpose of the elasticity matrix
                   elasticity <- diag((1/sigma-1)*alpha)
                   elasticity <- elasticity[nests,nests]
