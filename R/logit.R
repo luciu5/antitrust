@@ -68,7 +68,7 @@ setClass(
          }
 
              if(!(
-                  (isTRUE(all.equal(sumShares,1))  && object@normIndex %in% 1:nprods) ||
+                  (isTRUE(all.equal(sumShares,1,check.names=FALSE))  && object@normIndex %in% 1:nprods) ||
                    (sumShares < 1 && is.na(object@normIndex))
                   )){
                  stop("'normIndex' must take on a value between 1 and ",nprods,
@@ -362,7 +362,7 @@ setMethod(
 
 logit <- function(prices,shares,margins,
                   ownerPre,ownerPost,
-                  normIndex=ifelse(isTRUE(all.equal(sum(shares),1)),1, NA),
+                  normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
                   priceOutside = 0,
@@ -385,7 +385,7 @@ logit <- function(prices,shares,margins,
                   subset=subset,
                   priceOutside=priceOutside,
                   priceStart=priceStart,
-                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1)),1,sum(shares)),
+                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1,sum(shares)),
                   labels=labels)
 
     if(!missing(control.slopes)){

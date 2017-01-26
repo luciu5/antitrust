@@ -31,7 +31,7 @@ setClass(
              if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
 
 
-             if(!isTRUE(all.equal(diag(diversion),rep(-1,nprods)))){ stop("'diversions' diagonal elements must all equal -1")}
+             if(!isTRUE(all.equal(diag(diversion),rep(-1,nprods), check.names=FALSE))){ stop("'diversions' diagonal elements must all equal -1")}
 
              diag(diversion)=1
              if(any(diversion > 1 | diversion<0)){
@@ -244,7 +244,7 @@ setMethod(
 
          minResult <- constrOptim(object@priceStart,FOC,grad=NULL,ui=slopes,ci=-intercept,...)
          
-         if(!isTRUE(all.equal(minResult$convergence,0))){
+         if(!isTRUE(all.equal(minResult$convergence,0,check.names=FALSE))){
              warning("'calcPrices' solver may not have successfully converged.'constrOptim' reports: '",minResult$message,"'")
            }
 

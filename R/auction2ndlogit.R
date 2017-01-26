@@ -392,7 +392,7 @@ setMethod(
 
 auction2nd.logit <- function(prices,shares,margins,
                   ownerPre,ownerPost,
-                  normIndex=ifelse(isTRUE(all.equal(sum(shares),1)),1, NA),
+                  normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
                   mcDeltaOutside=0,
@@ -410,7 +410,7 @@ auction2nd.logit <- function(prices,shares,margins,
                   mcDelta=mcDelta,
                   subset=subset,
                   priceOutside=mcDeltaOutside,
-                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1)),1,sum(shares)),
+                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1,sum(shares)),
                   priceStart=rep(0,length(shares)),
                   labels=labels,
                   cls = "Auction2ndLogit")

@@ -109,6 +109,7 @@ setMethod(
     
     revenues <- prices * shares
     
+    firmShares <- drop(ownerPre %*% shares)
     
     
     
@@ -120,7 +121,7 @@ setMethod(
       sigma <- as.numeric(isSingletonNest)
       sigma[!isSingletonNest] <- theta[-1]
       
-      margin <- apply(sharesCond, 1, 
+      thisMargin <- apply(sharesCond, 1, 
                       function(x){
                         x <- tapply(x,nests,sum)
                         isZero <- x == 0
@@ -132,24 +133,12 @@ setMethod(
                       }
       )
       
-      ## The following returns the transpose of the elasticity matrix
-      elasticity <- diag((1/sigma-1)*alpha)
-      elasticity <- elasticity[nests,nests]
-      elasticity <- elasticity * matrix(sharesNests*prices,ncol=nprods,nrow=nprods)
-      elasticity <- -1*(elasticity + alpha * matrix(shares*prices,ncol=nprods,nrow=nprods))
-      diag(elasticity) <- diag(elasticity) + (1/sigma[nests])*alpha*prices
+      thisMargin <- thisMargin/firmShares
       
       
       
-      elasticity <- elasticity[isMargin,isMargin]
-      revenues   <- revenues[isMargin]
-      ownerPre   <- ownerPre[isMargin,isMargin]
-      margins    <- margins[isMargin]
       
-      #marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
-      #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
-      
-      measure <- revenues * diag(ownerPre) + as.vector((elasticity * ownerPre) %*% (margins * revenues))
+      measure <- margins - thisMargin
       measure <- sum(measure^2,na.rm=TRUE)
       
       return(measure)

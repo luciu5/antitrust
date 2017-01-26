@@ -43,7 +43,7 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
     if(!is.matrix(ownerPost)){ stop("'ownerPost'  must be a matrix")}
     if(any(ownerPost < 0 || ownerPost > 1,na.rm=TRUE)){ stop("'ownerPost' elements must be between 0 and 1")}
     if(
-       !isTRUE(all.equal(colSums(unique(ownerPost)),rep(1,nprod)))){
+       !isTRUE(all.equal(colSums(unique(ownerPost)),rep(1,nprod),check.names=FALSE))){
         stop("The columns of the matrix formed from the unique rows of 'ownerPost' must sum to 1")
     }
 
@@ -71,7 +71,7 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
             ncol(ownerPre) != nrow(ownerPre) ||
             any(ownerPre < 0 || ownerPre > 1,na.rm=TRUE) ||
             ncol(ownerPre) != nprod ||
-            !isTRUE(all.equal(colSums(unique(ownerPre)),rep(1,nprod)))
+            !isTRUE(all.equal(colSums(unique(ownerPre)),rep(1,nprod),check.names=FALSE))
             ){
             stop("'ownerPre' must be a square matrix whose dimension equals the length of 'prices' and whose elements are between 0 and 1. Also, the columns of the matrix formed from the unique rows of 'ownerPre' must sum to 1")}
 

@@ -32,7 +32,7 @@ setClass(
                  stop("'shares' values must be between 0 and 1")}
 
              if(!(sum(object@shares) < 1 ||
-                  isTRUE(all.equal(sum(object@shares),1)))){
+                  isTRUE(all.equal(sum(object@shares),1,check.names=FALSE)))){
                  stop("The sum of 'shares' values must be less than or equal to 1")}
 
 
@@ -478,7 +478,7 @@ setMethod(
 
     thisPlot=thisPlot + geom_hline(aes_string(yintercept = "mc",group="Cost",color="Cost"),data=equilibria[,c("mc","Cost","prod")],show_guide=TRUE)
 
-    #if(!isTRUE(all.equal(mcPre,mcPost))){
+    #if(!isTRUE(all.equal(mcPre,mcPost,check.names=FALSE))){
     #  thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="orange",data=data.frame(mc=mcPost[mcPost!=mcPre],prod=labels[mcPost!=mcPre]),show_guide=TRUE)
 
     #}

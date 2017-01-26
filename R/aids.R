@@ -17,9 +17,9 @@ setClass(
 
              nprods <- length(object@shares)
 
-             if(!isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods)))){ stop("'diversions' rows must sum to 0")}
+             if(!isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods),check.names=FALSE))){ stop("'diversions' rows must sum to 0")}
 
-             if(!isTRUE(all.equal(sum(object@shares),1))){
+             if(!isTRUE(all.equal(sum(object@shares),1,check.names=FALSE))){
                  stop("The sum of 'shares' values must equal 1")}
 
              if(length(object@margins[!is.na(object@margins)])<2){
