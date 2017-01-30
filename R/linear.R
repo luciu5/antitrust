@@ -125,6 +125,20 @@ setMethod(
 
        bKnown      =  -quantities[k]/(prices[k]*margins[k])
        bStart      =   bKnown*diversion[k,]/diversion[,k]
+      
+       ## change starting guess to ensure that it satisfies constraints
+       mltplyr <- 1.1 # increase starting guess by 10%
+       isneg <- as.vector(t(diversion) %*% bStart < 0)
+       
+       while(any(isneg)){
+         
+         bStart[isneg] <- bStart[isneg] * mltplyr
+         mltplyr <- mltplyr +.1 # increment by 10%
+         
+         isneg <- as.vector(t(diversion) %*% bStart < 0)
+         
+       }
+       
        bStart      =  -diversion*bStart
        parmStart   =   c(diag(bStart),bStart[upper.tri(bStart,diag=FALSE)])
 
