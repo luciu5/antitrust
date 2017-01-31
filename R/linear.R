@@ -127,16 +127,19 @@ setMethod(
        bStart      =   bKnown*diversion[k,]/diversion[,k]
       
        ## change starting guess to ensure that it satisfies constraints
-       mltplyr <- 1.1 # increase starting guess by 10%
+       mltplyr <- 1.01 # increase starting guess by 1%
        isneg <- as.vector(t(diversion) %*% bStart < 0)
        
        while(any(isneg)){
          
-         bStart[isneg] <- bStart[isneg] * mltplyr
-         mltplyr <- mltplyr +.1 # increment by 10%
+         bStart[!isneg] <- bStart[!isneg] * mltplyr
+         mltplyr <- mltplyr + .01 # decrement by 1%
          
          isneg <- as.vector(t(diversion) %*% bStart < 0)
          
+         if(any(is.na(isneg))){
+           stop("'calcSlopes' cannot find initial values that satisfy symmetry constraints using supplied data. Consider setting 'symmetry' equal to FALSE."
+                )}
        }
        
        bStart      =  -diversion*bStart
