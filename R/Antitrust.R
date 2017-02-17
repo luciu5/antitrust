@@ -1,5 +1,6 @@
 setClassUnion("matrixOrVector", c("matrix", "numeric","character","factor"))
 setClassUnion("matrixOrList", c("matrix", "list"))
+setClassUnion("numericOrList", c("numeric", "list"))
 
 setClass(
 
@@ -9,8 +10,8 @@ setClass(
          ownerPost    = "matrixOrVector",
          pricePre     = "numeric",
          pricePost    = "numeric",
-         mcPre        = "numeric",
-         mcPost       = "numeric",
+         mcPre        = "numericOrList",
+         mcPost       = "numericOrList",
          labels       = "character",
          cls        = "character",
          control.slopes = "list",
