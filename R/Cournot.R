@@ -11,8 +11,9 @@ setClass(
     margins          = "numeric",
     quantityPre      = "numeric",
     quantityPost     = "numeric",
-    productsPre      = "matrixOrVector",
-    productsPost     = "matrixOrVector",
+    quantityStart     = "numeric",
+    productsPre      = "vector",
+    productsPost     = "vector",
     demand           = "vector"
     
   ), 
@@ -22,40 +23,44 @@ setClass(
   ),
   validity=function(object){
     
-    nprods <- length(object@shares) # count the number of products
+    nprods <- length(object@quantities) # count the number of product/owner pairs
+    nvars  <- length(object@prices)     # count the number of distinct products
 
+  
+    if(nvars > nprods){stop("the length of 'prices' should be less than or equal to the length of 'quantities' ")}
+
+    # if(is.matrix(object@productsPre)){
+    #   
+    #   if(nprods != ncol(object@productsPre)){
+    #     stop("The number of rows and columns in 'productsPre' must equal the length of 'quantities'")}
+    #   if(nrow(object@productsPre) != ncol(object@productsPre)){
+    #     stop("'productsPre' must be a square matrix ")}
+    # }
     
-    if(is.matrix(object@productsPre)){
-      
-      if(nprods != ncol(object@productsPre)){
-        stop("The number of rows and columns in 'productsPre' must equal the length of 'labels'")}
-      if(nrow(object@productsPre) != ncol(object@productsPre)){
-        stop("'productsPre' must be a square matrix ")}
-    }
+   if (nprods != length(object@productsPre)) stop("'productsPre' and 'quantities' must be vectors of the same length")
+   if(nlevels(factor(object@productsPre)) != nvars ) stop("the number of unique values that 'productsPre' assumes must equal the length of 'prices'")  
     
-    else if (nprods != length(object@productsPre)) stop("'productsPre' and 'labels' must be vectors of the same length")
-    if(is.matrix(object@productsPost)){
-      if(nprods != ncol(object@productsPost)){
-        stop("The number of rows and columns in 'productsPost' must equal the length of 'labels'")}
-      if(nrow(object@productsPost) != ncol(object@productsPost)){
-        stop("'productsPost' must be a square matrix")}
-    }
-    
-    else if (nprods != length(object@productsPost)) stop("'productsPost' and 'labels' must be vectors of the same length")
+    # if(is.matrix(object@productsPost)){
+    #   if(nprods != ncol(object@productsPost)){
+    #     stop("The number of rows and columns in 'productsPost' must equal the length of 'labels'")}
+    #   if(nrow(object@productsPost) != ncol(object@productsPost)){
+    #     stop("'productsPost' must be a square matrix")}
+    # }
+    # 
+    if (nprods != length(object@productsPost)) stop("'productsPost' and 'labels' must be vectors of the same length")
     
     
     
     if(nprods != length(object@quantities) ||
-       nprods != length(object@margins) ||
-       nprods != length(object@prices)){
-      stop("'prices', 'quantities', 'margins', and 'shares' must all be vectors with the same length")}
+       nprods != length(object@margins) ){
+      stop("'quantities' and 'margins' must all be vectors with the same length")}
     
     if(any(object@prices<0,na.rm=TRUE))             stop("'prices' values must be positive")
     if(any(object@quantities<0,na.rm=TRUE))          stop("'quantities' values must be positive")
     if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
     
-    if(!tolower(trimws(object@demand)) %in% c("linear","log")){stop("'demand' must equal 'linear' or 'log'")}
-    
+    if(!(tolower(trimws(object@demand)) %in% c("linear","log"))){stop("'demand' must equal 'linear' or 'log'")}
+    if(length(object@demand) != nvars) stop("then lengths of 'demand' and 'prices' must be the same")
     
   }
 )
@@ -246,19 +251,19 @@ setMethod(
     
     ownersVec <- ownerToVec(object,preMerger=TRUE)
     
-    nprods <- length(products)
-    quantTot <- tapply(quantities,products,sum)[products]
+    nprods <- length(prices)
+    quantTot <- tapply(quantities,products,sum)
     quantOwn <- as.vector(owners %*% quantities)
     
     
     shares <- quantities/quantTot
     
-    minDemand <- fun(theta){
+    minDemand <- function(theta){
       
       thisints <- theta[1:nprods]
       thisslopes <- theta[-(1:nprods)]
       
-      elast <- ifelse(demand=="linear", prices*quantTot/thisslopes, thisslopes)
+      elast <- ifelse(demand=="linear", prices/(quantTot*thisslopes)[products], thisslopes)
       
       FOC <- margins + shares/elast
       dem <- ifelse(demand=="linear", thisints + thisslopes*quantTot, 
@@ -269,6 +274,42 @@ setMethod(
       
       return(sum(dist^2,na.rm=TRUE))
     }
+    
+    
+    bStart      =   ifelse(demand=="linear", (prices*margins)/(shares*quantTot), -shares/margins)
+    parmStart   =   c( bStart*quantTot + 1,bStart)
+    
+    
+    
+    ## constrain diagonal elements so that D'b >=0
+    ## constrain off-diagonal elements to be non-negative.
+    
+    #ui          =  diag(length(parmStart))
+    #ui[1:nprods,1:nprods] = t(diversion)
+    
+    #ci = rep(0,length(parmStart)) 
+    
+    
+    
+    #bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci,
+    #                      control=object@control.slopes)
+    
+    bestParms=optim(parmStart,minDemand)
+    
+    intercepts = bestParms$par[1:nprods]
+    slopes =intercepts =  bestParms$par[-(1:nprods)]
+  
+    elast <- ifelse(demand=="linear", prices/(quantTot*slopes)[products], slopes)
+    elast <- shares/elast
+    mc <- prices*(1+elast)
+    
+    mcparm <- tapply(quantOwn/mc,ownersVec,mean,na.rm=TRUE)[ownersVec]
+    
+    object@intercepts <- intercepts
+    object@slopes <-     slopes
+    object@mcparm <-     mcparm
+      
+  return(object)
     
   })    
 setMethod(
@@ -367,3 +408,66 @@ setMethod(
     return(prices)
       
   })  
+
+
+
+
+cournot <- function(prices,quantities,margins, 
+                    demand = rep("linear",length(prices)),
+                    productsPre=rep(1,length(quantities)), 
+                    productsPost=productsPre, 
+                    ownerPre,ownerPost,
+                    mcDelta,
+                    subset=rep(TRUE,length(prices)),
+                    quantStart=quantities,
+                    control.slopes,
+                    labels,
+                   ...
+){
+  
+  shares <- quantities/sum(quantities)
+  
+  if(missing(mcDelta)){
+    if(is.matrix(ownerPre)){ mcDelta <- rep(0,nrow(ownerPre))}
+    else{mcDelta <- rep(0,length(ownerPre))}
+                                           
+  }
+  
+  if(missing(labels)){
+    if(is.matrix(ownerPre)){ mcDelta <- rep(0,nrow(ownerPre))}
+    else{mcDelta <- rep(0,length(ownerPre))}
+    
+    
+  }
+  
+  result <- new("Cournot",prices=prices, quantities=quantities,margins=margins,
+                shares=shares,mcDelta=mcDelta, subset=subset,
+                ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
+                ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
+  
+  
+  if(!missing(control.slopes)){
+    result@control.slopes <- control.slopes
+  }
+  
+  
+  ## Convert ownership vectors to ownership matrices
+  result@ownerPre  <- ownerToMatrix(result,TRUE)
+  result@ownerPost <- ownerToMatrix(result,FALSE)
+  
+  ## Calculate Demand Slope Coefficients and Intercepts
+  result <- calcSlopes(result)
+  
+  
+  ## Calculate marginal cost
+  result@mcPre <-  calcMC(result,TRUE)
+  result@mcPost <- calcMC(result,FALSE)
+  
+  result@pricePre  <- calcPrices(result,TRUE,...)
+  result@pricePost <- calcPrices(result,FALSE,subset=subset,...)
+  
+  
+  return(result)
+  
+}
+
