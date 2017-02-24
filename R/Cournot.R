@@ -7,13 +7,13 @@ setClass(
     intercepts       = "vector",
     mcparm           = "vector",
     prices           = "vector",
-    quantities       = "numeric",
-    margins          = "numeric",
-    quantityPre      = "numeric",
-    quantityPost     = "numeric",
+    quantities       = "matrix",
+    margins          = "matrix",
+    quantityPre      = "matrix",
+    quantityPost     = "matrix",
     quantityStart     = "numeric",
-    productsPre      = "vector",
-    productsPost     = "vector",
+    productsPre      = "matrix",
+    productsPost     = "matrix",
     demand           = "vector"
     
   ), 
@@ -23,45 +23,31 @@ setClass(
   ),
   validity=function(object){
     
-    nprods <- length(object@quantities) # count the number of product/owner pairs
-    nvars  <- length(object@prices)     # count the number of distinct products
-
+    nprods <- ncol(object@quantities) # count the number of products
+    nfirms  <- nrow(object@prices)     # count the number of firms
   
-    if(nvars > nprods){stop("the length of 'prices' should be less than or equal to the length of 'quantities' ")}
-
-    # if(is.matrix(object@productsPre)){
-    #   
-    #   if(nprods != ncol(object@productsPre)){
-    #     stop("The number of rows and columns in 'productsPre' must equal the length of 'quantities'")}
-    #   if(nrow(object@productsPre) != ncol(object@productsPre)){
-    #     stop("'productsPre' must be a square matrix ")}
-    # }
-    
-   if (nprods != length(object@productsPre)) stop("'productsPre' and 'quantities' must be vectors of the same length")
-   if(nlevels(factor(object@productsPre)) != nvars ) stop("the number of unique values that 'productsPre' assumes must equal the length of 'prices'")  
-    
-    # if(is.matrix(object@productsPost)){
-    #   if(nprods != ncol(object@productsPost)){
-    #     stop("The number of rows and columns in 'productsPost' must equal the length of 'labels'")}
-    #   if(nrow(object@productsPost) != ncol(object@productsPost)){
-    #     stop("'productsPost' must be a square matrix")}
-    # }
-    # 
-    if (nprods != length(object@productsPost)) stop("'productsPost' and 'labels' must be vectors of the same length")
+   if(!is.logical(object@productsPre)) stop("'productsPre' must be a logical matrix")
+   if(!is.logical(object@productsPost)) stop("'productsPost' must be a logical matrix")
+   
+   if (!identical(dim(object@quantities), dim(object@margins))) stop("'margins' and 'quantities' must be matrices of the same dimension")
+   if (!identical(dim(object@quantities), dim(object@productsPre))) stop("'productsPre' and 'quantities' must be matrices of the same dimension")
+   if (!identical(dim(object@quantities), dim(object@productsPost))) stop("'productsPost' and 'quantities' must be matrices of the same dimension")
+     
+   
+   if (nprods*nfirms != length(object@labels)) stop("'labels' length must equal the number of elements in 'quantities'")
     
     
     
-    if(nprods != length(object@quantities) ||
-       nprods != length(object@margins) ){
-      stop("'quantities' and 'margins' must all be vectors with the same length")}
-    
-    if(any(object@prices<0,na.rm=TRUE))             stop("'prices' values must be positive")
-    if(any(object@quantities<0,na.rm=TRUE))          stop("'quantities' values must be positive")
+    if(any(object@prices<=0,na.rm=TRUE))             stop("'prices' values must be positive")
+    if(any(object@quantities<=0,na.rm=TRUE))          stop("'quantities' values must be positive")
     if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
     
-    if(!(tolower(trimws(object@demand)) %in% c("linear","log"))){stop("'demand' must equal 'linear' or 'log'")}
-    if(length(object@demand) != nvars) stop("then lengths of 'demand' and 'prices' must be the same")
     
+    if(any(colSums(object@margins,na.rm=TRUE) == 0)) stop("at least one firm margin must be supplied for each product")
+    
+    if(all(!(object@demand %in% c("linear","log")))){stop("'demand' must equal 'linear' or 'log'")}
+    if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")
+    if(length(object@prices) != nprods) stop("the length of 'prices' must equal the number of products")
   }
 )
 
@@ -414,12 +400,11 @@ setMethod(
 
 cournot <- function(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
-                    productsPre=rep(1,length(quantities)), 
+                    productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
-                    mcDelta,
-                    subset=rep(TRUE,length(prices)),
-                    quantStart=quantities,
+                    mcDelta =rep(0,nrow(quantities)),
+                    quantStart=as.vector(quantities),
                     control.slopes,
                     labels,
                    ...
@@ -427,17 +412,17 @@ cournot <- function(prices,quantities,margins,
   
   shares <- quantities/sum(quantities)
   
-  if(missing(mcDelta)){
-    if(is.matrix(ownerPre)){ mcDelta <- rep(0,nrow(ownerPre))}
-    else{mcDelta <- rep(0,length(ownerPre))}
-                                           
-  }
+  
   
   if(missing(labels)){
-    if(is.matrix(ownerPre)){ mcDelta <- rep(0,nrow(ownerPre))}
-    else{mcDelta <- rep(0,length(ownerPre))}
-    
-    
+  if(is.null(dimnames(quantities))){ 
+    rname <- paste0("O",1:nrow(quantities))
+    cname <- paste0("P",1:ncol(quantities))
+  }
+    else{rname <- rownames(quantities)
+    cname <- colnames(quantitites)
+    }
+    labels <- interaction(expand.grid(rname,cname),sep=":")
   }
   
   result <- new("Cournot",prices=prices, quantities=quantities,margins=margins,
