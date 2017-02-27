@@ -1,6 +1,7 @@
 setClassUnion("matrixOrVector", c("matrix", "numeric","character","factor"))
 setClassUnion("matrixOrList", c("matrix", "list"))
 setClassUnion("numericOrList", c("numeric", "list"))
+setClassUnion("characterOrList", c("character", "list"))
 
 setClass(
 
@@ -39,7 +40,8 @@ setClass(
 
 
 
-             nprods <- length(object@labels)
+           if(is.list(object@labels)){ nprods <- length(object@labels[[2]])}
+           else{nprods <- length(object@labels)}
 
 
              if(is.matrix(object@ownerPre)){

@@ -41,8 +41,6 @@ setClass(
     if(any(object@prices<=0,na.rm=TRUE))             stop("'prices' values must be positive")
     if(any(object@quantities<=0,na.rm=TRUE))          stop("'quantities' values must be positive")
     if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
-    
-    
     if(any(colSums(object@margins,na.rm=TRUE) == 0)) stop("at least one firm margin must be supplied for each product")
     
     if(all(!(object@demand %in% c("linear","log")))){stop("'demand' must equal 'linear' or 'log'")}
@@ -136,7 +134,8 @@ setMethod(
   signature= "Cournot",
   definition=function(object,preMerger=TRUE,revenue=FALSE){
     
-    quantities <- calcQuantities(object,preMerger)
+    if(preMerger) quantities <- object@quantitiesPre
+    else{ quantities <- object@quantitiesPost}
     
     if (revenue){
       if(preMerger){ prices <- object@pricePre}
@@ -163,10 +162,9 @@ setMethod(
     
   
     if(preMerger){
-      products <- object@productsPre
       owner <- objects@ownerPre
       quantities <- object@quantitiesPre}
-    else{products <- object@productsPost
+    else{
       owner <- objects@ownerPost
       quantities <- object@quantitiesPost}
     
@@ -190,11 +188,13 @@ setMethod(
     
     else{
       
-     prodmat <- model.matrix(~0+x,data.frame(x=products))
+     shares <- t( t(quantities) / mktQuant)
      
-     elast <-  as.vector((quantities%*%(owner * prodmat))/partial)
-     elast <- diag(1/elast)
-     dimnames(elast,object@labels,object@labels)
+     elast <- ifelse(demand=="linear", 
+                     1/t( t(quantities) / (partial*prices) ),
+                     t( partial / t(shares)))
+     
+     dimnames(elast,object@labels)
     }
     
     return(elast)
@@ -211,8 +211,8 @@ setMethod(
     
   elast <- elast(object, preMerger = preMerger, market=FALSE)
   
-  elast <- -1/diag(elast)
-  names(elast) <- object@labels
+  elast <- -1/elast
+  dimnames(elast,object@labels)
   return(elast)
   }
 )
@@ -233,27 +233,30 @@ setMethod(
     demand <- object@demand
     owners <- object@ownePre
     
-    ownersVec <- ownerToVec(object,preMerger=TRUE)
-    
     nprods <- ncol(quantities)
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantOwn <- rowSums(quantities, na.rm = TRUE)
     
     
-    shares <- quantities/quantTot
+    shares <- t(t(quantities)/quantTot)
     
     minDemand <- function(theta){
       
       thisints <- theta[1:nprods]
       thisslopes <- theta[-(1:nprods)]
       
-      elast <- ifelse(demand=="linear", prices/(quantTot*thisslopes)[products], thisslopes)
+      thisprices <- ifelse(demand=="linear", thisints + thisslopes*quantTot, 
+                    exp(thisints)*quantTot^thisslopes)
       
-      FOC <- margins + shares/elast
-      dem <- ifelse(demand=="linear", thisints + thisslopes*quantTot, 
-                                     exp(thisints)*quantTot^thisslopes
-                    )
-      dem <- 1 - dem/prices
+      elast <- ifelse(demand=="linear", 
+                      t(t(quantities)/(thisprices/thisslopes)),
+                      t(thisslopes / t(shares)))
+      
+      
+      FOC <- margins + 1/elast
+      
+                    
+      dem <- 1 - thisprices/prices
       dist <- c(FOC,dem)
       
       return(sum(dist^2,na.rm=TRUE))
@@ -261,7 +264,7 @@ setMethod(
     
     
     bStart      =   ifelse(demand=="linear", (prices*margins)/(shares*quantTot), -shares/margins)
-    parmStart   =   c( bStart*quantTot + 1,bStart)
+    parmStart   =   c( -bStart*quantTot + 1,bStart)
     
     
     
@@ -283,11 +286,14 @@ setMethod(
     intercepts = bestParms$par[1:nprods]
     slopes =intercepts =  bestParms$par[-(1:nprods)]
   
+    elast <- ifelse(demand=="linear", 
+                    t(t(quantities)/(thisprices/slopes)),
+                    t(slopes / t(shares)))
     elast <- ifelse(demand=="linear", prices/(quantTot*slopes)[products], slopes)
-    elast <- shares/elast
-    mc <- prices*(1+elast)
+    marg <- -1/elast
+    mc <- t(prices*(1-t(marg)))
     
-    mcparm <- tapply(quantOwn/mc,ownersVec,mean,na.rm=TRUE)[ownersVec]
+    mcparm <- rowMeans(quantOwn/mc,na.rm=TRUE)
     
     object@intercepts <- intercepts
     object@slopes <-     slopes
@@ -302,15 +308,16 @@ setMethod(
   definition=function(object,preMerger=TRUE){
     
     if(preMerger){ 
-    owner  <- object@ownerPre
+   
     quantity  <- object@quantityPre
    }
-    else{          owner <-  object@ownerPost
+    else{          
+    
     quantity  <- object@quantityPost
     }
     
     mcparm <- object@mcparm
-    quantOwner <- as.vector(quantity %*% owner)
+    quantOwner <- rowSums(quantity, na.rm=TRUE)
     mc <- quantOwner/mcparm
     names(mc) <- object@labels
     
@@ -332,11 +339,18 @@ setMethod(
                    mc        <- object@mcPost}
     
     
-    prodmat <- model.matrix(~0+x,data.frame(x=products))
+    #prodmat <- model.matrix(~0+x,data.frame(x=products))
     
-    nprods <- length(products)
+    nprods <- ncol(quantities)
+    
+    quantvec <- as.vector(quantities)
+    products <- as.vector(products)
     
     FOC <- function(quantCand){
+      
+      allquant <- rep(0,length(products))
+      allquant[products] <- quantCand
+      quantCand <- matrix(allquant,ncol=nprods)
       
       if(preMerger){ object@quantityPre  <- quantCand}
       else{          object@quantityPost <- quantCand}
@@ -345,19 +359,45 @@ setMethod(
       
       thisMC <- calcMC(object, preMerger= preMerger) 
       
-      mktQuant <- tapply(quantCand,products)
+      mktQuant <- colSums(quantCand, na.rm=TRUE)
       
       thisPartial <- ifelse(object@demand=="linear", 
                             slopes,
-                         exp(intercepts)*object@slopes*mktQuant^(slopes - 1))
+                         exp(intercepts)*slopes*mktQuant^(slopes - 1))
       
-      thisPartial <- 1/thisPartial[products]
       
-      thisFOC <- matrix(quantCand*thisPartial,ncol = nprods,nrow = nprods,byrow = TRUE)
-      thisFOC <- thisFOC %*% (owner * prodmat) + thisPrice - thisMC
+      thisFOC <- t( t(quantCand) / thisPartial ) %*% owner - thisMC
+      thisFOC <- t(thisFOC) +thisPrice
       
       return(sum(thisFOC^2))
     }
+    
+    
+    quantityStart <- object@quantityStart[products]
+    
+    ## Find price changes that set FOCs equal to 0
+    minResult <- BBsolve( quantityStart,FOC,quiet=TRUE,control=object@control.equ,...)
+    
+    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+    
+    
+    if(isMax){
+      
+      hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
+      hess <- hess$D[,1:hess$p]
+      hess <- hess * (owner[products,products]>0)   #0 terms not under the control of a common owner
+      
+      state <- ifelse(preMerger,"Pre-merger","Post-merger")
+      
+      if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. ",state," price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
+    }
+    
+    
+    quantEst        <- rep(NA, length(products))
+    quantEst[products] <- minResult$par
+    quantEst <- matrix(quantEst,ncol = nprods)
+    dimnames(priceEst) <- object@labels
+    
     
   })
 
@@ -368,11 +408,10 @@ setMethod(
   definition=function(object,preMerger=TRUE){
   
     if(preMerger){
-      products <- object@productsPre
+          
       quantities <- object@quantityPre
       }
     else{
-      products <- object@productsPost
       quantities <- object@quantityPost
     }
     
@@ -380,8 +419,7 @@ setMethod(
     slopes     <- object@slopes
   
 
-    mktQuant <- tapply(quantities, products, sum)
-    mktQuant <- mktQuant[products]
+    mktQuant <- colSums(quantities, na.rm=TRUE)
     
     prices <- ifelse(object@demand == "linear",
                      intercepts + slopes * mktQuant,
@@ -402,7 +440,7 @@ cournot <- function(prices,quantities,margins,
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
                     mcDelta =rep(0,nrow(quantities)),
-                    quantStart=as.vector(quantities),
+                    quantityStart=as.vector(quantities),
                     control.slopes,
                     labels,
                    ...
@@ -418,7 +456,7 @@ cournot <- function(prices,quantities,margins,
     cname <- paste0("P",1:ncol(quantities))
   }
     else{rname <- rownames(quantities)
-    cname <- colnames(quantitites)
+    cname <- colnames(quantities)
     }
     labels <- interaction(expand.grid(rname,cname),sep=":")
   }
