@@ -136,20 +136,19 @@ setMethod(
   signature= "Cournot",
   definition=function(object,preMerger=TRUE,revenue=FALSE){
     
-    products <- object@products
     quantities <- calcQuantities(object,preMerger)
     
     if (revenue){
       if(preMerger){ prices <- object@pricePre}
       else{          prices <- object@pricePost}
       
-      totrev <- tapply(prices*quantities, products, sum)[products]
-      return(prices*quantities/totrev)
+      totrev <- rowSums(prices*t(quantities), na.rm = TRUE)
+      return(t(prices*t(quantities)/totrev))
     }
     
     else{
-      totquant <- tapply(quantities, products, sum)[products]
-      return(quantities/totquant)}
+      totquant <- colSums(quantities)
+      return(t(t(quantities)/totquant))}
   }
 )
 
@@ -173,7 +172,7 @@ setMethod(
     
     prices <- calcPrices(object,preMerger=preMerger)
     
-    mktQuant <-  tapply(quantities,products)
+    mktQuant <-  colSums(quantities,na.rm = TRUE)
     
     ##dQdP
     partial <- ifelse(demand=="linear", 
@@ -183,7 +182,6 @@ setMethod(
     ##dPdQ
     partial <- 1/partial
    
-    slopes    <- object@slopes
     
     if(market){
       
@@ -237,9 +235,9 @@ setMethod(
     
     ownersVec <- ownerToVec(object,preMerger=TRUE)
     
-    nprods <- length(prices)
-    quantTot <- tapply(quantities,products,sum)
-    quantOwn <- as.vector(owners %*% quantities)
+    nprods <- ncol(quantities)
+    quantTot <- colSums(quantities, na.rm = TRUE)
+    quantOwn <- rowSums(quantities, na.rm = TRUE)
     
     
     shares <- quantities/quantTot
