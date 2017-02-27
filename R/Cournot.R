@@ -396,7 +396,7 @@ setMethod(
     quantEst        <- rep(NA, length(products))
     quantEst[products] <- minResult$par
     quantEst <- matrix(quantEst,ncol = nprods)
-    dimnames(priceEst) <- object@labels
+    dimnames(quantEst) <- object@labels
     
     
   })
