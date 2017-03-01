@@ -33,9 +33,11 @@ setClass(
    if (!identical(dim(object@quantities), dim(object@productsPre))) stop("'productsPre' and 'quantities' must be matrices of the same dimension")
    if (!identical(dim(object@quantities), dim(object@productsPost))) stop("'productsPost' and 'quantities' must be matrices of the same dimension")
      
-   
-   if (nprods*nfirms != length(object@labels)) stop("'labels' length must equal the number of elements in 'quantities'")
+  
+   if(!is.list(object@labels)) stop("'labels' must be a list") 
+   if (nfirms != length(object@labels[[1]])) stop("'labels' length must be a list whose first element is a vector whose length equals the number of firms")
     
+    if (nfirms != length(object@labels[[2]])) stop("'labels' length must be a list whose 2nd element is a vector whose length equals the number of products")
     
     
     if(any(object@prices<=0,na.rm=TRUE))             stop("'prices' values must be positive")
@@ -55,79 +57,6 @@ setClass(
 ## Cournot Methods
 ##
 
-## Generate a bunch of generic functions
-
-
-setGeneric (
-  name= "prodToMatrix",
-  def=function(object,...){standardGeneric("prodToMatrix")}
-)
-setGeneric (
-  name= "prodToVec",
-  def=function(object,...){standardGeneric("prodToVec")}
-)
-
-
-## create ownership matrix
-setMethod(
-  f= "prodToMatrix",
-  signature= "Cournot",
-  definition=function(object,preMerger=TRUE){
-    
-    
-    ## transform productsPre/productsPost vector into matrix, when applicable
-    
-    if(preMerger) {thisProd <- object@productsPre}
-    else{         thisProd <- object@productsPost}
-    
-    
-    
-    if(is.vector(thisProd) || is.factor(thisProd)){
-      
-      nprod <- length(object@labels)
-      products <- as.numeric(factor(thisProd))
-      thisProd <- matrix(0,ncol=nprod,nrow=nprod)
-      
-      
-      for( p in unique(products)){
-        thisProd[products == p, products == p] = 1
-      }
-      
-      
-    }
-    
-    
-    return(thisProd)
-    
-  }
-)
-
-
-## convert ownership matrix to vector
-setMethod(
-  f= "prodToVec",
-  signature= "Cournot",
-  definition=function(object,preMerger=TRUE){
-    
-    
-    ## transform productsPre/productsPost matrix into an ownership vector
-    if(preMerger) {thisProd <- object@productsPre}
-    else{         thisProd <- object@productsPost}
-    
-    
-    if(is.matrix(thisProd)){
-      
-      thisProd <- unique(thisProd)
-      thisProd <- as.numeric(thisProd>=0.5) * (1: nrow(thisProd))
-      thisProd <- apply(thisProd,2,max)
-      
-    }
-    
-    
-    return(as.numeric(thisProd))
-  }
-  
-)
 
 setMethod(
   f= "calcShares",
@@ -192,9 +121,9 @@ setMethod(
      
      elast <- ifelse(demand=="linear", 
                      1/t( t(quantities) / (partial*prices) ),
-                     t( partial / t(shares)))
+                     t( slopes / t(shares)))
      
-     dimnames(elast,object@labels)
+     dimnames(elast) <- object@labels
     }
     
     return(elast)
@@ -212,7 +141,7 @@ setMethod(
   elast <- elast(object, preMerger = preMerger, market=FALSE)
   
   elast <- -1/elast
-  dimnames(elast,object@labels)
+  dimnames(elast) <- object@labels
   return(elast)
   }
 )
@@ -249,7 +178,7 @@ setMethod(
                     exp(thisints)*quantTot^thisslopes)
       
       elast <- ifelse(demand=="linear", 
-                      t(t(quantities)/(thisprices/thisslopes)),
+                      1/t(t(quantities)/(thisprices/thisslopes)),
                       t(thisslopes / t(shares)))
       
       
@@ -287,9 +216,9 @@ setMethod(
     slopes =intercepts =  bestParms$par[-(1:nprods)]
   
     elast <- ifelse(demand=="linear", 
-                    t(t(quantities)/(thisprices/slopes)),
+                    1/t(t(quantities)/(thisprices/slopes)),
                     t(slopes / t(shares)))
-    elast <- ifelse(demand=="linear", prices/(quantTot*slopes)[products], slopes)
+    
     marg <- -1/elast
     mc <- t(prices*(1-t(marg)))
     
@@ -319,7 +248,10 @@ setMethod(
     mcparm <- object@mcparm
     quantOwner <- rowSums(quantity, na.rm=TRUE)
     mc <- quantOwner/mcparm
-    names(mc) <- object@labels
+    
+    if(!preMerger){mc <- mc*(1 + object@mcDelta)}
+    
+    names(mc) <- object@labels[[1]]
     
     return(mc)
   })    
@@ -337,9 +269,6 @@ setMethod(
     else{          owner <-  object@ownerPost
                    products <-  object@productsPost
                    mc        <- object@mcPost}
-    
-    
-    #prodmat <- model.matrix(~0+x,data.frame(x=products))
     
     nprods <- ncol(quantities)
     
@@ -367,7 +296,7 @@ setMethod(
       
       
       thisFOC <- t( t(quantCand) / thisPartial ) %*% owner - thisMC
-      thisFOC <- t(thisFOC) +thisPrice
+      thisFOC <- t(thisFOC) + thisPrice
       
       return(sum(thisFOC^2))
     }
@@ -396,6 +325,7 @@ setMethod(
     quantEst        <- rep(NA, length(products))
     quantEst[products] <- minResult$par
     quantEst <- matrix(quantEst,ncol = nprods)
+    
     dimnames(quantEst) <- object@labels
     
     
@@ -427,6 +357,7 @@ setMethod(
                      )
     
     
+    names(prices) <- object@labels[[2]]
     return(prices)
       
   })  
@@ -458,11 +389,11 @@ cournot <- function(prices,quantities,margins,
     else{rname <- rownames(quantities)
     cname <- colnames(quantities)
     }
-    labels <- interaction(expand.grid(rname,cname),sep=":")
+    labels <- list(rname,cname)
   }
   
   result <- new("Cournot",prices=prices, quantities=quantities,margins=margins,
-                shares=shares,mcDelta=mcDelta, subset=subset,
+                shares=shares,mcDelta=mcDelta, subset=subset, demand = demand,
                 ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
                 ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
   
