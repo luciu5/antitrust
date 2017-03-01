@@ -4,8 +4,8 @@ setClass(
   contains="Bertrand",
   representation=representation(
     
-    intercepts       = "vector",
-    mcparm           = "vector",
+    intercepts       = "numeric",
+    mcparm           = "numericOrList",
     prices           = "vector",
     quantities       = "matrix",
     margins          = "matrix",
@@ -14,18 +14,18 @@ setClass(
     quantityStart     = "numeric",
     productsPre      = "matrix",
     productsPost     = "matrix",
-    demand           = "vector"
+    demand           = "character"
     
   ), 
   prototype(
-    intercepts    =  numeric(),
-    demand        =  "linear"
+    intercepts    =  numeric()
   ),
   validity=function(object){
     
     nprods <- ncol(object@quantities) # count the number of products
     nfirms  <- nrow(object@prices)     # count the number of firms
   
+
    if(!is.logical(object@productsPre)) stop("'productsPre' must be a logical matrix")
    if(!is.logical(object@productsPost)) stop("'productsPost' must be a logical matrix")
    
