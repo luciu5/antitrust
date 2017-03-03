@@ -5,7 +5,8 @@ setClass(
   representation=representation(
     
     intercepts       = "numeric",
-    mcparm           = "numericOrList",
+    mcfunPre           = "list",
+    mcfunPost           = "list",
     prices           = "vector",
     quantities       = "matrix",
     margins          = "matrix",
@@ -25,7 +26,16 @@ setClass(
     nprods <- ncol(object@quantities) # count the number of products
     nfirms  <- nrow(object@prices)     # count the number of firms
   
-
+   if(!is.list(object@mcfunPre) || 
+      !length(object@mcfunPre) %in% c(nfirms,0)) {stop("'mcfunPre' must be a list of functions whose length equals the number of firms")}
+   if(length(object@mcfunPre) >0 && any(sapply(object@mcfunPre,class) != "function"))
+   {stop("'mcfunPre' must be a list of functions")}
+    
+    if(!is.list(object@mcfunPost) || 
+       !length(object@mcfunPost) %in% c(nfirms,0)) {stop("'mcfunPost' must be a list of functions whose length equals the number of firms")}
+    if(length(object@mcfunPost) >0 && any(sapply(object@mcfunPost,class) != "function"))
+    {stop("'mcfunPost' must be a list of functions")}
+    
    if(!is.logical(object@productsPre)) stop("'productsPre' must be a logical matrix")
    if(!is.logical(object@productsPost)) stop("'productsPost' must be a logical matrix")
    
@@ -47,6 +57,7 @@ setClass(
     
     if(all(!(object@demand %in% c("linear","log")))){stop("'demand' must equal 'linear' or 'log'")}
     if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")
+    
     if(length(object@prices) != nprods) stop("the length of 'prices' must equal the number of products")
   }
 )
@@ -161,10 +172,12 @@ setMethod(
     products <- object@productsPre
     demand <- object@demand
     owners <- object@ownePre
-    
+    mcfunPre <- object@mcfunPre
     nprods <- ncol(quantities)
+    
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantOwn <- rowSums(quantities, na.rm = TRUE)
+    
     
     
     shares <- t(t(quantities)/quantTot)
@@ -222,11 +235,26 @@ setMethod(
     marg <- -1/elast
     mc <- t(prices*(1-t(marg)))
     
-    mcparm <- rowMeans(quantOwn/mc,na.rm=TRUE)
+    ## if no marginal cost functions are supplied 
+    ## assume that firm i's marginal cost is
+    ## q_i/k_i, where k_i is calculated from FOC
+    
+    if(length(mcfunPre) ==0){
+      mcparm <- rowMeans(quantOwn/mc,na.rm=TRUE)
+      
+      fndef <- "function(q,mcparm = %f){ return(q/mcparm)}"
+      fndef <- sprintf(fndef,mcparm)
+      fndef <- lapply(fndef, function(x){eval(parse(text=x ))})
+    
+      object@mcfunPre <- fundef
+      names(object@mcfunPre) <- object@labels[[1]]
+      
+    }
+    if(length(mcfunPost)==0){object@mcfunPost <- object@mcfunPre}
     
     object@intercepts <- intercepts
     object@slopes <-     slopes
-    object@mcparm <-     mcparm
+    
       
   return(object)
     
@@ -239,15 +267,24 @@ setMethod(
     if(preMerger){ 
    
     quantity  <- object@quantityPre
+    mcfun <- object@mcfunPre
    }
     else{          
     
     quantity  <- object@quantityPost
+    mcfun <- object@mcfunPost
     }
     
-    mcparm <- object@mcparm
+   
     quantOwner <- rowSums(quantity, na.rm=TRUE)
-    mc <- quantOwner/mcparm
+    
+    nfirms <- length(quantOwner)
+    
+    mc <- rep(NA, nfirms)
+    
+    for(f in 1:nfirms){
+      mc[f] <- mcfun[[f]](quantOwner[f])
+    }
     
     if(!preMerger){mc <- mc*(1 + object@mcDelta)}
     
@@ -265,10 +302,10 @@ setMethod(
     intercept <- object@intercepts
     if(preMerger){ owner  <- object@ownerPre
                    products  <- object@productsPre
-                   mc        <- object@mcPre}
+                   }
     else{          owner <-  object@ownerPost
                    products <-  object@productsPost
-                   mc        <- object@mcPost}
+                   }
     
     nprods <- ncol(quantities)
     
@@ -367,6 +404,8 @@ setMethod(
 
 cournot <- function(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
+                    mcfunPre=list(),
+                    mcfunPost=list(),
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
@@ -394,6 +433,7 @@ cournot <- function(prices,quantities,margins,
   
   result <- new("Cournot",prices=prices, quantities=quantities,margins=margins,
                 shares=shares,mcDelta=mcDelta, subset=subset, demand = demand,
+                mcfunPre=mcfunPre, mcfunPost=mcfunPost,
                 ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
                 ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
   
@@ -410,10 +450,6 @@ cournot <- function(prices,quantities,margins,
   ## Calculate Demand Slope Coefficients and Intercepts
   result <- calcSlopes(result)
   
-  
-  ## Calculate marginal cost
-  result@mcPre <-  calcMC(result,TRUE)
-  result@mcPost <- calcMC(result,FALSE)
   
   result@pricePre  <- calcPrices(result,TRUE,...)
   result@pricePost <- calcPrices(result,FALSE,subset=subset,...)
