@@ -1,5 +1,5 @@
 setClassUnion("matrixOrVector", c("matrix", "numeric","character","factor"))
-setClassUnion("matrixOrList", c("matrix", "list"))
+setClassUnion("matrixOrList", c("numeric","matrix", "list"))
 setClassUnion("characterOrList", c("character", "list"))
 
 setClass(
@@ -39,14 +39,14 @@ setClass(
 
 
 
-           if(is.list(object@labels)){ nprods <- length(object@labels[[2]])}
+           if(is.list(object@labels)){ nprods <- length(object@labels[[1]])}
            else{nprods <- length(object@labels)}
 
 
              if(is.matrix(object@ownerPre)){
 
                  if(nprods != ncol(object@ownerPre)){
-                     stop("The number of rows and columns in 'ownerPre' must equal the length of 'labels'")}
+                     stop("The number of rows and columns in 'ownerPre' must equal the number of products")}
                  if(nrow(object@ownerPre) != ncol(object@ownerPre)){
                      stop("'ownerPre' must be a square matrix ")}
 
@@ -60,7 +60,7 @@ setClass(
              else if (nprods != length(object@ownerPre)) stop("'ownerPre' and 'labels' must be vectors of the same length")
              if(is.matrix(object@ownerPost)){
                  if(nprods != ncol(object@ownerPost)){
-                     stop("The number of rows and columns in 'ownerPost' must equal the length of 'labels'")}
+                     stop("The number of rows and columns in 'ownerPost' must equal the number of products")}
                  if(nrow(object@ownerPost) != ncol(object@ownerPost)){
                      stop("'ownerPost' must be a square matrix")}
                  if(

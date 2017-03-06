@@ -19,13 +19,13 @@ setClass(
          ),
          validity=function(object){
 
+             if(is.list(object@labels)){ nprods <- length(object@labels[[1]])}
+             else{nprods <- length(object@labels)}
 
-             nprods <- length(object@labels)
 
-
-
-             if(nprods != length(object@shares) ||
-                nprods != length(object@subset)){
+             if(!is.list(object@labels) &&
+                (nprods != length(object@shares) ||
+                nprods != length(object@subset))){
                  stop("'labels', 'shares', and 'subset' must all have the same length")}
 
              if(any(object@shares < 0 | object@shares > 1,na.rm=TRUE)){
