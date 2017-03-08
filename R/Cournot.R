@@ -76,8 +76,8 @@ setMethod(
   signature= "Cournot",
   definition=function(object,preMerger=TRUE,revenue=FALSE){
     
-    if(preMerger) quantities <- object@quantitiesPre
-    else{ quantities <- object@quantitiesPost}
+    if(preMerger) quantities <- object@quantityPre
+    else{ quantities <- object@quantityPost}
     
     if (revenue){
       if(preMerger){ prices <- object@pricePre}
@@ -168,6 +168,7 @@ setMethod(
   f= "calcSlopes",
   signature= "Cournot",
   definition=function(object){
+    
     prices <- object@prices
     quantities <- object@quantities
     margins <- object@margins
@@ -210,14 +211,22 @@ setMethod(
     
     
     bStart      =   ifelse(isLinear, -(prices*margins)/(shares*quantTot), -shares/margins)
-    parmStart   =   c( -bStart*quantTot + 1,bStart)
+    intStart    =   ifelse(isLinear,prices - bStart*quantTot, log(prices/(quantTot^bStart)))
+    intStart    =   abs(intStart)
+    
+    parmStart   =   c( intStart,bStart)
     
     
     
     ## constrain diagonal elements so that D'b >=0
     ## constrain off-diagonal elements to be non-negative.
     
-    #ui          =  diag(length(parmStart))
+    #ui          =  -diag(length(parmStart))
+    #for(i in 1:nprods){
+    #  ui[i,i] <- 1
+    #  ui[i,i+nprods] <- quantTot[i]
+      
+    #}
     #ui[1:nprods,1:nprods] = t(diversion)
     
     #ci = rep(0,length(parmStart)) 
@@ -247,7 +256,7 @@ setMethod(
       mcparm <- rowMeans(quantOwn/mc,na.rm=TRUE)
       
       fndef <- "function(q,mcparm = %f){ return(q/mcparm)}"
-      fndef <- sprintf(fndef,mcparm)
+      fndef <- sprintf(fndef,1/mcparm)
       fndef <- lapply(fndef, function(x){eval(parse(text=x ))})
     
       object@mcfunPre <- fndef
@@ -300,10 +309,11 @@ setMethod(
 setMethod(
   f= "calcQuantities",
   signature= "Cournot",
-  definition=function(object,preMerger=TRUE){
+  definition=function(object,preMerger=TRUE,...){
     
     slopes <- object@slopes
-    intercept <- object@intercepts
+    intercepts <- object@intercepts
+    
     if(preMerger){ owner  <- object@ownerPre
                    products  <- object@productsPre
                    }
@@ -317,6 +327,8 @@ setMethod(
     products <- as.vector(products)
     
     FOC <- function(quantCand){
+      
+      quantCand <- quantCand^2 # constrain positive
       
       allquant <- rep(0,length(products))
       allquant[products] <- quantCand
@@ -336,40 +348,27 @@ setMethod(
                          exp(intercepts)*slopes*mktQuant^(slopes - 1))
       
       
-      thisFOC <- t( t(quantCand) / thisPartial ) %*% owner - thisMC
+      thisFOC <- (t(quantCand) / thisPartial) %*% owner - thisMC
       thisFOC <- t(thisFOC) + thisPrice
       
-      return(sum(thisFOC^2))
+      return(as.vector(thisFOC))
     }
     
     
-    quantityStart <- object@quantityStart[products]
+    quantityStart <- sqrt(object@quantityStart[products]) #constrain positive
     
     ## Find price changes that set FOCs equal to 0
     minResult <- BBsolve( quantityStart,FOC,quiet=TRUE,control=object@control.equ,...)
     
-    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
-    
-    
-    if(isMax){
-      
-      hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
-      hess <- hess$D[,1:hess$p]
-      hess <- hess * (owner[products,products]>0)   #0 terms not under the control of a common owner
-      
-      state <- ifelse(preMerger,"Pre-merger","Post-merger")
-      
-      if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. ",state," price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
-    }
-    
+    if(minResult$convergence != 0){warning("'calcQuantities' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
     
     quantEst        <- rep(NA, length(products))
-    quantEst[products] <- minResult$par
+    quantEst[products] <- minResult$par^2
     quantEst <- matrix(quantEst,ncol = nprods)
     
     dimnames(quantEst) <- object@labels
     
-    
+    return(quantEst)
   })
 
 
@@ -403,6 +402,152 @@ setMethod(
       
   })  
 
+## compute margins
+setMethod(
+  f= "calcMargins",
+  signature= "Cournot",
+  definition=function(object,preMerger=TRUE){
+    
+    if(preMerger) {
+      prices <- object@pricePre
+      products <- object@productsPre}
+    else{prices <- object@pricePost
+         products <- object@productsPost}
+    
+    mc     <- calcMC(object, preMerger = TRUE)
+    
+    margins <-  1 - t(t(products*mc)/prices)
+    margins[!products] <- NA
+    
+    
+    dimnames(margins) <- object@labels
+    
+    return(margins)
+  }
+  
+)
+
+
+
+
+setMethod(
+  f= "summary",
+  signature= "Cournot",
+  definition=function(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,digits=2,...){
+    
+    curWidth <-  getOption("width")
+    
+    
+    pricePre   <-  object@pricePre
+    pricePost  <-  object@pricePost
+    priceDelta <- calcPriceDelta(object,levels=levels)
+    if(!levels) priceDelta <- priceDelta *100
+    
+    if(!shares){
+      outPre  <-  object@quantityPre
+      outPost <-  object@quantityPost
+      
+      if(revenue){
+        outPre <- t(pricePre*t(outPre))
+        outPost <- t(pricePost*t(outPost))
+      }
+      
+      sumlabels=paste("quantity",c("Pre","Post"),sep="")
+    }
+    
+    else{
+      if(!shares){warning("'shares' equals FALSE but 'calcQuantities' not defined. Reporting shares instead of quantities")}
+      
+      outPre  <-  calcShares(object,preMerger=TRUE,revenue=revenue) * 100
+      outPost <-  calcShares(object,preMerger=FALSE,revenue=revenue) * 100
+      
+      sumlabels=paste("shares",c("Pre","Post"),sep="")
+    }
+    
+    mcDelta <- object@mcDelta * 100
+    
+    if(levels){outDelta <- outPost - outPre}
+    else{outDelta <- (outPost/outPre - 1) * 100}
+    
+    
+    isParty <- as.numeric(rowSums( abs(object@ownerPost - object@ownerPre))>0)
+    isParty <- factor(isParty,levels=0:1,labels=c(" ","*"))
+    
+    results <- data.frame(pricePre=pricePre,pricePost=pricePost,
+                          priceDelta=priceDelta,outputPre=outPre,
+                          outputPost=outPost,outputDelta=outDelta)
+    
+    colnames(results)[colnames(results) %in% c("outputPre","outputPost")] <- sumlabels
+    
+    if(sum(abs(mcDelta))>0) results <- cbind(results,mcDelta=mcDelta)
+    
+    
+    rownames(results) <- paste(isParty,object@labels)
+    
+    sharesPost <- calcShares(object,FALSE,revenue)
+    
+    cat("\nMerger simulation results under '",class(object),"' demand:\n\n",sep="")
+    
+    options("width"=100) # this width ensures that everything gets printed on the same line
+    print(round(results,digits),digits=digits)
+    options("width"=curWidth) #restore to current width
+    
+    cat("\n\tNotes: '*' indicates merging parties' products.\n ")
+    if(levels){cat("\tDeltas are level changes.\n")}
+    else{cat("\tDeltas are percent changes.\n")}
+    if(revenue){cat("\tOutput is based on revenues.\n")}
+    else{cat("\tOutput is based on units sold.\n")}
+    
+    results <- cbind(isParty, results)
+    
+    cat("\n\nShare-Weighted Price Change:",round(sum(sharesPost*priceDelta,na.rm=TRUE),digits),sep="\t")
+    ##Only compute cmcr if cmcr method doesn't yield an error
+    thisCMCR <- tryCatch(cmcr(object),error=function(e) FALSE)
+    if(!is.logical(thisCMCR)){
+      cat("\nShare-Weighted CMCR:",round(sum(cmcr(object)*sharesPost[isParty=="*"],na.rm=TRUE)/sum(sharesPost[isParty=="*"],na.rm=TRUE),digits),sep="\t")
+    } 
+    
+    ##Only compute upp if prices are supplied
+    thisUPP <- tryCatch(upp(object),error=function(e) FALSE)
+    if(!is.logical(thisUPP)){
+      cat("\nShare-Weighted Pricing Pressure:",round(sum(thisUPP*sharesPost[isParty=="*"],na.rm=TRUE)/sum(sharesPost[isParty=="*"],na.rm=TRUE),digits),sep="\t")}
+    
+    ##Only compute CV if prices  are supplied
+    thisCV <- tryCatch(CV(object,...),error=function(e) FALSE)
+    if(!is.logical(thisCV)){
+      cat("\nCompensating Variation (CV):",round(thisCV,digits),sep="\t")}
+    
+    cat("\n\n")
+    
+    
+    if(parameters){
+      
+      cat("\nDemand Parameter Estimates:\n\n")
+      if(is.list(object@slopes)){
+        print(lapply(object@slopes,round,digits=digits))
+      }
+      else{
+        print(round(object@slopes,digits))
+      }
+      cat("\n\n")
+      
+      if(.hasSlot(object,"intercepts")){
+        
+        cat("\nIntercepts:\n\n")
+        print(round(object@intercepts,digits))
+        cat("\n\n")
+        
+      }
+      
+      if(.hasSlot(object,"constraint") && object@constraint){cat("\nNote: (non-singleton) nesting parameters are constrained to be equal")}
+      cat("\n\n")
+      
+    }
+    
+    rownames(results) <- object@labels
+    return(invisible(results))
+    
+  })
 
 
 
@@ -456,9 +601,11 @@ cournot <- function(prices,quantities,margins,
   result <- calcSlopes(result)
   
   
-  result@pricePre  <- calcPrices(result,TRUE,...)
-  result@pricePost <- calcPrices(result,FALSE,...)
+  result@quantityPre  <- calcQuantities(result, preMerger = TRUE,...)
+  result@quantityPost <- calcQuantities(result,preMerger = FALSE,...)
   
+  result@pricePre  <- calcPrices(result, preMerger = TRUE)
+  result@pricePost <- calcPrices(result,preMerger = FALSE)
   
   return(result)
   
