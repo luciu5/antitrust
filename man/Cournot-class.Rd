@@ -32,9 +32,8 @@ Objects can be created by calls of the form \code{new("Cournot", ...)}.
     \item{\code{quantityStart}:}{A length n x k vector of starting quantities for the non-linear solver.}
     \item{\code{productsPre}:}{An n x k logical matrix qhose elements are TRUE if a firm produces a product pre-merger and FALSE otherwise.}
     \item{\code{productsPre}:}{An n x k logical matrix qhose elements are TRUE if a firm produces a product post-merger and FALSE otherwise.}
-  }
   \item{\code{demand}:}{A length k character vector specifying whether product demand is linear ("linear") or log-linear ("log").}
-}
+}}
  \section{Extends}{
    Class \code{\linkS4class{Bertrand}}, directly.
    Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 2.
@@ -67,12 +66,6 @@ Objects can be created by calls of the form \code{new("Cournot", ...)}.
       Hypothetical Monopolist) and prices set in the pre-merger Cournot
       equilibrium. \sQuote{...} may be used to pass arguments to the
       optimizer.}
-    \item{\code{\link{diversionHypoMon}}}{\code{signature(object,prodIndex,...)}}{
-      Calculates the matrix of revenue
-    diversions between all products included in the merger simulation,
-    \emph{irrespective of whether or not they are also included in
-    \sQuote{prodIndex}}.
-     }
     \item{\code{hhi}}{\code{signature(object, preMerger= TRUE,revenue=FALSE)}}{ Compute either the pre-merger or
       post-merger Herfindahl-Hirschman Index (HHI) under the assumption
       that firms play a differentiated product Cournot Nash pricing game.}
@@ -85,11 +78,8 @@ Objects can be created by calls of the form \code{new("Cournot", ...)}.
       rather than than shares (when possible). Setting \sQuote{parameters} equal to TRUE reports
       all demand parameters. \sQuote{digits} controls the number of significant
       digits reported in output.}
-     \item{\code{plot}}{\code{signature(x=object,scale=.1}}{
-      Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. \sQuote{scale} controls the amount above marginal cost and below equilbrium price that is plotted.
-    }
-    \item{\code{upp}}{\code{signature(object)}}{
-      Calculate the Upwards Pricing Pressure (upp) index.
+    \item{\code{cmcr}}{\code{signature(object)}}{
+      Calculates Compensating Marginal Cost Reduction (CMCR).
     }
      }}
 
