@@ -25,13 +25,15 @@ setClass(
   ),
   validity=function(object){
     
-    nprods <- ncol(object@quantities) # count the number of products
-    nfirms  <- nrow(object@prices)     # count the number of firms
+    nfirms <- nrow(object@quantities) # count the number of firms
+    nprods  <- length(object@prices)     # count the number of products
   
    if(!is.list(object@mcfunPre) || 
       !length(object@mcfunPre) %in% c(nfirms,0)) {stop("'mcfunPre' must be a list of functions whose length equals the number of firms")}
    if(length(object@mcfunPre) >0 && any(sapply(object@mcfunPre,class) != "function"))
    {stop("'mcfunPre' must be a list of functions")}
+    
+    if(length(object@mcfunPre) ==0 && any(rowSums(object@margins) == 0)){stop("When 'mcfunPre' is not supplied, at least one margin per firm must be supplied")}
     
     if(!is.list(object@mcfunPost) || 
        !length(object@mcfunPost) %in% c(nfirms,0)) {stop("'mcfunPost' must be a list of functions whose length equals the number of firms")}
@@ -61,7 +63,11 @@ setClass(
     if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")
     
     if(length(object@prices) != nprods) stop("the length of 'prices' must equal the number of products")
-  }
+
+    if(ncol(object@quantities) != nprods) stop("the number of columns in 'quantities' must equal the number of products")
+    
+    }
+  
 )
 
 
@@ -590,13 +596,14 @@ setMethod(
 cournot <- function(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
                     mcfunPre=list(),
-                    mcfunPost=list(),
+                    mcfunPost=mcfunPre,
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
                     mcDelta =rep(0,nrow(quantities)),
                     quantityStart=as.vector(quantities),
                     control.slopes,
+                    control.eq,
                     labels,
                    ...
 ){
