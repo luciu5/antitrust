@@ -592,6 +592,82 @@ setMethod(
   })
 
 
+setMethod(
+  f= "calcPricesHypoMon",
+  signature= "Cournot",
+  definition=function(object,firmIndex){
+    
+    nhypofirms <- length(firmIndex)
+    intercept <- object@intercepts
+    nprods <- length(intercept)
+    slopes <- object@slopes
+    mc <- object@mcPre[prodIndex]
+    quantityPre <- as.vector(object@quantityPre)
+    demand <- object@demand
+    
+    stop("This analysis is currently unavailable")
+    
+    
+    
+    calcMonopolySurplus <- function(quantCand){
+      
+      
+      quantityPre[firmIndex] <- quantCand
+      quantCand <- matrix(quantityCand,ncol=nprods)
+      object@quantityPre <- quantCand
+      mktQuant <- colSums(quantCand, na.rm = TRUE)
+      
+      priceCand <- ifelse(demand == "linear",
+                      intercept + slopes * mktQuant,
+                      exp(intercept)*mktQuant^slopes)
+      
+      mc <- calcMC(object, preMerger=TRUE)
+      
+      surplus <- sum(priceCand*t(quantityCand[firmIndex,]), na.rm =TRUE)
+      
+      return(sum(surplus))
+    }
+    
+    ##Find starting value that always meets boundary conditions
+    ##Note: if  nhypofirms=1, need to use a more accurate optimizer.
+    
+    if( nhypofirms> 1){
+      
+      if(det(slopes)!=0){startParm <- as.vector(solve(slopes) %*% (1 - intercept ))}
+      else{startParm <- rep(0,nprods)}
+      
+      
+      priceConstr <- pricePre
+      priceConstr[prodIndex] <- 0
+      
+      maxResult <- constrOptim(startParm[prodIndex],calcMonopolySurplus,
+                               grad=NULL,
+                               ui=slopes[prodIndex,prodIndex],
+                               ci=-intercept[prodIndex] - as.vector(slopes %*% priceConstr)[prodIndex],
+                               control=list(fnscale=-1))
+      
+      pricesHM <- maxResult$par
+    }
+    
+    
+    else{
+      
+      upperB <- -(intercept[prodIndex] + sum(pricePre[-prodIndex]*slopes[prodIndex,-prodIndex]))/slopes[prodIndex,prodIndex]
+      
+      maxResult <- optimize(calcMonopolySurplus,c(0,upperB),maximum = TRUE)
+      pricesHM <- maxResult$maximum
+    }
+    
+    #priceDelta <- pricesHM/pricePre[prodIndex] - 1
+    #names(priceDelta) <- object@labels[prodIndex]
+    names(pricesHM) <- object@labels[prodIndex]
+    
+    return(pricesHM)
+    
+    
+  })
+
+
 
 cournot <- function(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
