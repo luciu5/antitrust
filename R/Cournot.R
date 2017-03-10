@@ -177,6 +177,7 @@ setMethod(
     
     prices <- object@prices
     quantities <- object@quantities
+    quantities[is.na(quantities)] <- 0
     margins <- object@margins
     products <- object@productsPre
     demand <- object@demand
@@ -187,7 +188,7 @@ setMethod(
     isLinear <- demand=="linear"
     
     quantTot <- colSums(quantities, na.rm = TRUE)
-    quantOwn <- rowSums(quantities, na.rm = TRUE)
+    quantOwn <- owner %*% quantities
     
     
     
@@ -286,22 +287,25 @@ setMethod(
     if(preMerger){ 
    
     quantity  <- object@quantityPre
+    owner <- object@ownerPre
     mcfun <- object@mcfunPre
    }
     else{          
     
     quantity  <- object@quantityPost
+    owner <- object@ownerPost
     mcfun <- object@mcfunPost
     }
     
    
-    quantOwner <- rowSums(quantity, na.rm=TRUE)
+    quantity[is.na(quantity)] <- 0 
+    quantOwner <- owner %*% quantity 
     
-    nfirms <- length(quantOwner)
+    nplants <- nrow(quantOwner)
     
-    mc <- rep(NA, nfirms)
+    mc <- rep(NA, nplants)
     
-    for(f in 1:nfirms){
+    for(f in 1:nplants){
       mc[f] <- mcfun[[f]](quantOwner[f])
     }
     
@@ -417,8 +421,11 @@ setMethod(
   definition=function(object,preMerger=TRUE, revenue = FALSE){
   
   shares <- calcShares(object,preMerger=preMerger,revenue=revenue)
+  shares[is.na(shares)] <- 0 
+  if(preMerger) {owner <- object@ownerPre}
+  else{owner <- object@ownerPre}
   
-  hhi <- colSums((shares*100)^2, na.rm =TRUE)
+  hhi <- colSums((owner %*% (shares*100))^2, na.rm =TRUE)
   
   return(hhi)
     
@@ -430,9 +437,12 @@ setMethod(
   signature= "Cournot",
   definition=function(object){
     
+    owner <- object@ownerPre
     isParty <- rowSums( abs(object@ownerPost - object@ownerPre) ) > 0
     
     shares <- calcShares(object,preMerger=TRUE,revenue=FALSE)
+    shares[is.na(shares)] <- 0 
+    shares <- owner %*% shares
     shares <- shares[isParty,]
     mktElast <- elast(object, preMerger= TRUE,market=TRUE)
 
