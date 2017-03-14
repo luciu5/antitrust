@@ -112,60 +112,53 @@ von Haefen, Roger (2002).
 
 \examples{
 
-## Simulate a merger between two single-product firms in a
-## three-firm market with linear demand with diversions
-## that are proportional to shares.
-## This example assumes that the merger is between
-## the first two firms
+## (Mcafee and Williams 1992)
+## Simulate a merger between two single-plant firms 
+## producing a single product in a
+## 5-firm market with linear demand 
 
 
 
-n <- 3 #number of firms in market
-price    <- c(2.9,3.4,2.2)
-quantity <- c(650,998,1801)
-margin <- c(.435,.417,.370)
+n <- 4 #number of firms in market pre-merger
+cap <- rnorm(n,mean = 2, sd = .5)
+int <- 10
+slope <- .25 # absolute value of demand slope
+
+betas.pre <- slope * cap/( 1 + slope * cap)
+B.pre <- sum(betas.pre)
+price.pre <- int/(1 + B.pre)
+
+quantity.pre <- int*(betas.pre)/(slope * (1 + B.pre))
+mc.pre = quantity.pre/cap
+margin.pre = 1 - mc.pre/price.pre
+
+mktQuant.pre = sum(quantity.pre)
+
+## suppose firm 1 acquires firm 2
+## This model has a closed form solution 
+betas.post = betas.pre 
+betas.post[1] = (betas.post[1] + betas.post[2] - 2*betas.post[1]*betas.post[2])/(1 - betas.post[1]*betas.post[2])
+betas.post[2] = NA
+B.post = sum(betas.post, na.rm=TRUE)
+price.post <- int/(1 + B.post)
+quantity.post <- int*(betas.post)/(slope * (1 + B.post))
+
+mktQuant.post = sum(quantity.post, na.rm=TRUE)
 
 
-#simulate merger between firms 1 and 2
+
+#prep inputs for Cournot
 owner.pre <- diag(n)
 owner.post <- owner.pre
 owner.post[1,2] <- owner.post[2,1] <- 1
 
 
 
-result.linear <- linear(price,quantity,margin,ownerPre=owner.pre,ownerPost=owner.post)
+result.c <- cournot(price.pre,as.matrix(quantity.pre),as.matrix(margin.pre),ownerPre=owner.pre,ownerPost=owner.post)
 
-print(result.linear)           # return predicted price change
-summary(result.linear)         # summarize merger simulation
+print(result.c)           # return predicted price change
+summary(result.c)         # summarize merger simulation
 
-elast(result.linear,TRUE)      # returns premerger elasticities
-elast(result.linear,FALSE)     # returns postmerger elasticities
-
-diversion(result.linear,TRUE)  # returns premerger diversion ratios
-diversion(result.linear,FALSE) # returns postmeger diversion ratios
-
-cmcr(result.linear)            # returns the compensating marginal cost reduction
-
-CV(result.linear)              # returns representative agent compensating variation
-
-
-## Implement the Hypothetical Monopolist Test
-## for products 1 and 2 using a 5\% SSNIP
-
-#HypoMonTest(result.linear,prodIndex=1:2)
-
-
-## Get a detailed description of the 'Linear' class slots
-showClass("Linear")
-
-## Show all methods attached to the 'Linear' Class
-showMethods(classes="Linear")
-
-## Show which class have their own 'elast' method
-showMethods("elast")
-
-## Show the method definition for 'elast' and Class 'Linear'
-getMethod("elast","Linear")
 
 
 

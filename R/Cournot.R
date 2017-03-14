@@ -51,7 +51,7 @@ setClass(
    if(!is.list(object@labels)) stop("'labels' must be a list") 
    if (isTRUE(nfirms != length(object@labels[[1]]))) stop("'labels' length must be a list whose first element is a vector whose length equals the number of firms")
     
-    if (isTRUE(nfirms != length(object@labels[[2]]))) stop("'labels' length must be a list whose 2nd element is a vector whose length equals the number of products")
+    if (isTRUE(nprods != length(object@labels[[2]]))) stop("'labels' length must be a list whose 2nd element is a vector whose length equals the number of productsS")
     
     
     if(any(object@prices<=0,na.rm=TRUE))             stop("'prices' values must be positive")
@@ -181,6 +181,7 @@ setMethod(
     margins <- object@margins
     products <- object@productsPre
     demand <- object@demand
+    owner <- object@ownerPre
     mcfunPre <- object@mcfunPre
     nprods <- ncol(quantities)
     nfirms <- nrow(quantities)
@@ -262,7 +263,7 @@ setMethod(
     if(length(mcfunPre) ==0){
       mcparm <- rowMeans(quantOwn/mc,na.rm=TRUE)
       
-      fndef <- "function(q,mcparm = %f){ return(q/mcparm)}"
+      fndef <- "function(q,mcparm = %f){ return(q * mcparm)}"
       fndef <- sprintf(fndef,1/mcparm)
       fndef <- lapply(fndef, function(x){eval(parse(text=x ))})
     
@@ -331,9 +332,7 @@ setMethod(
                    products <-  object@productsPost
                    }
     
-    nprods <- ncol(quantities)
-    
-    quantvec <- as.vector(quantities)
+    nprods <- ncol(products)
     products <- as.vector(products)
     
     FOC <- function(quantCand){
@@ -358,7 +357,7 @@ setMethod(
                          exp(intercepts)*slopes*mktQuant^(slopes - 1))
       
       
-      thisFOC <- (t(quantCand) / thisPartial) %*% owner - thisMC
+      thisFOC <- (t(quantCand) * thisPartial) %*% owner - thisMC
       thisFOC <- t(thisFOC) + thisPrice
       
       return(as.vector(thisFOC))
@@ -455,7 +454,7 @@ setMethod(
 setMethod(
   f= "summary",
   signature= "Cournot",
-  definition=function(object,market=TRUE,revenue=TRUE,shares=FALSE,levels=FALSE,parameters=FALSE,digits=2,...){
+  definition=function(object,market=TRUE,revenue=FALSE,shares=FALSE,levels=FALSE,parameters=FALSE,digits=2,...){
     
     if(market){nfirms <- 1}
     else{ nfirms <- nrow(object@quantities) }
@@ -533,7 +532,7 @@ setMethod(
       results <- subset(out, select = c(isParty,product,owner, pricePre,pricePost,priceDelta,outPre,outPost,outDelta ))
     }
     
-    colnames(results)[colnames(results) %in% c("outputPre","outputPost")] <- sumlabels
+    colnames(results)[colnames(results) %in% c("outPre","outPost")] <- sumlabels
     
     if(!market && sum(abs(mcDelta))>0) results <- cbind(results,mcDelta=mcDelta)
     
