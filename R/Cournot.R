@@ -263,7 +263,7 @@ setMethod(
     if(length(mcfunPre) ==0){
       mcparm <- rowMeans(quantOwn/mc,na.rm=TRUE)
       
-      fndef <- "function(q,mcparm = %f){ return(q * mcparm)}"
+      fndef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE) * mcparm)}"
       fndef <- sprintf(fndef,1/mcparm)
       fndef <- lapply(fndef, function(x){eval(parse(text=x ))})
     
@@ -288,26 +288,23 @@ setMethod(
     if(preMerger){ 
    
     quantity  <- object@quantityPre
-    owner <- object@ownerPre
     mcfun <- object@mcfunPre
    }
     else{          
     
     quantity  <- object@quantityPost
-    owner <- object@ownerPost
     mcfun <- object@mcfunPost
     }
     
    
-    quantity[is.na(quantity)] <- 0 
-    quantOwner <- owner %*% quantity 
+    quantPlants <- rowSums(quantity,na.rm=TRUE) 
     
-    nplants <- nrow(quantOwner)
+    nplants <- length(quantPlants)
     
     mc <- rep(NA, nplants)
     
     for(f in 1:nplants){
-      mc[f] <- mcfun[[f]](quantOwner[f])
+      mc[f] <- mcfun[[f]](quantity[f,])
     }
     
     if(!preMerger){mc <- mc*(1 + object@mcDelta)}
@@ -358,7 +355,7 @@ setMethod(
       
       
       thisFOC <- (t(quantCand) * thisPartial) %*% owner - thisMC
-      thisFOC <- t(thisFOC) + thisPrice
+      thisFOC <- t(t(thisFOC) + thisPrice)
       
       return(as.vector(thisFOC))
     }
@@ -367,7 +364,7 @@ setMethod(
     quantityStart <- sqrt(object@quantityStart[products]) #constrain positive
     
     ## Find price changes that set FOCs equal to 0
-    minResult <- BBsolve( quantityStart,FOC,quiet=TRUE,control=object@control.equ,...)
+    minResult <- BBsolve( quantityStart,FOC, quiet=TRUE,control=object@control.equ,...)
     
     if(minResult$convergence != 0){warning("'calcQuantities' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
     

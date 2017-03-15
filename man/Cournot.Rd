@@ -112,23 +112,21 @@ von Haefen, Roger (2002).
 
 \examples{
 
-## (Mcafee and Williams 1992)
 ## Simulate a merger between two single-plant firms 
 ## producing a single product in a
-## 5-firm market with linear demand 
+## 4-firm market with linear demand and quadratic costs 
 
 
 
 n <- 4 #number of firms in market pre-merger
 cap <- rnorm(n,mean = 2, sd = .5)
 int <- 10
-slope <- .25 # absolute value of demand slope
+slope <- -.25 
 
-betas.pre <- slope * cap/( 1 + slope * cap)
-B.pre <- sum(betas.pre)
-price.pre <- int/(1 + B.pre)
-
-quantity.pre <- int*(betas.pre)/(slope * (1 + B.pre))
+B.pre = matrix(slope,nrow=n,ncol=n)
+diag(B.pre) = 2* diag(B.pre) - 1/cap
+quantity.pre = rowSums(solve(B.pre) * -int) 
+price.pre = int + slope * sum(quantity.pre)
 mc.pre = quantity.pre/cap
 margin.pre = 1 - mc.pre/price.pre
 
@@ -136,12 +134,14 @@ mktQuant.pre = sum(quantity.pre)
 
 ## suppose firm 1 acquires firm 2
 ## This model has a closed form solution 
-betas.post = betas.pre 
-betas.post[1] = (betas.post[1] + betas.post[2] - 2*betas.post[1]*betas.post[2])/(1 - betas.post[1]*betas.post[2])
-betas.post[2] = NA
-B.post = sum(betas.post, na.rm=TRUE)
-price.post <- int/(1 + B.post)
-quantity.post <- int*(betas.post)/(slope * (1 + B.post))
+B.post = B.pre
+B.post[1,2] = 2*B.post[1,2]
+B.post[2,1] = 2*B.post[2,1]
+
+quantity.post = rowSums(solve(B.post) * -int) 
+price.post = int + slope * sum(quantity.post)
+mc.post = quantity.post/cap
+margin.post = 1 - mc.post/price.post
 
 mktQuant.post = sum(quantity.post, na.rm=TRUE)
 
@@ -154,12 +154,14 @@ owner.post[1,2] <- owner.post[2,1] <- 1
 
 
 
-result.c <- cournot(price.pre,as.matrix(quantity.pre),as.matrix(margin.pre),ownerPre=owner.pre,ownerPost=owner.post)
+result.c <- cournot(prices = price.pre,quantities = as.matrix(quantity.pre),margins=as.matrix(margin.pre),ownerPre=owner.pre,ownerPost=owner.post)
 
 print(result.c)           # return predicted price change
 summary(result.c)         # summarize merger simulation
 
-
+## check if 'cournot' yields the same result as closed-form solution
+print(all.equal(sum(result.c@quantityPre) , mktQuant.pre))
+print(all.equal(sum(result.c@quantityPost) , mktQuant.post))
 
 
 }
