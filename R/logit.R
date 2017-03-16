@@ -43,12 +43,12 @@ setClass(
              else{ownerPre <- object@ownerPre}
 
 
-              isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
-              isMargin[ownerPre==0]=0
-              isMargin    <- !is.na(rowSums(isMargin))
+              #isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
+              #isMargin[ownerPre==0]=0
+              #isMargin    <- !is.na(rowSums(isMargin))
 
-             if(object@cls != "Auction2ndLogit" &&
-                !any(isMargin)){ stop("Insufficient margin information to calibrate demand parameters.")}
+             #if(object@cls != "Auction2ndLogit" &&
+             #    !any(isMargin)){ stop("Insufficient margin information to calibrate demand parameters.")}
 
              if(nprods != length(object@priceStart)){
                  stop("'priceStart' must have the same length as 'shares'")}
@@ -67,12 +67,10 @@ setClass(
                  stop("elements of vector 'shares' must be between 0 and 1")
          }
 
-             if(!(
-                  (isTRUE(all.equal(sumShares,1,check.names=FALSE))  && object@normIndex %in% 1:nprods) ||
-                   (sumShares < 1 && is.na(object@normIndex))
-                  )){
+             if(!(length(object@normIndex) == 1 && 
+                  object@normIndex %in% c(NA,1:nprods))){
                  stop("'normIndex' must take on a value between 1 and ",nprods,
-                      " if 'shares' sum to 1 , or NA if the sum of shares is less than 1")
+                      " or NA")
              }
 
              if(length(object@priceOutside) != 1 || object@priceOutside<0
@@ -115,10 +113,10 @@ setMethod(
 
               ## identify which products have enough margin information
               ##  to impute Bertrand margins
-              isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
-              isMargin[ownerPre==0]=0
-              isMargin    <- !is.na(rowSums(isMargin))
-
+              #isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
+              #isMargin[ownerPre==0]=0
+              #isMargin    <- !is.na(rowSums(isMargin))
+              
 
               ## Minimize the distance between observed and predicted margins
               minD <- function(alpha){
@@ -128,16 +126,17 @@ setMethod(
                   diag(elast) <- alpha*prices + diag(elast)
 
 
-                  elast      <- elast[isMargin,isMargin]
-                  revenues   <- revenues[isMargin]
-                  ownerPre   <- ownerPre[isMargin,isMargin]
-                  margins    <- margins[isMargin]
+                  #elast      <- elast[isMargin,isMargin]
+                  #revenues   <- revenues[isMargin]
+                  #ownerPre   <- ownerPre[isMargin,isMargin]
+                  #margins    <- margins[isMargin]
 
-                  #marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
-                  #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+                  
+                  marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
-                  measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
-                  measure <- sum(measure^2,na.rm=TRUE)
+                  #measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
+                  #measure <- sum(measure^2,na.rm=TRUE)
 
                   return(measure)
               }

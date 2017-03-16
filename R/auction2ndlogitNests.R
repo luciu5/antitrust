@@ -320,7 +320,7 @@ setMethod(
 
 
 
-logit.nests <- function(prices,shares,margins,
+auction2nd.logit.nests <- function(prices,shares,margins,
                         ownerPre,ownerPost,
                         nests=rep(1,length(shares)),
                         normIndex=ifelse(sum(shares) < 1,NA,1),

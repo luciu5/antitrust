@@ -8,9 +8,11 @@ setClass(
          parmsStart="numeric",
          constraint="logical"
          ),
-
          prototype=prototype(
-         parmsStart      =  numeric()
+         parmsStart      =  numeric(),
+         control.slopes = list( 
+           factr = 1e7 
+         )
          ),
 
          validity=function(object){

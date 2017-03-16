@@ -5,7 +5,10 @@ setClass(
           parmsStart="numeric"
          ),
          prototype=prototype(
-         normIndex         =  NA
+         normIndex         =  NA,
+         control.slopes = list( 
+           factr = 1e7 
+         )
          ),
 
          validity=function(object){
@@ -42,9 +45,9 @@ setMethod(
 
               ##identify which products have enough margin information
               ##  to impute Bertrand margins
-              isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
-              isMargin[ownerPre==0]=0
-              isMargin    <- !is.na(rowSums(isMargin))
+              #isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
+              #isMargin[ownerPre==0]=0
+              #isMargin    <- !is.na(rowSums(isMargin))
 
               minD <- function(theta){
 
@@ -56,19 +59,19 @@ setMethod(
                   diag(elast) <- alpha*prices - diag(elast)
 
                   revenues <- probs * prices
-                  #marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
-                  #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+                  marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
-                  elast      <-   elast[isMargin,isMargin]
-                  revenues   <-   revenues[isMargin]
-                  ownerPre   <-   ownerPre[isMargin,isMargin]
-                  margins    <-   margins[isMargin]
+                  #elast      <-   elast[isMargin,isMargin]
+                  #revenues   <-   revenues[isMargin]
+                  #ownerPre   <-   ownerPre[isMargin,isMargin]
+                  #margins    <-   margins[isMargin]
 
                   #marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
                   #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
-                  measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
-                  measure <- sum(measure^2,na.rm=TRUE)
+                  #measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
+                  #measure <- sum(measure^2,na.rm=TRUE)
 
                   return(measure)
               }
