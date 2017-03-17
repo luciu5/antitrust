@@ -25,18 +25,18 @@ setClass(
   ),
   validity=function(object){
     
-    nfirms <- nrow(object@quantities) # count the number of firms
+    nplants <- nrow(object@quantities) # count the number of plants
     nprods  <- length(object@prices)     # count the number of products
   
    if(!is.list(object@mcfunPre) || 
-      !length(object@mcfunPre) %in% c(nfirms,0)) {stop("'mcfunPre' must be a list of functions whose length equals the number of firms")}
+      !length(object@mcfunPre) %in% c(nplants,0)) {stop("'mcfunPre' must be a list of functions whose length equals the number of plants")}
    if(length(object@mcfunPre) >0 && any(sapply(object@mcfunPre,class) != "function"))
    {stop("'mcfunPre' must be a list of functions")}
     
-    if(length(object@mcfunPre) ==0 && any(rowSums(object@margins) == 0)){stop("When 'mcfunPre' is not supplied, at least one margin per firm must be supplied")}
+    #if(length(object@mcfunPre) ==0 && any(rowSums(object@margins,na.rm=TRUE) == 0)){stop("When 'mcfunPre' is not supplied, at least one margin per plant must be supplied")}
     
     if(!is.list(object@mcfunPost) || 
-       !length(object@mcfunPost) %in% c(nfirms,0)) {stop("'mcfunPost' must be a list of functions whose length equals the number of firms")}
+       !length(object@mcfunPost) %in% c(nplants,0)) {stop("'mcfunPost' must be a list of functions whose length equals the number of plants")}
     if(length(object@mcfunPost) >0 && any(sapply(object@mcfunPost,class) != "function"))
     {stop("'mcfunPost' must be a list of functions")}
     
@@ -49,7 +49,7 @@ setClass(
      
   
    if(!is.list(object@labels)) stop("'labels' must be a list") 
-   if (isTRUE(nfirms != length(object@labels[[1]]))) stop("'labels' length must be a list whose first element is a vector whose length equals the number of firms")
+   if (isTRUE(nplants != length(object@labels[[1]]))) stop("'labels' length must be a list whose first element is a vector whose length equals the number of plants")
     
     if (isTRUE(nprods != length(object@labels[[2]]))) stop("'labels' length must be a list whose 2nd element is a vector whose length equals the number of productsS")
     
@@ -57,7 +57,7 @@ setClass(
     if(any(object@prices<=0,na.rm=TRUE))             stop("'prices' values must be positive")
     if(any(object@quantities<=0,na.rm=TRUE))          stop("'quantities' values must be positive")
     if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
-    if(any(colSums(object@margins,na.rm=TRUE) == 0)) stop("at least one firm margin must be supplied for each product")
+    if(any(colSums(object@margins,na.rm=TRUE) == 0)) stop("at least one plant margin must be supplied for each product")
     
     if(all(!(object@demand %in% c("linear","log")))){stop("'demand' must equal 'linear' or 'log'")}
     if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")
@@ -177,20 +177,18 @@ setMethod(
     
     prices <- object@prices
     quantities <- object@quantities
-    quantities[is.na(quantities)] <- 0
     margins <- object@margins
     products <- object@productsPre
     demand <- object@demand
     owner <- object@ownerPre
     mcfunPre <- object@mcfunPre
     nprods <- ncol(quantities)
-    nfirms <- nrow(quantities)
+    nplants <- nrow(quantities)
     
     isLinear <- demand=="linear"
     
     quantTot <- colSums(quantities, na.rm = TRUE)
-    quantOwn <- owner %*% quantities
-    
+    quantPlants <- rowSums(quantities, na.rm = TRUE)
     
     
     shares <- t(t(quantities)/quantTot)
@@ -249,19 +247,25 @@ setMethod(
     intercepts = bestParms$par[1:nprods]
     slopes = bestParms$par[-(1:nprods)]
   
-    elast <- 1/(t(quantities)/(prices/slopes)) * isLinear +
-      (slopes / t(shares))  * ( 1 - isLinear)
     
-    
-    marg <- -1/t(elast)
-    mc <- t(prices*(1-t(marg)))
     
     ## if no marginal cost functions are supplied 
-    ## assume that firm i's marginal cost is
+    ## assume that plant i's marginal cost is
     ## q_i/k_i, where k_i is calculated from FOC
     
     if(length(mcfunPre) ==0){
-      mcparm <- rowMeans(quantOwn/mc,na.rm=TRUE)
+      
+      elast <- 1/(t(quantities)/(prices/slopes)) * isLinear +
+        (slopes / t(shares))  * ( 1 - isLinear)
+      
+      
+      marg <- -1/t(elast)
+      mcpred <- t(prices*(1-t(marg)))
+      mcact<- t(prices*(1-t(margins)))
+      
+      mcact[is.na(mcact)] <- mcpred[is.na(mcact)]
+      
+      mcparm <- rowMeans(quantPlants/mcact,na.rm=TRUE)
       
       fndef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE) * mcparm)}"
       fndef <- sprintf(fndef,1/mcparm)
@@ -297,9 +301,9 @@ setMethod(
     }
     
    
-    quantPlants <- rowSums(quantity,na.rm=TRUE) 
+   
     
-    nplants <- length(quantPlants)
+    nplants <- nrow(quantity)
     
     mc <- rep(NA, nplants)
     
@@ -453,8 +457,8 @@ setMethod(
   signature= "Cournot",
   definition=function(object,market=TRUE,revenue=FALSE,shares=FALSE,levels=FALSE,parameters=FALSE,digits=2,...){
     
-    if(market){nfirms <- 1}
-    else{ nfirms <- nrow(object@quantities) }
+    if(market){nplants <- 1}
+    else{ nplants <- nrow(object@quantities) }
     
     curWidth <-  getOption("width")
     curSci  <-  getOption("scipen")
@@ -492,21 +496,21 @@ setMethod(
       
       outPre <- colSums(outPre,na.rm=TRUE)
       outPost <- colSums(outPost,na.rm=TRUE)
-      ids <- data.frame(owner = 1 ,product= object@labels[[2]])  
+      ids <- data.frame(plant = 1 ,product= object@labels[[2]])  
     }
     
     
     else{
       
-      ids <- expand.grid(owner=object@labels[[1]], product=object@labels[[2]])
+      ids <- expand.grid(plant=object@labels[[1]], product=object@labels[[2]])
     }
     
     
     out <- data.frame(product=ids$product, 
-                      owner=ids$owner,outPre=as.vector(t(outPre)), 
+                      plant=ids$plant,outPre=as.vector(t(outPre)), 
                       outPost = as.vector(t(outPost)))
     
-    if(market) {out$owner <- NULL}
+    if(market) {out$plant <- NULL}
     else{
       out$isParty <- as.numeric(rowSums( abs(object@ownerPost - object@ownerPre))>0)
       out$isParty <- factor(out$isParty,levels=0:1,labels=c(" ","*"))
@@ -517,16 +521,16 @@ setMethod(
     if(levels){out$outDelta <- out$outPost - out$outPre}
     else{out$outDelta <- (out$outPost/out$outPre - 1) * 100}
     
-    out$pricePre <- rep(pricePre,each=nfirms)
-    out$pricePost <- rep(pricePost,each=nfirms)
-    out$priceDelta <- rep(priceDelta, each=nfirms)
+    out$pricePre <- rep(pricePre,each=nplants)
+    out$pricePost <- rep(pricePost,each=nplants)
+    out$priceDelta <- rep(priceDelta, each=nplants)
     
     if(market){
       results <- subset(out, select = c(product,pricePre,pricePost,priceDelta,outPre,outPost,outDelta ))  
     }
     
     else{
-      results <- subset(out, select = c(isParty,product,owner, pricePre,pricePost,priceDelta,outPre,outPost,outDelta ))
+      results <- subset(out, select = c(isParty,product,plant, pricePre,pricePost,priceDelta,outPre,outPost,outDelta ))
     }
     
     colnames(results)[colnames(results) %in% c("outPre","outPost")] <- sumlabels
@@ -601,9 +605,9 @@ setMethod(
 setMethod(
   f= "calcPricesHypoMon",
   signature= "Cournot",
-  definition=function(object,firmIndex){
+  definition=function(object,plantIndex){
     
-    nhypofirms <- length(firmIndex)
+    nhypoplants <- length(plantIndex)
     intercept <- object@intercepts
     nprods <- length(intercept)
     slopes <- object@slopes
@@ -618,7 +622,7 @@ setMethod(
     calcMonopolySurplus <- function(quantCand){
       
       
-      quantityPre[firmIndex] <- quantCand
+      quantityPre[plantIndex] <- quantCand
       quantCand <- matrix(quantityCand,ncol=nprods)
       object@quantityPre <- quantCand
       mktQuant <- colSums(quantCand, na.rm = TRUE)
@@ -629,15 +633,15 @@ setMethod(
       
       mc <- calcMC(object, preMerger=TRUE)
       
-      surplus <- sum(priceCand*t(quantityCand[firmIndex,]), na.rm =TRUE)
+      surplus <- sum(priceCand*t(quantityCand[plantIndex,]), na.rm =TRUE)
       
       return(sum(surplus))
     }
     
     ##Find starting value that always meets boundary conditions
-    ##Note: if  nhypofirms=1, need to use a more accurate optimizer.
+    ##Note: if  nhypoplants=1, need to use a more accurate optimizer.
     
-    if( nhypofirms> 1){
+    if( nhypoplants> 1){
       
       if(det(slopes)!=0){startParm <- as.vector(solve(slopes) %*% (1 - intercept ))}
       else{startParm <- rep(0,nprods)}

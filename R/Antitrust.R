@@ -72,6 +72,7 @@ setClass(
 
              else if (nprods != length(object@ownerPost)) stop("'ownerPost' and 'labels' must be vectors of the same length")
 
+             if(identical(object@ownerPre,object@ownerPost)) warning("'ownerPost' and 'ownerPre' are the same")
               return(TRUE)
          }
 
