@@ -231,7 +231,9 @@ The FOCs for all products may be stacked and then
 represented using the following matrix notation:
 \begin{align}
   \label{eqn:FOC}
-  (r\circ diag(\Omega)) + (E\circ\Omega)'(r \circ m)=&0
+  (r\circ diag(\Omega)) + (E\circ\Omega)'(r \circ m)=0\\
+  \intertext{rearranging yields}
+  m_{Bertrand}= -\{(E\circ\Omega)'^{-1}(r\circ diag(\Omega))\} \circ \frac{1}{r}
 \end{align}
 
 where $r$ and $m$ are $n$-length vectors of revenue shares

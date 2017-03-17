@@ -118,8 +118,9 @@ logit.alm <- function(prices,shares,margins,
 
 
     if(missing(parmsStart)){
-        parmsStart <- runif(2)
-        parmsStart[1] <- -1* parmsStart[1] # price coefficient is assumed to be negative
+        parmsStart <- rep(.1,2)
+        nm <- which(!is.na(margins))[1] 
+        parmsStart[1] <- -1/(margins[nm]*prices[nm]*(1-shares[nm])) #ballpark alpha for starting values
     }
 
    
