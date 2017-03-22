@@ -7,6 +7,8 @@ setClass(
     intercepts       = "numeric",
     mcfunPre           = "list",
     mcfunPost           = "list",
+    vcfunPre           = "list",
+    vcfunPost           = "list",
     prices           = "vector",
     quantities       = "matrix",
     margins          = "matrix",
@@ -21,7 +23,9 @@ setClass(
   prototype(
     intercepts    =  numeric(),
     mcfunPre =list(),
-    mcfunPost=list()
+    mcfunPost=list(),
+    vcfunPre =list(),
+    vcfunPost=list()
   ),
   validity=function(object){
     
@@ -33,12 +37,23 @@ setClass(
    if(length(object@mcfunPre) >0 && any(sapply(object@mcfunPre,class) != "function"))
    {stop("'mcfunPre' must be a list of functions")}
     
-    #if(length(object@mcfunPre) ==0 && any(rowSums(object@margins,na.rm=TRUE) == 0)){stop("When 'mcfunPre' is not supplied, at least one margin per plant must be supplied")}
+    if(!identical(length(object@mcfunPre),length(object@vcfunPre) )){stop("'mcfunPre' and 'vcfunPre' should be lists of the same length")}
+    
     
     if(!is.list(object@mcfunPost) || 
        !length(object@mcfunPost) %in% c(nplants,0)) {stop("'mcfunPost' must be a list of functions whose length equals the number of plants")}
     if(length(object@mcfunPost) >0 && any(sapply(object@mcfunPost,class) != "function"))
     {stop("'mcfunPost' must be a list of functions")}
+    
+    if(!is.list(object@vcfunPre) || 
+       !length(object@vcfunPre) %in% c(nplants,0)) {stop("'vcfunPre' must be a list of functions whose length equals the number of plants")}
+    if(length(object@vcfunPre) >0 && any(sapply(object@vcfunPre,class) != "function"))
+    {stop("'vcfunPre' must be a list of functions")}
+    
+    if(!is.list(object@vcfunPost) || 
+       !length(object@vcfunPost) %in% c(nplants,0)) {stop("'vcfunPost' must be a list of functions whose length equals the number of plants")}
+    if(length(object@vcfunPost) >0 && any(sapply(object@vcfunPost,class) != "function"))
+    {stop("'vcfunPost' must be a list of functions")}
     
    if(!is.logical(object@productsPre)) stop("'productsPre' must be a logical matrix")
    if(!is.logical(object@productsPost)) stop("'productsPost' must be a logical matrix")
@@ -70,6 +85,10 @@ setClass(
   
 )
 
+setGeneric (
+  name= "calcVC",
+  def=function(object,...){standardGeneric("calcVC")}
+)
 
 
 ##
@@ -261,21 +280,31 @@ setMethod(
       
       marg <- -1/t(elast)
       mcpred <- t(prices*(1-t(marg)))
-      mcact<- t(prices*(1-t(margins)))
+      #mcact<- t(prices*(1-t(margins)))
       
-      mcact[is.na(mcact)] <- mcpred[is.na(mcact)]
+      #mcact[is.na(mcact)] <- mcpred[is.na(mcact)]
+      mcact = mcpred
       
       mcparm <- rowMeans(quantPlants/mcact,na.rm=TRUE)
       
-      fndef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE) * mcparm)}"
-      fndef <- sprintf(fndef,1/mcparm)
-      fndef <- lapply(fndef, function(x){eval(parse(text=x ))})
+      mcdef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE) * mcparm)}"
+      mcdef <- sprintf(mcdef,1/mcparm)
+      mcdef <- lapply(mcdef, function(x){eval(parse(text=x ))})
     
-      object@mcfunPre <- fndef
+      object@mcfunPre <- mcdef
       names(object@mcfunPre) <- object@labels[[1]]
       
+      vcdef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE)^2 * mcparm / 2)}"
+      vcdef <- sprintf(vcdef,1/mcparm)
+      vcdef <- lapply(vcdef, function(x){eval(parse(text=x ))})
+      
+      object@vcfunPre <- vcdef
+      names(object@vcfunPre) <- object@labels[[1]]
+      
     }
-    if(length(object@mcfunPost)==0){object@mcfunPost <- object@mcfunPre}
+    if(length(object@mcfunPost)==0){
+      object@mcfunPost <- object@mcfunPre
+      object@vcfunPost <- object@vcfunPre}
     
     object@intercepts <- intercepts
     object@slopes <-     slopes
@@ -284,6 +313,8 @@ setMethod(
   return(object)
     
   })    
+
+
 setMethod(
   f= "calcMC",
   signature= "Cournot",
@@ -317,6 +348,75 @@ setMethod(
     
     return(mc)
   })    
+
+
+setMethod(
+  f= "calcVC",
+  signature= "Cournot",
+  definition=function(object,preMerger=TRUE){
+    
+    if(preMerger){ 
+      
+      quantity  <- object@quantityPre
+      vcfun <- object@vcfunPre
+    }
+    else{          
+      
+      quantity  <- object@quantityPost
+      vcfun <- object@vcfunPost
+    }
+    
+    
+    
+    
+    nplants <- nrow(quantity)
+    
+    vc <- rep(NA, nplants)
+    
+    for(f in 1:nplants){
+      vc[f] <- vcfun[[f]](quantity[f,])
+    }
+    
+    if(!preMerger){vc <- vc*(1 + object@mcDelta)}
+    
+    names(vc) <- object@labels[[1]]
+    
+    return(vc)
+  })   
+
+
+
+
+
+## compute producer surplus
+setMethod(
+  f= "calcProducerSurplus",
+  signature= "Cournot",
+  definition=function(object,preMerger=TRUE){
+    
+    
+    if( preMerger) {
+      prices <- object@pricePre
+      quantities <- object@quantityPre
+      
+    }
+    else{prices <- object@pricePost
+    quantities <- object@quantityPost
+    
+    }
+    
+    
+    
+    vc <- calcVC(object, preMerger= preMerger)
+    
+    ps <- colSums(prices*t(quantities), na.rm=TRUE) - vc
+    names(ps) <- object@labels[[1]]
+    
+    return(ps)
+  }
+  
+)
+
 
 setMethod(
   f= "calcQuantities",
@@ -443,7 +543,7 @@ setMethod(
     shares <- calcShares(object,preMerger=TRUE,revenue=FALSE)
     shares[is.na(shares)] <- 0 
     shares <- owner %*% shares
-    shares <- shares[isParty,]
+    shares <- shares[isParty,,drop=FALSE]
     mktElast <- elast(object, preMerger= TRUE,market=TRUE)
 
     cmcr <- -2 * apply(shares,2,prod) / (mktElast * colSums(shares) )
@@ -545,7 +645,7 @@ setMethod(
     
     options("width"=100) # this width ensures that everything gets printed on the same line
     options("scipen"=999) # this width ensures that everything gets printed on the same line
-    print(cbind(results[,1:3], round(results[,-(1:3)], digits=digits)),digits=digits)
+    print(format(results,digits=digits),row.names = FALSE)
     options("width"=curWidth) #restore to current width
     options("scipen"=curSci) #restore to current scientific notation
     
@@ -562,18 +662,19 @@ setMethod(
     if(!is.logical(thisCMCR)){
     cat("\n\nCMCR:\n\n")
       
-      print(round(cmcr(object),digits))
+      cat(format(cmcr(object),digits=digits), fill=TRUE,labels=object@labels[[2]])
     } 
     
     ##Only compute upp if prices are supplied
     #thisUPP <- tryCatch(upp(object),error=function(e) FALSE)
     #if(!is.logical(thisUPP)){
-    #  cat("\nShare-Weighted Pricing Pressure:",round(sum(thisUPP*sharesPost[isParty=="*"],na.rm=TRUE)/sum(sharesPost[isParty=="*"],na.rm=TRUE),digits),sep="\t")}
+    #  cat("\nShare-Weighted Pricing Pressure:",format(sum(thisUPP*sharesPost[isParty=="*"],na.rm=TRUE)/sum(sharesPost[isParty=="*"],na.rm=TRUE),digits),sep="\t")}
     
     ##Only compute CV if prices  are supplied
-   # thisCV <- tryCatch(CV(object,...),error=function(e) FALSE)
-   # if(!is.logical(thisCV)){
-   #    cat("\nCompensating Variation (CV):",round(thisCV,digits),sep="\t")}
+    thisCV <- tryCatch(CV(object,...),error=function(e) FALSE)
+    if(!is.logical(thisCV)){
+      cat("\n\nCompensating Variation (CV):\n\n")
+      cat(format(thisCV,digits=digits),fill=TRUE, labels=object@labels[[2]])}
     
     cat("\n\n")
     
@@ -582,14 +683,14 @@ setMethod(
       
       cat("\nDemand Parameter Estimates:\n\n")
      
-        print(round(object@slopes,digits))
+        print(format(object@slopes,digits=digits))
         
       cat("\n\n")
       
       if(.hasSlot(object,"intercepts")){
         
         cat("\nIntercepts:\n\n")
-        print(round(object@intercepts,digits))
+        print(format(object@intercepts,digits=digits))
         cat("\n\n")
         
       }
@@ -603,6 +704,29 @@ setMethod(
 
 
 setMethod(
+  f= "CV",
+  signature= "Cournot",
+  definition=function(object){
+    
+    demand <- object@demand
+    slopes    <- object@slopes
+    intercepts <- object@intercepts
+    quantityPre <- colSums(object@quantityPre, na.rm=TRUE)
+    quantityPost <- colSums(object@quantityPost, na.rm=TRUE)
+    pricePre <- object@pricePre
+    pricePost <- object@pricePost
+    
+    result <- -ifelse(demand =="linear",
+                 .5*(pricePre - pricePost)*(quantityPre - quantityPost),
+                 exp(intercepts)/(slopes + 1) * (quantityPre^(slopes+1) - quantityPost^(slopes+1)) -  (quantityPre - quantityPost)* pricePre
+                 )
+    
+   
+    names(result) <-  object@labels[[2]]
+    return(result)
+  })
+
+setMethod(
   f= "calcPricesHypoMon",
   signature= "Cournot",
   definition=function(object,plantIndex){
@@ -611,13 +735,12 @@ setMethod(
     intercept <- object@intercepts
     nprods <- length(intercept)
     slopes <- object@slopes
-    mc <- object@mcPre[prodIndex]
     quantityPre <- as.vector(object@quantityPre)
     demand <- object@demand
     
-    stop("This analysis is currently unavailable")
     
-    
+    ## how to deal with multiple products?
+   stop("A work in progress!!")
     
     calcMonopolySurplus <- function(quantCand){
       
@@ -631,45 +754,37 @@ setMethod(
                       intercept + slopes * mktQuant,
                       exp(intercept)*mktQuant^slopes)
       
-      mc <- calcMC(object, preMerger=TRUE)
+      vcCand <- calcVC(object, preMerger=TRUE)
+      vcCand <- vcCand[plantIndex]
       
-      surplus <- sum(priceCand*t(quantityCand[plantIndex,]), na.rm =TRUE)
+      revCand <-  colSums(priceCand*t(quantCand[plantIndex,]), na.rm=TRUE)
+      
+      
+      surplus <- sum(revCand - vcCand, na.rm =TRUE)
       
       return(sum(surplus))
     }
     
-    ##Find starting value that always meets boundary conditions
-    ##Note: if  nhypoplants=1, need to use a more accurate optimizer.
-    
-    if( nhypoplants> 1){
+    if( nhypoplants > 1){
+     
+      maxResult <- optim(object@quantityPre[prodIndex],
+                         calcMonopolySurplus,
+                         method="L-BFGS-B",
+                         lower = rep(0,nhypoplants)
+                               )
       
-      if(det(slopes)!=0){startParm <- as.vector(solve(slopes) %*% (1 - intercept ))}
-      else{startParm <- rep(0,nprods)}
-      
-      
-      priceConstr <- pricePre
-      priceConstr[prodIndex] <- 0
-      
-      maxResult <- constrOptim(startParm[prodIndex],calcMonopolySurplus,
-                               grad=NULL,
-                               ui=slopes[prodIndex,prodIndex],
-                               ci=-intercept[prodIndex] - as.vector(slopes %*% priceConstr)[prodIndex],
-                               control=list(fnscale=-1))
-      
-      pricesHM <- maxResult$par
+      quantitiesHM <- maxResult$par
     }
     
     
     else{
       
-      upperB <- -(intercept[prodIndex] + sum(pricePre[-prodIndex]*slopes[prodIndex,-prodIndex]))/slopes[prodIndex,prodIndex]
-      
-      maxResult <- optimize(calcMonopolySurplus,c(0,upperB),maximum = TRUE)
-      pricesHM <- maxResult$maximum
+      upperB <- sum(quantityPre,na.rm=TRUE)
+      maxResult <- optimize(calcMonopolySurplus,c(0, upperB),maximum = TRUE)
+      quantitiesHM <- maxResult$maximum
     }
     
-    #priceDelta <- pricesHM/pricePre[prodIndex] - 1
-    #names(priceDelta) <- object@labels[prodIndex]
+    quantityPre[plantIndex]
     names(pricesHM) <- object@labels[prodIndex]
     
     return(pricesHM)
@@ -683,6 +798,8 @@ cournot <- function(prices,quantities,margins,
                     demand = rep("linear",length(prices)),
                     mcfunPre=list(),
                     mcfunPost=mcfunPre,
+                    vcfunPre=list(),
+                    vcfunPost=vcfunPre,
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
@@ -712,7 +829,7 @@ cournot <- function(prices,quantities,margins,
 
   result <- new("Cournot",prices=prices, quantities=quantities,margins=margins,
                 shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand,
-                mcfunPre=mcfunPre, mcfunPost=mcfunPost,
+                mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
                 ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
                 ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
   

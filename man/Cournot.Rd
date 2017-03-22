@@ -5,7 +5,7 @@
 \title{Multi-product Cournot Calibration and Merger Simulation With Linear or Log-Linear Demand}
 
 \description{Calibrates consumer demand for multiple products using either a
-  linear or log-linear demand system and then simulates the prices effect of a merger between two firms
+  linear or log-linear demand system and then simulates the prices effect of a merger between two multi-plant firms
   under the assumption that all firms in the market are playing a Cournot quantity setting game.}
 
 \usage{
@@ -15,6 +15,8 @@
                     demand = rep("linear",length(prices)),
                     mcfunPre=list(),
                     mcfunPost=mcfunPre,
+                    vcfunPre=list(),
+                    vcfunPost=vcfunPre,
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
@@ -29,21 +31,23 @@
 }
 
 \arguments{
-  \item{}{Let k denote the number of products and n denote the number of firms.}
+  \item{}{Let k denote the number of products and n denote the number of plants.}
   \item{prices}{A length k vector product prices.}
-  \item{quantities}{An n x k vector of product quantities. All quantities must            either be positive, or  if the product is not produced by a firm, NA. }
+  \item{quantities}{An n x k vector of product quantities. All quantities must            either be positive, or  if the product is not produced by a plant, NA. }
   \item{margins}{An n x k  matrix of product margins. All margins must
     be either be between 0 and 1, or NA.}
   \item{demand}{A length k character vector equal to "linear" if a product's              demand curve is assumed to be linear or "log" if a product's demand curve         is assumed to be log-linear.}
-   \item{mcfunPre}{a length n list of functions that calculate a firm's pre-merger marginal cost. If empty (the default), assumes  quadratic costs. }
-   \item{mcfunPost}{a length n list of functions that calculate a firm's post-merger marginal cost. If empty (the default), equals \sQuote{mcfunPre} )}
-   \item{productsPre}{An n x k  matrix that equals TRUE if pre-merger, a firms producrs a product. Default is TRUE if 'quantities' is not NA. }
-    \item{productsPre}{An n x k  matrix that equals TRUE if pre-merger, a firms producrs a product. Default equals \sQuote{productsPre}. }
+   \item{mcfunPre}{a length n list of functions that calculate a plant's pre-merger marginal cost. If empty (the default), assumes  quadratic costs. }
+   \item{mcfunPost}{a length n list of functions that calculate a plant's post-merger marginal cost. If empty (the default), equals \sQuote{mcfunPre} )}
+     \item{vcfunPre}{a length n list of functions that calculate a plant's pre-merger variable cost. If empty (the default), assumes  quadratic costs. }
+   \item{vcfunPost}{a length n list of functions that calculate a plant's post-merger variable cost. If empty (the default), equals \sQuote{vcfunPre} )}
+   \item{productsPre}{An n x k  matrix that equals TRUE if pre-merger, a plant produces a product. Default is TRUE if 'quantities' is not NA. }
+    \item{productsPre}{An n x k  matrix that equals TRUE if pre-merger, a plant produces a product. Default equals \sQuote{productsPre}. }
   \item{ownerPre}{EITHER a vector of length n whose values
-    indicate which firms produced a product pre-merger OR
+    indicate which plants are commonly owned pre-merger OR
     an n x n matrix of pre-merger ownership shares.}
   \item{ownerPost}{EITHER a vector of length n whose values
-    indicate which firms will be commonly owned after the merger OR
+    indicate which plants will be commonly owned after the merger OR
     an n x n matrix of post-merger ownership shares.}
   \item{mcDelta}{A length n vector where each element equals the
     proportional change in a firm's marginal costs due to
@@ -70,7 +74,7 @@
 
 
 
-\sQuote{mcfunPre} and \sQuote{mcfunPost} are length n lists whose elements are \sQuote{R} functions that return a firm's marginal cost. The first argument of each function should be total firm quantities. By default, each firm is assumed to have quadratic costs with a firm-specific parameter calibrated from a firm's margin.  
+\sQuote{mcfunPre} and \sQuote{mcfunPost} are length n lists whose elements are \sQuote{R} functions that return a firm's marginal cost. The first argument of each function should be total firm quantities. By default, each firm is assumed to have quadratic costs with a firm-specific parameter calibrated from a firm's margin.  \sQuote{vcfunPre} and \sQuote{vcfunPost} are similarly defined.
   
   \sQuote{ownerPre} and \sQuote{ownerPost} values will typically be equal to either 0
   (element [i,j] is not commonly owned) or 1 (element [i,j] is commonly
@@ -102,11 +106,7 @@
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
 \references{
-von Haefen, Roger (2002).
-\dQuote{A Complete Characterization Of The Linear, Log-Linear, And Semi-Log
-  Incomplete Demand System Models.}
-\emph{Journal of Agricultural and Resource Economics}, \bold{27}(02).
-\url{http://ideas.repec.org/a/ags/jlaare/31118.html}.
+
 }
 
 
@@ -119,7 +119,7 @@ von Haefen, Roger (2002).
 
 
 n <- 4 #number of firms in market pre-merger
-cap <- rnorm(n,mean = 2, sd = .5)
+cap <- rnorm(n,mean = .5, sd = .1)
 int <- 10
 slope <- -.25 
 
@@ -128,7 +128,9 @@ diag(B.pre) = 2* diag(B.pre) - 1/cap
 quantity.pre = rowSums(solve(B.pre) * -int) 
 price.pre = int + slope * sum(quantity.pre)
 mc.pre = quantity.pre/cap
+vc.pre = quantity.pre^2/(2*cap)
 margin.pre = 1 - mc.pre/price.pre
+ps.pre = price.pre*quantity.pre - vc.pre
 
 mktQuant.pre = sum(quantity.pre)
 
@@ -141,10 +143,15 @@ B.post[2,1] = 2*B.post[2,1]
 quantity.post = rowSums(solve(B.post) * -int) 
 price.post = int + slope * sum(quantity.post)
 mc.post = quantity.post/cap
+vc.post = quantity.post^2/(2*cap)
 margin.post = 1 - mc.post/price.post
+ps.post = price.post*quantity.post - vc.post
 
 mktQuant.post = sum(quantity.post, na.rm=TRUE)
 
+#check if merger is profitable for merging parties
+isprofitable = ps.post - ps.pre
+isprofitable= sum(isprofitable[1:2]) > 0 
 
 
 #prep inputs for Cournot

@@ -19,19 +19,21 @@ Objects can be created by calls of the form \code{new("Cournot", ...)}.
 }
 
 \section{Slots}{
-  Let k denote the number of products and n denote the number of firms.
+  Let k denote the number of products and n denote the number of plants.
   \describe{
     \item{\code{intercepts}:}{A length k vector containing the calibrated demand intercept.}
-    \item{\code{mcfunPre}:}{A length n list whose elements equal a function that calculates a firm's pre-merger marginal cost. }
-    \item{\code{mcfunPost}:}{A length n list whose elements equal a function that calculates a firm's post-merger marginal cost. }
+    \item{\code{mcfunPre}:}{A length n list whose elements equal a function that calculates a plant's pre-merger marginal cost. }
+    \item{\code{mcfunPost}:}{A length n list whose elements equal a function that calculates a plant's post-merger marginal cost. }
+     \item{\code{vcfunPre}:}{A length n list whose elements equal a function that calculates a plant's pre-merger variable cost. }
+    \item{\code{vcfunPost}:}{A length n list whose elements equal a function that calculates a plant's post-merger variable cost. }
     \item{\code{prices}:}{A length k vector of product prices. }
-    \item{\code{quantities}:}{An n x k matrix of firm quantities produced for each product.}
-    \item{\code{margins}:}{An n x k matrix of firm product margins.}
+    \item{\code{quantities}:}{An n x k matrix of plant quantities produced for each product.}
+    \item{\code{margins}:}{An n x k matrix of plant product margins.}
     \item{\code{quantityPre}:}{An n x k matrix of predicted pre-merger quantities.}
     \item{\code{quantityPost}:}{An n x k matrix of predicted post-merger quantities.}
     \item{\code{quantityStart}:}{A length n x k vector of starting quantities for the non-linear solver.}
-    \item{\code{productsPre}:}{An n x k logical matrix qhose elements are TRUE if a firm produces a product pre-merger and FALSE otherwise.}
-    \item{\code{productsPre}:}{An n x k logical matrix qhose elements are TRUE if a firm produces a product post-merger and FALSE otherwise.}
+    \item{\code{productsPre}:}{An n x k logical matrix qhose elements are TRUE if a plant produces a product pre-merger and FALSE otherwise.}
+    \item{\code{productsPre}:}{An n x k logical matrix qhose elements are TRUE if a plant produces a product post-merger and FALSE otherwise.}
   \item{\code{demand}:}{A length k character vector specifying whether product demand is linear ("linear") or log-linear ("log").}
 }}
  \section{Extends}{
@@ -47,12 +49,13 @@ Objects can be created by calls of the form \code{new("Cournot", ...)}.
   on a value of TRUE or FALSE, where TRUE invokes the method using
   revenues, while FALSE invokes the method using quantities
   \describe{
-    \item{\code{calcMC}}{\code{signature(object,preMerger=TRUE)}}{ Calculates (constant) marginal cost for each
-      product. For those classes that do not require prices, returns a
-      length-k vector of NAs when prices are not supplied.}
+    \item{\code{calcMC}}{\code{signature(object,preMerger=TRUE)}}{ Calculates marginal cost for each
+      product. }
+    \item{\code{calcVC}}{\code{signature(object,preMerger=TRUE)}}{ Calculates variable cost for each
+      product.}
     \item{\code{calcMargins}}{\code{signature(object, preMerger
 	= TRUE)}}{ Compute either pre-merger or post-merger equilibrium
-      margins under the assumption that firms play a differentiated product
+      margins under the assumption that firms play a multi-product
       Cournot Nash pricing game.}
     \item{\code{\link{cmcr}}}{\code{signature(object)}}{ Calculates compensated marginal cost reduction,
       the percentage decrease in the marginal costs of the merging
@@ -68,7 +71,7 @@ Objects can be created by calls of the form \code{new("Cournot", ...)}.
       optimizer.}
     \item{\code{hhi}}{\code{signature(object, preMerger= TRUE,revenue=FALSE)}}{ Compute either the pre-merger or
       post-merger Herfindahl-Hirschman Index (HHI) under the assumption
-      that firms play a differentiated product Cournot Nash pricing game.}
+      that firms play a multi-product Cournot Nash pricing game.}
     \item{\code{\link{diversion}}}{\code{signature(object, preMerger
 	= TRUE)}}{ Computes a k x k matrix of diversion ratios.}
     \item{\code{summary}}{\code{signature(object,revenue=TRUE,shares=TRUE,parameters=FALSE,digits=2)}}{ Summarizes
