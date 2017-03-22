@@ -260,7 +260,7 @@ setMethod(
 
 
 
-## compute margins
+## compute producer surplus
 setMethod(
   f= "calcProducerSurplus",
   signature= "Bertrand",
