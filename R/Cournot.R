@@ -716,8 +716,8 @@ setMethod(
     pricePre <- object@pricePre
     pricePost <- object@pricePost
     
-    result <- -ifelse(demand =="linear",
-                 .5*(pricePre - pricePost)*(quantityPre - quantityPost),
+    result <- ifelse(demand =="linear",
+                 -.5*(pricePre - pricePost)*(quantityPre - quantityPost),
                  exp(intercepts)/(slopes + 1) * (quantityPre^(slopes+1) - quantityPost^(slopes+1)) -  (quantityPre - quantityPost)* pricePre
                  )
     
