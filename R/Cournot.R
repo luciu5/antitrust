@@ -129,9 +129,15 @@ setMethod(
     
   
     if(preMerger){
-      quantities <- object@quantityPre}
+      quantities <- object@quantityPre
+      owner <- object@ownerPre}
     else{
-      quantities <- object@quantityPost}
+      quantities <- object@quantityPost
+      owner <- object@ownerPost}
+    
+    quantities[is.na(quantities)] <- 0
+    
+    quantOwner <- owner %*% quantities
     
     prices <- calcPrices(object,preMerger=preMerger)
     
@@ -153,11 +159,11 @@ setMethod(
     
     else{
       
-     shares <- t( t(quantities) / mktQuant)
+     sharesOwner <- t( t(quantOwner) / mktQuant)
      
      
-     elast <- 1/(t(quantities)/(prices/slopes)) * isLinear +
-       (slopes / t(shares))  * ( 1 - isLinear)
+     elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
+       (slopes / t(sharesOwner))  * ( 1 - isLinear)
      
      elast <- t(elast)
      
