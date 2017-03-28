@@ -196,6 +196,7 @@ setMethod(
     
     prices <- object@prices
     quantities <- object@quantities
+    quantities[is.na(quantities)] <- 0
     margins <- object@margins
     products <- object@productsPre
     demand <- object@demand
@@ -209,8 +210,10 @@ setMethod(
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantPlants <- rowSums(quantities, na.rm = TRUE)
     
+    quantOwner <- owner %*% quantities
     
-    shares <- t(t(quantities)/quantTot)
+    
+    sharesOwner <- t(t(quantOwner)/quantTot)
     
     minDemand <- function(theta){
       
@@ -220,8 +223,8 @@ setMethod(
       thisprices <- ifelse(isLinear, thisints + thisslopes*quantTot, 
                     exp(thisints)*quantTot^thisslopes)
       
-      elast <- 1/(t(quantities)/(thisprices/thisslopes)) * isLinear +
-       (thisslopes / t(shares))  * ( 1 - isLinear)
+      elast <- 1/(t(quantOwner)/(thisprices/thisslopes)) * isLinear +
+       (thisslopes / t(sharesOwner))  * ( 1 - isLinear)
       
       
       
@@ -235,7 +238,7 @@ setMethod(
     }
     
     
-    bStart      =   ifelse(isLinear, -(prices*margins)/(shares*quantTot), -shares/margins)
+    bStart      =   ifelse(isLinear, -(prices*margins)/(sharesOwner*quantTot), -sharesOwner/margins)
     intStart    =   ifelse(isLinear,prices - bStart*quantTot, log(prices/(quantTot^bStart)))
     intStart    =   abs(intStart)
     
@@ -274,8 +277,8 @@ setMethod(
     
     if(length(mcfunPre) ==0){
       
-      elast <- 1/(t(quantities)/(prices/slopes)) * isLinear +
-        (slopes / t(shares))  * ( 1 - isLinear)
+      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
+        (slopes / t(sharesOwner))  * ( 1 - isLinear)
       
       
       marg <- -1/t(elast)
@@ -716,8 +719,8 @@ setMethod(
     pricePre <- object@pricePre
     pricePost <- object@pricePost
     
-    result <- -ifelse(demand =="linear",
-                 .5*(pricePre - pricePost)*(quantityPre - quantityPost),
+    result <- ifelse(demand =="linear",
+                 -.5*(pricePre - pricePost)*(quantityPre - quantityPost),
                  exp(intercepts)/(slopes + 1) * (quantityPre^(slopes+1) - quantityPost^(slopes+1)) -  (quantityPre - quantityPost)* pricePre
                  )
     
