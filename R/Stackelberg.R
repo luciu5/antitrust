@@ -5,8 +5,8 @@ setClass(
   representation=representation(
     isLeaderPre = "matrix",
     isLeaderPost = "matrix",
-    mcfunPre           = "list",
-    mcfunPost           = "list"
+    dmcfunPre           = "list",
+    dmcfunPost          = "list"
   ), 
   prototype(
   ),
