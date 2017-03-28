@@ -131,6 +131,7 @@ setMethod(
     
     prices <- object@prices
     quantities <- object@quantities
+    quantities[is.na(quantities)] <- 0
     margins <- object@margins
     products <- object@productsPre
     demand <- object@demand
@@ -144,8 +145,10 @@ setMethod(
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantPlants <- rowSums(quantities, na.rm = TRUE)
     
+    quantOwner <- owner %*% quantities
     
-    shares <- t(t(quantities)/quantTot)
+    
+    sharesOwner <- t(t(quantOwner)/quantTot)
     
     minDemand <- function(theta){
       
@@ -153,16 +156,16 @@ setMethod(
       thisslopes <- theta[-(1:nprods)]
       
       thisprices <- ifelse(isLinear, thisints + thisslopes*quantTot, 
-                    exp(thisints)*quantTot^thisslopes)
+                           exp(thisints)*quantTot^thisslopes)
       
-      elast <- 1/(t(quantities)/(thisprices/thisslopes)) * isLinear +
-       (thisslopes / t(shares))  * ( 1 - isLinear)
+      elast <- 1/(t(quantOwner)/(thisprices/thisslopes)) * isLinear +
+        (thisslopes / t(sharesOwner))  * ( 1 - isLinear)
       
       
       
       FOC <- margins + 1/t(elast)
       
-                    
+      
       dem <- 1 - thisprices/prices
       dist <- c(FOC,dem)
       
@@ -170,7 +173,7 @@ setMethod(
     }
     
     
-    bStart      =   ifelse(isLinear, -(prices*margins)/(shares*quantTot), -shares/margins)
+    bStart      =   ifelse(isLinear, -(prices*margins)/(sharesOwner*quantTot), -sharesOwner/margins)
     intStart    =   ifelse(isLinear,prices - bStart*quantTot, log(prices/(quantTot^bStart)))
     intStart    =   abs(intStart)
     
@@ -185,7 +188,7 @@ setMethod(
     #for(i in 1:nprods){
     #  ui[i,i] <- 1
     #  ui[i,i+nprods] <- quantTot[i]
-      
+    
     #}
     #ui[1:nprods,1:nprods] = t(diversion)
     
@@ -200,7 +203,7 @@ setMethod(
     
     intercepts = bestParms$par[1:nprods]
     slopes = bestParms$par[-(1:nprods)]
-  
+    
     
     
     ## if no marginal cost functions are supplied 
@@ -209,8 +212,8 @@ setMethod(
     
     if(length(mcfunPre) ==0){
       
-      elast <- 1/(t(quantities)/(prices/slopes)) * isLinear +
-        (slopes / t(shares))  * ( 1 - isLinear)
+      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
+        (slopes / t(sharesOwner))  * ( 1 - isLinear)
       
       
       marg <- -1/t(elast)
@@ -225,7 +228,7 @@ setMethod(
       mcdef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE) * mcparm)}"
       mcdef <- sprintf(mcdef,1/mcparm)
       mcdef <- lapply(mcdef, function(x){eval(parse(text=x ))})
-    
+      
       object@mcfunPre <- mcdef
       names(object@mcfunPre) <- object@labels[[1]]
       
@@ -244,8 +247,8 @@ setMethod(
     object@intercepts <- intercepts
     object@slopes <-     slopes
     
-      
-  return(object)
+    
+    return(object)
     
   })    
 
@@ -638,98 +641,8 @@ setMethod(
   })
 
 
-setMethod(
-  f= "CV",
-  signature= "Cournot",
-  definition=function(object){
-    
-    demand <- object@demand
-    slopes    <- object@slopes
-    intercepts <- object@intercepts
-    quantityPre <- colSums(object@quantityPre, na.rm=TRUE)
-    quantityPost <- colSums(object@quantityPost, na.rm=TRUE)
-    pricePre <- object@pricePre
-    pricePost <- object@pricePost
-    
-    result <- ifelse(demand =="linear",
-                 -.5*(pricePre - pricePost)*(quantityPre - quantityPost),
-                 exp(intercepts)/(slopes + 1) * (quantityPre^(slopes+1) - quantityPost^(slopes+1)) -  (quantityPre - quantityPost)* pricePre
-                 )
-    
-   
-    names(result) <-  object@labels[[2]]
-    return(result)
-  })
 
-setMethod(
-  f= "calcPricesHypoMon",
-  signature= "Cournot",
-  definition=function(object,plantIndex){
-    
-    nhypoplants <- length(plantIndex)
-    intercept <- object@intercepts
-    nprods <- length(intercept)
-    slopes <- object@slopes
-    quantityPre <- as.vector(object@quantityPre)
-    demand <- object@demand
-    
-    
-    ## how to deal with multiple products?
-   stop("A work in progress!!")
-    
-    calcMonopolySurplus <- function(quantCand){
-      
-      
-      quantityPre[plantIndex] <- quantCand
-      quantCand <- matrix(quantityCand,ncol=nprods)
-      object@quantityPre <- quantCand
-      mktQuant <- colSums(quantCand, na.rm = TRUE)
-      
-      priceCand <- ifelse(demand == "linear",
-                      intercept + slopes * mktQuant,
-                      exp(intercept)*mktQuant^slopes)
-      
-      vcCand <- calcVC(object, preMerger=TRUE)
-      vcCand <- vcCand[plantIndex]
-      
-      revCand <-  colSums(priceCand*t(quantCand[plantIndex,]), na.rm=TRUE)
-      
-      
-      surplus <- sum(revCand - vcCand, na.rm =TRUE)
-      
-      return(sum(surplus))
-    }
-    
-    if( nhypoplants > 1){
-     
-      maxResult <- optim(object@quantityPre[prodIndex],
-                         calcMonopolySurplus,
-                         method="L-BFGS-B",
-                         lower = rep(0,nhypoplants)
-                               )
-      
-      quantitiesHM <- maxResult$par
-    }
-    
-    
-    else{
-      
-      upperB <- sum(quantityPre,na.rm=TRUE)
-      maxResult <- optimize(calcMonopolySurplus,c(0, upperB),maximum = TRUE)
-      quantitiesHM <- maxResult$maximum
-    }
-    
-    quantityPre[plantIndex]
-    names(pricesHM) <- object@labels[prodIndex]
-    
-    return(pricesHM)
-    
-    
-  })
-
-
-
-cournot <- function(prices,quantities,margins, 
+stackelberg <- function(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
                     mcfunPre=list(),
                     mcfunPost=mcfunPre,
@@ -762,7 +675,7 @@ cournot <- function(prices,quantities,margins,
     
   }
 
-  result <- new("Cournot",prices=prices, quantities=quantities,margins=margins,
+  result <- new("Stackelberg",prices=prices, quantities=quantities,margins=margins,
                 shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
                 ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
