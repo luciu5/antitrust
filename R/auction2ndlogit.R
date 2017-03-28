@@ -400,7 +400,7 @@ auction2nd.logit <- function(prices,shares,margins,
                   labels=paste("Prod",1:length(prices),sep="")
                   ){
 
-
+if(missing(prices)){prices <- rep(NA_integer_, length(shares))}
     ## Create Auction2ndLogit  container to store relevant data
     result <- new("Auction2ndLogit",prices=prices, shares=shares,
                   margins=margins,

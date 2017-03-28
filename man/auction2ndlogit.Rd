@@ -20,7 +20,7 @@ auction2nd.logit(prices,shares,margins,
              }
 \arguments{
   \item{}{Let k denote the number of products produced by all firms playing the
-    Bertrand pricing game.}
+    auction game.}
   \item{prices}{A length k vector of product prices.}
   \item{shares}{A length k vector of product (quantity) shares. Values must be
     between 0 and 1.}
@@ -101,7 +101,7 @@ ownerPre <- ownerPost <- diag(length(share))
 #Suppose products 2 and 3 merge
 ownerPost[2,3] <- ownerPost[3,2] <- 1 
 
-margin = 1 - cost/price
+margin = price - cost
 
 result <- auction2nd.logit(price,share,margin,
 ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
@@ -112,7 +112,7 @@ summary(result,revenue=FALSE)
 
 ##re-run without any price information except Firm 2
 
-price[-2] <- NA
+price <- rep(NA, length(price))
 
 result.noprice <- auction2nd.logit(price,share,margin,
 ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
