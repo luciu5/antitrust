@@ -32,7 +32,7 @@ setClass(
     nplants <- nrow(object@quantities) # count the number of plants
     nprods  <- length(object@prices)     # count the number of products
   
-   if(!is.list(object@mcfunPre) || 
+   if(
       !length(object@mcfunPre) %in% c(nplants,0)) {stop("'mcfunPre' must be a list of functions whose length equals the number of plants")}
    if(length(object@mcfunPre) >0 && any(sapply(object@mcfunPre,class) != "function"))
    {stop("'mcfunPre' must be a list of functions")}
@@ -40,17 +40,17 @@ setClass(
     if(!identical(length(object@mcfunPre),length(object@vcfunPre) )){stop("'mcfunPre' and 'vcfunPre' should be lists of the same length")}
     
     
-    if(!is.list(object@mcfunPost) || 
+    if(
        !length(object@mcfunPost) %in% c(nplants,0)) {stop("'mcfunPost' must be a list of functions whose length equals the number of plants")}
     if(length(object@mcfunPost) >0 && any(sapply(object@mcfunPost,class) != "function"))
     {stop("'mcfunPost' must be a list of functions")}
     
-    if(!is.list(object@vcfunPre) || 
+    if( 
        !length(object@vcfunPre) %in% c(nplants,0)) {stop("'vcfunPre' must be a list of functions whose length equals the number of plants")}
     if(length(object@vcfunPre) >0 && any(sapply(object@vcfunPre,class) != "function"))
     {stop("'vcfunPre' must be a list of functions")}
     
-    if(!is.list(object@vcfunPost) || 
+    if(
        !length(object@vcfunPost) %in% c(nplants,0)) {stop("'vcfunPost' must be a list of functions whose length equals the number of plants")}
     if(length(object@vcfunPost) >0 && any(sapply(object@vcfunPost,class) != "function"))
     {stop("'vcfunPost' must be a list of functions")}

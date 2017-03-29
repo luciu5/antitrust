@@ -21,94 +21,47 @@ setClass(
     if(!identical(dim(object@quantities), dim(object@isLeaderPre))){stop("'isLeaderPre' must be a logical matrix whose dimensions must equal 'quantities' ")}
     if(!identical(dim(object@quantities), dim(object@isLeaderPost))){stop("'isLeaderPost' must be a logical matrix whose dimensions must equal 'quantities'")}
     
+    if( 
+      !length(object@dmcfunPre) %in% c(nplants,0)) {stop("'dmcfunPre' must be a list of functions whose length equals the number of plants")}
+    if(length(object@dmcfunPre) >0 && any(sapply(object@dmcfunPre,class) != "function"))
+    {stop("'dmcfunPre' must be a list of functions")}
+    
+    if(
+      !length(object@dmcfunPost) %in% c(nplants,0)) {stop("'dmcfunPost' must be a list of functions whose length equals the number of plants")}
+    if(length(object@dmcfunPost) >0 && any(sapply(object@dmfunPost,class) != "function"))
+    {stop("'dmcfunPost' must be a list of functions")}
     
     
   }
 )
 
-setGeneric (
-  name= "calcPass",
-  def=function(object,...){standardGeneric("calcPass")}
-)
+# setGeneric (
+#   name= "calcPass",
+#   def=function(object,...){standardGeneric("calcPass")}
+# )
 
 
 ##
 ## Stackelberg Methods
 ##
 
-
-setMethod(
-  f="calcPass",
-  signature = "Stackelberg",
-  definition=function(object, preMerger=TRUE){
-  
-    islinear <- object@demand=="linear"
-    
-    if(preMerger){isLeader <- object@isLeaderPre}
-    else{isLeader <- object@isLeaderPost}
-    
-    pass <- ifelse( islinear, )
-    
-    
-  }
-  
-)
-setMethod(
-  f= "elast",
-  signature= "Stackelberg",
-  definition=function(object,preMerger=TRUE,market=TRUE){
-    
-    isLinear <- object@demand =="linear"
-    slopes <- object@slopes
-    intercepts <- object@intercepts
-    
-    
-    if(preMerger){
-      quantities <- object@quantityPre
-      owner <- object@ownerPre}
-    else{
-      quantities <- object@quantityPost
-      owner <- object@ownerPost}
-    
-    quantities[is.na(quantities)] <- 0
-    
-    quantOwner <- owner %*% quantities
-    
-    prices <- calcPrices(object,preMerger=preMerger)
-    
-    mktQuant <-  colSums(quantities,na.rm = TRUE)
-    
-    ##dQdP
-    partial <- ifelse(isLinear, 
-                      slopes,
-                      exp(intercepts)*slopes*mktQuant^(slopes - 1))
-    
-    ##dPdQ
-    partial <- 1/partial
-    
-    
-    if(market){
-      
-      elast <- partial*mktQuant/prices
-    }
-    
-    else{
-      
-      sharesOwner <- t( t(quantOwner) / mktQuant)
-      
-      
-      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
-        (slopes / t(sharesOwner))  * ( 1 - isLinear)
-      
-      elast <- t(elast)
-      
-      dimnames(elast) <- object@labels
-    }
-    
-    return(elast)
-    
-  }
-)
+# 
+# setMethod(
+#   f="calcPass",
+#   signature = "Stackelberg",
+#   definition=function(object, preMerger=TRUE){
+#   
+#     islinear <- object@demand=="linear"
+#     
+#     if(preMerger){isLeader <- object@isLeaderPre}
+#     else{isLeader <- object@isLeaderPost}
+#     
+#     pass <- ifelse( islinear, )
+#     
+#     
+#   }
+#   
+# )
 
 ## compute margins
 setMethod(
@@ -152,7 +105,6 @@ setMethod(
     
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantPlants <- rowSums(quantities, na.rm = TRUE)
-    
     quantOwner <- owner %*% quantities
     
     
@@ -162,11 +114,11 @@ setMethod(
     ## assume vc_i = q_i^2/k_i for plant i
     ## adding create functions for mc and dmc
     if(!noCosts){
-      mcPre <- sapply(1:nplants, function(i){object@mcfunPre(quantities[i,])})
-      dmcPre <- sapply(1:nplants, function(i){object@dmcfunPre(quantities[i,])})
+      mcPre <- sapply(1:nplants, function(i){object@mcfunPre[[i]](quantities[i,])})
+      dmcPre <- sapply(1:nplants, function(i){object@dmcfunPre[[i]](quantities[i,])})
     }
     
-    minDemand <- function(theta){
+    minParms <- function(theta){
       
       if(noCosts){
         
@@ -183,25 +135,25 @@ setMethod(
                            exp(thisints)*quantTot^thisslopes)
       
       thisPartial <- ifelse(isLinear, 
-                            slopes,
-                            exp(intercepts)*slopes*mktQuant^(slopes - 1))
+                            thisslopes,
+                            exp(intercepts)*thisslopes*mktQuant^(thisslopes - 1))
       
-      thisPass <- ifelse(isLeader,
-                         sum(-thisPartial/(2*thisPartial - dmcPre)),
-                         )
+      dthisPartial <- ifelse(isLinear,
+                             0,
+                             exp(intercepts)*thisslopes*(thisslopes - 1)*mktQuant^(thisslopes - 2))
+      
+    
+      demPass <- dthisPartial * t(!isLeader * quantOwner)  
+      thisPass <- -(thisPartial + demPass)/
+                   (2*thisPartial  + demPass - dmcPre)
+                         
       thisPass[!isLeader] <- 0
       
       thisFOC <- (t(quantities) * thisPartial) %*% owner  -  mcPre
-      thisFOC <- t(t(thisFOC) + thisprices + thisPartial*thisPass)
+      thisFOC <- t(t(thisFOC) + thisprices + thisPartial*rowSums(thisPass))
       
       
-      
-      
-  
-      
-      
-      
-      dist <- c(FOC,prices)
+      dist <- c(thisFOC,thisprices)
       
       return(sum(dist^2,na.rm=TRUE))
     }
@@ -214,52 +166,28 @@ setMethod(
     parmStart   =   c( intStart,bStart)
     
     if(noCosts){
-     capStart <-  
+     capStart <-  rowMeans(quantOwner/margins,na.rm=TRUE)
+     parmStart <- c(capStart,parmStart)
     }
     
-    ## constrain diagonal elements so that D'b >=0
-    ## constrain off-diagonal elements to be non-negative.
+    bestParms=optim(parmStart,minParms)$par
     
-    #ui          =  -diag(length(parmStart))
-    #for(i in 1:nprods){
-    #  ui[i,i] <- 1
-    #  ui[i,i+nprods] <- quantTot[i]
-    
-    #}
-    #ui[1:nprods,1:nprods] = t(diversion)
-    
-    #ci = rep(0,length(parmStart)) 
-    
-    
-    
-    #bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci,
-    #                      control=object@control.slopes)
-    
-    bestParms=optim(parmStart,minDemand)
-    
-    intercepts = bestParms$par[1:nprods]
-    slopes = bestParms$par[-(1:nprods)]
-    
-    
-    
-    ## if no marginal cost functions are supplied 
-    ## assume that plant i's marginal cost is
-    ## q_i/k_i, where k_i is calculated from FOC
+    ## if no variable cost functions are supplied 
+    ## assume that plant i's varialbe cost is
+    ## q_i^2/(2*k_i), where k_i is calculated from FOC
     
     if(length(vcfunPre) ==0){
       
-      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
-        (slopes / t(sharesOwner))  * ( 1 - isLinear)
+      mcparm <- bestParms[1:nplants]
+      bestParms <- bestParms[-(1:nplants)]
       
       
-      marg <- -1/t(elast)
-      mcpred <- t(prices*(1-t(marg)))
-      #mcact<- t(prices*(1-t(margins)))
+      dmcdef <- "function(q,mcparm = %f){ return(mcparm)}"
+      dmcdef <- sprintf(dmcdef,1/mcparm)
+      dmcdef <- lapply(dmcdef, function(x){eval(parse(text=x ))})
       
-      #mcact[is.na(mcact)] <- mcpred[is.na(mcact)]
-      mcact = mcpred
-      
-      mcparm <- rowMeans(quantPlants/mcact,na.rm=TRUE)
+      object@dmcfunPre <- dmcdef
+      names(object@dmcfunPre) <- object@labels[[1]]
       
       mcdef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE) * mcparm)}"
       mcdef <- sprintf(mcdef,1/mcparm)
@@ -276,7 +204,17 @@ setMethod(
       names(object@vcfunPre) <- object@labels[[1]]
       
     }
+      
+    
+    intercepts = bestParms[1:nprods]
+    slopes = bestParms[-(1:nprods)]
+    
+    
+    
+   
+    
     if(length(object@vcfunPost)==0){
+      object@dmcfunPost <- object@dmcfunPre
       object@mcfunPost <- object@mcfunPre
       object@vcfunPost <- object@vcfunPre}
     
@@ -297,12 +235,16 @@ setMethod(
     
     slopes <- object@slopes
     intercepts <- object@intercepts
+    isLinear <- object@demand=="linear"
+    
     
     if(preMerger){ owner  <- object@ownerPre
                    products  <- object@productsPre
+                   isLeader <- object@isLeaderPre
                    }
     else{          owner <-  object@ownerPost
                    products <-  object@productsPost
+                   isLeader <- object@isLeaderPost
                    }
     
     nprods <- ncol(products)
@@ -324,14 +266,26 @@ setMethod(
       thisMC <- calcMC(object, preMerger= preMerger) 
       
       mktQuant <- colSums(quantCand, na.rm=TRUE)
+      ownerQuant <- owner %*% quantCand
       
-      thisPartial <- ifelse(object@demand=="linear", 
+      thisPartial <- ifelse(isLinear, 
                             slopes,
                          exp(intercepts)*slopes*mktQuant^(slopes - 1))
       
+      dthisPartial <- ifelse(isLinear,
+                             0,
+                             exp(intercepts)*slopes*(slopes - 1)*mktQuant^(slopes - 2))
+      
+      
+      demPass <- dthisPartial * t(!isLeader * ownerQuant)  
+      thisPass <- -(thisPartial + demPass)/
+        (2*thisPartial  + demPass - dmcPre)
+      
+      thisPass[!isLeader] <- 0
+      
       
       thisFOC <- (t(quantCand) * thisPartial) %*% owner - thisMC
-      thisFOC <- t(t(thisFOC) + thisPrice)
+      thisFOC <- t(t(thisFOC) + thisPrice + thisPartial*rowSums(thisPass))
       
       return(as.vector(thisFOC))
     }
@@ -362,6 +316,8 @@ stackelberg <- function(prices,quantities,margins,
                     mcfunPost=mcfunPre,
                     vcfunPre=list(),
                     vcfunPost=vcfunPre,
+                    dmcfunPre=list(),
+                    dmcfunPost=dmcfunPre,
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
