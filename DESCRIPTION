@@ -1,12 +1,12 @@
 Package: antitrust
 Type: Package
 Title: Tools for Antitrust Practitioners
-Version: 0.97
-Date: 2017-03-06
+Version: 0.98
+Date: 2017-03-30
 Author: Charles Taragin and Michael Sandfort
 Maintainer: Charles Taragin <charles.taragin@usdoj.gov>
 Imports:  methods, MASS, evd, BB, numDeriv, ggplot2
 Description: A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects mergers under different competitive regimes.
 License:  Unlimited
 LazyLoad: yes
-Collate: Antitrust.R Bertrand.R logit.R linear.R loglin.R logitALM.R logitNests.R logitNestsALM.R logitCap.R ces.R cesNests.R aids.R pcaids.R pcaidsNests.R  cmcr.R upp.R hhi.R sim.R auction2ndcap.R auction2ndlogit.R  Cournot.R 
+Collate: Antitrust.R Bertrand.R logit.R linear.R loglin.R logitALM.R logitNests.R logitNestsALM.R logitCap.R ces.R cesNests.R aids.R pcaids.R pcaidsNests.R  cmcr.R upp.R hhi.R sim.R auction2ndcap.R auction2ndlogit.R  Cournot.R Stackelberg.R 
