@@ -30,7 +30,7 @@
                    ...
                      )
                      
-    stackelbergfunction(prices,quantities,margins, 
+    stackelberg(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
                     isLeaderPre = matrix(FALSE,
                                   ncol = ncol(quantities), 
