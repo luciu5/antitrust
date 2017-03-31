@@ -9,6 +9,10 @@ setClass(
     dmcfunPost          = "list"
   ), 
   prototype(
+    isLeaderPre = matrix(),
+    isLeaderPost = matrix(),
+    dmcfunPre = list(),
+    dmcfunPost=list()
   ),
   validity=function(object){
     
@@ -312,6 +316,8 @@ setMethod(
 
 stackelberg <- function(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
+                    isLeaderPre = matrix(FALSE,ncol = ncol(quantities), nrow= nrow(quantities)),
+                    isLeaderPost= isLeaderPre,
                     mcfunPre=list(),
                     mcfunPost=mcfunPre,
                     vcfunPre=list(),
@@ -348,6 +354,7 @@ stackelberg <- function(prices,quantities,margins,
   result <- new("Stackelberg",prices=prices, quantities=quantities,margins=margins,
                 shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
+                dmcfunPre=dmcfunPre, dmcfunPost=dmcfunPost, isLeaderPre = isLeaderPre, isLeaderPost = isLeaderPost,
                 ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
                 ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
   
