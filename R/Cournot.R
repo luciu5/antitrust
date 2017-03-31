@@ -255,8 +255,13 @@ setMethod(
     }
     
     
-    bStart      =   ifelse(isLinear, -(prices*margins)/(sharesOwner*quantTot), -sharesOwner/margins)
-    intStart    =   ifelse(isLinear,prices - bStart*quantTot, log(prices/(quantTot^bStart)))
+    
+    bStart      =   ifelse(isLinear,
+                           colMeans(-(prices*margins)/(sharesOwner*quantTot),na.rm=TRUE), 
+                           colMeans(-sharesOwner/margins,na.rm=TRUE))
+    intStart    =   ifelse(isLinear,
+                           prices - bStart*quantTot, 
+                           log(prices/(quantTot^bStart)))
     intStart    =   abs(intStart)
     
     parmStart   =   c( intStart,bStart)
@@ -478,8 +483,8 @@ setMethod(
                          exp(intercepts)*slopes*mktQuant^(slopes - 1))
       
       
-      thisFOC <- (t(quantCand) * thisPartial) %*% owner - thisMC
-      thisFOC <- t(t(thisFOC) + thisPrice)
+      thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice
+      thisFOC <- t(thisFOC) - thisMC
       
       return(as.vector(thisFOC))
     }

@@ -1,12 +1,14 @@
 \name{Cournot}
 \alias{cournot}
 \alias{Cournot}
+\alias{stackelberg}
+\alias{Stackelberg}
 
-\title{Multi-product Cournot Calibration and Merger Simulation With Linear or Log-Linear Demand}
+\title{Multi-product Cournot/Stackelberg Calibration and Merger Simulation With Linear or Log-Linear Demand}
 
 \description{Calibrates consumer demand for multiple products using either a
   linear or log-linear demand system and then simulates the prices effect of a merger between two multi-plant firms
-  under the assumption that all firms in the market are playing a Cournot quantity setting game.}
+  under the assumption that all firms in the market are playing either a Cournot or Stackelberg quantity setting game.}
 
 \usage{
 
@@ -178,8 +180,8 @@ ps.post.c = price.post.c*quantity.post.c - vc.post.c
 mktQuant.post.c = sum(quantity.post.c, na.rm=TRUE)
 
 #check if merger is profitable for merging parties
-isprofitable = ps.post.c - ps.pre.c
-isprofitable= sum(isprofitable[1:2]) > 0 
+isprofitable.c = ps.post.c - ps.pre.c
+isprofitable.c= sum(isprofitable.c[1:2]) > 0 
 
 
 #prep inputs for Cournot
@@ -203,25 +205,25 @@ print(all.equal(sum(result.c@quantityPost) , mktQuant.post.c))
 
 ## Simulate a Stackelberg merger between two single-plant firms 
 ## producing a single product in a
-## 4-firm market with linear demand and quadratic costs.
+## 5-firm market with linear demand and quadratic costs.
 ## Allow both merging parties to be followers pre-merger,
 ## but assume that they become leaders post-merger.
 ## Finally, assume that pre-merger, there is a single leader who ## remains a leader post-merger
 ## Note: This example uses setup from the above Cournot example
 
 isLeader.pre = matrix(rep(FALSE,n), ncol=1)
-is.Leader.pre[n,] = TRUE
-is.Leader.post = is.Leader.pre
-is.Leader.post[1:2,] = TRUE
+isLeader.pre[n,] = TRUE
+isLeader.post = isLeader.pre
+isLeader.post[1:2,] = TRUE
 
-passthru.pre = -slope^2/(2*slope - 1/cap)
+passthru.pre = matrix(-slope^2/(2*slope - 1/cap))
 passthru.post = passthru.pre
-passthru.pre[!isLeader.pre] = 0
-passthru.post[!isLeader.post] = 0
+passthru.pre[isLeader.pre] = 0
+passthru.post[isLeader.post] = 0
 
 B.pre.s = matrix(slope,nrow=n,ncol=n)
 diag(B.pre.s) = 2* diag(B.pre.s) - 1/cap
-quantity.pre.s = rowSums(solve(B.pre.s) * ( -int + sum(passthru.pre) ) 
+quantity.pre.s = rowSums(solve(B.pre.s) * as.vector( -int + t(isLeader.pre)* colSums(passthru.pre) )) 
 price.pre.s = int + slope * sum(quantity.pre.s)
 mc.pre.s = quantity.pre.s/cap
 vc.pre.s = quantity.pre.s^2/(2*cap)
@@ -236,7 +238,7 @@ B.post.s = B.pre.s
 B.post.s[1,2] = 2*B.post.s[1,2]
 B.post.s[2,1] = 2*B.post.s[2,1]
 
-quantity.post.s = rowSums(solve(B.pre.s) * ( -int + sum(passthru.pre) ) 
+quantity.post.s = rowSums(solve(B.post.s) * as.vector( -int + t(isLeader.post) * colSums(passthru.post) )) 
 price.post.s = int + slope * sum(quantity.post.s)
 mc.post.s = quantity.post.s/cap
 vc.post.s = quantity.post.s^2/(2*cap)
@@ -246,8 +248,8 @@ ps.post.s = price.post.s*quantity.post.s - vc.post.s
 mktQuant.post.s = sum(quantity.post.s, na.rm=TRUE)
 
 #check if merger is profitable for merging parties
-isprofitable = ps.post.s - ps.pre.s
-isprofitable= sum(isprofitable[1:2]) > 0 
+isprofitable.s = ps.post.s - ps.pre.s
+isprofitable.s = sum(isprofitable.s[1:2]) > 0 
 
 
 #prep inputs for Cournot
@@ -257,7 +259,7 @@ owner.post[1,2] <- owner.post[2,1] <- 1
 
 
 
-result.s <- stackelberg(prices = price.pre.s,quantities = as.matrix(quantity.pre.s),margins=as.matrix(margin.pre.s),ownerPre=owner.pre,ownerPost=owner.post)
+result.s <- stackelberg(prices = price.pre.s,quantities = as.matrix(quantity.pre.s),margins=as.matrix(margin.pre.s),ownerPre=owner.pre,ownerPost=owner.post, isLeaderPre = isLeader.pre, isLeaderPost = isLeader.post)
 
 print(result.s)           # return predicted price change
 summary(result.s)         # summarize merger simulation

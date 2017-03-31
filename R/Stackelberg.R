@@ -39,6 +39,13 @@ setClass(
   }
 )
 
+
+setGeneric (
+  name= "calcdMC",
+  def=function(object,...){standardGeneric("calcdMC")}
+)
+
+
 # setGeneric (
 #   name= "calcPass",
 #   def=function(object,...){standardGeneric("calcPass")}
@@ -68,8 +75,41 @@ setClass(
 # )
 
 
-## Create a method to recover marginal cost using
-## demand parameters and supplied prices
+setMethod(
+  f= "calcdMC",
+  signature= "Stackelberg",
+  definition=function(object,preMerger=TRUE){
+    
+    if(preMerger){ 
+      
+      quantity  <- object@quantityPre
+      dmcfun <- object@dmcfunPre
+    }
+    else{          
+      
+      quantity  <- object@quantityPost
+      dmcfun <- object@dmcfunPost
+    }
+    
+    
+    
+    
+    nplants <- nrow(quantity)
+    
+    dmc <- rep(NA, nplants)
+    
+    for(f in 1:nplants){
+      dmc[f] <- dmcfun[[f]](quantity[f,])
+    }
+    
+    if(!preMerger){dmc <- dmc*(1 + object@mcDelta)}
+    
+    names(dmc) <- object@labels[[1]]
+    
+    return(dmc)
+  })   
+
+
 
 
 setMethod(
@@ -133,29 +173,38 @@ setMethod(
       
     
       demPass <- dthisPartial * t(!isLeader * quantOwner)  
-      thisPass <- -(thisPartial + demPass)/
-                   (2*thisPartial  + demPass - dmcPre)
+      thisPass <- -t((thisPartial + demPass)/
+                   (2*thisPartial  + t(t(demPass) - dmcPre)))
                          
-      thisPass[!isLeader] <- 0
+      thisPass[isLeader] <- 0
       
-      thisFOC <- (t(quantities) * thisPartial) %*% owner  -  mcPre
-      thisFOC <- t(t(thisFOC) + thisprices + thisPartial*rowSums(thisPass))
+      thisFOC <- (t(quantities) * thisPartial) %*% owner  + + thisprices + t(isLeader)* thisPartial*colSums(thisPass)
+      thisFOC <- t(thisFOC) -   mcPre  
       
-      
-      dist <- c(thisFOC,thisprices)
+  
+      dist <- c(thisFOC,thisprices - prices)
       
       return(sum(dist^2,na.rm=TRUE))
     }
     
     
-    bStart      =   ifelse(isLinear, -(prices*margins)/(sharesOwner*quantTot), -sharesOwner/margins)
-    intStart    =   ifelse(isLinear,prices - bStart*quantTot, log(prices/(quantTot^bStart)))
+    bStart      =   ifelse(isLinear,
+                           colMeans(-(prices*margins)/(sharesOwner*quantTot),na.rm=TRUE), 
+                           colMeans(-sharesOwner/margins,na.rm=TRUE))
+    intStart    =   ifelse(isLinear,
+                           prices - bStart*quantTot, 
+                           log(prices/(quantTot^bStart)))
     intStart    =   abs(intStart)
     
     parmStart   =   c( intStart,bStart)
     
     if(noCosts){
-     capStart <-  rowMeans(quantOwner/margins,na.rm=TRUE)
+    
+      if(isLinear){margStart <- rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE)}
+      else{margStart <- rowMeans(-sharesOwner*bStart,na.rm=TRUE)} 
+                       
+     mcStart  <- abs(prices*(margStart - 1)) 
+     capStart <- quantPlants/mcStart  
      parmStart <- c(capStart,parmStart)
     }
     
@@ -253,6 +302,7 @@ setMethod(
       thisPrice <- calcPrices(object, preMerger= preMerger)
       
       thisMC <- calcMC(object, preMerger= preMerger) 
+      thisdMC <- calcdMC(object, preMerger= preMerger) 
       
       mktQuant <- colSums(quantCand, na.rm=TRUE)
       ownerQuant <- owner %*% quantCand
@@ -267,14 +317,15 @@ setMethod(
       
       
       demPass <- dthisPartial * t(!isLeader * ownerQuant)  
-      thisPass <- -(thisPartial + demPass)/
-        (2*thisPartial  + demPass - dmcPre)
+      thisPass <- -t((thisPartial + demPass)/
+        (2*thisPartial  + t(t(demPass) - thisdMC)))
       
-      thisPass[!isLeader] <- 0
+    
+      thisPass[isLeader] <- 0
       
       
-      thisFOC <- (t(quantCand) * thisPartial) %*% owner - thisMC
-      thisFOC <- t(t(thisFOC) + thisPrice + thisPartial*rowSums(thisPass))
+      thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice + t(isLeader) * thisPartial*colSums(thisPass)
+      thisFOC <- t(thisFOC) - thisMC 
       
       return(as.vector(thisFOC))
     }
