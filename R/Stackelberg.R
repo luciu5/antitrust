@@ -67,21 +67,6 @@ setClass(
 #   
 # )
 
-## compute margins
-setMethod(
-  f= "calcMargins",
-  signature= "Stackelberg",
-  definition=function(object,preMerger=TRUE){
-    
-    
-  elast <- elast(object, preMerger = preMerger, market=FALSE)
-  
-  elast <- -1/elast
-  dimnames(elast) <- object@labels
-  return(elast)
-  }
-)
-
 
 ## Create a method to recover marginal cost using
 ## demand parameters and supplied prices

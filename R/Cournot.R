@@ -182,12 +182,23 @@ setMethod(
   definition=function(object,preMerger=TRUE){
     
     
-  elast <- elast(object, preMerger = preMerger, market=FALSE)
-  
-  elast <- -1/elast
-  dimnames(elast) <- object@labels
-  return(elast)
+    if(preMerger){
+      prices <- object@pricePre
+    }  
+    else{prices <- object@pricePost}
+    
+    mc <- calcMC(object,preMerger = preMerger)
+    prices <- matrix(prices, ncol=length(prices), nrow=length(mc),byrow=TRUE)
+    
+    
+    
+    margin <- 1 - mc/prices
+    
+    
+    dimnames(margin) <- object@labels
+    return(margin)
   }
+  
 )
 
 
