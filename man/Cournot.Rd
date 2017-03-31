@@ -27,20 +27,47 @@
                     labels,
                    ...
                      )
+                     
+    stackelbergfunction(prices,quantities,margins, 
+                    demand = rep("linear",length(prices)),
+                    isLeaderPre = matrix(FALSE,
+                                  ncol = ncol(quantities), 
+                                  nrow= nrow(quantities)),
+                    isLeaderPost= isLeaderPre,
+                    mcfunPre=list(),
+                    mcfunPost=mcfunPre,
+                    vcfunPre=list(),
+                    vcfunPost=vcfunPre,
+                    dmcfunPre=list(),
+                    dmcfunPost=dmcfunPre,
+                    productsPre=!is.na(quantities), 
+                    productsPost=productsPre, 
+                    ownerPre,ownerPost,
+                    mcDelta =rep(0,nrow(quantities)),
+                    quantityStart=as.vector(quantities),
+                    control.slopes,
+                    control.eq,
+                    labels,
+                   ...
+)
 
 }
 
 \arguments{
   \item{}{Let k denote the number of products and n denote the number of plants.}
   \item{prices}{A length k vector product prices.}
-  \item{quantities}{An n x k vector of product quantities. All quantities must            either be positive, or  if the product is not produced by a plant, NA. }
+  \item{quantities}{An n x k matrix of product quantities. All quantities must            either be positive, or  if the product is not produced by a plant, NA. }
   \item{margins}{An n x k  matrix of product margins. All margins must
     be either be between 0 and 1, or NA.}
   \item{demand}{A length k character vector equal to "linear" if a product's              demand curve is assumed to be linear or "log" if a product's demand curve         is assumed to be log-linear.}
+  \item{isLeaderPre}{An n x k logical matrix equal to TRUE if a firm is a "leader" pre-merger for a particular product and FALSE otherwise. Default is FALSE, which is equivalent to \code{cournot}.  }
+ \item{isLeaderPost}{An n x k logical matrix equal to TRUE if a firm is a "leader" pre-merger for a particular product and FALSE otherwise. Default is FALSE, which is equivalent to \code{cournot}.  }
    \item{mcfunPre}{a length n list of functions that calculate a plant's pre-merger marginal cost. If empty (the default), assumes  quadratic costs. }
    \item{mcfunPost}{a length n list of functions that calculate a plant's post-merger marginal cost. If empty (the default), equals \sQuote{mcfunPre} )}
-     \item{vcfunPre}{a length n list of functions that calculate a plant's pre-merger variable cost. If empty (the default), assumes  quadratic costs. }
+     \item{vcfunPre}{a length n list of functions that calculate a plant's pre-merger variable cost. If empty (the default), assumes  quadratic variable costs. }
    \item{vcfunPost}{a length n list of functions that calculate a plant's post-merger variable cost. If empty (the default), equals \sQuote{vcfunPre} )}
+    \item{dmcfunPre}{a length n list of functions that calculate the derivative of a plant's pre-merger marginal cost. If empty (the default), assumes  quadratic variable costs. }
+   \item{mdcfunPost}{a length n list of functions that calculate the derivative of a plant's post-merger marginal cost. If empty (the default), equals \sQuote{mcfunPre} )}
    \item{productsPre}{An n x k  matrix that equals TRUE if pre-merger, a plant produces a product. Default is TRUE if 'quantities' is not NA. }
     \item{productsPre}{An n x k  matrix that equals TRUE if pre-merger, a plant produces a product. Default equals \sQuote{productsPre}. }
   \item{ownerPre}{EITHER a vector of length n whose values
@@ -70,11 +97,12 @@
   system. These parameters are then used to simulate the price
   effects of a merger between
   two firms under the assumption that the firms are playing a
-  homogeneous products quantity setting game.
+  homogeneous products simultaneous quantity setting game.
+  
+  \code{stackelberg}, is similar to \code{cournot}, except that for a given product, firms are either "leaders" or "followers". leaders gain a first mover advantage over followers, which allows the leaders to anticipate how changes to their output will effect the follower's output decisions. Firms can be the leader for some products but the follower in others.
+  
 
-
-
-\sQuote{mcfunPre} and \sQuote{mcfunPost} are length n lists whose elements are \sQuote{R} functions that return a firm's marginal cost. The first argument of each function should be total firm quantities. By default, each firm is assumed to have quadratic costs with a firm-specific parameter calibrated from a firm's margin.  \sQuote{vcfunPre} and \sQuote{vcfunPost} are similarly defined.
+\sQuote{mcfunPre} and \sQuote{mcfunPost} are length n lists whose elements are \sQuote{R} functions that return a firm's marginal cost. The first argument of each function should be total firm quantities. By default, each firm is assumed to have quadratic costs with a firm-specific parameter calibrated from a firm's margin.  \sQuote{vcfunPre} and \sQuote{vcfunPost} are similarly defined. sQuote{dmcfunPre} and \sQuote{dmcfunPost} are the changes in marginal cost and are only required for \code{stackelberg}.
   
   \sQuote{ownerPre} and \sQuote{ownerPost} values will typically be equal to either 0
   (element [i,j] is not commonly owned) or 1 (element [i,j] is commonly
@@ -112,45 +140,45 @@
 
 \examples{
 
-## Simulate a merger between two single-plant firms 
+## Simulate a Cournot merger between two single-plant firms 
 ## producing a single product in a
-## 4-firm market with linear demand and quadratic costs 
+## 5-firm market with linear demand and quadratic costs 
 
 
 
-n <- 4 #number of firms in market pre-merger
+n <- 5 #number of firms in market pre-merger
 cap <- rnorm(n,mean = .5, sd = .1)
 int <- 10
 slope <- -.25 
 
-B.pre = matrix(slope,nrow=n,ncol=n)
-diag(B.pre) = 2* diag(B.pre) - 1/cap
-quantity.pre = rowSums(solve(B.pre) * -int) 
-price.pre = int + slope * sum(quantity.pre)
-mc.pre = quantity.pre/cap
-vc.pre = quantity.pre^2/(2*cap)
-margin.pre = 1 - mc.pre/price.pre
-ps.pre = price.pre*quantity.pre - vc.pre
+B.pre.c = matrix(slope,nrow=n,ncol=n)
+diag(B.pre.c) = 2* diag(B.pre.c) - 1/cap
+quantity.pre.c = rowSums(solve(B.pre.c) * -int) 
+price.pre.c = int + slope * sum(quantity.pre.c)
+mc.pre.c = quantity.pre.c/cap
+vc.pre.c = quantity.pre.c^2/(2*cap)
+margin.pre.c = 1 - mc.pre.c/price.pre.c
+ps.pre.c = price.pre.c*quantity.pre.c - vc.pre.c
 
-mktQuant.pre = sum(quantity.pre)
+mktQuant.pre.c = sum(quantity.pre.c)
 
 ## suppose firm 1 acquires firm 2
 ## This model has a closed form solution 
-B.post = B.pre
-B.post[1,2] = 2*B.post[1,2]
-B.post[2,1] = 2*B.post[2,1]
+B.post.c = B.pre.c
+B.post.c[1,2] = 2*B.post.c[1,2]
+B.post.c[2,1] = 2*B.post.c[2,1]
 
-quantity.post = rowSums(solve(B.post) * -int) 
-price.post = int + slope * sum(quantity.post)
-mc.post = quantity.post/cap
-vc.post = quantity.post^2/(2*cap)
-margin.post = 1 - mc.post/price.post
-ps.post = price.post*quantity.post - vc.post
+quantity.post.c = rowSums(solve(B.post.c) * -int) 
+price.post.c = int + slope * sum(quantity.post.c)
+mc.post.c = quantity.post.c/cap
+vc.post.c = quantity.post.c^2/(2*cap)
+margin.post.c = 1 - mc.post.c/price.post.c
+ps.post.c = price.post.c*quantity.post.c - vc.post.c
 
-mktQuant.post = sum(quantity.post, na.rm=TRUE)
+mktQuant.post.c = sum(quantity.post.c, na.rm=TRUE)
 
 #check if merger is profitable for merging parties
-isprofitable = ps.post - ps.pre
+isprofitable = ps.post.c - ps.pre.c
 isprofitable= sum(isprofitable[1:2]) > 0 
 
 
@@ -161,14 +189,85 @@ owner.post[1,2] <- owner.post[2,1] <- 1
 
 
 
-result.c <- cournot(prices = price.pre,quantities = as.matrix(quantity.pre),margins=as.matrix(margin.pre),ownerPre=owner.pre,ownerPost=owner.post)
+result.c <- cournot(prices = price.pre.c,quantities = as.matrix(quantity.pre.c),margins=as.matrix(margin.pre.c),ownerPre=owner.pre,ownerPost=owner.post)
 
 print(result.c)           # return predicted price change
 summary(result.c)         # summarize merger simulation
 
 ## check if 'cournot' yields the same result as closed-form solution
-print(all.equal(sum(result.c@quantityPre) , mktQuant.pre))
-print(all.equal(sum(result.c@quantityPost) , mktQuant.post))
+print(all.equal(sum(result.c@quantityPre) , mktQuant.pre.c))
+print(all.equal(sum(result.c@quantityPost) , mktQuant.post.c))
+
+
+
+
+## Simulate a Stackelberg merger between two single-plant firms 
+## producing a single product in a
+## 4-firm market with linear demand and quadratic costs.
+## Allow both merging parties to be followers pre-merger,
+## but assume that they become leaders post-merger.
+## Finally, assume that pre-merger, there is a single leader who ## remains a leader post-merger
+## Note: This example uses setup from the above Cournot example
+
+isLeader.pre = matrix(rep(FALSE,n), ncol=1)
+is.Leader.pre[n,] = TRUE
+is.Leader.post = is.Leader.pre
+is.Leader.post[1:2,] = TRUE
+
+passthru.pre = -slope^2/(2*slope - 1/cap)
+passthru.post = passthru.pre
+passthru.pre[!isLeader.pre] = 0
+passthru.post[!isLeader.post] = 0
+
+B.pre.s = matrix(slope,nrow=n,ncol=n)
+diag(B.pre.s) = 2* diag(B.pre.s) - 1/cap
+quantity.pre.s = rowSums(solve(B.pre.s) * ( -int + sum(passthru.pre) ) 
+price.pre.s = int + slope * sum(quantity.pre.s)
+mc.pre.s = quantity.pre.s/cap
+vc.pre.s = quantity.pre.s^2/(2*cap)
+margin.pre.s = 1 - mc.pre.s/price.pre.s
+ps.pre.s = price.pre.s*quantity.pre.s - vc.pre.s
+
+mktQuant.pre.s = sum(quantity.pre.s)
+
+## suppose firm 1 acquires firm 2
+## This model has a closed form solution 
+B.post.s = B.pre.s
+B.post.s[1,2] = 2*B.post.s[1,2]
+B.post.s[2,1] = 2*B.post.s[2,1]
+
+quantity.post.s = rowSums(solve(B.pre.s) * ( -int + sum(passthru.pre) ) 
+price.post.s = int + slope * sum(quantity.post.s)
+mc.post.s = quantity.post.s/cap
+vc.post.s = quantity.post.s^2/(2*cap)
+margin.post.s = 1 - mc.post.s/price.post.s
+ps.post.s = price.post.s*quantity.post.s - vc.post.s
+
+mktQuant.post.s = sum(quantity.post.s, na.rm=TRUE)
+
+#check if merger is profitable for merging parties
+isprofitable = ps.post.s - ps.pre.s
+isprofitable= sum(isprofitable[1:2]) > 0 
+
+
+#prep inputs for Cournot
+owner.pre <- diag(n)
+owner.post <- owner.pre
+owner.post[1,2] <- owner.post[2,1] <- 1
+
+
+
+result.s <- stackelberg(prices = price.pre.s,quantities = as.matrix(quantity.pre.s),margins=as.matrix(margin.pre.s),ownerPre=owner.pre,ownerPost=owner.post)
+
+print(result.s)           # return predicted price change
+summary(result.s)         # summarize merger simulation
+
+## check if 'stackelberg' yields the same result as closed-form solution
+print(all.equal(sum(result.s@quantityPre) , mktQuant.pre.s))
+print(all.equal(sum(result.s@quantityPost) , mktQuant.post.s))
+
+
+
 
 
 }
