@@ -113,7 +113,7 @@ setMethod(
     }
     
     else{
-      totquant <- colSums(quantities)
+      totquant <- colSums(quantities,na.rm=TRUE)
       return(t(t(quantities)/totquant))}
   }
 )
@@ -459,6 +459,7 @@ setMethod(
                    }
     
     nprods <- ncol(products)
+    isProducts <- rowSums(products) > 0
     products <- as.vector(products)
     
     FOC <- function(quantCand){
@@ -476,6 +477,7 @@ setMethod(
       
       thisMC <- calcMC(object, preMerger= preMerger) 
       
+      
       mktQuant <- colSums(quantCand, na.rm=TRUE)
       
       thisPartial <- ifelse(object@demand=="linear", 
@@ -486,6 +488,7 @@ setMethod(
       thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice
       thisFOC <- t(thisFOC) - thisMC
       
+      thisFOC <- thisFOC[isProducts,]
       return(as.vector(thisFOC))
     }
     

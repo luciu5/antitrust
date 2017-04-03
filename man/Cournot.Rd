@@ -237,8 +237,8 @@ mktQuant.pre.s = sum(quantity.pre.s)
 ## suppose firm 1 acquires firm 2
 ## This model has a closed form solution 
 B.post.s = B.pre.s
-B.post.s[1,2] = 2*B.post.s[1,2] + colSums(passthru.post)
-B.post.s[2,1] = 2*B.post.s[2,1] + colSums(passthru.post)
+B.post.s[1,2] = 2*B.post.s[1,2] + sum(passthru.post)
+B.post.s[2,1] = 2*B.post.s[2,1] + sum(passthru.post)
 
 quantity.post.s = rowSums(solve(B.post.s) * as.vector( -int + t(isLeader.post) * colSums(passthru.post) )) 
 price.post.s = int + slope * sum(quantity.post.s)

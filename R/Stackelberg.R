@@ -165,11 +165,11 @@ setMethod(
       
       thisPartial <- ifelse(isLinear, 
                             thisslopes,
-                            exp(intercepts)*thisslopes*mktQuant^(thisslopes - 1))
+                            exp(thisints)*thisslopes*quantTot^(thisslopes - 1))
       
       dthisPartial <- ifelse(isLinear,
                              0,
-                             exp(intercepts)*thisslopes*(thisslopes - 1)*mktQuant^(thisslopes - 2))
+                             exp(thisints)*thisslopes*(thisslopes - 1)*quantTot^(thisslopes - 2))
       
     
       demPass <- dthisPartial * t(!isLeader * quantOwner)  
@@ -286,6 +286,7 @@ setMethod(
                    }
     
     nprods <- ncol(products)
+    isProducts <- rowSums(products) > 0
     products <- as.vector(products)
     
     FOC <- function(quantCand){
@@ -321,12 +322,13 @@ setMethod(
         (2*thisPartial  + t(t(demPass) - thisdMC)))
       
     
-      thisPass[isLeader] <- 0
+      thisPass[isLeader | !isProducts] <- 0
       
       
       thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice + t(isLeader * quantCand) * thisPartial*colSums(thisPass)
       thisFOC <- t(thisFOC) - thisMC 
       
+      thisFOC <- thisFOC[isProducts,]
       return(as.vector(thisFOC))
     }
     
@@ -408,11 +410,11 @@ stackelberg <- function(prices,quantities,margins,
   result <- calcSlopes(result)
   
   
-  #result@quantityPre  <- calcQuantities(result, preMerger = TRUE,...)
-  #result@quantityPost <- calcQuantities(result,preMerger = FALSE,...)
+  result@quantityPre  <- calcQuantities(result, preMerger = TRUE,...)
+  result@quantityPost <- calcQuantities(result,preMerger = FALSE,...)
   
-  #result@pricePre  <- calcPrices(result, preMerger = TRUE)
-  #result@pricePost <- calcPrices(result,preMerger = FALSE)
+  result@pricePre  <- calcPrices(result, preMerger = TRUE)
+  result@pricePost <- calcPrices(result,preMerger = FALSE)
   
   return(result)
   
