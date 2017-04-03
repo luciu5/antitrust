@@ -178,7 +178,7 @@ setMethod(
                          
       thisPass[isLeader] <- 0
       
-      thisFOC <- (t(quantities) * thisPartial) %*% owner  + + thisprices + t(isLeader)* thisPartial*colSums(thisPass)
+      thisFOC <- (t(quantities) * thisPartial) %*% owner  + thisprices + t(isLeader * quantities) * thisPartial * colSums(thisPass)
       thisFOC <- t(thisFOC) -   mcPre  
       
   
@@ -324,7 +324,7 @@ setMethod(
       thisPass[isLeader] <- 0
       
       
-      thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice + t(isLeader) * thisPartial*colSums(thisPass)
+      thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice + t(isLeader * quantCand) * thisPartial*colSums(thisPass)
       thisFOC <- t(thisFOC) - thisMC 
       
       return(as.vector(thisFOC))
@@ -408,11 +408,11 @@ stackelberg <- function(prices,quantities,margins,
   result <- calcSlopes(result)
   
   
-  result@quantityPre  <- calcQuantities(result, preMerger = TRUE,...)
-  result@quantityPost <- calcQuantities(result,preMerger = FALSE,...)
+  #result@quantityPre  <- calcQuantities(result, preMerger = TRUE,...)
+  #result@quantityPost <- calcQuantities(result,preMerger = FALSE,...)
   
-  result@pricePre  <- calcPrices(result, preMerger = TRUE)
-  result@pricePost <- calcPrices(result,preMerger = FALSE)
+  #result@pricePre  <- calcPrices(result, preMerger = TRUE)
+  #result@pricePost <- calcPrices(result,preMerger = FALSE)
   
   return(result)
   

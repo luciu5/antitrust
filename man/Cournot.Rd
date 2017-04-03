@@ -167,7 +167,7 @@ mktQuant.pre.c = sum(quantity.pre.c)
 ## suppose firm 1 acquires firm 2
 ## This model has a closed form solution 
 B.post.c = B.pre.c
-B.post.c[1,2] = 2*B.post.c[1,2]
+B.post.c[1,2] = 2*B.post.c[1,2] 
 B.post.c[2,1] = 2*B.post.c[2,1]
 
 quantity.post.c = rowSums(solve(B.post.c) * -int) 
@@ -223,7 +223,9 @@ passthru.post[isLeader.post] = 0
 
 B.pre.s = matrix(slope,nrow=n,ncol=n)
 diag(B.pre.s) = 2* diag(B.pre.s) - 1/cap
-quantity.pre.s = rowSums(solve(B.pre.s) * as.vector( -int + t(isLeader.pre)* colSums(passthru.pre) )) 
+diag(B.pre.s)[n] = diag(B.pre.s)[n] + sum(passthru.pre)
+
+quantity.pre.s = rowSums(solve(B.pre.s) * ( -int)) 
 price.pre.s = int + slope * sum(quantity.pre.s)
 mc.pre.s = quantity.pre.s/cap
 vc.pre.s = quantity.pre.s^2/(2*cap)
@@ -235,8 +237,8 @@ mktQuant.pre.s = sum(quantity.pre.s)
 ## suppose firm 1 acquires firm 2
 ## This model has a closed form solution 
 B.post.s = B.pre.s
-B.post.s[1,2] = 2*B.post.s[1,2]
-B.post.s[2,1] = 2*B.post.s[2,1]
+B.post.s[1,2] = 2*B.post.s[1,2] + colSums(passthru.post)
+B.post.s[2,1] = 2*B.post.s[2,1] + colSums(passthru.post)
 
 quantity.post.s = rowSums(solve(B.post.s) * as.vector( -int + t(isLeader.post) * colSums(passthru.post) )) 
 price.post.s = int + slope * sum(quantity.post.s)
