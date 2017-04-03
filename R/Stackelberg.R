@@ -190,7 +190,7 @@ setMethod(
     
     bStart      =   ifelse(isLinear,
                            colMeans(-(prices*margins)/(sharesOwner*quantTot),na.rm=TRUE), 
-                           colMeans(-sharesOwner/margins,na.rm=TRUE))
+                           colMeans(-margins/sharesOwner,na.rm=TRUE))
     intStart    =   ifelse(isLinear,
                            prices - bStart*quantTot, 
                            log(prices/(quantTot^bStart)))

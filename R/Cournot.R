@@ -163,7 +163,7 @@ setMethod(
      
      
      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
-       (slopes / t(sharesOwner))  * ( 1 - isLinear)
+       (slopes^(-1) / t(sharesOwner))  * ( 1 - isLinear)
      
      elast <- t(elast)
      
@@ -241,7 +241,7 @@ setMethod(
                     exp(thisints)*quantTot^thisslopes)
       
       elast <- 1/(t(quantOwner)/(thisprices/thisslopes)) * isLinear +
-       (thisslopes / t(sharesOwner))  * ( 1 - isLinear)
+       (thisslopes^(-1) / t(sharesOwner))  * ( 1 - isLinear)
       
       
       
@@ -258,7 +258,7 @@ setMethod(
     
     bStart      =   ifelse(isLinear,
                            colMeans(-(prices*margins)/(sharesOwner*quantTot),na.rm=TRUE), 
-                           colMeans(-sharesOwner/margins,na.rm=TRUE))
+                           colMeans(-margins/sharesOwner,na.rm=TRUE))
     intStart    =   ifelse(isLinear,
                            prices - bStart*quantTot, 
                            log(prices/(quantTot^bStart)))
@@ -300,7 +300,7 @@ setMethod(
     if(length(mcfunPre) ==0){
       
       elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
-        (slopes / t(sharesOwner))  * ( 1 - isLinear)
+        (slopes^(-1) / t(sharesOwner))  * ( 1 - isLinear)
       
       
       marg <- -1/t(elast)
@@ -745,11 +745,11 @@ setMethod(
     pricePost <- object@pricePost
     
     result <- ifelse(demand =="linear",
-                 -.5*(pricePre - pricePost)*(quantityPre - quantityPost),
-                 exp(intercepts)/(slopes + 1) * (quantityPre^(slopes+1) - quantityPost^(slopes+1)) -  (quantityPre - quantityPost)* pricePre
+                 .5*(pricePost - pricePre)*(quantityPre - quantityPost)  ,
+                 exp(intercepts)/(slopes + 1) * (quantityPre^(slopes + 1) - quantityPost^(slopes+1)) -  (quantityPre - quantityPost)* pricePre
                  )
     
-   
+   result <- result  +  (pricePost - pricePre)*quantityPre
     names(result) <-  object@labels[[2]]
     return(result)
   })

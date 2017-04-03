@@ -236,9 +236,11 @@ mktQuant.pre.s = sum(quantity.pre.s)
 
 ## suppose firm 1 acquires firm 2
 ## This model has a closed form solution 
-B.post.s = B.pre.s
+B.post.s = matrix(slope,nrow=n,ncol=n)
+diag(B.post.s) = 2* diag(B.post.s) - 1/cap
 B.post.s[1,2] = 2*B.post.s[1,2] + sum(passthru.post)
 B.post.s[2,1] = 2*B.post.s[2,1] + sum(passthru.post)
+diag(B.post.s)[n] = diag(B.pre.s)[n]  +  sum(passthru.post)
 
 quantity.post.s = rowSums(solve(B.post.s) * as.vector( -int + t(isLeader.post) * colSums(passthru.post) )) 
 price.post.s = int + slope * sum(quantity.post.s)
@@ -254,7 +256,7 @@ isprofitable.s = ps.post.s - ps.pre.s
 isprofitable.s = sum(isprofitable.s[1:2]) > 0 
 
 
-#prep inputs for Cournot
+#prep inputs for Stackelberg
 owner.pre <- diag(n)
 owner.post <- owner.pre
 owner.post[1,2] <- owner.post[2,1] <- 1
