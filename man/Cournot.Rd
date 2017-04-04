@@ -123,7 +123,7 @@
 
 }
 
-\value{\code{cournot} returns an instance of class \code{\linkS4class{Cournot}}.}
+\value{\code{cournot} returns an instance of class \code{\linkS4class{Cournot}}.\code{stackelberg} returns an instance of class \code{\linkS4class{Stackelberg}}.}
 
 
 
@@ -242,7 +242,7 @@ B.post.s[1,2] = 2*B.post.s[1,2] + sum(passthru.post)
 B.post.s[2,1] = 2*B.post.s[2,1] + sum(passthru.post)
 diag(B.post.s)[n] = diag(B.pre.s)[n]  +  sum(passthru.post)
 
-quantity.post.s = rowSums(solve(B.post.s) * as.vector( -int + t(isLeader.post) * colSums(passthru.post) )) 
+quantity.post.s = rowSums(solve(B.post.s) * as.vector( -int ) 
 price.post.s = int + slope * sum(quantity.post.s)
 mc.post.s = quantity.post.s/cap
 vc.post.s = quantity.post.s^2/(2*cap)
