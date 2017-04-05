@@ -121,6 +121,9 @@ setMethod(
     quantities <- object@quantities
     quantities[is.na(quantities)] <- 0
     margins <- object@margins
+    
+    mc <- t(t(1 - margins) * prices)
+    
     products <- object@productsPre
     demand <- object@demand
     owner <- object@ownerPre
@@ -135,6 +138,7 @@ setMethod(
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantPlants <- rowSums(quantities, na.rm = TRUE)
     quantOwner <- owner %*% quantities
+    
     
     
     sharesOwner <- t(t(quantOwner)/quantTot)
@@ -178,11 +182,13 @@ setMethod(
                          
       thisPass[isLeader] <- 0
       
-      thisFOC <- (t(quantities) * thisPartial) %*% owner  + thisprices + t(isLeader * quantities) * thisPartial * colSums(thisPass)
+      thisFOC <- (t(quantities) * thisPartial + t(isLeader * quantities) * thisPartial * colSums(thisPass)) %*% owner  + thisprices 
       thisFOC <- t(thisFOC) -   mcPre  
       
   
       dist <- c(thisFOC,thisprices - prices)
+      
+      if(noCosts){ dist <- c(dist, mcPre - mc)}
       
       return(sum(dist^2,na.rm=TRUE))
     }
@@ -214,7 +220,7 @@ setMethod(
     ## assume that plant i's varialbe cost is
     ## q_i^2/(2*k_i), where k_i is calculated from FOC
     
-    if(length(vcfunPre) ==0){
+    if(noCosts){
       
       mcparm <- bestParms[1:nplants]
       bestParms <- bestParms[-(1:nplants)]
@@ -325,7 +331,7 @@ setMethod(
       thisPass[isLeader | !isProducts] <- 0
       
       
-      thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice + t(isLeader * quantCand) * thisPartial*colSums(thisPass)
+      thisFOC <- (t(quantCand) * thisPartial  + t(isLeader * quantCand) * thisPartial*colSums(thisPass)) %*% owner + thisPrice 
       thisFOC <- t(thisFOC) - thisMC 
       
       thisFOC <- thisFOC[isProducts,]

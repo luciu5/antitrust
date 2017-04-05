@@ -215,6 +215,9 @@ setMethod(
     quantities <- object@quantities
     quantities[is.na(quantities)] <- 0
     margins <- object@margins
+    
+    mc <- t(t(1 - margins) * prices)
+    
     products <- object@productsPre
     demand <- object@demand
     owner <- object@ownerPre
@@ -222,17 +225,30 @@ setMethod(
     nprods <- ncol(quantities)
     nplants <- nrow(quantities)
     
+    noCosts <- length(mcfunPre) == 0
     isLinear <- demand=="linear"
     
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantPlants <- rowSums(quantities, na.rm = TRUE)
-    
     quantOwner <- owner %*% quantities
+
     
+    if(!noCosts){
+      mcPre <- sapply(1:nplants, function(i){object@mcfunPre[[i]](quantities[i,])})
+      dmcPre <- sapply(1:nplants, function(i){object@dmcfunPre[[i]](quantities[i,])})
+    }
     
     sharesOwner <- t(t(quantOwner)/quantTot)
     
     minDemand <- function(theta){
+      
+      if(noCosts){
+        
+        thiscap <- theta[1:nplants]
+        theta <- theta[-(1:nplants)]
+        mcPre <- quantPlants/thiscap
+        dmcPre <- 1/thiscap
+      }
       
       thisints <- theta[1:nprods]
       thisslopes <- theta[-(1:nprods)]
@@ -240,20 +256,21 @@ setMethod(
       thisprices <- ifelse(isLinear, thisints + thisslopes*quantTot, 
                     exp(thisints)*quantTot^thisslopes)
       
-      elast <- 1/(t(quantOwner)/(thisprices/thisslopes)) * isLinear +
-       (thisslopes^(-1) / t(sharesOwner))  * ( 1 - isLinear)
+      thisPartial <- ifelse(isLinear, 
+                            thisslopes,
+                            exp(thisints)*thisslopes*quantTot^(thisslopes - 1))
       
       
+      thisFOC <- (t(quantities) * thisPartial ) %*% owner  + thisprices 
+      thisFOC <- t(thisFOC) -   mcPre  
       
-      FOC <- margins + 1/t(elast)
       
-                    
-      dem <- 1 - thisprices/prices
-      dist <- c(FOC,dem)
+      dist <- c(thisFOC,thisprices - prices)
+      
+      if(noCosts){ dist <- c(dist, mcPre - mc)}
       
       return(sum(dist^2,na.rm=TRUE))
     }
-    
     
     
     bStart      =   ifelse(isLinear,
@@ -266,56 +283,36 @@ setMethod(
     
     parmStart   =   c( intStart,bStart)
     
-    
-    
-    ## constrain diagonal elements so that D'b >=0
-    ## constrain off-diagonal elements to be non-negative.
-    
-    #ui          =  -diag(length(parmStart))
-    #for(i in 1:nprods){
-    #  ui[i,i] <- 1
-    #  ui[i,i+nprods] <- quantTot[i]
+    if(noCosts){
       
-    #}
-    #ui[1:nprods,1:nprods] = t(diversion)
+      if(isLinear){margStart <- rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE)}
+      else{margStart <- rowMeans(-sharesOwner*bStart,na.rm=TRUE)} 
+      
+      mcStart  <- abs(prices*(margStart - 1)) 
+      capStart <- quantPlants/mcStart  
+      parmStart <- c(capStart,parmStart)
+    }
     
-    #ci = rep(0,length(parmStart)) 
+    
+    bestParms=optim(parmStart,minDemand)$par
     
     
-    
-    #bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci,
-    #                      control=object@control.slopes)
-    
-    bestParms=optim(parmStart,minDemand)
-    
-    intercepts = bestParms$par[1:nprods]
-    slopes = bestParms$par[-(1:nprods)]
-  
     
     
     ## if no marginal cost functions are supplied 
     ## assume that plant i's marginal cost is
     ## q_i/k_i, where k_i is calculated from FOC
     
-    if(length(mcfunPre) ==0){
+    if(noCosts){
       
-      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
-        (slopes^(-1) / t(sharesOwner))  * ( 1 - isLinear)
+      mcparm <- bestParms[1:nplants]
+      bestParms <- bestParms[-(1:nplants)]
       
-      
-      marg <- -1/t(elast)
-      mcpred <- t(prices*(1-t(marg)))
-      #mcact<- t(prices*(1-t(margins)))
-      
-      #mcact[is.na(mcact)] <- mcpred[is.na(mcact)]
-      mcact = mcpred
-      
-      mcparm <- rowMeans(quantPlants/mcact,na.rm=TRUE)
       
       mcdef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE) * mcparm)}"
       mcdef <- sprintf(mcdef,1/mcparm)
       mcdef <- lapply(mcdef, function(x){eval(parse(text=x ))})
-    
+      
       object@mcfunPre <- mcdef
       names(object@mcfunPre) <- object@labels[[1]]
       
@@ -330,6 +327,10 @@ setMethod(
     if(length(object@mcfunPost)==0){
       object@mcfunPost <- object@mcfunPre
       object@vcfunPost <- object@vcfunPre}
+    
+    intercepts = bestParms[1:nprods]
+    slopes = bestParms[-(1:nprods)]
+    
     
     object@intercepts <- intercepts
     object@slopes <-     slopes
