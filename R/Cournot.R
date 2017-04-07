@@ -235,7 +235,6 @@ setMethod(
     
     if(!noCosts){
       mcPre <- sapply(1:nplants, function(i){object@mcfunPre[[i]](quantities[i,])})
-      dmcPre <- sapply(1:nplants, function(i){object@dmcfunPre[[i]](quantities[i,])})
     }
     
     sharesOwner <- t(t(quantOwner)/quantTot)
@@ -247,7 +246,7 @@ setMethod(
         thiscap <- theta[1:nplants]
         theta <- theta[-(1:nplants)]
         mcPre <- quantPlants/thiscap
-        dmcPre <- 1/thiscap
+        
       }
       
       thisints <- theta[1:nprods]
