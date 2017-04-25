@@ -19,6 +19,8 @@
                     mcfunPost=mcfunPre,
                     vcfunPre=list(),
                     vcfunPost=vcfunPre,
+                    capacitiesPre = rep(Inf,nrow(quantities)),
+                    capacitiesPost = capacitiesPre,
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
@@ -42,6 +44,8 @@
                     vcfunPost=vcfunPre,
                     dmcfunPre=list(),
                     dmcfunPost=dmcfunPre,
+                    capacitiesPre = rep(Inf,nrow(quantities)),
+                    capacitiesPost = capacitiesPre,
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
@@ -70,8 +74,10 @@
    \item{vcfunPost}{a length n list of functions that calculate a plant's post-merger variable cost. If empty (the default), equals \sQuote{vcfunPre} )}
     \item{dmcfunPre}{a length n list of functions that calculate the derivative of a plant's pre-merger marginal cost. If empty (the default), assumes  quadratic variable costs. }
    \item{mdcfunPost}{a length n list of functions that calculate the derivative of a plant's post-merger marginal cost. If empty (the default), equals \sQuote{mcfunPre} )}
+   \item{capacitiesPre}{A length n numeric vector of pre-merger plant capacities. Default is Inf. }
+      \item{capacitiesPost}{A length n numeric vector of post-merger plant capacities. Default \sQuote{capacitiesPre}. }
    \item{productsPre}{An n x k  matrix that equals TRUE if pre-merger, a plant produces a product. Default is TRUE if 'quantities' is not NA. }
-    \item{productsPre}{An n x k  matrix that equals TRUE if pre-merger, a plant produces a product. Default equals \sQuote{productsPre}. }
+    \item{productsPost}{An n x k  matrix that equals TRUE if post-merger, a plant produces a product. Default equals \sQuote{productsPre}. }
   \item{ownerPre}{EITHER a vector of length n whose values
     indicate which plants are commonly owned pre-merger OR
     an n x n matrix of pre-merger ownership shares.}

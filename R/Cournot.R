@@ -329,14 +329,14 @@ setMethod(
       bestParms <- bestParms[-(1:nplants)]
       
       
-      mcdef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE) * mcparm)}"
+      mcdef <- "function(q,mcparm = %f){ val <- sum(q, na.rm=TRUE) * mcparm; return(val)}"
       mcdef <- sprintf(mcdef,1/mcparm)
       mcdef <- lapply(mcdef, function(x){eval(parse(text=x ))})
       
       object@mcfunPre <- mcdef
       names(object@mcfunPre) <- object@labels[[1]]
       
-      vcdef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE)^2 * mcparm / 2)}"
+      vcdef <- "function(q,mcparm = %f){  val <-  sum(q, na.rm=TRUE)^2 * mcparm / 2; return(val)}"
       vcdef <- sprintf(vcdef,1/mcparm)
       vcdef <- lapply(vcdef, function(x){eval(parse(text=x ))})
       
@@ -370,13 +370,16 @@ setMethod(
    
     quantity  <- object@quantityPre
     mcfun <- object@mcfunPre
+    cap <- object@capacitiesPre
    }
     else{          
     
     quantity  <- object@quantityPost
     mcfun <- object@mcfunPost
+    cap <- object@capacitiesPost
     }
     
+    plantQuant <- rowSums(quantity,na.rm=TRUE)
    
    
     
@@ -387,6 +390,8 @@ setMethod(
     for(f in 1:nplants){
       mc[f] <- mcfun[[f]](quantity[f,])
     }
+    
+    mc <- ifelse(plantQuant <= cap, mc, Inf)
     
     if(!preMerger){mc <- mc*(1 + object@mcDelta)}
     
@@ -513,11 +518,11 @@ setMethod(
       
       thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice
       thisFOC <- t(thisFOC) - thisMC
-      thisCons <- plantQuant - cap
-      thisFOC[isConstrained,] <- thisFOC[isConstrained,] + 
-                                 thisCons[isConstrained] + 
-                                 sqrt(thisFOC[isConstrained,]^2 + 
-                                 thisCons[isConstrained]^2)
+      # thisCons <- plantQuant - cap
+      # thisFOC[isConstrained,] <- thisFOC[isConstrained,] + 
+      #                            thisCons[isConstrained] + 
+      #                            sqrt(thisFOC[isConstrained,]^2 + 
+      #                            thisCons[isConstrained]^2)
       thisFOC <- thisFOC[isProducts,]
       return(as.vector(thisFOC))
     }

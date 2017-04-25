@@ -117,6 +117,7 @@ setMethod(
   signature= "Stackelberg",
   definition=function(object){
     
+    
     prices <- object@prices
     quantities <- object@quantities
     quantities[is.na(quantities)] <- 0
@@ -226,22 +227,22 @@ setMethod(
       bestParms <- bestParms[-(1:nplants)]
       
       
-      dmcdef <- "function(q,mcparm = %f){ return(mcparm)}"
-      dmcdef <- sprintf(dmcdef,1/mcparm)
+      dmcdef <- "function(q,mcparm = %f){ val <-   mcparm; return(val)}}"
+      dmcdef <- sprintf(dmcdef,1/mcparm, cap)
       dmcdef <- lapply(dmcdef, function(x){eval(parse(text=x ))})
       
       object@dmcfunPre <- dmcdef
       names(object@dmcfunPre) <- object@labels[[1]]
       
-      mcdef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE) * mcparm)}"
-      mcdef <- sprintf(mcdef,1/mcparm)
+      mcdef <- "function(q,mcparm = %f,cap=%f){ val <-  sum(q, na.rm=TRUE) * mcparm; return(val)}"
+      mcdef <- sprintf(mcdef,1/mcparm,cap)
       mcdef <- lapply(mcdef, function(x){eval(parse(text=x ))})
       
       object@mcfunPre <- mcdef
       names(object@mcfunPre) <- object@labels[[1]]
       
-      vcdef <- "function(q,mcparm = %f){ return(sum(q, na.rm=TRUE)^2 * mcparm / 2)}"
-      vcdef <- sprintf(vcdef,1/mcparm)
+      vcdef <- "function(q,mcparm = %f,cap=%f){  val <- sum(q, na.rm=TRUE)^2 * mcparm / 2; return(val)}"
+      vcdef <- sprintf(vcdef,1/mcparm,cap)
       vcdef <- lapply(vcdef, function(x){eval(parse(text=x ))})
       
       object@vcfunPre <- vcdef
@@ -368,6 +369,8 @@ stackelberg <- function(prices,quantities,margins,
                     vcfunPost=vcfunPre,
                     dmcfunPre=list(),
                     dmcfunPost=dmcfunPre,
+                    capacitiesPre = rep(Inf,nrow(quantities)),
+                    capacitiesPost = capacitiesPre,
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
@@ -400,6 +403,7 @@ stackelberg <- function(prices,quantities,margins,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
                 dmcfunPre=dmcfunPre, dmcfunPost=dmcfunPost, isLeaderPre = isLeaderPre, isLeaderPost = isLeaderPost,
                 ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
+                capacitiesPre=capacitiesPre,capacitiesPost=capacitiesPost,
                 ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
   
   
