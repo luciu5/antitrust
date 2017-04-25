@@ -14,6 +14,8 @@ setClass(
     margins          = "matrix",
     quantityPre      = "matrix",
     quantityPost     = "matrix",
+    capacitiesPre           = "numeric",
+    capacitiesPost           = "numeric",
     quantityStart     = "numeric",
     productsPre      = "matrix",
     productsPost     = "matrix",
@@ -32,6 +34,20 @@ setClass(
     nplants <- nrow(object@quantities) # count the number of plants
     nprods  <- length(object@prices)     # count the number of products
   
+    
+    if(nplants != length(object@capacitiesPre)){
+      stop("capacitiesPre' must be a vector whose length equals the number of rows in 'quantities'")}
+    
+    if(any(is.na(object@capacitiesPre) |
+           object@capacitiesPre<0 ,na.rm=TRUE)){stop("'capacitiesPre' values must be positive, and not NA")}
+    
+    
+    if(nplants != length(object@capacitiesPost)){
+      stop("capacitiesPre' must be a vector whose length equals the number of rows in 'quantities'")}
+    
+    if(any(is.na(object@capacitiesPost) |
+           object@capacitiesPost<0 ,na.rm=TRUE)){stop("'capacitiesPost' values must be positive, and not NA")}
+    
    if(
       !length(object@mcfunPre) %in% c(nplants,0)) {stop("'mcfunPre' must be a list of functions whose length equals the number of plants")}
    if(length(object@mcfunPre) >0 && any(sapply(object@mcfunPre,class) != "function"))
@@ -81,6 +97,9 @@ setClass(
 
     if(ncol(object@quantities) != nprods) stop("the number of columns in 'quantities' must equal the number of products")
     
+    if(any(rowSums(object@quantities,na.rm=TRUE) > object@capacitiesPre)){
+      stop("pre-merger plant output must be less than pre-merger capacity constraint")
+    }
     }
   
 )
@@ -215,6 +234,7 @@ setMethod(
     quantities <- object@quantities
     quantities[is.na(quantities)] <- 0
     margins <- object@margins
+    cap <- object@capacitiesPre
     
     mc <- t(t(1 - margins) * prices)
     
@@ -232,6 +252,7 @@ setMethod(
     quantPlants <- rowSums(quantities, na.rm = TRUE)
     quantOwner <- owner %*% quantities
 
+    isConstrained <- quantPlants >= cap
     
     if(!noCosts){
       mcPre <- sapply(1:nplants, function(i){object@mcfunPre[[i]](quantities[i,])})
@@ -262,7 +283,7 @@ setMethod(
       
       thisFOC <- (t(quantities) * thisPartial ) %*% owner  + thisprices 
       thisFOC <- t(thisFOC) -   mcPre  
-      
+      thisFOC <- thisFOC[!isConstrained,]
       
       dist <- c(thisFOC,thisprices - prices)
       
@@ -453,14 +474,18 @@ setMethod(
     
     if(preMerger){ owner  <- object@ownerPre
                    products  <- object@productsPre
+                   cap <- object@capacitiesPre
                    }
     else{          owner <-  object@ownerPost
                    products <-  object@productsPost
+                   cap <- object@capacitiesPost
                    }
     
     nprods <- ncol(products)
     isProducts <- rowSums(products) > 0
     products <- as.vector(products)
+    
+    isConstrained <- is.finite(cap)
     
     FOC <- function(quantCand){
       
@@ -479,6 +504,7 @@ setMethod(
       
       
       mktQuant <- colSums(quantCand, na.rm=TRUE)
+      plantQuant <- rowSums(quantCand, na.rm=TRUE)
       
       thisPartial <- ifelse(object@demand=="linear", 
                             slopes,
@@ -487,7 +513,11 @@ setMethod(
       
       thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice
       thisFOC <- t(thisFOC) - thisMC
-      
+      thisCons <- plantQuant - cap
+      thisFOC[isConstrained,] <- thisFOC[isConstrained,] + 
+                                 thisCons[isConstrained] + 
+                                 sqrt(thisFOC[isConstrained,]^2 + 
+                                 thisCons[isConstrained]^2)
       thisFOC <- thisFOC[isProducts,]
       return(as.vector(thisFOC))
     }
@@ -500,7 +530,7 @@ setMethod(
     
     if(minResult$convergence != 0){warning("'calcQuantities' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
     
-    quantEst        <- rep(NA, length(products))
+    quantEst        <- rep(0, length(products))
     quantEst[products] <- minResult$par^2
     quantEst <- matrix(quantEst,ncol = nprods)
     
@@ -828,6 +858,8 @@ cournot <- function(prices,quantities,margins,
                     mcfunPost=mcfunPre,
                     vcfunPre=list(),
                     vcfunPost=vcfunPre,
+                    capacitiesPre = rep(Inf,nrow(quantities)),
+                    capacitiesPost = capacitiesPre,
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
@@ -858,6 +890,7 @@ cournot <- function(prices,quantities,margins,
   result <- new("Cournot",prices=prices, quantities=quantities,margins=margins,
                 shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
+                capacitiesPre=capacitiesPre,capacitiesPost=capacitiesPost,
                 ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
                 ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
   
