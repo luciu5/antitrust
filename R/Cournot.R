@@ -48,39 +48,39 @@ setClass(
     if(any(is.na(object@capacitiesPost) |
            object@capacitiesPost<0 ,na.rm=TRUE)){stop("'capacitiesPost' values must be positive, and not NA")}
     
-   if(
+    if(
       !length(object@mcfunPre) %in% c(nplants,0)) {stop("'mcfunPre' must be a list of functions whose length equals the number of plants")}
-   if(length(object@mcfunPre) >0 && any(sapply(object@mcfunPre,class) != "function"))
-   {stop("'mcfunPre' must be a list of functions")}
+    if(length(object@mcfunPre) >0 && any(sapply(object@mcfunPre,class) != "function"))
+    {stop("'mcfunPre' must be a list of functions")}
     
     if(!identical(length(object@mcfunPre),length(object@vcfunPre) )){stop("'mcfunPre' and 'vcfunPre' should be lists of the same length")}
     
     
     if(
-       !length(object@mcfunPost) %in% c(nplants,0)) {stop("'mcfunPost' must be a list of functions whose length equals the number of plants")}
+      !length(object@mcfunPost) %in% c(nplants,0)) {stop("'mcfunPost' must be a list of functions whose length equals the number of plants")}
     if(length(object@mcfunPost) >0 && any(sapply(object@mcfunPost,class) != "function"))
     {stop("'mcfunPost' must be a list of functions")}
     
     if( 
-       !length(object@vcfunPre) %in% c(nplants,0)) {stop("'vcfunPre' must be a list of functions whose length equals the number of plants")}
+      !length(object@vcfunPre) %in% c(nplants,0)) {stop("'vcfunPre' must be a list of functions whose length equals the number of plants")}
     if(length(object@vcfunPre) >0 && any(sapply(object@vcfunPre,class) != "function"))
     {stop("'vcfunPre' must be a list of functions")}
     
     if(
-       !length(object@vcfunPost) %in% c(nplants,0)) {stop("'vcfunPost' must be a list of functions whose length equals the number of plants")}
+      !length(object@vcfunPost) %in% c(nplants,0)) {stop("'vcfunPost' must be a list of functions whose length equals the number of plants")}
     if(length(object@vcfunPost) >0 && any(sapply(object@vcfunPost,class) != "function"))
     {stop("'vcfunPost' must be a list of functions")}
     
-   if(!is.logical(object@productsPre)) stop("'productsPre' must be a logical matrix")
-   if(!is.logical(object@productsPost)) stop("'productsPost' must be a logical matrix")
-   
-   if (!identical(dim(object@quantities), dim(object@margins))) stop("'margins' and 'quantities' must be matrices of the same dimension")
-   if (!identical(dim(object@quantities), dim(object@productsPre))) stop("'productsPre' and 'quantities' must be matrices of the same dimension")
-   if (!identical(dim(object@quantities), dim(object@productsPost))) stop("'productsPost' and 'quantities' must be matrices of the same dimension")
-     
-  
-   if(!is.list(object@labels)) stop("'labels' must be a list") 
-   if (isTRUE(nplants != length(object@labels[[1]]))) stop("'labels' length must be a list whose first element is a vector whose length equals the number of plants")
+    if(!is.logical(object@productsPre)) stop("'productsPre' must be a logical matrix")
+    if(!is.logical(object@productsPost)) stop("'productsPost' must be a logical matrix")
+    
+    if (!identical(dim(object@quantities), dim(object@margins))) stop("'margins' and 'quantities' must be matrices of the same dimension")
+    if (!identical(dim(object@quantities), dim(object@productsPre))) stop("'productsPre' and 'quantities' must be matrices of the same dimension")
+    if (!identical(dim(object@quantities), dim(object@productsPost))) stop("'productsPost' and 'quantities' must be matrices of the same dimension")
+    
+    
+    if(!is.list(object@labels)) stop("'labels' must be a list") 
+    if (isTRUE(nplants != length(object@labels[[1]]))) stop("'labels' length must be a list whose first element is a vector whose length equals the number of plants")
     
     if (isTRUE(nprods != length(object@labels[[2]]))) stop("'labels' length must be a list whose 2nd element is a vector whose length equals the number of productsS")
     
@@ -94,13 +94,13 @@ setClass(
     if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")
     
     if(length(object@prices) != nprods) stop("the length of 'prices' must equal the number of products")
-
+    
     if(ncol(object@quantities) != nprods) stop("the number of columns in 'quantities' must equal the number of products")
     
     if(any(rowSums(object@quantities,na.rm=TRUE) > object@capacitiesPre)){
       stop("pre-merger plant output must be less than pre-merger capacity constraint")
     }
-    }
+  }
   
 )
 
@@ -146,7 +146,7 @@ setMethod(
     slopes <- object@slopes
     intercepts <- object@intercepts
     
-  
+    
     if(preMerger){
       quantities <- object@quantityPre
       owner <- object@ownerPre}
@@ -164,12 +164,12 @@ setMethod(
     
     ##dQdP
     partial <- ifelse(isLinear, 
-           slopes,
-           exp(intercepts)*slopes*mktQuant^(slopes - 1))
+                      slopes,
+                      exp(intercepts)*slopes*mktQuant^(slopes - 1))
     
     ##dPdQ
     partial <- 1/partial
-   
+    
     
     if(market){
       
@@ -178,15 +178,15 @@ setMethod(
     
     else{
       
-     sharesOwner <- t( t(quantOwner) / mktQuant)
-     
-     
-     elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
-       (slopes^(-1) / t(sharesOwner))  * ( 1 - isLinear)
-     
-     elast <- t(elast)
-     
-     dimnames(elast) <- object@labels
+      sharesOwner <- t( t(quantOwner) / mktQuant)
+      
+      
+      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
+        (slopes^(-1) / t(sharesOwner))  * ( 1 - isLinear)
+      
+      elast <- t(elast)
+      
+      dimnames(elast) <- object@labels
     }
     
     return(elast)
@@ -251,7 +251,7 @@ setMethod(
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantPlants <- rowSums(quantities, na.rm = TRUE)
     quantOwner <- owner %*% quantities
-
+    
     isConstrained <- quantPlants >= cap
     
     if(!noCosts){
@@ -274,7 +274,7 @@ setMethod(
       thisslopes <- theta[-(1:nprods)]
       
       thisprices <- ifelse(isLinear, thisints + thisslopes*quantTot, 
-                    exp(thisints)*quantTot^thisslopes)
+                           exp(thisints)*quantTot^thisslopes)
       
       thisPartial <- ifelse(isLinear, 
                             thisslopes,
@@ -355,8 +355,8 @@ setMethod(
     object@intercepts <- intercepts
     object@slopes <-     slopes
     
-      
-  return(object)
+    
+    return(object)
     
   })    
 
@@ -367,21 +367,21 @@ setMethod(
   definition=function(object,preMerger=TRUE){
     
     if(preMerger){ 
-   
-    quantity  <- object@quantityPre
-    mcfun <- object@mcfunPre
-    cap <- object@capacitiesPre
-   }
+      
+      quantity  <- object@quantityPre
+      mcfun <- object@mcfunPre
+      cap <- object@capacitiesPre
+    }
     else{          
-    
-    quantity  <- object@quantityPost
-    mcfun <- object@mcfunPost
-    cap <- object@capacitiesPost
+      
+      quantity  <- object@quantityPost
+      mcfun <- object@mcfunPost
+      cap <- object@capacitiesPost
     }
     
     plantQuant <- rowSums(quantity,na.rm=TRUE)
-   
-   
+    
+    
     
     nplants <- nrow(quantity)
     
@@ -391,7 +391,7 @@ setMethod(
       mc[f] <- mcfun[[f]](quantity[f,])
     }
     
-    mc <- ifelse(plantQuant <= cap, mc, Inf)
+    #mc <- ifelse(plantQuant <= cap, mc, Inf)
     
     if(!preMerger){mc <- mc*(1 + object@mcDelta)}
     
@@ -476,15 +476,16 @@ setMethod(
     
     slopes <- object@slopes
     intercepts <- object@intercepts
+    quantityStart <- object@quantityStart
     
     if(preMerger){ owner  <- object@ownerPre
-                   products  <- object@productsPre
-                   cap <- object@capacitiesPre
-                   }
+    products  <- object@productsPre
+    cap <- object@capacitiesPre
+    }
     else{          owner <-  object@ownerPost
-                   products <-  object@productsPost
-                   cap <- object@capacitiesPost
-                   }
+    products <-  object@productsPost
+    cap <- object@capacitiesPost
+    }
     
     nprods <- ncol(products)
     isProducts <- rowSums(products) > 0
@@ -494,7 +495,7 @@ setMethod(
     
     FOC <- function(quantCand){
       
-      quantCand <- quantCand^2 # constrain positive
+      #quantCand <- quantCand^2 # constrain positive
       
       allquant <- rep(0,length(products))
       allquant[products] <- quantCand
@@ -513,22 +514,27 @@ setMethod(
       
       thisPartial <- ifelse(object@demand=="linear", 
                             slopes,
-                         exp(intercepts)*slopes*mktQuant^(slopes - 1))
+                            exp(intercepts)*slopes*mktQuant^(slopes - 1))
       
       
       thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice
       thisFOC <- t(thisFOC) - thisMC
-      # thisCons <- plantQuant - cap
-      # thisFOC[isConstrained,] <- thisFOC[isConstrained,] + 
-      #                            thisCons[isConstrained] + 
-      #                            sqrt(thisFOC[isConstrained,]^2 + 
-      #                            thisCons[isConstrained]^2)
-      thisFOC <- thisFOC[isProducts,]
+      thisFOC <- t(t(thisFOC)/thisPrice) # rescale
+      thisCons <- (plantQuant - cap)/cap # rescale
+      thisFOC[isConstrained,] <- thisFOC[isConstrained,] + 
+        thisCons[isConstrained] + 
+        sqrt(thisFOC[isConstrained,]^2 + 
+               thisCons[isConstrained]^2)
+      thisFOC <- 
+        thisFOC <- thisFOC[isProducts,]
       return(as.vector(thisFOC))
     }
     
     
-    quantityStart <- sqrt(object@quantityStart[products]) #constrain positive
+    #quantityStart <- sqrt(object@quantityStart[products]) #constrain positive
+    quantityStart <- ifelse(quantityStart >= cap, cap-1, quantityStart)
+    quantityStart <- quantityStart[products]
+    
     
     ## Find price changes that set FOCs equal to 0
     minResult <- BBsolve( quantityStart,FOC, quiet=TRUE,control=object@control.equ,...)
@@ -536,7 +542,7 @@ setMethod(
     if(minResult$convergence != 0){warning("'calcQuantities' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
     
     quantEst        <- rep(0, length(products))
-    quantEst[products] <- minResult$par^2
+    quantEst[products] <- minResult$par#^2
     quantEst <- matrix(quantEst,ncol = nprods)
     
     dimnames(quantEst) <- object@labels
@@ -549,30 +555,30 @@ setMethod(
   f= "calcPrices",
   signature= "Cournot",
   definition=function(object,preMerger=TRUE){
-  
+    
     if(preMerger){
-          
+      
       quantities <- object@quantityPre
-      }
+    }
     else{
       quantities <- object@quantityPost
     }
     
     intercepts <- object@intercepts
     slopes     <- object@slopes
-  
-
+    
+    
     mktQuant <- colSums(quantities, na.rm=TRUE)
     
     prices <- ifelse(object@demand == "linear",
                      intercepts + slopes * mktQuant,
                      exp(intercepts) * mktQuant^slopes
-                     )
+    )
     
     
     names(prices) <- object@labels[[2]]
     return(prices)
-      
+    
   })  
 
 
@@ -582,17 +588,17 @@ setMethod(
   f= "hhi",
   signature= "Cournot",
   definition=function(object,preMerger=TRUE, revenue = FALSE){
-  
-  shares <- calcShares(object,preMerger=preMerger,revenue=revenue)
-  shares[is.na(shares)] <- 0 
-  if(preMerger) {owner <- object@ownerPre}
-  else{owner <- object@ownerPre}
-  
-  hhi <- colSums((owner %*% (shares*100))^2, na.rm =TRUE)
-  
-  return(hhi)
     
-})
+    shares <- calcShares(object,preMerger=preMerger,revenue=revenue)
+    shares[is.na(shares)] <- 0 
+    if(preMerger) {owner <- object@ownerPre}
+    else{owner <- object@ownerPre}
+    
+    hhi <- colSums((owner %*% (shares*100))^2, na.rm =TRUE)
+    
+    return(hhi)
+    
+  })
 
 
 setMethod(
@@ -608,7 +614,7 @@ setMethod(
     shares <- owner %*% shares
     shares <- shares[isParty,,drop=FALSE]
     mktElast <- elast(object, preMerger= TRUE,market=TRUE)
-
+    
     cmcr <- -2 * apply(shares,2,prod) / (mktElast * colSums(shares) )
     
     return(cmcr * 100)
@@ -678,7 +684,7 @@ setMethod(
       out$isParty <- as.numeric(rowSums( abs(object@ownerPost - object@ownerPre))>0)
       out$isParty <- factor(out$isParty,levels=0:1,labels=c(" ","*"))
     }
-  
+    
     mcDelta <- object@mcDelta * 100
     
     if(levels){out$outDelta <- out$outPost - out$outPre}
@@ -723,7 +729,7 @@ setMethod(
     ##Only compute cmcr if cmcr method doesn't yield an error
     thisCMCR <- tryCatch(cmcr(object),error=function(e) FALSE)
     if(!is.logical(thisCMCR)){
-    cat("\n\nCMCR:\n\n")
+      cat("\n\nCMCR:\n\n")
       
       cat(format(cmcr(object),digits=digits), fill=TRUE,labels=object@labels[[2]])
     } 
@@ -745,9 +751,9 @@ setMethod(
     if(parameters){
       
       cat("\nDemand Parameter Estimates:\n\n")
-     
-        print(format(object@slopes,digits=digits))
-        
+      
+      print(format(object@slopes,digits=digits))
+      
       cat("\n\n")
       
       if(.hasSlot(object,"intercepts")){
@@ -780,11 +786,11 @@ setMethod(
     pricePost <- object@pricePost
     
     result <- ifelse(demand =="linear",
-                 .5*(pricePost - pricePre)*(quantityPre - quantityPost)  ,
-                 exp(intercepts)/(slopes + 1) * (quantityPre^(slopes + 1) - quantityPost^(slopes+1)) -  (quantityPre - quantityPost)* pricePre
-                 )
+                     .5*(pricePost - pricePre)*(quantityPre - quantityPost)  ,
+                     exp(intercepts)/(slopes + 1) * (quantityPre^(slopes + 1) - quantityPost^(slopes+1)) -  (quantityPre - quantityPost)* pricePre
+    )
     
-   result <- result  +  (pricePost - pricePre)*quantityPre
+    result <- result  +  (pricePost - pricePre)*quantityPre
     names(result) <-  object@labels[[2]]
     return(result)
   })
@@ -803,7 +809,7 @@ setMethod(
     
     
     ## how to deal with multiple products?
-   stop("A work in progress!!")
+    stop("A work in progress!!")
     
     calcMonopolySurplus <- function(quantCand){
       
@@ -814,8 +820,8 @@ setMethod(
       mktQuant <- colSums(quantCand, na.rm = TRUE)
       
       priceCand <- ifelse(demand == "linear",
-                      intercept + slopes * mktQuant,
-                      exp(intercept)*mktQuant^slopes)
+                          intercept + slopes * mktQuant,
+                          exp(intercept)*mktQuant^slopes)
       
       vcCand <- calcVC(object, preMerger=TRUE)
       vcCand <- vcCand[plantIndex]
@@ -829,12 +835,12 @@ setMethod(
     }
     
     if( nhypoplants > 1){
-     
+      
       maxResult <- optim(object@quantityPre[prodIndex],
                          calcMonopolySurplus,
                          method="L-BFGS-B",
                          lower = rep(0,nhypoplants)
-                               )
+      )
       
       quantitiesHM <- maxResult$par
     }
@@ -873,7 +879,7 @@ cournot <- function(prices,quantities,margins,
                     control.slopes,
                     control.eq,
                     labels,
-                   ...
+                    ...
 ){
   
   shares <- as.vector(quantities/sum(quantities))
@@ -881,17 +887,17 @@ cournot <- function(prices,quantities,margins,
   
   
   if(missing(labels)){
-  if(is.null(dimnames(quantities))){ 
-    rname <- paste0("O",1:nrow(quantities))
-    cname <- paste0("P",1:ncol(quantities))
-  }
+    if(is.null(dimnames(quantities))){ 
+      rname <- paste0("O",1:nrow(quantities))
+      cname <- paste0("P",1:ncol(quantities))
+    }
     else{rname <- rownames(quantities)
     cname <- colnames(quantities)
     }
     labels <- list(rname,cname)
     
   }
-
+  
   result <- new("Cournot",prices=prices, quantities=quantities,margins=margins,
                 shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
