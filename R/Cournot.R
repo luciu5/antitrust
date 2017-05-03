@@ -391,7 +391,8 @@ setMethod(
       mc[f] <- mcfun[[f]](quantity[f,])
     }
     
-    #mc <- ifelse(plantQuant <= cap, mc, Inf)
+    #mc <- mc + 1/(100*(cap - plantQuant)^2) + 1/(100*(plantQuant)^2)
+    #mc <- ifelse(plantQuant <= cap & plantQuant >= 0 , mc, max(mc,na.rm=TRUE) * 1e3)
     
     if(!preMerger){mc <- mc*(1 + object@mcDelta)}
     
@@ -522,7 +523,7 @@ setMethod(
       thisFOC <- t(t(thisFOC)/thisPrice) # rescale
       thisCons <- (plantQuant - cap)/cap # rescale
       thisFOC[isConstrained,] <- thisFOC[isConstrained,] + 
-        thisCons[isConstrained] + 
+         thisCons[isConstrained] + 
         sqrt(thisFOC[isConstrained,]^2 + 
                thisCons[isConstrained]^2)
       thisFOC <- 
@@ -612,7 +613,8 @@ setMethod(
     shares <- calcShares(object,preMerger=TRUE,revenue=FALSE)
     shares[is.na(shares)] <- 0 
     shares <- owner %*% shares
-    shares <- shares[isParty,,drop=FALSE]
+    shares <- unique(shares[isParty,,drop=FALSE])
+    if(nrow(shares) == 1 ){shares <- rbind(shares,shares)}
     mktElast <- elast(object, preMerger= TRUE,market=TRUE)
     
     cmcr <- -2 * apply(shares,2,prod) / (mktElast * colSums(shares) )
@@ -790,7 +792,7 @@ setMethod(
                      exp(intercepts)/(slopes + 1) * (quantityPre^(slopes + 1) - quantityPost^(slopes+1)) -  (quantityPre - quantityPost)* pricePre
     )
     
-    result <- result  +  (pricePost - pricePre)*quantityPre
+    result <- result  +  (pricePost - pricePre)*quantityPost
     names(result) <-  object@labels[[2]]
     return(result)
   })
