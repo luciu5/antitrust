@@ -36,9 +36,9 @@ setClass(
              diag(diversion)=1
              if(any(diversion > 1 | diversion<0)){
                  stop("'diversions' off-diagonal elements must be between 0 and 1")}
-
-            
-             if (any(rowSums(object@diversion,na.rm=TRUE)>0,na.rm=TRUE)){ stop("'diversions' rows cannot sum to greater than 0")}
+             
+             if (!isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods),check.names=FALSE)) && 
+                 any(rowSums(object@diversion,na.rm=TRUE)>0,na.rm=TRUE)){ stop("'diversions' rows cannot sum to greater than 0")}
 
              if(nprods != nrow(object@diversion) ||
                 nprods != ncol(object@diversion)){
