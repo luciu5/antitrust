@@ -391,10 +391,11 @@ setMethod(
       mc[f] <- mcfun[[f]](quantity[f,])
     }
     
-    #mc <- mc + 1/(100*(cap - plantQuant)^2) + 1/(100*(plantQuant)^2)
+    if(!preMerger){mc <- mc*(1 + object@mcDelta)}
+    
+    mc <- mc + 1/(100*(pmax(cap - plantQuant, 1e-16))) + 1/(100*(pmax(1e-16,plantQuant)))
     #mc <- ifelse(plantQuant <= cap & plantQuant >= 0 , mc, max(mc,na.rm=TRUE) * 1e3)
     
-    if(!preMerger){mc <- mc*(1 + object@mcDelta)}
     
     names(mc) <- object@labels[[1]]
     
@@ -521,12 +522,11 @@ setMethod(
       thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice
       thisFOC <- t(thisFOC) - thisMC
       thisFOC <- t(t(thisFOC)/thisPrice) # rescale
-      thisCons <- (plantQuant - cap)/cap # rescale
-      thisFOC[isConstrained,] <- thisFOC[isConstrained,] + 
-         thisCons[isConstrained] + 
-        sqrt(thisFOC[isConstrained,]^2 + 
-               thisCons[isConstrained]^2)
-      thisFOC <- 
+      #thisCons <- (plantQuant - cap)/cap # rescale
+      #thisFOC[isConstrained,] <- thisFOC[isConstrained,] + 
+      #   thisCons[isConstrained] + 
+      #  sqrt(thisFOC[isConstrained,]^2 + 
+      #         thisCons[isConstrained]^2)
         thisFOC <- thisFOC[isProducts,]
       return(as.vector(thisFOC))
     }
