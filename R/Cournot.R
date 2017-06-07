@@ -19,7 +19,8 @@ setClass(
     quantityStart     = "numeric",
     productsPre      = "matrix",
     productsPost     = "matrix",
-    demand           = "character"
+    demand           = "character",
+    cost             = "character"
     
   ), 
   prototype(
@@ -40,6 +41,7 @@ setClass(
     
     if(any(is.na(object@capacitiesPre) |
            object@capacitiesPre<0 ,na.rm=TRUE)){stop("'capacitiesPre' values must be positive, and not NA")}
+    
     
     
     if(nplants != length(object@capacitiesPost)){
@@ -93,6 +95,11 @@ setClass(
     if(all(!(object@demand %in% c("linear","log")))){stop("'demand' must equal 'linear' or 'log'")}
     if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")
     
+    if(all(!(object@cost %in% c("linear","constant")))){stop("'demand' must equal 'linear' or 'constant'")}
+    if(length(object@cost) != nplants) stop("the length of 'cost' must equal the number of products")
+    
+    if(any(rowSums(object@ownerPre) > 0 & !(is.finite(object@capacitiesPre) & is.finite(object@capacitiesPost))  & object@cost == "constant")){ stop("multi-plant firms with 'cost' equal to 'constant' must have finite pre- and post-merger capacity constraints")}
+    
     if(length(object@prices) != nprods) stop("the length of 'prices' must equal the number of products")
     
     if(ncol(object@quantities) != nprods) stop("the number of columns in 'quantities' must equal the number of products")
@@ -142,7 +149,7 @@ setMethod(
   signature= "Cournot",
   definition=function(object,preMerger=TRUE,market=TRUE){
     
-    isLinear <- object@demand =="linear"
+    isLinearD <- object@demand =="linear"
     slopes <- object@slopes
     intercepts <- object@intercepts
     
@@ -163,7 +170,7 @@ setMethod(
     mktQuant <-  colSums(quantities,na.rm = TRUE)
     
     ##dQdP
-    partial <- ifelse(isLinear, 
+    partial <- ifelse(isLinearD, 
                       slopes,
                       exp(intercepts)*slopes*mktQuant^(slopes - 1))
     
@@ -181,8 +188,8 @@ setMethod(
       sharesOwner <- t( t(quantOwner) / mktQuant)
       
       
-      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinear +
-        (slopes^(-1) / t(sharesOwner))  * ( 1 - isLinear)
+      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinearD +
+        (slopes^(-1) / t(sharesOwner))  * ( 1 - isLinearD)
       
       elast <- t(elast)
       
@@ -246,7 +253,8 @@ setMethod(
     nplants <- nrow(quantities)
     
     noCosts <- length(mcfunPre) == 0
-    isLinear <- demand=="linear"
+    isLinearD <- demand=="linear"
+    isLinearC <- object@cost=="linear"
     
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantPlants <- rowSums(quantities, na.rm = TRUE)
@@ -266,17 +274,17 @@ setMethod(
         
         thiscap <- theta[1:nplants]
         theta <- theta[-(1:nplants)]
-        mcPre <- quantPlants/thiscap
+        mcPre <- ifelse(isLinearC, quantPlants/thiscap, thiscap)
         
       }
       
       thisints <- theta[1:nprods]
       thisslopes <- theta[-(1:nprods)]
       
-      thisprices <- ifelse(isLinear, thisints + thisslopes*quantTot, 
+      thisprices <- ifelse(isLinearD, thisints + thisslopes*quantTot, 
                            exp(thisints)*quantTot^thisslopes)
       
-      thisPartial <- ifelse(isLinear, 
+      thisPartial <- ifelse(isLinearD, 
                             thisslopes,
                             exp(thisints)*thisslopes*quantTot^(thisslopes - 1))
       
@@ -293,10 +301,10 @@ setMethod(
     }
     
     
-    bStart      =   ifelse(isLinear,
+    bStart      =   ifelse(isLinearD,
                            colMeans(-(prices*margins)/(sharesOwner*quantTot),na.rm=TRUE), 
                            colMeans(-margins/sharesOwner,na.rm=TRUE))
-    intStart    =   ifelse(isLinear,
+    intStart    =   ifelse(isLinearD,
                            prices - bStart*quantTot, 
                            log(prices/(quantTot^bStart)))
     intStart    =   abs(intStart)
@@ -305,11 +313,11 @@ setMethod(
     
     if(noCosts){
       
-      if(isLinear){margStart <- rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE)}
+      if(isLinearD){margStart <- rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE)}
       else{margStart <- rowMeans(-sharesOwner*bStart,na.rm=TRUE)} 
       
       mcStart  <- abs(prices*(margStart - 1)) 
-      capStart <- quantPlants/mcStart  
+      capStart <- ifelse(isLinearC, quantPlants/mcStart, mcStart)  
       parmStart <- c(capStart,parmStart)
     }
     
@@ -329,14 +337,16 @@ setMethod(
       bestParms <- bestParms[-(1:nplants)]
       
       
-      mcdef <- "function(q,mcparm = %f){ val <- sum(q, na.rm=TRUE) * mcparm; return(val)}"
+      mcdef <- ifelse(isLinearC,"function(q,mcparm = %f){ val <- sum(q, na.rm=TRUE) * mcparm; return(val)}",
+                      "function(q,mcparm = %f){ val <- mcparm; return(val)}")
       mcdef <- sprintf(mcdef,1/mcparm)
       mcdef <- lapply(mcdef, function(x){eval(parse(text=x ))})
       
       object@mcfunPre <- mcdef
       names(object@mcfunPre) <- object@labels[[1]]
       
-      vcdef <- "function(q,mcparm = %f){  val <-  sum(q, na.rm=TRUE)^2 * mcparm / 2; return(val)}"
+      vcdef <- ifelse(isLinearC,"function(q,mcparm = %f){  val <-  sum(q, na.rm=TRUE)^2 * mcparm / 2; return(val)}",
+                      "function(q,mcparm = %f){  val <-  sum(q, na.rm=TRUE) * mcparm; return(val)}")
       vcdef <- sprintf(vcdef,1/mcparm)
       vcdef <- lapply(vcdef, function(x){eval(parse(text=x ))})
       
@@ -867,6 +877,7 @@ setMethod(
 
 cournot <- function(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
+                    cost   =   rep("linear",nrow(quantities)),
                     mcfunPre=list(),
                     mcfunPost=mcfunPre,
                     vcfunPre=list(),
@@ -901,7 +912,7 @@ cournot <- function(prices,quantities,margins,
   }
   
   result <- new("Cournot",prices=prices, quantities=quantities,margins=margins,
-                shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand,
+                shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand, cost=cost,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
                 capacitiesPre=capacitiesPre,capacitiesPost=capacitiesPost,
                 ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,

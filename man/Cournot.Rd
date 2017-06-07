@@ -15,6 +15,7 @@
 
        cournot(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
+                    cost   =   rep("linear",nrow(quantities)),
                     mcfunPre=list(),
                     mcfunPost=mcfunPre,
                     vcfunPre=list(),
@@ -34,6 +35,7 @@
                      
     stackelberg(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
+                    cost   =   rep("linear",nrow(quantities)),
                     isLeaderPre = matrix(FALSE,
                                   ncol = ncol(quantities), 
                                   nrow= nrow(quantities)),
@@ -66,6 +68,7 @@
   \item{margins}{An n x k  matrix of product margins. All margins must
     be either be between 0 and 1, or NA.}
   \item{demand}{A length k character vector equal to "linear" if a product's              demand curve is assumed to be linear or "log" if a product's demand curve         is assumed to be log-linear.}
+  \item{cost}{A length k character vector equal to "linear" if a plant's              marginal cost curve is assumed to be linear or "constant" if a plant's marginal curve         is assumed to be constant. Returns an error if a multi-plant firm with constant marginal costs  does not have capacity constraints. }
   \item{isLeaderPre}{An n x k logical matrix equal to TRUE if a firm is a "leader" pre-merger for a particular product and FALSE otherwise. Default is FALSE, which is equivalent to \code{cournot}.  }
  \item{isLeaderPost}{An n x k logical matrix equal to TRUE if a firm is a "leader" pre-merger for a particular product and FALSE otherwise. Default is FALSE, which is equivalent to \code{cournot}.  }
    \item{mcfunPre}{a length n list of functions that calculate a plant's pre-merger marginal cost. If empty (the default), assumes  quadratic costs. }

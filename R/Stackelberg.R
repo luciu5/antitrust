@@ -62,12 +62,12 @@ setGeneric (
 #   signature = "Stackelberg",
 #   definition=function(object, preMerger=TRUE){
 #   
-#     islinear <- object@demand=="linear"
+#     isLinearD <- object@demand=="linear"
 #     
 #     if(preMerger){isLeader <- object@isLeaderPre}
 #     else{isLeader <- object@isLeaderPost}
 #     
-#     pass <- ifelse( islinear, )
+#     pass <- ifelse( isLinearD, )
 #     
 #     
 #   }
@@ -134,7 +134,8 @@ setMethod(
     
     noCosts <- length(vcfunPre) == 0
     isLeader <- object@isLeaderPre
-    isLinear <- demand=="linear"
+    isLinearD <- demand=="linear"
+    isLinearC <- object@cost=="linear"
     
     quantTot <- colSums(quantities, na.rm = TRUE)
     quantPlants <- rowSums(quantities, na.rm = TRUE)
@@ -158,21 +159,21 @@ setMethod(
         
         thiscap <- theta[1:nplants]
         theta <- theta[-(1:nplants)]
-        mcPre <- quantPlants/thiscap
-        dmcPre <- 1/thiscap
+        mcPre <- ifelse(isLinearC, quantPlants/thiscap, thiscap)
+        dmcPre <- ifelse(isLinearc, 1/thiscap, 0)
       }
       
       thisints <- theta[1:nprods]
       thisslopes <- theta[-(1:nprods)]
       
-      thisprices <- ifelse(isLinear, thisints + thisslopes*quantTot, 
+      thisprices <- ifelse(isLinearD, thisints + thisslopes*quantTot, 
                            exp(thisints)*quantTot^thisslopes)
       
-      thisPartial <- ifelse(isLinear, 
+      thisPartial <- ifelse(isLinearD, 
                             thisslopes,
                             exp(thisints)*thisslopes*quantTot^(thisslopes - 1))
       
-      dthisPartial <- ifelse(isLinear,
+      dthisPartial <- ifelse(isLinearD,
                              0,
                              exp(thisints)*thisslopes*(thisslopes - 1)*quantTot^(thisslopes - 2))
       
@@ -195,10 +196,10 @@ setMethod(
     }
     
     
-    bStart      =   ifelse(isLinear,
+    bStart      =   ifelse(isLinearD,
                            colMeans(-(prices*margins)/(sharesOwner*quantTot),na.rm=TRUE), 
                            colMeans(-margins/sharesOwner,na.rm=TRUE))
-    intStart    =   ifelse(isLinear,
+    intStart    =   ifelse(isLinearD,
                            prices - bStart*quantTot, 
                            log(prices/(quantTot^bStart)))
     intStart    =   abs(intStart)
@@ -207,11 +208,11 @@ setMethod(
     
     if(noCosts){
     
-      if(isLinear){margStart <- rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE)}
+      if(isLinearD){margStart <- rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE)}
       else{margStart <- rowMeans(-sharesOwner*bStart,na.rm=TRUE)} 
                        
      mcStart  <- abs(prices*(margStart - 1)) 
-     capStart <- quantPlants/mcStart  
+     capStart <- ifelse(isLinearC, quantPlants/mcStart, mcStart)   
      parmStart <- c(capStart,parmStart)
     }
     
@@ -227,26 +228,30 @@ setMethod(
       bestParms <- bestParms[-(1:nplants)]
       
       
-      dmcdef <- "function(q,mcparm = %f){ val <-   mcparm; return(val)}}"
+      dmcdef <- ifelse(isLinearC,"function(q,mcparm = %f){ val <-   mcparm; return(val)}}",
+                       "function(q,mcparm = %f){ val <-   0; return(val)}}")
       dmcdef <- sprintf(dmcdef,1/mcparm, cap)
       dmcdef <- lapply(dmcdef, function(x){eval(parse(text=x ))})
       
       object@dmcfunPre <- dmcdef
       names(object@dmcfunPre) <- object@labels[[1]]
       
-      mcdef <- "function(q,mcparm = %f,cap=%f){ val <-  sum(q, na.rm=TRUE) * mcparm; return(val)}"
-      mcdef <- sprintf(mcdef,1/mcparm,cap)
+      mcdef <- ifelse(isLinearC,"function(q,mcparm = %f){ val <- sum(q, na.rm=TRUE) * mcparm; return(val)}",
+                      "function(q,mcparm = %f){ val <- mcparm; return(val)}")
+      mcdef <- sprintf(mcdef,1/mcparm)
       mcdef <- lapply(mcdef, function(x){eval(parse(text=x ))})
       
       object@mcfunPre <- mcdef
       names(object@mcfunPre) <- object@labels[[1]]
       
-      vcdef <- "function(q,mcparm = %f,cap=%f){  val <- sum(q, na.rm=TRUE)^2 * mcparm / 2; return(val)}"
-      vcdef <- sprintf(vcdef,1/mcparm,cap)
+      vcdef <- ifelse(isLinearC,"function(q,mcparm = %f){  val <-  sum(q, na.rm=TRUE)^2 * mcparm / 2; return(val)}",
+                      "function(q,mcparm = %f){  val <-  sum(q, na.rm=TRUE) * mcparm; return(val)}")
+      vcdef <- sprintf(vcdef,1/mcparm)
       vcdef <- lapply(vcdef, function(x){eval(parse(text=x ))})
       
       object@vcfunPre <- vcdef
       names(object@vcfunPre) <- object@labels[[1]]
+      
       
     }
       
@@ -280,7 +285,7 @@ setMethod(
     
     slopes <- object@slopes
     intercepts <- object@intercepts
-    isLinear <- object@demand=="linear"
+    isLinearD <- object@demand=="linear"
     
     
     if(preMerger){ owner  <- object@ownerPre
@@ -315,11 +320,11 @@ setMethod(
       mktQuant <- colSums(quantCand, na.rm=TRUE)
       ownerQuant <- owner %*% quantCand
       
-      thisPartial <- ifelse(isLinear, 
+      thisPartial <- ifelse(isLinearD, 
                             slopes,
                          exp(intercepts)*slopes*mktQuant^(slopes - 1))
       
-      dthisPartial <- ifelse(isLinear,
+      dthisPartial <- ifelse(isLinearD,
                              0,
                              exp(intercepts)*slopes*(slopes - 1)*mktQuant^(slopes - 2))
       
@@ -361,6 +366,7 @@ setMethod(
 
 stackelberg <- function(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
+                    cost   =   rep("linear",nrow(quantities)),
                     isLeaderPre = matrix(FALSE,ncol = ncol(quantities), nrow= nrow(quantities)),
                     isLeaderPost= isLeaderPre,
                     mcfunPre=list(),
@@ -399,7 +405,7 @@ stackelberg <- function(prices,quantities,margins,
   }
 
   result <- new("Stackelberg",prices=prices, quantities=quantities,margins=margins,
-                shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand,
+                shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand, cost = cost,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
                 dmcfunPre=dmcfunPre, dmcfunPost=dmcfunPost, isLeaderPre = isLeaderPre, isLeaderPost = isLeaderPost,
                 ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
