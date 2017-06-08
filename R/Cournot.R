@@ -337,17 +337,17 @@ setMethod(
       bestParms <- bestParms[-(1:nplants)]
       
       
-      mcdef <- ifelse(isLinearC,"function(q,mcparm = %f){ val <- sum(q, na.rm=TRUE) * mcparm; return(val)}",
+      mcdef <- ifelse(isLinearC,"function(q,mcparm = %f){ val <- sum(q, na.rm=TRUE) / mcparm; return(val)}",
                       "function(q,mcparm = %f){ val <- mcparm; return(val)}")
-      mcdef <- sprintf(mcdef,1/mcparm)
+      mcdef <- sprintf(mcdef,mcparm)
       mcdef <- lapply(mcdef, function(x){eval(parse(text=x ))})
       
       object@mcfunPre <- mcdef
       names(object@mcfunPre) <- object@labels[[1]]
       
-      vcdef <- ifelse(isLinearC,"function(q,mcparm = %f){  val <-  sum(q, na.rm=TRUE)^2 * mcparm / 2; return(val)}",
+      vcdef <- ifelse(isLinearC,"function(q,mcparm = %f){  val <-  sum(q, na.rm=TRUE)^2 / (mcparm * 2); return(val)}",
                       "function(q,mcparm = %f){  val <-  sum(q, na.rm=TRUE) * mcparm; return(val)}")
-      vcdef <- sprintf(vcdef,1/mcparm)
+      vcdef <- sprintf(vcdef,mcparm)
       vcdef <- lapply(vcdef, function(x){eval(parse(text=x ))})
       
       object@vcfunPre <- vcdef
