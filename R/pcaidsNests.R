@@ -119,7 +119,7 @@ setMethod(
                   elast <- t(Bcand/shares) + shares * (mktElast + 1)
                   diag(elast) <- diag(elast) - 1
 
-                  marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
+                  marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
 
                   measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 

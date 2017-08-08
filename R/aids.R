@@ -8,10 +8,8 @@ setClass(
          ),
         prototype=prototype(
         priceDelta       =  numeric(),
-        mktElast         =  numeric(),
-        control.slopes = list( 
-          factr = 1e7 
-        )),
+        mktElast         =  numeric()
+       ),
        
 
          validity=function(object){
@@ -77,7 +75,7 @@ setMethod(
        elast <- t(B/shares) + shares * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
        diag(elast) <- diag(elast) - 1
 
-       marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
+       marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
 
 
        m1 <- margins - marginsCand
@@ -90,24 +88,32 @@ setMethod(
      }
 
 
+     
+     
+     
      ## Create starting values for optimizer
-     mktElast = -2
-     shareProd =  tcrossprod(shares)
-     parmStart=c(mktElast,-shareProd[upper.tri(shareProd)]*(1+mktElast) + 1)
-
+     mktElast = -.5
+     knownElast <- -1.25
+     bknown <- shares[1] * (knownElast + 1 - shares[1]*(1 + mktElast) )
+     bStart <- diversion[1,]/diversion[,1] * bknown
+     bStart <- -diversion * bStart
+     
+     parmStart=c(mktElast,bStart[upper.tri(bStart)])
 
 
      ## create bounds for optimizer
-      ui=diag(length(parmStart))
-      ui[1,1]   = -1 #mktElast constrained to be non-positive
-
-      # cross-price elastictities constrained non-negative
-      ui[-1,1]  =  shareProd[upper.tri(shareProd)]
-      ci        =  rep(0,length(parmStart))
-      ci[-1]    = -shareProd[upper.tri(shareProd)]
-
-     bestParms=constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci,
-                           control=object@control.slopes)
+     upper<-lower<-parmStart
+     upper[1]=0
+     upper[-(1)]=Inf
+     lower[1]=-Inf
+     lower[-(1)]=0
+     
+     
+     bestParms=optim(parmStart,minD,method="L-BFGS-B",
+                     upper=upper,lower=lower,
+                     control=object@control.slopes)
+     
+     
 
      B = diag(nprod)
 
