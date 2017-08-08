@@ -8,8 +8,11 @@ setClass(
          ),
         prototype=prototype(
         priceDelta       =  numeric(),
-        mktElast         =  numeric()
-        ),
+        mktElast         =  numeric(),
+        control.slopes = list( 
+          factr = 1e7 
+        )),
+       
 
          validity=function(object){
 

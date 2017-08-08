@@ -14,6 +14,10 @@ setClass(
 
              nprods <- length(object@shares)
 
+             if(length(object@knownElastIndex) != 1 ){stop("'knownElastIndex' must be length 1")}
+             if(length(object@knownElast) != 1 ){stop("'knownElast' must be length 1")}
+             if(length(object@mktElast) != 1 ){stop("'mktElast' must be length 1")}
+             
              if(!(object@knownElastIndex %in% seq(1,nprods)) ){
                  stop("'knownElastIndex' value must be between 1 and the length of 'shares'")}
              if(nprods != length(object@mcDelta)){
@@ -56,8 +60,8 @@ setMethod(
      minD <- function(betas){
 
        #enforce symmetry
-       bknown = betas[idx]
-       betas  =  betas[-idx]
+       bknown = betas[1]
+       betas  =  betas[-1]
 
 
         B = diag(nprod)
