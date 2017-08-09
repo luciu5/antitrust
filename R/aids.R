@@ -8,7 +8,10 @@ setClass(
          ),
         prototype=prototype(
         priceDelta       =  numeric(),
-        mktElast         =  numeric()
+        mktElast         =  numeric(),
+        control.slopes = list( 
+          factr = 1e7 
+        )
        ),
        
 
@@ -28,7 +31,6 @@ setClass(
              }
 
 
-             ## Need to write a check that tests if the margins for all the firm's products is present
 
          }
 
@@ -92,13 +94,13 @@ setMethod(
      
      
      ## Create starting values for optimizer
-     mktElast = -.5
-     knownElast <- -1.25
-     bknown <- shares[1] * (knownElast + 1 - shares[1]*(1 + mktElast) )
-     bStart <- diversion[1,]/diversion[,1] * bknown
-     bStart <- -diversion * bStart
+     # mktElast = -1.5
+     # knownElast <- -1.75
+     # bknown <- shares[1] * (knownElast + 1 - shares[1]*(1 + mktElast) )
+     # bStart <- diversion[1,]/diversion[,1] * bknown
+     # bStart <- -diversion * bStart
      
-     parmStart=c(mktElast,bStart[upper.tri(bStart)])
+     parmStart=c(mktElast,diversion[upper.tri(diversion)])
 
 
      ## create bounds for optimizer
@@ -599,7 +601,7 @@ aids <- function(shares,margins,prices,diversions,
 
     if(missing(diversions)){
         diversions <- tcrossprod(1/(1-shares),shares)
-        diag(diversions) <- -1.000000001 #correct potential floating point issue
+        diag(diversions) <- -1 
 
 
     }
