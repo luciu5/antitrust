@@ -160,7 +160,7 @@ setMethod(
         thiscap <- theta[1:nplants]
         theta <- theta[-(1:nplants)]
         mcPre <- ifelse(isLinearC, quantPlants/thiscap, thiscap)
-        dmcPre <- ifelse(isLinearc, 1/thiscap, 0)
+        dmcPre <- ifelse(isLinearC, 1/thiscap, 0)
       }
       
       thisints <- theta[1:nprods]
@@ -228,8 +228,8 @@ setMethod(
       bestParms <- bestParms[-(1:nplants)]
       
       
-      dmcdef <- ifelse(isLinearC,"function(q,mcparm = %f){ val <-   1/mcparm; return(val)}}",
-                       "function(q,mcparm = %f){ val <-   0; return(val)}}")
+      dmcdef <- ifelse(isLinearC,"function(q,mcparm = %f){ val <-   1/mcparm; return(val)}",
+                       "function(q,mcparm = %f){ val <-   0; return(val)}")
       dmcdef <- sprintf(dmcdef,mcparm)
       dmcdef <- lapply(dmcdef, function(x){eval(parse(text=x ))})
       
@@ -383,7 +383,7 @@ stackelberg <- function(prices,quantities,margins,
                     mcDelta =rep(0,nrow(quantities)),
                     quantityStart=as.vector(quantities),
                     control.slopes,
-                    control.eq,
+                    control.equ,
                     labels,
                    ...
 ){

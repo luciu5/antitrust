@@ -147,7 +147,7 @@ pcaids <- function(shares,knownElast,mktElast=-1,
 
     if(missing(diversions)){
         diversions <- tcrossprod(1/(1-shares),shares)
-        diag(diversions) <- -1.000000001 #correct potential floating point issue
+        diag(diversions) <- -1
     }
 
   ## Create PCAIDS container to store relevant data

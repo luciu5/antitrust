@@ -102,8 +102,9 @@ setMethod(
 
      ui = -diag(2)
      ui[2,1] = -1/shares[idx]
-     ui[2,2] =  1 - shares[idx] 
-     ci = rep(0,2)
+     ui[2,2] =  1 - shares[idx]
+     ui <- rbind(ui,c(0,-1))
+     ci = rep(0,3)
      ci[2] = -(1 - shares[idx]) 
      
      bestParms=constrOptim(parmStart,f=minD, ui=ui,ci=ci, grad=NULL,

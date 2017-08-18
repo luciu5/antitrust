@@ -33,7 +33,9 @@ Objects can be created by calls of the form \code{new("Cournot", ...)}.
     \item{\code{quantityPost}:}{An n x k matrix of predicted post-merger quantities.}
     \item{\code{quantityStart}:}{A length n x k vector of starting quantities for the non-linear solver.}
     \item{\code{productsPre}:}{An n x k logical matrix qhose elements are TRUE if a plant produces a product pre-merger and FALSE otherwise.}
-    \item{\code{productsPre}:}{An n x k logical matrix qhose elements are TRUE if a plant produces a product post-merger and FALSE otherwise.}
+    \item{\code{productsPost}:}{An n x k logical matrix qhose elements are TRUE if a plant produces a product post-merger and FALSE otherwise.}
+    item{\code{capacitiesPre}:}{A length-n logical vector whose elements equal to pre-merger plant capacities. Infinite values are allowed.}
+    \item{\code{capacitiesPost}:}{A length-n logical vector whose elements equal to post-merger plant capacities. Infinite values are allowed.}
   \item{\code{demand}:}{A length k character vector specifying whether product demand is linear ("linear") or log-linear ("log").}
 }}
  \section{Extends}{

@@ -11,6 +11,8 @@
 \alias{CV,Logit-method}
 \alias{CV,LogitNests-method}
 \alias{CV,Auction2ndLogit-method}
+\alias{CV,Cournot-method}
+
 \title{Methods For Calculating Compensating Variation (CV)}
 \description{
  Calculate the amount of money a consumer would need to

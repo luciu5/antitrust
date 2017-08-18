@@ -11,10 +11,12 @@
 \alias{calcPricesHypoMon,Logit-method}
 \alias{calcPricesHypoMon,LogitCap-method}
 \alias{calcPricesHypoMon,Auction2ndLogit-method}
+\alias{calcPricesHypoMon,Cournot-method}
 \alias{calcPriceDeltaHypoMon}
 \alias{calcPriceDeltaHypoMon,ANY-method}
 \alias{calcPriceDeltaHypoMon,AIDS-method}
 \alias{calcPriceDeltaHypoMon,Bertrand-method}
+\alias{calcPriceDeltaHypoMon,Cournot-method}
 \alias{diversionHypoMon}
 \alias{diversionHypoMon,ANY-method}
 \alias{diversionHypoMon,AIDS-method}

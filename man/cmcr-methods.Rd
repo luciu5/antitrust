@@ -5,6 +5,7 @@
 \alias{cmcr,ANY-method}
 \alias{cmcr,Bertrand-method}
 \alias{cmcr,Auction2ndLogit-method}
+\alias{cmcr,Cournot-method}
 \alias{cmcr,AIDS-method}
 \alias{upp,ANY-method}
 \alias{upp,Bertrand-method}

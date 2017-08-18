@@ -28,7 +28,7 @@
                     mcDelta =rep(0,nrow(quantities)),
                     quantityStart=as.vector(quantities),
                     control.slopes,
-                    control.eq,
+                    control.equ,
                     labels,
                    ...
                      )
@@ -54,7 +54,7 @@
                     mcDelta =rep(0,nrow(quantities)),
                     quantityStart=as.vector(quantities),
                     control.slopes,
-                    control.eq,
+                    control.equ,
                     labels,
                    ...
 )
@@ -64,7 +64,7 @@
 \arguments{
   \item{}{Let k denote the number of products and n denote the number of plants.}
   \item{prices}{A length k vector product prices.}
-  \item{quantities}{An n x k matrix of product quantities. All quantities must            either be positive, or  if the product is not produced by a plant, NA. }
+  \item{quantities}{An n x k matrix of product quantities. All quantities musteither be positive, or  if the product is not produced by a plant, NA. }
   \item{margins}{An n x k  matrix of product margins. All margins must
     be either be between 0 and 1, or NA.}
   \item{demand}{A length k character vector equal to "linear" if a product's              demand curve is assumed to be linear or "log" if a product's demand curve         is assumed to be log-linear.}
@@ -76,7 +76,7 @@
      \item{vcfunPre}{a length n list of functions that calculate a plant's pre-merger variable cost. If empty (the default), assumes  quadratic variable costs. }
    \item{vcfunPost}{a length n list of functions that calculate a plant's post-merger variable cost. If empty (the default), equals \sQuote{vcfunPre} )}
     \item{dmcfunPre}{a length n list of functions that calculate the derivative of a plant's pre-merger marginal cost. If empty (the default), assumes  quadratic variable costs. }
-   \item{mdcfunPost}{a length n list of functions that calculate the derivative of a plant's post-merger marginal cost. If empty (the default), equals \sQuote{mcfunPre} )}
+   \item{dmcfunPost}{a length n list of functions that calculate the derivative of a plant's post-merger marginal cost. If empty (the default), equals \sQuote{mcfunPre} )}
    \item{capacitiesPre}{A length n numeric vector of pre-merger plant capacities. Default is Inf. }
       \item{capacitiesPost}{A length n numeric vector of post-merger plant capacities. Default \sQuote{capacitiesPre}. }
    \item{productsPre}{An n x k  matrix that equals TRUE if pre-merger, a plant produces a product. Default is TRUE if 'quantities' is not NA. }
@@ -138,15 +138,7 @@
 
 
 
-
-\seealso{
-  }
-
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
-
-\references{
-
-}
 
 
 \examples{
@@ -200,14 +192,16 @@ owner.post[1,2] <- owner.post[2,1] <- 1
 
 
 
-result.c <- cournot(prices = price.pre.c,quantities = as.matrix(quantity.pre.c),margins=as.matrix(margin.pre.c),ownerPre=owner.pre,ownerPost=owner.post)
+result.c <- cournot(prices = price.pre.c,quantities = as.matrix(quantity.pre.c),
+                    margins=as.matrix(margin.pre.c),
+                    ownerPre=owner.pre,ownerPost=owner.post)
 
 print(result.c)           # return predicted price change
 summary(result.c)         # summarize merger simulation
 
 ## check if 'cournot' yields the same result as closed-form solution
-print(all.equal(sum(result.c@quantityPre) , mktQuant.pre.c))
-print(all.equal(sum(result.c@quantityPost) , mktQuant.post.c))
+#print(all.equal(sum(result.c@quantityPre) , mktQuant.pre.c))
+#print(all.equal(sum(result.c@quantityPost) , mktQuant.post.c))
 
 
 
@@ -274,14 +268,17 @@ owner.post[1,2] <- owner.post[2,1] <- 1
 
 
 
-result.s <- stackelberg(prices = price.pre.s,quantities = as.matrix(quantity.pre.s),margins=as.matrix(margin.pre.s),ownerPre=owner.pre,ownerPost=owner.post, isLeaderPre = isLeader.pre, isLeaderPost = isLeader.post)
+result.s <- stackelberg(prices = price.pre.s,quantities = as.matrix(quantity.pre.s),
+                        margins=as.matrix(margin.pre.s),ownerPre=owner.pre,
+                        ownerPost=owner.post, 
+                        isLeaderPre = isLeader.pre, isLeaderPost = isLeader.post)
 
 print(result.s)           # return predicted price change
 summary(result.s)         # summarize merger simulation
 
 ## check if 'stackelberg' yields the same result as closed-form solution
-print(all.equal(sum(result.s@quantityPre) , mktQuant.pre.s))
-print(all.equal(sum(result.s@quantityPost) , mktQuant.post.s))
+#print(all.equal(sum(result.s@quantityPre) , mktQuant.pre.s))
+#print(all.equal(sum(result.s@quantityPost) , mktQuant.post.s))
 
 
 

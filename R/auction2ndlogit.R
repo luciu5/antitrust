@@ -133,7 +133,7 @@ setMethod(
       mc <- mc + object@mcDelta
     }
     
-    if(exAnte){mc <- mc*shares}
+    if(exAnte){mc <- mc * calcShares(object,preMerger=preMerger)}
     
     names(mc) <- object@labels
     

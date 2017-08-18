@@ -10,11 +10,14 @@
 \alias{calcShares,Logit-method}
 \alias{calcShares,LogitNests-method}
 \alias{calcShares,Auction2ndLogit-method}
+\alias{calcShares,Cournot-method}
 \alias{calcQuantities}
 \alias{calcQuantities,ANY-method}
 \alias{calcQuantities,Linear-method}
 \alias{calcQuantities,LogLin-method}
 \alias{calcQuantities,LogitCap-method}
+\alias{calcQuantities,Cournot-method}
+\alias{calcQuantities,Stackelberg-method}
 \alias{calcPrices}
 \alias{calcPrices,ANY-method}
 \alias{calcPrices,AIDS-method}
@@ -23,24 +26,35 @@
 \alias{calcPrices,Logit-method}
 \alias{calcPrices,LogitCap-method}
 \alias{calcPrices,Auction2ndLogit-method}
+\alias{calcPrices,Cournot-method}
 \alias{calcPriceDelta}
 \alias{calcPriceDelta,ANY-method}
 \alias{calcPriceDelta,Antitrust-method}
 \alias{calcPriceDelta,AIDS-method}
 \alias{calcPriceDelta,Auction2ndLogit-method}
+\alias{calcPriceDelta,Cournot-method}
 \alias{calcProducerSurplus}
 \alias{calcProducerSurplus,ANY-method}
 \alias{calcProducerSurplus,Bertrand-method}
+\alias{calcProducerSurplus,Cournot-method}
 \alias{calcMargins}
 \alias{calcMargins,ANY-method}
 \alias{calcMargins,AIDS-method}
 \alias{calcMargins,Bertrand-method}
 \alias{calcMargins,LogitCap-method}
 \alias{calcMargins,Auction2ndLogit-method}
+\alias{calcMargins,Cournot-method}
 \alias{calcMC}
 \alias{calcMC,ANY-method}
 \alias{calcMC,Bertrand-method}
 \alias{calcMC,Auction2ndLogit-method}
+\alias{calcMC,Cournot-method}
+\alias{calcVC}
+\alias{calcVC,ANY-method}
+\alias{calcVC,Cournot-method}
+\alias{calcdMC}
+\alias{calcdMC,ANY-method}
+\alias{calcdMC,Stackelberg-method}
 \alias{calcSlopes}
 \alias{calcSlopes,ANY-method}
 \alias{calcSlopes,AIDS-method}
@@ -56,9 +70,12 @@
 \alias{calcSlopes,PCAIDS-method}
 \alias{calcSlopes,PCAIDSNests-method}
 \alias{calcSlopes,Auction2ndLogit-method}
+\alias{calcSlopes,Cournot-method}
+\alias{calcSlopes,Stackelberg-method}
 \alias{hhi}
 \alias{hhi,ANY-method}
 \alias{hhi,Bertrand-method}
+\alias{hhi,Cournot-method}
 \alias{ownerToVec}
 \alias{ownerToVec,ANY-method}
 \alias{ownerToVec,Antitrust-method}
@@ -71,6 +88,8 @@
 \alias{summary,AIDS-method}
 \alias{summary,Bertrand-method}
 \alias{summary,Auction2ndLogit-method}
+\alias{summary,Cournot-method}
+
 \title{Other Useful \sQuote{Bertrand} Methods}
 \description{
  Methods defined for the \sQuote{Bertrand} class and its child classes.
@@ -127,30 +146,30 @@
 	preMerger=TRUE, revenue=FALSE)}}{
 
     Computes equilibrium product shares assuming that firms are playing a
-    Nash-Bertrand pricing game. \sQuote{revenue} takes
+    Nash-Bertrand or Cournot  game. \sQuote{revenue} takes
     on a value of TRUE or FALSE, where TRUE calculates revenue shares,
     while FALSE calculates quantity shares.
   }
   \item{calcQuantities}{\code{signature(object=c(Linear,LogLin,LogitCap),preMerger=TRUE)}}{
 
     Computes equilibrium product quantities assuming that firms are playing a
-    Nash-Bertrand pricing game.
+    Nash-Bertrand or Cournot game.
   }
   \item{calcPrices}{\code{signature(object=c(Linear,LogLin,AIDS,Logit,LogitNests,LogitCap,CES,CESNests),preMerger=TRUE,subset,...)}}{
     Computes equilibrium product price levels assuming that firms are playing a
-    Nash-Bertrand pricing game. \sQuote{...} may be used to feed additional
+    Nash-Bertrand or Cournot game. \sQuote{...} may be used to feed additional
     options to the optimizer responsible for computing equilibrium
     prices. Typically, \code{\link[BB]{BBsolve}} is used, but see
     the appropriate document for further details.
   }
    \item{calcPriceDelta}{\code{signature(object=Antitrust)}}{
     Computes equilibrium price changes due to a merger assuming that firms are playing a
-    Nash-Bertrand pricing game. This is a wrapper method for computing
+    Nash-Bertrand or Cournot game. This is a wrapper method for computing
     the difference between pre- and post-merger equilbrium prices
   }
    \item{calcPriceDelta}{\code{signature(object=AIDS,isMax=FALSE,subset,...)}}{
     Computes equilibrium price changes due to a merger assuming that firms are playing a
-    Nash-Bertrand pricing game and LA-AIDS. This method calls a non-linear
+    Nash-Bertrand or Cournot game and LA-AIDS. This method calls a non-linear
     equations solver to find a sequence of price changes that satisfy
     the Bertrand FOCs.
   }
@@ -159,20 +178,34 @@
   }
   \item{calcMargins}{\code{signature(object=c(Bertrand,LogitCap),preMerger=TRUE)}}{
     Computes equilibrium product margins assuming that firms are playing a
-    Nash-Bertrand pricing game. For "LogitCap", assumes firms are
-    playing a Nash-Bertrand pricing game with capacity constraints.
+    Nash-Bertrand or Cournot game. For "LogitCap", assumes firms are
+    playing a Nash-Bertrand or Cournot game with capacity constraints.
   }
-   \item{calcMC}{\code{signature(object=Bertrand,preMerger=TRUE)}}{
+   \item{calcVC}{\code{signature(object=Cournot,preMerger=TRUE)}}{
+    Computes either pre- or post-merger variable costs. Variable costs
+    are assumed to be quadratic by default. Post-merger variable costs are equal to
+    pre-merger variable costs multiplied by 1+\sQuote{mcDelta}, a length-k
+    vector of marginal cost changes. \sQuote{mcDelta} will typically be between 0
+    and 1.
+  }
+  \item{calcMC}{\code{signature(object=Bertrand,preMerger=TRUE)}}{
     Computes either pre- or post-merger marginal costs. Marginal costs
     are assumed to be constant. Post-merger marginal costs are equal to
     pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a length-k
     vector of marginal cost changes. \sQuote{mcDelta} will typically be between 0
     and 1.
   }
-   \item{calcSlopes}{\code{signature(object=c(Linear,LogLin,AIDS,PCAIDSNests,Logit,LogitNests,LogitCap,CES,CESNests),preMerger=TRUE)}}{
+  \item{calcdMC}{\code{signature(object=Cournot,preMerger=TRUE)}}{
+    Computes the derivative of either pre- or post-merger marginal costs. the derivative of Marginal costs
+    is assumed to be constant. Post-merger marginal costs are equal to
+    pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a length-k
+    vector of marginal cost changes. \sQuote{mcDelta} will typically be between 0
+    and 1.
+  }
+   \item{calcSlopes}{\code{signature(object=c(Linear,LogLin,AIDS,PCAIDSNests,Logit,LogitNests,LogitCap,CES,CESNests, Cournot,Stackelberg),preMerger=TRUE)}}{
 
     Computes demand parameters assuming that firms are playing a
-    Nash-Bertrand pricing game.
+    Nash-Bertrand or Cournot game.
   }
    \item{hhi}{\code{signature(object=Bertrand,preMerger=TRUE,revenue=FALSE)}}{
 

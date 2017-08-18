@@ -39,8 +39,7 @@ setClass(
     if(nplants != length(object@capacitiesPre)){
       stop("capacitiesPre' must be a vector whose length equals the number of rows in 'quantities'")}
     
-    if(any(is.na(object@capacitiesPre) |
-           object@capacitiesPre<0 ,na.rm=TRUE)){stop("'capacitiesPre' values must be positive, and not NA")}
+    if( any(object@capacitiesPre<0 ,na.rm=TRUE)){stop("'capacitiesPre' values must be positive, and not NA")}
     
     
     
@@ -707,11 +706,11 @@ setMethod(
     out$priceDelta <- rep(priceDelta, each=nplants)
     
     if(market){
-      results <- subset(out, select = c(product,pricePre,pricePost,priceDelta,outPre,outPost,outDelta ))  
+      results <- out[,c("product","pricePre","pricePost","priceDelta","outPre","outPost","outDelta" )]  
     }
     
     else{
-      results <- subset(out, select = c(isParty,product,plant, pricePre,pricePost,priceDelta,outPre,outPost,outDelta ))
+      results <- out[, c("isParty","product","plant", "pricePre","pricePost","priceDelta","outPre","outPost","outDelta" )]
     }
     
     colnames(results)[colnames(results) %in% c("outPre","outPost")] <- sumlabels
@@ -827,7 +826,7 @@ setMethod(
       
       
       quantityPre[plantIndex] <- quantCand
-      quantCand <- matrix(quantityCand,ncol=nprods)
+      quantCand <- matrix(quantCand,ncol=nprods)
       object@quantityPre <- quantCand
       mktQuant <- colSums(quantCand, na.rm = TRUE)
       
@@ -848,7 +847,7 @@ setMethod(
     
     if( nhypoplants > 1){
       
-      maxResult <- optim(object@quantityPre[prodIndex],
+      maxResult <- optim(object@quantityPre[plantIndex],
                          calcMonopolySurplus,
                          method="L-BFGS-B",
                          lower = rep(0,nhypoplants)
@@ -866,7 +865,7 @@ setMethod(
     }
     
     quantityPre[plantIndex]
-    names(pricesHM) <- object@labels[prodIndex]
+    names(pricesHM) <- object@labels[plantIndex]
     
     return(pricesHM)
     
@@ -890,7 +889,7 @@ cournot <- function(prices,quantities,margins,
                     mcDelta =rep(0,nrow(quantities)),
                     quantityStart=as.vector(quantities),
                     control.slopes,
-                    control.eq,
+                    control.equ,
                     labels,
                     ...
 ){

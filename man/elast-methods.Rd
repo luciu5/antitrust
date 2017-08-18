@@ -10,6 +10,7 @@
 \alias{elast,LogLin-method}
 \alias{elast,Logit-method}
 \alias{elast,LogitNests-method}
+\alias{elast,Cournot-method}
 
 \title{Methods For Calculating Own and Cross-Price Elasticities}
 \description{

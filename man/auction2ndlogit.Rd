@@ -8,7 +8,8 @@
 \usage{
 auction2nd.logit(prices,shares,margins,
                   ownerPre,ownerPost,
-                  normIndex=ifelse(isTRUE(all.equal(sum(shares), 1)), 1, NA),
+                  normIndex=ifelse(isTRUE(all.equal(sum(shares), 
+                            1, check.names=FALSE)), 1, NA),
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
                   mcDeltaOutside=0,
@@ -112,7 +113,7 @@ summary(result,revenue=FALSE)
 
 ##re-run without any price information except Firm 2
 
-price <- rep(NA, length(price))
+price <- rep(NA_real_, length(price))
 
 result.noprice <- auction2nd.logit(price,share,margin,
 ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
