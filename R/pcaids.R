@@ -74,9 +74,10 @@ setMethod(
 
 
        m1 = bknown - shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
-       m2 = as.vector(diversion +  t(B)/diag(B)) #measure distance between observed and predicted diversion
-
-
+       
+       m2 <- diversion/t(diversion) - tcrossprod(1/diag(B), diag(B)) 
+       m2 <-  m2[upper.tri(m2)]
+       
        measure=c(m1,m2)
 
        return(sum(measure^2))
