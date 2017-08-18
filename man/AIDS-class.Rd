@@ -33,6 +33,8 @@ Objects can be created by using the constructor function \code{\link{aids}}.
     \item{\code{priceStart}:}{A length k vector who elements equal to an
       initial guess of the proportional change in prices caused by the
       merger.}
+      \item{\code{parmStart}:}{A length 2 vector who elements equal to an
+      initial of a single diagonal element of the matrix of slope coefficients, as well as the market elasticity. }
     \item{\code{priceDelta}:}{A length k vector containing the
       simulated price effects from the merger.}
   }

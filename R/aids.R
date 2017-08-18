@@ -4,11 +4,13 @@ setClass(
          representation=representation(
          priceStart  = "numeric",
          priceDelta       = "numeric",
-         mktElast         = "numeric"
+         mktElast         = "numeric",
+         parmStart="numeric"
          ),
         prototype=prototype(
         priceDelta       =  numeric(),
         mktElast         =  numeric(),
+        parmStart        =  numeric(),
         control.slopes = list( 
           factr = 1e7 
         )
@@ -17,7 +19,8 @@ setClass(
 
          validity=function(object){
 
-
+          
+             if(!length(object@parmStart) %in% c(0,2) || any(object@parmStart > 0,na.rm=TRUE)){stop("'parmStart' must be a length-2 non-positive numeric vector")}
 
              nprods <- length(object@shares)
 
@@ -56,23 +59,26 @@ setMethod(
      diversion  <- object@diversion
      labels     <- object@labels
      ownerPre   <- object@ownerPre
-
+     parmStart  <- object@parmStart
      nprod=length(shares)
 
+     idx <- which.max(ifelse(!is.na(margins),shares, -1))
 
+     if(any(is.na(parmStart))){
+     parmStart[2] <-  -1.2
+     parmStart[1] <-  (1 - shares[idx] + parmStart[2] * (1 - shares[idx])) * shares[idx] - .1
+     if(parmStart[1] >= 0){parmStart[1] <- -.5}
+     }
      minD <- function(s){
 
        #enforce symmetry
-       mktElast = s[1]
-       betas  =   s[-1]
+       mktElast = s[2]
+       betas  =   s[1]
 
+       betas <- -diversion[idx,]/diversion[,idx] * betas
 
-       B = diag(nprod)
-
-       B[upper.tri(B)] <- betas
-       B=t(B)
-       B[upper.tri(B)] <- betas
-       diag(B)= 1-rowSums(B) #enforce homogeneity of degree zero
+       B = diversion * betas
+       #diag(B)=  betas - rowSums(B) #enforce homogeneity of degree zero
 
        elast <- t(B/shares) + shares * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
        diag(elast) <- diag(elast) - 1
@@ -81,56 +87,40 @@ setMethod(
 
 
        m1 <- margins - marginsCand
-       m2 <- as.vector(diversion +  t(B)/diag(B)) #measure distance between observed and predicted diversion
+       m2 <- diversion/t(diversion) - tcrossprod(1/betas,betas) 
+       m2 <-  m2[upper.tri(m2)]
+       #m2 <- as.vector(diversion +  t(B)/diag(B)) #measure distance between observed and predicted diversion
 
 
        measure=c(m1,m2)
 
+      
        return(sum(measure^2,na.rm=TRUE))
      }
 
+    
 
+     ui = -diag(2)
+     ui[2,1] = -1/shares[idx]
+     ui[2,2] =  1 - shares[idx] 
+     ci = rep(0,2)
+     ci[2] = -(1 - shares[idx]) 
+     
+     bestParms=constrOptim(parmStart,f=minD, ui=ui,ci=ci, grad=NULL,
+                   control=object@control.slopes)
      
      
+     betas <- -diversion[idx,]/diversion[,idx]*bestParms$par[1]
      
-     ## Create starting values for optimizer
-     # mktElast = -1.5
-     # knownElast <- -1.75
-     # bknown <- shares[1] * (knownElast + 1 - shares[1]*(1 + mktElast) )
-     # bStart <- diversion[1,]/diversion[,1] * bknown
-     # bStart <- -diversion * bStart
-     
-     parmStart=c(mktElast,diversion[upper.tri(diversion)])
-
-
-     ## create bounds for optimizer
-     upper<-lower<-parmStart
-     upper[1]=0
-     upper[-(1)]=Inf
-     lower[1]=-Inf
-     lower[-(1)]=0
-     
-     
-     bestParms=optim(parmStart,minD,method="L-BFGS-B",
-                     upper=upper,lower=lower,
-                     control=object@control.slopes)
-     
-     
-
-     B = diag(nprod)
-
-     B[upper.tri(B)] <- bestParms$par[-1]
-     B=t(B)
-     B[upper.tri(B)] <- bestParms$par[-1]
-     diag(B)= 1-rowSums(B)
-
+     B = diversion * betas
 
      dimnames(B) <- list(object@labels,object@labels)
 
      object@slopes <- B
 
-     if(abs(bestParms$par[1])>5){warning("'mktElast' estimate is large: ",bestParms$par[1])}
-     object@mktElast <- bestParms$par[1]
+     if(abs(bestParms$par[2])>5){warning("'mktElast' estimate is large: ",bestParms$par[2])}
+     if(isTRUE(all.equal(bestParms$par[2] , object@parmStart[2]))){warning("'mktElast' estimate is not identified" )}
+     object@mktElast <- bestParms$par[2]
      object@intercepts <- as.vector(shares - B%*%log(prices))
      names(object@intercepts) <- object@labels
 
@@ -588,6 +578,7 @@ aids <- function(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
                  mcDelta=rep(0, length(shares)),
                  subset=rep(TRUE, length(shares)),
+                 parmStart= rep(NA_real_,2),
                  priceStart=runif(length(shares)),
                  isMax=FALSE,
                  control.slopes,
@@ -611,7 +602,7 @@ aids <- function(shares,margins,prices,diversions,
     ## Create AIDS container to store relevant data
     result <- new("AIDS",shares=shares,mcDelta=mcDelta,subset=subset,
                   margins=margins, prices=prices, quantities=shares,
-                  ownerPre=ownerPre,ownerPost=ownerPost,
+                  ownerPre=ownerPre,ownerPost=ownerPost, parmStart=parmStart,
                   diversion=diversions,
                   priceStart=priceStart,labels=labels)
 

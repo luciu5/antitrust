@@ -14,6 +14,7 @@ aids(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
                  mcDelta=rep(0, length(shares)),
                  subset=rep(TRUE, length(shares)),
+                 parmStart= rep(NA_real_,2),
                  priceStart=runif(length(shares)),
                  isMax=FALSE,
                  control.slopes,
@@ -85,6 +86,8 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   the product indexed by that element should be included in the
   post-merger simulation and FALSE if it should be excluded.Default is a
   length k vector of TRUE.}
+  \item{parmStart}{\code{aids} only. A vector of length 2 who elements equal to an
+  initial guess for "known" element of the diagonal of the demand matrix and the market elasticity.}
   \item{priceStart}{A vector of length k who elements equal to an
   initial guess of the proportional change in price caused by the
   merger. The default is to draw k random elements from a [0,1] uniform
