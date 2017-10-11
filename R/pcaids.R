@@ -77,6 +77,7 @@ setMethod(
        
        m2 <- diversion/t(diversion) - tcrossprod(1/diag(B), diag(B)) 
        m2 <-  m2[upper.tri(m2)]
+       m2 <- m2[is.finite(m2) & m2 != 0]
        
        measure=c(m1,m2)
 

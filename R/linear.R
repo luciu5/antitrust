@@ -33,6 +33,9 @@ setClass(
 
              if(!isTRUE(all.equal(diag(diversion),rep(-1,nprods), check.names=FALSE))){ stop("'diversions' diagonal elements must all equal -1")}
 
+             allhavezeros <- all(apply(diversion,1,function(x){any(x==0)}))
+             if(allhavezeros){stop("every row of 'diversions' contains zeros. Cannot calibrate demand parameters!")}
+             
              diag(diversion)=1
              if(any(diversion > 1 | diversion<0)){
                  stop("'diversions' off-diagonal elements must be between 0 and 1")}

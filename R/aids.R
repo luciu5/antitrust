@@ -62,7 +62,9 @@ setMethod(
      parmStart  <- object@parmStart
      nprod=length(shares)
 
-     idx <- which.max(ifelse(!is.na(margins),shares, -1))
+     cancalibrate <- apply(diversion,1,function(x){!any(x==0)})
+     idx <- which.max(ifelse(cancalibrate,shares, -1))
+     
 
      if(any(is.na(parmStart))){
      parmStart[2] <-  -1.2
@@ -77,18 +79,19 @@ setMethod(
 
        betas <- -diversion[idx,]/diversion[,idx] * betas
 
-       B = diversion * betas
+       B = t(diversion * betas)
        #diag(B)=  betas - rowSums(B) #enforce homogeneity of degree zero
 
        elast <- t(B/shares) + shares * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
        diag(elast) <- diag(elast) - 1
 
        marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
-
-
+       
+       
        m1 <- margins - marginsCand
        m2 <- diversion/t(diversion) - tcrossprod(1/betas,betas) 
        m2 <-  m2[upper.tri(m2)]
+       m2 <- m2[is.finite(m2) & m2 != 0]
        #m2 <- as.vector(diversion +  t(B)/diag(B)) #measure distance between observed and predicted diversion
 
 
@@ -113,7 +116,7 @@ setMethod(
      
      betas <- -diversion[idx,]/diversion[,idx]*bestParms$par[1]
      
-     B = diversion * betas
+     B = t(diversion * betas)
 
      dimnames(B) <- list(object@labels,object@labels)
 
