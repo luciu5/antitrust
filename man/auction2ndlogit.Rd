@@ -1,5 +1,6 @@
 \name{auction2nd.logit}
 \alias{auction2nd.logit}
+\alias{auction2nd.logit.alm}
 \title{2nd Score Procurement Auction Model}
 \description{Calibrates consumer demand using Logit and then simulates the price effect of a merger between two firms
   under the assumption that all firms in the market are playing a
@@ -18,7 +19,19 @@ auction2nd.logit(prices,shares,margins,
                   )
 
 
-             }
+             
+
+auction2nd.logit.alm(prices,shares,margins,
+                             ownerPre,ownerPost,
+                             mcDelta=rep(0,length(prices)),
+                             subset=rep(TRUE,length(prices)),
+                             mcDeltaOutside=0,
+                             parmsStart,
+                             control.slopes,
+                             control.equ,
+                             labels=paste("Prod",1:length(prices),sep="")
+)            
+}
 \arguments{
   \item{}{Let k denote the number of products produced by all firms playing the
     auction game.}
@@ -47,8 +60,13 @@ auction2nd.logit(prices,shares,margins,
      length k vector of TRUE.}
   \item{mcDeltaOutside}{A length 1 vector indicating the change in the marginal cost of the
     outside good. Default is 0.}
-   \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
-  \item{labels}{A k-length vector of labels. Default is "Prod#", where
+\item{parmsStart}{A length 2 vector of starting values used to solve for
+    price coefficient and the share of the outside good. The first element should
+    always be the price coefficient and the second should be
+    the outside good. }
+  \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
+    \item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters passed to the non-linear equation solver (typically the \code{calcPrices} method).}
+   \item{labels}{A k-length vector of labels. Default is "Prod#", where
     \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
 }
 
@@ -59,6 +77,10 @@ auction2nd.logit(prices,shares,margins,
   recover the price coefficient and product mean valuations in a
   Logit demand model. \code{auction2nd.logit} then uses these
   calibrated parameters to simulate a merger between two firms, under the assumption that firms are particpating in a 2nd score procurement auction.
+
+ \code{auction2nd.logit.alm} is identical to \code{auction2nd.logit} except that it assumes
+  that an outside product exists and uses additional margin
+  information to estimate the share of the outside good.
 
   
 

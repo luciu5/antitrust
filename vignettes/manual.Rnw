@@ -798,7 +798,7 @@ purchase an ``outside'' good. This works almost the same in
 revenue shares is less than 1, the outside good is placed in its own nest with its nesting
 parameter normalized to 1.
 
-\subsubsection{(Nested) Logit With Unobserved Outside Share}
+\subsubsection{(Nested) Logit With Unobserved Outside Share\label{sec:logitALM}}
 The Bertrand model with (nested) Logit demand and unobserved outside share may be
 implemented using the (\verb@logit.nests.alm@) \verb@logit.alm@ function.
 
@@ -1755,6 +1755,8 @@ The \verb@summary@ method for \verb@Auction2ndLogit@ is similar to the method de
 The \verb@CV@ method may be used to calculate compensating variation from a merger. This method will return `NA' if pre-merger prices were not supplied for all products included in the simulation.
 
 
+\subsubsection{Calibrating Unobserved Outside Share}
+\verb@auction2nd.logit.alm@ uses the calibration strategy similar to the one discussed in section \ref{sec:logitALM} to calibrate the unobserved share of the outside good.
 
 \chapter{Other Tools}
 For some acquisitions, there may be insufficient information available
