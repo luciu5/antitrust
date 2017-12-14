@@ -94,7 +94,7 @@ setClass(
     if(all(!(object@demand %in% c("linear","log")))){stop("'demand' must equal 'linear' or 'log'")}
     if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")
     
-    if(all(!(object@cost %in% c("linear","constant")))){stop("'demand' must equal 'linear' or 'constant'")}
+    if(all(!(object@cost %in% c("linear","constant")))){stop("'cost' must equal 'linear' or 'constant'")}
     if(length(object@cost) != nplants) stop("the length of 'cost' must equal the number of products")
     
     if(any(rowSums(object@ownerPre) > 0 & !(is.finite(object@capacitiesPre) & is.finite(object@capacitiesPost))  & object@cost == "constant")){ stop("multi-plant firms with 'cost' equal to 'constant' must have finite pre- and post-merger capacity constraints")}
