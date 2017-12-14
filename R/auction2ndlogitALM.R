@@ -43,12 +43,7 @@ setMethod(
 
               nprods <- length(object@shares)
 
-              ##identify which products have enough margin information
-              ##  to impute Bertrand margins
-              #isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
-              #isMargin[ownerPre==0]=0
-              #isMargin    <- !is.na(rowSums(isMargin))
-
+              
               minD <- function(theta){
 
                   alpha <- theta[1]
@@ -59,7 +54,7 @@ setMethod(
                   firmShares <- drop(ownerPre %*% probs)
                   
                   
-                  measure <- margins - log((1-firmShares))/( alpha * firmShares)
+                  measure <- 1 - (log((1-firmShares))/( alpha * firmShares))/margins
                   
                   measure <- sum((measure)^2,na.rm=TRUE)
 
@@ -68,14 +63,14 @@ setMethod(
 
                ## Constrain optimizer to look  alpha <0,  0 < sOut < 1
               lowerB <- c(-Inf,0)
-              upperB <- c(-1e-10,.99999)
+              upperB <- c(-1e-10,.9999999999)
 
               minTheta <- optim(object@parmsStart,minD,
                                 method="L-BFGS-B",
                                 lower= lowerB,upper=upperB,
                                 control=object@control.slopes)$par
 
-              if(isTRUE(all.equal(minTheta[[2]],0,check.names=FALSE))){stop("Estimated outside share is close to 0. Use `logit' function instead")}
+              if(isTRUE(all.equal(minTheta[2],0,check.names=FALSE))){stop("ERROR: Estimated outside share is close to 0. Use `auction2nd.logit' function instead")}
               
               
               meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) 
