@@ -247,7 +247,7 @@ setMethod(
      alpha    <- object@slopes$alpha
      meanval  <- object@slopes$meanval
 
-     outVal <- ifelse(object@shareInside<1, exp(alpha*object@priceOutside), 0)
+     outVal <- ifelse(object@shareInside<1, 1, 0)
 
      shares <- exp(meanval + alpha*prices)
      shares <- shares/(outVal+ sum(shares,na.rm=TRUE))
@@ -312,7 +312,7 @@ setMethod(
               meanval     <- object@slopes$meanval
               subset <- object@subset
       
-              outVal <- ifelse(object@shareInside<1, exp(alpha*object@priceOutside), 0)
+              outVal <- ifelse(object@shareInside<1, 1, 0)
               
               VPre  <- sum(exp(meanval + object@pricePre*alpha) + outVal)
               VPost <- sum(exp(meanval + object@pricePost*alpha)[subset] + outVal)
