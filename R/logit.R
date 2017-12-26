@@ -311,10 +311,11 @@ setMethod(
               alpha       <- object@slopes$alpha
               meanval     <- object@slopes$meanval
               subset <- object@subset
-
-
-              VPre  <- sum(exp(meanval + object@pricePre*alpha))
-              VPost <- sum(exp(meanval + object@pricePost*alpha)[subset])
+      
+              outVal <- ifelse(object@shareInside<1, exp(alpha*object@priceOutside), 0)
+              
+              VPre  <- sum(exp(meanval + object@pricePre*alpha) + outVal)
+              VPost <- sum(exp(meanval + object@pricePost*alpha)[subset] + outVal)
 
               result <- log(VPost/VPre)/alpha
 
