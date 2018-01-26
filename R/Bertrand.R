@@ -170,7 +170,7 @@ setGeneric (name= "summary")
 setMethod(
  f= "hhi",
  signature= "Bertrand",
- definition=function(object,preMerger=TRUE,revenue=FALSE){
+ definition=function(object,preMerger=TRUE,revenue=FALSE, insideonly=TRUE){
 
      if(preMerger){owner <- object@ownerPre}
      else{owner <- object@ownerPost}
@@ -181,7 +181,12 @@ setMethod(
      weights <- crossprod(control,owner)
      weights <- t(t(weights)/diag(weights)) # divide each element by its corresponding diagonal
 
-     shares <- calcShares(object,preMerger,revenue) *100
+     shares <- calcShares(object,preMerger,revenue)
+     
+     if(insideonly) shares <- shares/sum(shares, na.rm=TRUE) # hhi is typically defined over inside goods
+     
+     shares <- shares *100 
+     
      shares[is.na(shares)] <- 0
 
      result <- as.vector(shares %*% weights %*% shares)

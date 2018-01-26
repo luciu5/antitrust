@@ -2,7 +2,7 @@ Package: antitrust
 Type: Package
 Title: Tools for Antitrust Practitioners
 Version: 0.98
-Date: 2017-08-18
+Date: 2018-01-26
 Author: Charles Taragin and Michael Sandfort
 Maintainer: Charles Taragin <charles.taragin@usdoj.gov>
 Imports:  methods, MASS, evd, BB, numDeriv, ggplot2

@@ -53,7 +53,7 @@ Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, di
 \author{Charles Taragin \email{charles.taragin@usdoj.gov}}
 
 \examples{
-showClass("LogitALM")           # get a detailed description of the class
-showMethods(classes="LogitALM") # show all methods defined for the class
+showClass("Auction2ndLogit")           # get a detailed description of the class
+showMethods(classes="Auction2ndLogit") # show all methods defined for the class
 }
 \keyword{classes}

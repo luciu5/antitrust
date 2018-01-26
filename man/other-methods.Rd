@@ -70,6 +70,7 @@
 \alias{calcSlopes,PCAIDS-method}
 \alias{calcSlopes,PCAIDSNests-method}
 \alias{calcSlopes,Auction2ndLogit-method}
+\alias{calcSlopes,Auction2ndLogitALM-method}
 \alias{calcSlopes,Cournot-method}
 \alias{calcSlopes,Stackelberg-method}
 \alias{hhi}
@@ -104,7 +105,7 @@
 \S4method{calcMargins}{ANY}(object,preMerger=TRUE)
 \S4method{calcMC}{Bertrand}(object,preMerger=TRUE)
 \S4method{calcSlopes}{ANY}(object,preMerger=TRUE)
-\S4method{hhi}{Bertrand}(object,preMerger=TRUE,revenue=FALSE)
+\S4method{hhi}{Bertrand}(object,preMerger=TRUE,revenue=FALSE,insideonly=TRUE)
 \S4method{ownerToMatrix}{Antitrust}(object,preMerger=TRUE)
 \S4method{ownerToVec}{Antitrust}(object,preMerger=TRUE)
 \S4method{plot}{Bertrand}(x,scale=.1)
@@ -135,6 +136,7 @@
     \item{digits}{The number of significant digits to round
   printed results. Default is 2}
   \item{scale}{The proportion below marginal cost and above equilbrium price that should be plotted. Default is .1 }
+  \item{insideonly}{If TRUE, excludes the share of the outside good from the calculation. Default is TRUE.}
   \item{...}{Arguments to be passed to non-linear solver, OR for
     \code{summary} to \code{CV}.}
 }
@@ -207,7 +209,7 @@
     Computes demand parameters assuming that firms are playing a
     Nash-Bertrand or Cournot game.
   }
-   \item{hhi}{\code{signature(object=Bertrand,preMerger=TRUE,revenue=FALSE)}}{
+   \item{hhi}{\code{signature(object=Bertrand,preMerger=TRUE,revenue=FALSE, insideonly=TRUE)}}{
 
     Computes the  Herfindahl-Hirschman Index (HHI) using simulated market
     shares and either pre- or post-merger ownership information.

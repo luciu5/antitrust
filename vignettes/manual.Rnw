@@ -256,7 +256,7 @@ and 0 otherwise. Under partial ownership, the columns of the matrix formed from 
 unique rows of $\Omega$ must sum to 1.
 `$diag$' returns the diagonal of a square matrix and `$\circ$' is the Hadamard (entry-wise) product operator.
 
-The solution to system \ref{eqn:FOC} yields equilbrium prices conditional on the ownership structure $\Omega$. A (partial) merger is modelled as the solution to system  \ref{eqn:FOC} where $\Omega$ is changed to reflect the change in ownership.  
+The solution to system \ref{eqn:FOC} yields equilibrium prices conditional on the ownership structure $\Omega$. A (partial) merger is modeled as the solution to system  \ref{eqn:FOC} where $\Omega$ is changed to reflect the change in ownership.  
 
 \subsection{Adding Exogenous Capacity Constraints}
 The Bertrand model described above assumes that products are produced
@@ -1368,7 +1368,7 @@ Another model included in \atr{} is the Cournot quantity game.  This version of 
 simultaneously set plant output for each product to maximize their
 profits. All firms producing a particular product are assumed to be undifferentiated. In this model, quantities are \emph{strategic substitutes} in the sense that decreasing the quantity of
 one product causes some customers to switch to competing manufacturers, raising
-their quantities and profirs. Ultimately, it is the magnitude of these lost sales that, at
+their quantities and profits. Ultimately, it is the magnitude of these lost sales that, at
 the margin, dissuades firms from reducing their output further .
 
 Similar to the Bertrand model, mergers are modeled by assuming that the merging parties'
@@ -1411,16 +1411,83 @@ be a twice differentiable function of \emph{all} firm quantities with $\frac{\pa
 
 Differentiating profits with respect to each $q_j^r$  yields the following first order conditions (FOCs):
 
-\begin{align*}
-  \partial q_j^r&\equiv p_j + q_j^r\frac{\partial p_j}{\partial q_j^r} - \frac{\partial c^r}{\partial q_j^r}=0& \mbox{ for all $j\in J_k$, $r\in n_k$} \\
-\end{align*}
+\begin{align}
+  \partial q_j^r&\equiv p_j + q_j^r\frac{\partial p_j}{\partial q_j^r} - \frac{\partial c^r}{\partial q_j^r}=0& \mbox{ for all $j\in J_k$, $r\in n_k$}\label{eqn:cournotFOC} 
+\end{align}
 
 
 \section{Calibrating Model Demand and Cost Parameters \label{sec:cournotcal}}
 
 The Cournot model can yield different equilibrium quantity and price predictions depending on 1) the curvature of plant variable costs and 2) the curvature of demand. \atr{} allows users to explore the consequences of different cost and demand assumptions.
 
-To accomplish this, 
+Currently, \verb@cournot@ contains two different ways to specify plant costs. First, users can set the `cost' option equal to a $n$-length character vector whose values are either equal to ``linear" for linear marginal costs ($\frac{\partial c^r}{\partial q_j^r}= 0.5\gamma_r\sum_{j\in n_r}q_j^r$) or ``constant" for constant marginal costs ($\frac{\partial c^r}{\partial q_j^r}= \gamma_r$) . When the `cost' option is employed, \verb@cournot@'s \verb@calcSlopes@ method uses observed costs (implied by predicted margins and prices) and prices to calibrate plant-level cost parameters $\gamma_r$.    
+
+Alternatively, users can specify both plant level marginal and variable costs. Marginal costs may be specified by setting   the `mcfunPre' argument equal to a length $n$ list of functions that each take as an input the vector of product quantities produced at a plant and then return the marginal cost associated with producing that level of output at that plant. Likewise, the `vcfunPre' argument can be similarly used to specify plant-level variable costs. Note that when marginal costs and variable costs are specified in this manner, \verb@cournot@ makes no attempt to calibrate any parameters on the cost side. 
+
+Currently, \verb@cournot@ allows users to specify that product demand is either linear ($p_j=b_j + a_j\sum_{k\in n}q_j^k$) or log-linear ($\ln(p_j)=b_j + a_j\ln(\sum_{k\in n}q_j^k)$) Users can specify product demand by setting \verb@cournot@'s `demand' argument equal to a $j$-length character vector equal to either ``linear" for linear demand or ``log" for log-linear demand. 
+
+\section{Simulating Merger Effects\label{sec:cournotcal}}
+
+\subsection{Summarizing Results}
+
+The \verb@summary@ method may be used to summarize the results of a
+merger between two firms. By default, the \verb@summary@ method reports pre- and post-merger equilibrium prices and quantities for each product included in the simulation. Also reported is the compensating marginal cost reduction (CMCR) as well as the change in consumer surplus from the merger. Setting the `market' argument equal to FALSE returns plant-level equilibrium price effects.
+
+\subsection{Simulating Price Effects With Marginal Cost Efficiencies}
+Absent efficiencies, the Cournot model with the demand systems
+described here will almost always produce a (possibly negligible)
+post-merger price increase among substitutes. These price increases, however, can be
+offset by merger-specific efficiencies that decrease the \emph{incremental}
+costs of some of the merging firms' products.\footnote{Costs that are
+  not strictly increasing with a product's output (i.e. fixed or sunk
+  costs) do not affect the price setting behavior of firms in a
+  Bertrand pricing game. }
+
+All the functions discussed above allow users to evaluate these
+efficiencies in two different ways. First, all of these functions
+contain the `mcDelta' argument, which allows users to specify the
+proportional change in a product's marginal costs that may result from
+a merger. These cost changes are factored into the
+post-merger price equilibrium calculation made by the
+\verb@calcPrices@ method. If changes in marginal costs are not expected to be proportional,
+then users can instead set the `mcfunPre' and `mcfunPost' arguments  
+equal to lists containing functions that return each plants' pre- and post-merger marginal costs\footnote{Users will also have to specify plant-specific variable costs as well using the `vcfunPre' and `vcfunPost' arguments.}. 
+
+Second, users can call the \verb@cmcr@ method on the output of any
+of the functions described above. This method computes the
+compensating marginal cost reduction (CMCR) on the merging parties'
+products. CMCR is the percentage decrease in the marginal costs of
+the merging parties' products necessary to prevent a post-merger price
+increase. See the \verb@cmcr@ help page for further details.
+
+\subsection{Simulating Price Effects With Capacity Constraints}
+
+The Cournot model allows users to impose capacity constraints that may potentially change as a result of the merger. 
+The ``capacitiesPre" argument allows users to specify a vector of pre-merger plant-specific capacity constraints (default is \textbf{Inf}, or no constraint).  The ``capacitiesPost" argument allows users to specify a vector of post-merger constraints (default is ``capacitiesPre"). 
+
+\subsection{Excluding Products or Plants}
+
+By default, the Cournot model calculates a merger's effects
+under the assumption that the acquisition does not change the set of
+products available to consumers or the set of plants that are in production. A merger's effects, however, may
+differ if the merger induces either the merging parties or another
+market participant to eliminate some products from their portfolio or to alter the mix of plants used in producing their products.
+
+To accommodate the possibility that some products or plants may be removed from
+the market following an acquisition, all the constructor functions
+described above have a `productsPre' and a `productsPost' arguments that allows users to specify
+an $n$ by $J$ logical matrix which equals TRUE  if a product produced at a particular plant should be
+included in the merger simulation and FALSE otherwise. By default, `productsPre' equals TRUE if the `quantities' is not NA, and FALSE otherwise, while `productsPost' equals `productsPre'.
+
+\subsection{Measuring Changes In Consumer Welfare}
+
+The Cournot model has a \verb@CV@ method which may be used to
+calculate the change in consumer surplus from a merger.
+
+\subsection{Allowing For First-Mover Advantage}
+The package contains a \verb@stackelberg@ function that is similar to \verb@cournot@, but also allows for one or more firms to be designated as output leaders for certain products. Output leaders are assumed to set their output levels first, and conditional on the leaders' output decisions, output followers (defined as everyone who is not a leader) chooses their levels of output. The  \verb@stackelberg@ function contains four additional arguments: `isLeaderPre' and `isLeaderPost' for setting which firms are leaders and which are followers, and `dmcfunPre' and `dmcfunPost' for specifying the derivative of a plant's marginal cost (only necessary when marginal and variable costs are also specified).
+
+
 
 \chapter{Auction Models}
 Currently, \atr{} has the ability to calibrate model parameters and simulate the effects of a merger in a:
@@ -1433,7 +1500,7 @@ product,
 \item 1st score procurement auction with differentiated products. 
 \end{itemize}
 
-In a \href{https://en.wikipedia.org/wiki/Vickrey_auction}{2nd \emph{price} procurement auction}, sellers submit their offers to supply a \emph{homogenous} product and the seller with the lowest offer wins but is paid the next lowest offer. 2nd price auctions have a number of interesting properties. In particular, it can be shown that:
+In a \href{https://en.wikipedia.org/wiki/Vickrey_auction}{2nd \emph{price} procurement auction}, sellers submit their offers to supply a \emph{homogeneous} product and the seller with the lowest offer wins but is paid the next lowest offer. 2nd price auctions have a number of interesting properties. In particular, it can be shown that:
 
 \begin{itemize}
 \item the dominant strategy in a 2nd price auction is for each seller to offer their product at marginal cost,
@@ -1743,13 +1810,13 @@ In some instances, there may be more than one margin available. In these cases a
 
 
 \subsubsection{Summarizing Results}
-The \verb@summary@ method for \verb@Auction2ndLogit@ is similar to the method described in section \ref{subsec:nbsummary}. The main difference is that by default, this method reports changes in levels rather than percentages and output in quantity shares rather than in revenue shares. These alterations were made because prices are not a pre-requisite for this model, but when prices are not supplied, only level changes are identified. Regardless, these defaults can be changed by apropriately setting the methods `revenue' and `levels' arguments.
+The \verb@summary@ method for \verb@Auction2ndLogit@ is similar to the method described in section \ref{subsec:nbsummary}. The main difference is that by default, this method reports changes in levels rather than percentages and output in quantity shares rather than in revenue shares. These alterations were made because prices are not a pre-requisite for this model, but when prices are not supplied, only level changes are identified. Regardless, these defaults can be changed by appropriately setting the methods `revenue' and `levels' arguments.
 
 \subsubsection{Simulating Price Effects With Efficiencies}
 \verb@auction2nd.logit@'s `mcDelta' argument may be used to specify the anticipated proportional change in marginal costs that will likely occur from a merger. See \verb@auction2nd.logit@'s help page for further details.
 
 \subsubsection{Excluding Products From the Market}
-\verb@auction2nd.logit@'s `subset' argument may be used to simulate a merger's effect when a product is assumed to be elSiminated from the market post-merger. See \verb@auction2nd.logit@'s help page for further details.
+\verb@auction2nd.logit@'s `subset' argument may be used to simulate a merger's effect when a product is assumed to be eliminated from the market post-merger. See \verb@auction2nd.logit@'s help page for further details.
 
 \subsubsection{Measuring Changes In Consumer Welfare}
 The \verb@CV@ method may be used to calculate compensating variation from a merger. This method will return `NA' if pre-merger prices were not supplied for all products included in the simulation.
@@ -2122,7 +2189,7 @@ the behavior of existing methods may then be overridden.
 \section{The Auction Models}
 Currently, the two auction classes available in \atr{} are \emph{Auction2ndLogit} and \emph{Auction2ndCap}. \emph{Auction2ndLogit} is a child class of \emph{Logit} and therefore follows the same pattern as the Bertrand Model described above. 
 
- In constrast, the constructor function for \emph{Auction2ndLogit} is
+ In contrast, the constructor function for \emph{Auction2ndLogit} is
 \verb@auction2nd.cap@, which initializes a class instance with
 sensible default values and then does the following:
 
