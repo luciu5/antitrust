@@ -635,7 +635,7 @@ setMethod(
 setMethod(
   f= "summary",
   signature= "Cournot",
-  definition=function(object,market=TRUE,revenue=FALSE,shares=FALSE,levels=FALSE,parameters=FALSE,digits=2,...){
+  definition=function(object,market=FALSE,revenue=FALSE,shares=FALSE,levels=FALSE,parameters=FALSE,digits=2,...){
     
     if(market){nplants <- 1}
     else{ nplants <- nrow(object@quantities) }
