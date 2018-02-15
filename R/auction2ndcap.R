@@ -155,10 +155,6 @@ setGeneric (
  def=function(object,...){standardGeneric("calcBuyerExpectedCost")}
  )
 setGeneric (
- name= "calcProducerSurplus",
- def=function(object,...){standardGeneric("calcProducerSurplus")}
- )
-setGeneric (
   name= "calcSellerCostParms",
   def=function(object,...){standardGeneric("calcSellerCostParms")}
 )
