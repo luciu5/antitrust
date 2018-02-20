@@ -314,8 +314,8 @@ setMethod(
       
               outVal <- ifelse(object@shareInside<1, 1, 0)
               
-              VPre  <- sum(exp(meanval + object@pricePre*alpha))  + outVal
-              VPost <- sum(exp(meanval + object@pricePost*alpha)[subset] ) + outVal
+              VPre  <- sum(exp(meanval + (object@pricePre - object@priceOutside)*alpha))  + outVal
+              VPost <- sum(exp(meanval + (object@pricePost - object@priceOutside)*alpha)[subset] ) + outVal
 
               result <- log(VPost/VPre)/alpha
 

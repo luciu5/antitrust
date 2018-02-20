@@ -171,9 +171,10 @@ setMethod(
               shareInside <- object@shareInside
 
 
+              outVal <- ifelse(shareInside<1, 1, 0)
 
-              VPre  <- sum(meanval * object@pricePre^(1-gamma),na.rm=TRUE)
-              VPost <- sum(meanval * object@pricePost^(1-gamma),na.rm=TRUE)
+              VPre  <- sum(meanval * (object@pricePre / object@priceOutside)^(1-gamma),na.rm=TRUE) + outVal
+              VPost <- sum(meanval * (object@pricePost/ object@priceOutside)^(1-gamma),na.rm=TRUE) + outVal
 
               result <- log(VPost/VPre) / ((1+alpha)*(1-gamma))
 

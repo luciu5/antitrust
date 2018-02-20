@@ -14,11 +14,11 @@
   calibrate a Logit
   demand system and perform a merger analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game with
-  capacity constraints.
+  unknown market elasticity.
 %%  ~~ A concise (1-5 lines) description of what the class is. ~~
 }
 \section{Objects from the Class}{
-Objects can be created by using the constructor function \code{\link{logit.cap}}.
+Objects can be created by using the constructor function \code{\link{logit.alm}}.
 %%  ~~ describe objects here ~~
 }
 \section{Slots}{

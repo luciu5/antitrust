@@ -1,3 +1,6 @@
+require(shiny)
+require(rhandsontable)
+
 
 shinyServer(function(input, output, session) {
 
@@ -14,7 +17,7 @@ shinyServer(function(input, output, session) {
        ownerPost = c("O1","O1","O3"),
        'Prices (\u00A4)'  = c(6.46, 6.25, 6.10),
        Shares = c( 0.2643934, 0.3438824, 0.3917243),
-       Margins = c(0.3, 0.4,NA),
+       Margins = c(0.3, 0.4,0.28),
        #Margins = c(0.13147010, 0.10135467,NA),
        #Prices     = c(.0441,.0328,.0409)*100,
        #Shares    = c( 0.1344196, 0.3503055, 0.5152749),
@@ -66,7 +69,6 @@ shinyServer(function(input, output, session) {
      if(demand %in% c("aids","ces")){
        res$'Overall Effect ($/unit)' <- NULL
        colnames(res) <- gsub('(?<=Consumer Harm\\s)\\(\\\u00A4/unit\\)',"(% Expenditure)",colnames(res), perl=TRUE)
-       
        }
      
      
@@ -148,24 +150,24 @@ shinyServer(function(input, output, session) {
         switch(supply,
                Bertrand =
                  switch(demand,
-                        logit= logit(prices= indata[,"Prices (\u00A4)"],
+                        logit= logit.alm(prices= indata[,"Prices (\u00A4)"],
                                       shares= indata[,outstring],
                                       margins= indata$Margins,
                                       ownerPre= ownerPre,
                                       ownerPost= ownerPost,
                                       mcDelta = indata$mcDelta, labels=indata$Name),
-                        ces= ces(prices= indata[,"Prices (\u00A4)"],
+                        ces= ces.alm(prices= indata[,"Prices (\u00A4)"],
                                  shares= indata[,outstring],
                                  margins= indata$Margins,
                                  ownerPre= ownerPre,
                                  ownerPost= ownerPost,
                                  mcDelta = indata$mcDelta, labels=indata$Name),
-                        linear=linear(prices= indata[,"Prices (\u00A4)"],
-                                      quantities= indata[,outstring],
-                                      margins= indata$Margins,
-                                      ownerPre= ownerPre,
-                                      ownerPost= ownerPost,
-                                      mcDelta = indata$mcDelta, labels=indata$Name),
+                        # linear=linear(prices= indata[,"Prices (\u00A4)"],
+                        #               quantities= indata[,outstring],
+                        #               margins= indata$Margins,
+                        #               ownerPre= ownerPre,
+                        #               ownerPost= ownerPost,
+                        #               mcDelta = indata$mcDelta, labels=indata$Name),
                         aids=aids(prices= indata[,"Prices (\u00A4)"],
                                   shares= indata[,outstring],
                                   margins= indata$Margins,
@@ -182,7 +184,7 @@ shinyServer(function(input, output, session) {
                                                            ownerPost= ownerPost,
                                                            mcDelta = indata$mcDelta, 
                                                            labels=list(as.character(indata$ownerPre),indata$Name[1])),
-               `2nd Score Auction`=auction2nd.logit(prices= indata[,"Prices (\u00A4)"],
+               `2nd Score Auction`=auction2nd.logit.alm(prices= indata[,"Prices (\u00A4)"],
                                                     shares= indata[,outstring],
                                                     margins= indata$Margins,
                                                     ownerPre= ownerPre,

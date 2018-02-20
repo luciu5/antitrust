@@ -1,3 +1,5 @@
+require(shiny)
+require(rhandsontable)
 
 shinyUI(fluidPage(
 
@@ -20,7 +22,9 @@ shinyUI(fluidPage(
         conditionalPanel(
           condition = "input.supply == 'Bertrand'",
           selectInput("demand_bert", "Demand Specification:",
-                      choices = c("logit", "ces", "linear","aids"))
+                      choices = c("logit", "ces", 
+                                  #"linear",
+                                  "aids"))
         ),
         conditionalPanel(
           condition = "input.supply == 'Cournot'",

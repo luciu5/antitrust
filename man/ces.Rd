@@ -1,5 +1,6 @@
 \name{ces}
 \alias{ces}
+\alias{ces.alm}
 \alias{ces.nests}
 \title{(Nested) Constant Elasticity of Substitution Demand Calibration and Merger Simulation}
 
@@ -17,6 +18,20 @@
                 priceOutside = 1,
                 priceStart = prices,
                 isMax=FALSE,
+                control.slopes,
+                control.equ,
+                labels=paste("Prod",1:length(prices),sep=""),
+                ...
+                )
+
+ces.alm(prices,shares,margins,
+                ownerPre,ownerPost,
+                mcDelta=rep(0,length(prices)),
+                subset=rep(TRUE,length(prices)),
+                priceOutside=0,
+                priceStart = prices,
+                isMax=FALSE,
+                parmsStart,
                 control.slopes,
                 control.equ,
                 labels=paste("Prod",1:length(prices),sep=""),
@@ -107,6 +122,8 @@ ces.nests(prices,shares,margins,
   assumption that that all firms in the market are playing a
   differentiated products Bertrand pricing game.
 
+ \code{ces.alm} is identical to logit except that it assumes that an outside product exists and uses additional margin information to estimate the share of the outside good.
+ 
   \code{ces.nests} is identical to \code{ces} except that it includes the \sQuote{nests}
   argument which may be used to assign products to different
   nests. Nests are useful because they allow for richer substitution
@@ -135,7 +152,7 @@ ces.nests(prices,shares,margins,
 
 }
 
-\value{\code{ces} returns an instance of class \code{\linkS4class{CES}}.
+\value{\code{ces} returns an instance of class \code{\linkS4class{CES}}. \code{ces.alm} returns an instance of class \code{\linkS4class{CESALM}}.
   \code{ces.nests} returns an instance of \code{\linkS4class{CESNests}}, a
   child class of \code{\linkS4class{CES}.}}
 
@@ -189,7 +206,7 @@ names(price) <-
     prodNames
 
 result.ces <-ces(price,shares,margins,ownerPre=ownerPre,ownerPost=ownerPost,
-                 shareInside=.01,labels=prodNames)
+                 shareInside=.99,labels=prodNames)
 
 print(result.ces)           # return predicted price change
 summary(result.ces)         # summarize merger simulation
