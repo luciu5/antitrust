@@ -12,16 +12,15 @@ shinyServer(function(input, output, session) {
 
      
      inputData <- data.frame(
-       Name = c("P1","P2","P3"),
-       ownerPre  = c("O1","O2","O3"),
-       ownerPost = c("O1","O1","O3"),
-       'Prices (\u00A4)'  = c(6.46, 6.25, 6.10),
-       Shares = c( 0.2643934, 0.3438824, 0.3917243),
-       Margins = c(0.3, 0.4,0.28),
-       #Margins = c(0.13147010, 0.10135467,NA),
-       #Prices     = c(.0441,.0328,.0409)*100,
-       #Shares    = c( 0.1344196, 0.3503055, 0.5152749),
-       #Margins   = c(.3830,.5515,NA),
+       Name = c("P1","P2","P3","P4"),
+       ownerPre  = c("O1","O2","O3","O3"),
+       ownerPost = c("O1","O1","O3","O3"),
+       #'Prices (\u00A4)'  = c(6.46, 6.25, 6.10),
+       #Shares = c( 0.2643934, 0.3438824, 0.3917243),
+       #Margins = c(0.3, 0.4,0.28),
+       'Prices (\u00A4)'    =c(.0441,.0328,.0409,.0396)*100,
+       Shares   =c(0.09734513, 0.25368732, 0.37315634, 0.27581121),
+       Margins =c(.3830,.5515,.5421,.5557),
        stringsAsFactors = FALSE,
        check.names=FALSE
      )
@@ -53,6 +52,9 @@ shinyServer(function(input, output, session) {
      thiscmcr <- NA
      try(thiscmcr <- cmcr(res), silent=TRUE)
      thiscv <- CV(res)
+     thiselast <- elast(res,market=TRUE)
+     
+     
      thispsdelta  <- sum(calcProducerSurplus(res,preMerger=FALSE) -calcProducerSurplus(res,preMerger=TRUE),na.rm=TRUE)
      
      res <- data.frame(
@@ -63,6 +65,7 @@ shinyServer(function(input, output, session) {
            'Producer Benefit (\u00A4/unit)' = thispsdelta,
            'Overall Effect (\u00A4/unit)'= -1*thiscv + thispsdelta,
            'Compensating Marginal Cost Reduction (\u00A4/unit)' = ifelse(supply == "Cournot", thiscmcr, sum(thiscmcr*s$sharesPost[s$isParty== "*"]/sum(s$sharesPost[s$isParty== "*"],na.rm=TRUE))),
+           'Market Elasticity' = thiselast,
            check.names=FALSE
      )
      
@@ -119,6 +122,8 @@ shinyServer(function(input, output, session) {
     
     sims <- reactive({
       
+      
+      if(is.null(input$hot)){return()}
       
       supply <- input$supply
       demand <- ifelse(supply =="Bertrand", input$demand_bert,
@@ -205,6 +210,8 @@ shinyServer(function(input, output, session) {
           
           renderTable({
            
+            if(is.null(input$hot)){return()}
+            
             thisSim <<- sims()
             supply <- input$supply
             demand <- ifelse(supply =="Bertrand", input$demand_bert,

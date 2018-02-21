@@ -8,8 +8,7 @@ shinyUI(fluidPage(
       sidebarPanel(
         helpText("Simulate a horizontal merger between the owners of products 1 and 2.",
                  "Enter (or copy and paste) shares, margins, and prices in Inputs table (right).",
-                 "shares must be between 0 and 1.",
-                 "Except for '2nd Score Auction', margins must also be be between 0 and 1."),
+                 "shares must be between 0 and 1."),
 
         checkboxInput("dispDetails", "Display Detailed Results", value = FALSE, width = NULL),
         #checkboxInput("incEff", "Include Proportional Cost Changes (negative values imply cost reductions)", value = FALSE, width = NULL),
@@ -40,7 +39,15 @@ shinyUI(fluidPage(
         conditionalPanel(
           condition = "input.supply == 'Cournot'",
           helpText("Note: only the first inputted price and product name is used for Cournot.")
-          )
+          ),
+        conditionalPanel(
+          condition = "input.supply != '2nd Score Auction'",
+          helpText("Note: margins must be between 0 and 1.")
+        ),
+        conditionalPanel(
+          condition = "input.supply == '2nd Score Auction'",
+          helpText("Note: margins must be \u00A4/unit")
+        )
       ),
       mainPanel(
         h2("Enter Inputs"),
@@ -54,7 +61,9 @@ shinyUI(fluidPage(
           condition = "input.dispDetails == true",
           br(), br(),
           h2("Details"),
-          tableOutput("results_detailed")
+          tableOutput("results_detailed") #,
+          #br(),br(),
+          #textOutput("mktElast")
         )
       )
       
