@@ -32,7 +32,7 @@ setClass(
                  stop("'shares' values must be between 0 and 1")}
 
              if(!(sum(object@shares,na.rm=TRUE) < 1 ||
-                  isTRUE(all.equal(sum(object@shares),1,check.names=FALSE)))){
+                  isTRUE(all.equal(sum(object@shares),1,check.names=FALSE, tolerance = 1e-6)))){
                  stop("The sum of 'shares' values must be less than or equal to 1")}
 
 

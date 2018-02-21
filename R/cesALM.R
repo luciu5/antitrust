@@ -19,8 +19,8 @@ setClass(
 
              if(nMargins<2){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
-             if(object@shareInside!=1){
-                 stop(" sum of 'shares' must equal 1")
+             if(object@shareInside != 1){
+               stop(" sum of 'shares' must equal 1")
              }
 
               if(length(object@parmsStart)!=2){
@@ -128,7 +128,7 @@ ces.alm <- function(prices,shares,margins,
                   subset=subset,
                   priceOutside=priceOutside,
                   priceStart=priceStart,
-                  shareInside=sum(shares),
+                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE,tolerance=1e-3)),1,sum(shares)),
                   parmsStart=parmsStart,
                   labels=labels)
     

@@ -55,7 +55,8 @@ setClass(
 
               if(
                 !(object@shareInside >=0 &&
-                  object@shareInside <=1)
+                  object@shareInside <=1) #||
+                #!isTRUE(all.equal(object@shareInside,1,check.names=FALSE, tolerance=1e-3))
                 ){
                  stop("'shareInside' must be between 0 and 1")
          }
@@ -249,8 +250,8 @@ setMethod(
 
      outVal <- ifelse(object@shareInside<1, 1, 0)
 
-     shares <- exp(meanval + alpha*prices)
-     shares <- shares/(outVal+ sum(shares,na.rm=TRUE))
+     shares <- exp(meanval + alpha*(prices - object@priceOutside))
+     shares <- shares/(outVal + sum(shares,na.rm=TRUE))
 
      if(revenue){shares <- prices*shares/sum(prices*shares,object@priceOutside*(1-sum(shares,na.rm=TRUE)),na.rm=TRUE)}
 
@@ -385,7 +386,7 @@ logit <- function(prices,shares,margins,
                   subset=subset,
                   priceOutside=priceOutside,
                   priceStart=priceStart,
-                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1,sum(shares)),
+                  shareInside=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE,tolerance=1e-3)),1,sum(shares)),
                   labels=labels)
 
     if(!missing(control.slopes)){
