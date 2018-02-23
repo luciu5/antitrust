@@ -178,6 +178,10 @@ pcaids <- function(shares,knownElast,mktElast=-1,
     ## Solve Non-Linear System for Price Changes
     result@priceDelta <- calcPriceDelta(result,isMax=isMax,subset=subset,...)
 
+    ## Calculate marginal cost
+    result@mcPre <-  calcMC(result,TRUE)
+    result@mcPost <- calcMC(result,FALSE)
+    
 
     ## Calculate Pre and Post merger equilibrium prices
     ## These are equal to NA in pcaids
