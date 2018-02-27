@@ -104,7 +104,7 @@ setMethod(
      gamma    <- object@slopes$gamma
      meanval  <- object@slopes$meanval
 
-     outVal <- ifelse(sum(object@shares)<1, object@priceOutside^(1-gamma), 0)
+     outVal <- ifelse(object@shareInside<1, object@priceOutside^(1-gamma), 0)
      shares <- meanval*prices^(1-gamma)
      shares <- shares/(sum(shares,na.rm=TRUE) + outVal)
 

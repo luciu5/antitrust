@@ -9,10 +9,12 @@ setClass(
          priceStart       = "numeric",
          normIndex        = "vector",
          shareInside      = "numeric",
-         priceOutside     = "numeric"
+         priceOutside     = "numeric",
+         mktElast         = "numeric"
 
          ),
     prototype=prototype(
+      mktElast = NA_real_,
       priceStart  = numeric(),
       normIndex   = 1,
       shareInside = numeric(),
@@ -23,9 +25,10 @@ setClass(
 
 
              margins <- object@margins
+             nMargins <- length(margins[!is.na(margins)])
 
              nprods <- length(object@shares)
-             sumShares <- sum(object@shares)
+            
 
              if(
                  nprods != length(margins) ||
@@ -37,6 +40,8 @@ setClass(
 
              if(any(margins<0,na.rm=TRUE)) stop("'margins' values must be positive")
 
+             if(nMargins == 0) stop("At least one margin must be supplied.")
+             
              if(!(is.matrix(object@ownerPre))){
                  ownerPre <- ownerToMatrix(object,TRUE)
              }
@@ -77,6 +82,9 @@ setClass(
              if(length(object@priceOutside) != 1 || object@priceOutside<0
                 ){stop("'priceOutside' must be a non-negative number")}
 
+             if(!is.na(object@mktElast) && object@mktElast >0 ) stop("'mktElast' must be negative")
+             if(!is.na(object@mktElast) && sum(object@shares, na.rm=TRUE) != 1 ) stop("`shares' must sum to 1 when 'mktElast' is supplied")
+             
              return(TRUE)
 
          })
@@ -96,9 +104,11 @@ setMethod(
               margins      <-  object@margins
               prices       <-  object@prices
               idx          <-  object@normIndex
+              mktElast     <-  object@mktElast 
+              shareInside  <-  object@shareInside  
 
               if(is.na(idx)){
-                  idxShare <- 1 - object@shareInside
+                  idxShare <- 1 - shareInside
                   idxPrice <- object@priceOutside
               }
               else{
@@ -110,7 +120,8 @@ setMethod(
 
 
               nprods <- length(shares)
-              revenues <- shares * prices
+              
+              avgPrice <- sum(shares * prices, na.rm=TRUE)
 
               ## identify which products have enough margin information
               ##  to impute Bertrand margins
@@ -121,9 +132,19 @@ setMethod(
 
               ## Minimize the distance between observed and predicted margins
               minD <- function(alpha){
+                
+                probs <- shares
+                
+                if(!is.na(mktElast)){
+                  shareInside <-   1 - mktElast/( alpha * avgPrice )
+                  probs <- probs * shareInside
+                  
+                }
+                
+                 revenues <- probs * prices
 
                   ## the following returns the elasticity TRANSPOSED
-                  elast <- -alpha *  matrix(prices * shares,ncol=nprods,nrow=nprods)
+                  elast <- -alpha *  matrix(revenues,ncol=nprods,nrow=nprods)
                   diag(elast) <- alpha*prices + diag(elast)
 
 
@@ -134,16 +155,29 @@ setMethod(
 
                   
                   marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
-                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+                  m1 <- margins - marginsCand
+                  #m2 <- mktElast - alpha*avgPrice*( 1- shareInside)
+                  measure <- sum(c(m1*100 )^2,na.rm=TRUE)
 
                   #measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
                   #measure <- sum(measure^2,na.rm=TRUE)
 
                   return(measure)
               }
+              
+              alphaBounds <- c(-1e6,0)
+              if(!is.na(mktElast)){ alphaBounds[2] <- mktElast/ avgPrice}
 
-              minAlpha <- optimize(minD,c(-1e6,0),
+              minAlpha <- optimize(minD, alphaBounds,
                                    tol=object@control.slopes$reltol)$minimum
+              
+              if(!is.na(mktElast)){
+                
+               
+                object@shareInside <-    1 - mktElast/(minAlpha * avgPrice )
+                idxShare <-  1 - object@shareInside
+                
+                }
 
               meanval <- log(shares) - log(idxShare) - minAlpha * (prices - idxPrice)
 
@@ -281,7 +315,7 @@ setMethod(
 
      if(market){
 
-         elast <- alpha * sum(shares*prices,na.rm=TRUE) * (1 - sum(shares,na.rm=TRUE))
+         elast <- alpha * sum(shares/sum(shares)*prices,na.rm=TRUE) * (1 - sum(shares,na.rm=TRUE))
 
          }
 

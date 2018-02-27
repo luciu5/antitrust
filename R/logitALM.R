@@ -17,7 +17,7 @@ setClass(
 
              nMargins  <- length(object@margins[!is.na(object@margins)])
 
-             if(nMargins<2){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
+             if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
              if(object@shareInside != 1){
                stop(" sum of 'shares' must equal 1")
@@ -41,6 +41,9 @@ setMethod(
               shares       <-  object@shares
               margins      <-  object@margins
               prices       <-  object@prices
+              mktElast     <-  object@mktElast 
+              
+              avgPrice <- sum(shares*prices)
 
               nprods <- length(object@shares)
 
@@ -61,7 +64,10 @@ setMethod(
 
                   revenues <- probs * prices
                   marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
-                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+                  
+                  m1 <- margins - marginsCand
+                  m2 <- mktElast/(avgPrice * alpha) - sOut  
+                  measure <- sum(c(m1,m2)^2,na.rm=TRUE)
 
                   #elast      <-   elast[isMargin,isMargin]
                   #revenues   <-   revenues[isMargin]
@@ -81,6 +87,11 @@ setMethod(
               lowerB <- c(-Inf,0)
               upperB <- c(-1e-10,.99999)
 
+              
+              if(!is.na(mktElast)){
+                upperB[1] <- mktElast/avgPrice
+              }
+              
               minTheta <- optim(object@parmsStart,minD,
                                 method="L-BFGS-B",
                                 lower= lowerB,upper=upperB,
@@ -105,6 +116,7 @@ setMethod(
 
 logit.alm <- function(prices,shares,margins,
                       ownerPre,ownerPost,
+                      mktElast = NA_real_,
                       mcDelta=rep(0,length(prices)),
                       subset=rep(TRUE,length(prices)),
                       priceOutside=0,
@@ -131,6 +143,7 @@ logit.alm <- function(prices,shares,margins,
                   margins=margins,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
+                  mktElast = mktElast,
                   mcDelta=mcDelta,
                   subset=subset,
                   priceOutside=priceOutside,

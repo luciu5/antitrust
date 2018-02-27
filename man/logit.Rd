@@ -27,6 +27,7 @@ logit(prices,shares,margins,
                 )
 logit.alm(prices,shares,margins,
                 ownerPre,ownerPost,
+                mktElast = NA_numeric_,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
                 priceOutside = 0,
@@ -115,6 +116,7 @@ logit.cap(prices,shares,margins,
   \item{ownerPost}{EITHER a vector of length k whose values
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
+  \item{mktElast}{a negative value indicating market elasticity. Default is NA.}
   \item{mcDelta}{A vector of length k where each element equals the
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
@@ -158,7 +160,9 @@ logit.cap(prices,shares,margins,
 
   \code{logit.alm} is identical to \code{logit} except that it assumes
   that an outside product exists and uses additional margin
-  information to estimate the share of the outside good.
+  information to estimate the share of the outside good. 
+  If market elasticity is known, it may be supplied using the 
+  \sQuote{mktElast} argument.
 
   \code{logit.nests} is identical to \code{logit} except that it includes the \sQuote{nests}
   argument which may be used to assign products to different

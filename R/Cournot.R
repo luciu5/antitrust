@@ -20,15 +20,16 @@ setClass(
     productsPre      = "matrix",
     productsPost     = "matrix",
     demand           = "character",
-    cost             = "character"
-    
+    cost             = "character",
+    mktElast        =  "numeric"
   ), 
   prototype(
     intercepts    =  numeric(),
     mcfunPre =list(),
     mcfunPost=list(),
     vcfunPre =list(),
-    vcfunPost=list()
+    vcfunPost=list(),
+    mktElast = NA_real_
   ),
   validity=function(object){
     
@@ -89,7 +90,7 @@ setClass(
     if(any(object@prices<=0,na.rm=TRUE))             stop("'prices' values must be positive")
     if(any(object@quantities<=0,na.rm=TRUE))          stop("'quantities' values must be positive")
     if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
-    #if(any(colSums(object@margins,na.rm=TRUE) == 0)) stop("at least one plant margin must be supplied for each product")
+    if(any(colSums(object@margins,na.rm=TRUE) == 0)  && all(is.na(object@mktElast))) stop("at least one plant margin or a market elasticity must be supplied for each product")
     
     if(all(!(object@demand %in% c("linear","log")))){stop("'demand' must equal 'linear' or 'log'")}
     if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")
@@ -106,6 +107,9 @@ setClass(
     if(any(rowSums(object@quantities,na.rm=TRUE) > object@capacitiesPre)){
       stop("pre-merger plant output must be less than pre-merger capacity constraint")
     }
+    
+    
+    
   }
   
 )
@@ -155,7 +159,8 @@ setMethod(
     
     if(preMerger){
       quantities <- object@quantityPre
-      owner <- object@ownerPre}
+      owner <- object@ownerPre
+      }
     else{
       quantities <- object@quantityPost
       owner <- object@ownerPost}
@@ -168,29 +173,28 @@ setMethod(
     
     mktQuant <-  colSums(quantities,na.rm = TRUE)
     
-    ##dQdP
+    ##dPdQ
     partial <- ifelse(isLinearD, 
                       slopes,
                       exp(intercepts)*slopes*mktQuant^(slopes - 1))
     
-    ##dPdQ
+    ##dQdP
     partial <- 1/partial
     
     
-    if(market){
-      
-      elast <- partial*mktQuant/prices
-    }
     
-    else{
       
-      sharesOwner <- t( t(quantOwner) / mktQuant)
+      elast <- partial*prices/mktQuant
+    
+    
+    if(!market){
+      
+      sharesOwner <-  t(quantOwner) / mktQuant
       
       
-      elast <- 1/(t(quantOwner)/(prices/slopes)) * isLinearD +
-        (slopes^(-1) / t(sharesOwner))  * ( 1 - isLinearD)
+      elast <-  t(elast / sharesOwner)
       
-      elast <- t(elast)
+    
       
       dimnames(elast) <- object@labels
     }
@@ -240,6 +244,9 @@ setMethod(
     quantities <- object@quantities
     quantities[is.na(quantities)] <- 0
     margins <- object@margins
+    mktElast <- object@mktElast
+    
+    
     cap <- object@capacitiesPre
     
     mc <- t(t(1 - margins) * prices)
@@ -292,7 +299,7 @@ setMethod(
       thisFOC <- t(thisFOC) -   mcPre  
       thisFOC <- thisFOC[!isConstrained,]
       
-      dist <- c(thisFOC,thisprices - prices)
+      dist <- c(thisFOC,thisprices - prices, mktElast * quantTot/prices - 1/thisPartial)
       
       if(noCosts){ dist <- c(dist, mcPre - mc)}
       
@@ -300,9 +307,12 @@ setMethod(
     }
     
     
+    margGuess <- margins
+    margGuess[is.na(margGuess)] <- -t(t(sharesOwner)/mktElast)[is.na(margGuess)]
+    
     bStart      =   ifelse(isLinearD,
-                           colMeans(-(prices*margins)/(sharesOwner*quantTot),na.rm=TRUE), 
-                           colMeans(-margins/sharesOwner,na.rm=TRUE))
+                           colMeans(-(prices*margGuess)/(sharesOwner*quantTot),na.rm=TRUE), 
+                           colMeans(-margGuess/sharesOwner,na.rm=TRUE))
     intStart    =   ifelse(isLinearD,
                            prices - bStart*quantTot, 
                            log(prices/(quantTot^bStart)))
@@ -874,7 +884,8 @@ setMethod(
 
 
 
-cournot <- function(prices,quantities,margins, 
+cournot <- function(prices,quantities,
+                    margins = matrix(NA_real_ , nrow(quantities),ncol(quantities)), 
                     demand = rep("linear",length(prices)),
                     cost   =   rep("linear",nrow(quantities)),
                     mcfunPre=list(),
@@ -886,6 +897,7 @@ cournot <- function(prices,quantities,margins,
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
+                    mktElast = rep(NA_real_, length(prices)),
                     mcDelta =rep(0,nrow(quantities)),
                     quantityStart=as.vector(quantities),
                     control.slopes,
@@ -914,7 +926,7 @@ cournot <- function(prices,quantities,margins,
                 shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand, cost=cost,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
                 capacitiesPre=capacitiesPre,capacitiesPost=capacitiesPost,
-                ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
+                ownerPre=ownerPre, mktElast = mktElast,productsPre=productsPre,productsPost=productsPost,
                 ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
   
   

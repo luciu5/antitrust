@@ -13,7 +13,8 @@
 \usage{
 
 
-       cournot(prices,quantities,margins, 
+       cournot(prices,quantities,
+                    mktElast = rep(NA_real_, length(prices)), 
                     demand = rep("linear",length(prices)),
                     cost   =   rep("linear",nrow(quantities)),
                     mcfunPre=list(),
@@ -25,6 +26,7 @@
                     productsPre=!is.na(quantities), 
                     productsPost=productsPre, 
                     ownerPre,ownerPost,
+                    mktElast = rep(NA_real_, length(prices)),
                     mcDelta =rep(0,nrow(quantities)),
                     quantityStart=as.vector(quantities),
                     control.slopes,
@@ -87,6 +89,7 @@
   \item{ownerPost}{EITHER a vector of length n whose values
     indicate which plants will be commonly owned after the merger OR
     an n x n matrix of post-merger ownership shares.}
+  \item{mktElast}{A length k vector of product elasticities. Default is a length k vector of NAs}  
   \item{mcDelta}{A length n vector where each element equals the
     proportional change in a firm's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not

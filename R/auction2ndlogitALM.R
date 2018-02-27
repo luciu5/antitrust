@@ -17,8 +17,8 @@ setClass(
 
              nMargins  <- length(object@margins[!is.na(object@margins)])
 
-             if(nMargins<2){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
-
+             if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
+            
              if(object@shareInside != 1){
                stop(" sum of 'shares' must equal 1")
              }
@@ -39,6 +39,10 @@ setMethod(
               ownerPre     <-  object@ownerPre
               shares       <-  object@shares
               margins      <-  object@margins
+              mktElast     <-  object@mktElast
+              prices       <-  object@prices
+              
+              avgPrice     <- sum(shares * prices)
              
 
               nprods <- length(object@shares)
@@ -54,9 +58,9 @@ setMethod(
                   firmShares <- drop(ownerPre %*% probs)
                   
                   
-                  measure <- 1 - (log((1-firmShares))/( alpha * firmShares))/margins
-                  
-                  measure <- sum((measure)^2,na.rm=TRUE)
+                  m1 <- 1 - (log((1-firmShares))/( alpha * firmShares))/margins
+                  m2 <-  mktElast / (avgPrice) - alpha*sOut 
+                  measure <- sum(c(m1 , m2)^2,na.rm=TRUE)
 
                   return(measure)
               }
@@ -65,6 +69,8 @@ setMethod(
               lowerB <- c(-Inf,0)
               upperB <- c(-1e-10,.9999999999)
 
+              if(!is.na(mktElast)){upperB[1] <- mktElast/avgPrice}
+              
               minTheta <- optim(object@parmsStart,minD,
                                 method="L-BFGS-B",
                                 lower= lowerB,upper=upperB,
@@ -91,6 +97,7 @@ setMethod(
 
 auction2nd.logit.alm <- function(prices,shares,margins,
                              ownerPre,ownerPost,
+                             mktElast = NA_real_,
                              mcDelta=rep(0,length(prices)),
                              subset=rep(TRUE,length(prices)),
                              mcDeltaOutside=0,
@@ -109,11 +116,14 @@ auction2nd.logit.alm <- function(prices,shares,margins,
   
   
   if(missing(prices)){prices <- rep(NA_integer_, length(shares))}
+  
+  
   ## Create Auction2ndLogitALM  container to store relevant data
   result <- new("Auction2ndLogitALM",prices=prices, shares=shares,
                 margins=margins,
                 ownerPre=ownerPre,
                 ownerPost=ownerPost,
+                mktElast = mktElast,
                 mcDelta=mcDelta,
                 subset=subset,
                 priceOutside=mcDeltaOutside,

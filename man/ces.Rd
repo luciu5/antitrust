@@ -26,6 +26,7 @@
 
 ces.alm(prices,shares,margins,
                 ownerPre,ownerPost,
+                mktElast = NA_real_,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE,length(prices)),
                 priceOutside=0,
@@ -72,6 +73,7 @@ ces.nests(prices,shares,margins,
   \item{ownerPost}{EITHER a vector of length k whose values
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
+    \item{mktElast}{a negative value indicating market elasticity. Default is NA.}
   \item{shareInside}{The proportion that a typical consumer spends on
      all products included in the \sQuote{prices} vector. Only needed to calculate
      compensating variation.

@@ -17,7 +17,7 @@ setClass(
 
              nMargins  <- length(object@margins[!is.na(object@margins)])
 
-             if(nMargins<2){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
+             if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
              if(object@shareInside != 1){
                stop(" sum of 'shares' must equal 1")
@@ -40,6 +40,7 @@ setMethod(
               shares       <-  object@shares
               margins      <-  object@margins
               prices       <-  object@prices
+              mktElast    <-   object@mktElast
 
               nprods <- length(object@shares)
 
@@ -53,6 +54,8 @@ setMethod(
 
                   gamma <- theta[1]
                   sOut  <- theta[2]
+                  
+                  alpha <- 1/( 1  - sOut)
 
                   probs <- shares * (1 - sOut)
                   elasticity <- (gamma - 1 ) * matrix(probs,ncol=nprods,nrow=nprods)
@@ -60,9 +63,12 @@ setMethod(
                   
                   revenues <- probs * prices
                   marginsCand <- -1 * as.vector(MASS::ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
-                  measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
+                  
+                  m1 <- margins - marginsCand
+                  m2 <- mktElast/ ((1 + alpha) * sum(probs)) - (1 - gamma)
+                  measure <- sum(c(m1 , m2)^2,na.rm=TRUE)
 
-                 
+                  
                   return(measure)
               }
 
@@ -70,6 +76,8 @@ setMethod(
               lowerB <- c(1,0)
               upperB <- c(Inf,.99999)
 
+              
+              
               minGamma <- optim(object@parmsStart,minD,
                                 method="L-BFGS-B",
                                 lower= lowerB,upper=upperB,
@@ -98,6 +106,7 @@ setMethod(
 
 ces.alm <- function(prices,shares,margins,
                       ownerPre,ownerPost,
+                      mktElast = NA_real_,
                       mcDelta=rep(0,length(prices)),
                       subset=rep(TRUE,length(prices)),
                       priceOutside=1,
@@ -124,6 +133,7 @@ ces.alm <- function(prices,shares,margins,
                   margins=margins,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
+                  mktElast = mktElast,
                   mcDelta=mcDelta,
                   subset=subset,
                   priceOutside=priceOutside,
