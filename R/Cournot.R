@@ -150,7 +150,7 @@ setMethod(
 setMethod(
   f= "elast",
   signature= "Cournot",
-  definition=function(object,preMerger=TRUE,market=TRUE){
+  definition=function(object,preMerger=TRUE,market=FALSE){
     
     isLinearD <- object@demand =="linear"
     slopes <- object@slopes

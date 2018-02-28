@@ -6,11 +6,11 @@ shinyUI(fluidPage(
     titlePanel("Simulate a Merger"),
     sidebarLayout(
       sidebarPanel(
-        helpText("Simulate a merger between 'Firm1' and 'Firm2'\n.",
-                 "Enter (or copy and paste) shares, margins, and prices in Inputs table (right).",
+        helpText("Simulate a merger between 'Firm1' and 'Firm2'",br(),
+                 "Enter (or copy and paste) shares, margins, and prices in Inputs table (right).",br(),
                  "shares must be between 0 and 1."),
 
-        checkboxInput("dispDetails", "Display Detailed Results", value = FALSE, width = NULL),
+        #checkboxInput("dispDetails", "Display Detailed Results", value = FALSE, width = NULL),
         checkboxInput("calcElast", "Calibrate Market Elasticity", value = FALSE, width = NULL),
         conditionalPanel(
           condition = "input.calcElast == false",
@@ -78,23 +78,19 @@ shinyUI(fluidPage(
       mainPanel(
         h2("Enter Inputs"),
         rHandsontableOutput("hot"),
-        #br(),
-        #actionButton("simulate","Simulate!"),
+        
         br(), br(),
-        h2("Results"),
-        tableOutput("results"),
-        conditionalPanel(
-          condition = "input.dispDetails == true",
-          br(), br(),
-          h2("Details"),
-          tableOutput("results_detailed") ,
-          br(),br(),
-          radioButtons("pre_elast", "Product Elasticities:",
-                       choices = c("Pre-Merger",
-                                   "Post-Merger"
-                       ), inline = TRUE),
-          tableOutput("results_elast")
+        tabsetPanel(id = "inTabset",
+          tabPanel("Summary", value = "respanel", br(),br(),tableOutput("results")), 
+          tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_detailed")), 
+          tabPanel("Elasticities", value = "elastpanel",  br(),br(),
+                   radioButtons("pre_elast", "",
+                                                choices = c("Pre-Merger",
+                                                            "Post-Merger"
+                                                ), inline = TRUE),
+                   tableOutput("results_elast"))
         )
+        
       )
       
     )

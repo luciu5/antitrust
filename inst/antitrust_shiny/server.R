@@ -104,8 +104,9 @@ shinyServer(function(input, output, session) {
        
        
       
-      updateCheckboxInput(session, inputId = "dispDetails", value = FALSE)      
-
+      #updateCheckboxInput(session, inputId = "dispDetails", value = FALSE)      
+      updateTabsetPanel(session,inputId  = "inTabset", selected = "respanel")
+      
       if (!is.null(input$hot) 
           #&& input$simulate == 0
           ) {
@@ -276,7 +277,8 @@ shinyServer(function(input, output, session) {
           renderTable({
            
             if(is.null(input$hot)){return()}
-            
+         
+            if(input$inTabset!= "respanel"){return()}   
             thisSim <<- sims()
             supply <- input$supply
             calcElast <- input$calcElast
@@ -294,7 +296,7 @@ shinyServer(function(input, output, session) {
         
     output$results_detailed <- renderTable({
        
-      if(input$dispDetails){
+      if(input$inTabset== "detpanel"){
         
         if(input$supply == "Cournot"){
           
@@ -326,7 +328,7 @@ shinyServer(function(input, output, session) {
     
     output$results_elast <- renderTable({
       
-      if(input$dispDetails ){
+      if(input$inTabset== "elastpanel"){
         
        if(input$pre_elast == "Pre-Merger"){ preMerger = TRUE}
         else{preMerger =FALSE}
