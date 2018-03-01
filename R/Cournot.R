@@ -632,7 +632,7 @@ setMethod(
     shares <- calcShares(object,preMerger=TRUE,revenue=FALSE)
     shares[is.na(shares)] <- 0 
     shares <- owner %*% shares
-    shares <- unique(shares[isParty,,drop=FALSE])
+    if(any(isParty)) shares <- unique(shares[isParty,,drop=FALSE])
     if(nrow(shares) == 1 ){shares <- rbind(shares,shares)}
     mktElast <- elast(object, preMerger= TRUE,market=TRUE)
     

@@ -15,10 +15,10 @@ shinyServer(function(input, output, session) {
        Name = c("Prod1","Prod2","Prod3","Prod4"),
        ownerPre  = c("Firm1","Firm2","Firm3","Firm3"),
        ownerPost = c("Firm1","Firm1","Firm3","Firm3"),
-       #'Prices (\u00A4)'  = c(6.46, 6.25, 6.10),
+       #'Prices \n(\u00A4/unit)'  = c(6.46, 6.25, 6.10),
        #Shares = c( 0.2643934, 0.3438824, 0.3917243),
        #Margins = c(0.3, 0.4,0.28),
-       'Prices (\u00A4)'    =c(.0441,.0328,.0409,.0396)*100,
+       'Prices \n(\u00A4/unit)'    =c(.0441,.0328,.0409,.0396)*100,
        Shares   =c(0.09734513, 0.25368732, 0.37315634, 0.27581121),
        Margins =c(.3830,.5515,.5421,.5557),
        stringsAsFactors = FALSE,
@@ -61,10 +61,11 @@ shinyServer(function(input, output, session) {
            'HHI Change' = hhi(res,preMerger=FALSE) -  hhi(res,preMerger=TRUE),
            'Industry Price Change (%)' = sum((s$priceDelta)*s$sharesPost/100,na.rm=TRUE),
            'Merging Party Price Change (%)'= sum(((s$priceDelta)*s$sharesPost)[s$isParty == "*"] / s$sharesPost[s$isParty== "*"],na.rm=TRUE),
+           'Compensating Marginal Cost Reduction (%)' = ifelse(supply == "Cournot", thiscmcr, sum(thiscmcr*s$sharesPost[s$isParty== "*"]/sum(s$sharesPost[s$isParty== "*"],na.rm=TRUE))),
            'Consumer Harm (\u00A4/unit)' = -1*thiscv,
            'Producer Benefit (\u00A4/unit)' = thispsdelta,
            'Overall Effect (\u00A4/unit)'= -1*thiscv + thispsdelta,
-           'Compensating Marginal Cost Reduction (\u00A4/unit)' = ifelse(supply == "Cournot", thiscmcr, sum(thiscmcr*s$sharesPost[s$isParty== "*"]/sum(s$sharesPost[s$isParty== "*"],na.rm=TRUE))),
+           
            'Estimated Market Elasticity' = thiselast,
            check.names=FALSE
      )
@@ -75,7 +76,7 @@ shinyServer(function(input, output, session) {
        }
      
      
-     if(is.na(res[,"Compensating Marginal Cost Reduction (\u00A4/unit)"])) res[,"Compensating Marginal Cost Reduction (\u00A4/unit)"] <- NULL
+     if(is.na(res[,"Compensating Marginal Cost Reduction (%)"])) res[,"Compensating Marginal Cost Reduction (%)"] <- NULL
      
      return(res)
    }
@@ -155,7 +156,7 @@ shinyServer(function(input, output, session) {
       
       
       firstMargin <- which(!is.na(indata$Margins))[1]
-      firstPrice <- which(!is.na(indata[,"Prices (\u00A4)"]))[1]
+      firstPrice <- which(!is.na(indata[,"Prices \n(\u00A4/unit)"]))[1]
       
       #if(!input$incEff) indata$mcDelta <- 0
       indata$mcDelta <- 0
@@ -174,49 +175,49 @@ shinyServer(function(input, output, session) {
         switch(supply,
                Bertrand =
                  switch(demand,
-                        `logit (unknown elasticity)`= logit.alm(prices= indata[,"Prices (\u00A4)"],
+                        `logit (unknown elasticity)`= logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
                                       shares= indata[,outstring],
                                       margins= indata$Margins,
                                       ownerPre= ownerPre,
                                       ownerPost= ownerPost,
                                       mcDelta = indata$mcDelta, labels=indata$Name),
-                        `ces (unknown elasticity)`= ces.alm(prices= indata[,"Prices (\u00A4)"],
+                        `ces (unknown elasticity)`= ces.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
                                  shares= indata[,outstring],
                                  margins= indata$Margins,
                                  ownerPre= ownerPre,
                                  ownerPost= ownerPost,
                                  mcDelta = indata$mcDelta, labels=indata$Name),
-                         linear=linear(prices= indata[,"Prices (\u00A4)"],
+                         linear=linear(prices= indata[,"Prices \n(\u00A4/unit)"],
                                        quantities= indata[,outstring],
                                        margins= indata$Margins,
                                        ownerPre= ownerPre,
                                        ownerPost= ownerPost,
                                        mcDelta = indata$mcDelta, labels=indata$Name),
-                        aids=aids(prices= indata[,"Prices (\u00A4)"],
+                        aids=aids(prices= indata[,"Prices \n(\u00A4/unit)"],
                                   shares= indata[,outstring],
                                   margins= indata$Margins,
                                   ownerPre= ownerPre,
                                   ownerPost= ownerPost,
                                   mcDelta = indata$mcDelta, labels=indata$Name),
-                        logit= logit.alm(prices= indata[,"Prices (\u00A4)"],
+                        logit= logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
                                      shares= indata[,outstring],
                                      margins= indata$Margins,
                                      ownerPre= ownerPre,
                                      ownerPost= ownerPost,
                                      mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast ),
-                        ces = ces.alm(prices= indata[,"Prices (\u00A4)"],
+                        ces = ces.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
                                  shares= indata[,outstring],
                                  margins= indata$Margins,
                                  ownerPre= ownerPre,
                                  ownerPost= ownerPost,
                                  mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast),
-                        linear=linear(prices= indata[,"Prices (\u00A4)"],
+                        linear=linear(prices= indata[,"Prices \n(\u00A4/unit)"],
                                       quantities= indata[,outstring],
                                       margins= indata$Margins,
                                       ownerPre= ownerPre,
                                       ownerPost= ownerPost,
                                       mcDelta = indata$mcDelta, labels=indata$Name),
-                        pcaids=pcaids(prices= indata[,"Prices (\u00A4)"],
+                        pcaids=pcaids(prices= indata[,"Prices \n(\u00A4/unit)"],
                                       shares= indata[,outstring],
                                       knownElast = -1/indata$Margins[firstMargin],
                                       knownElastIndex = firstMargin,
@@ -227,7 +228,7 @@ shinyServer(function(input, output, session) {
                  ),
                Cournot = 
 
-                                 cournot(prices= indata[,"Prices (\u00A4)"][firstPrice],
+                                 cournot(prices= indata[,"Prices \n(\u00A4/unit)"][firstPrice],
                                                                                    demand = gsub("\\s+\\(.*","",demand,perl=TRUE),
                                                                                    cost= rep("linear", nrow(indata)),
                                                                                    quantities = as.matrix(indata[,outstring]),
@@ -240,13 +241,13 @@ shinyServer(function(input, output, session) {
                                                                                    labels=list(as.character(indata$ownerPre),indata$Name[firstPrice]))
                                 ,
                `2nd Score Auction`= switch(demand,
-                                           `logit (unknown elasticity)` = auction2nd.logit.alm(prices= indata[,"Prices (\u00A4)"],
+                                           `logit (unknown elasticity)` = auction2nd.logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
                                                     shares= indata[,outstring],
                                                     margins= indata$Margins,
                                                     ownerPre= ownerPre,
                                                     ownerPost= ownerPost,
                                                     mcDelta = indata$mcDelta, labels=indata$Name),
-                                            logit = auction2nd.logit.alm(prices= indata[,"Prices (\u00A4)"],
+                                            logit = auction2nd.logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
                                                                                 shares= indata[,outstring],
                                                                                 margins= indata$Margins,
                                                                                 ownerPre= ownerPre,

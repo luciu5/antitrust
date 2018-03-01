@@ -6,9 +6,12 @@ shinyUI(fluidPage(
     titlePanel("Simulate a Merger"),
     sidebarLayout(
       sidebarPanel(
-        helpText("Simulate a merger between 'Firm1' and 'Firm2'",br(),
-                 "Enter (or copy and paste) shares, margins, and prices in Inputs table (right).",br(),
-                 "shares must be between 0 and 1."),
+       
+        helpText(tags$ul(tags$li("Simulate a merger between 'Firm1' and 'Firm2'"),
+                 tags$li("Copy and paste (or enter) shares, margins, and prices in Inputs table (right)."),
+                 tags$li("shares must be between 0 and 1.")
+                 )
+                 ),hr(),
 
         #checkboxInput("dispDetails", "Display Detailed Results", value = FALSE, width = NULL),
         checkboxInput("calcElast", "Calibrate Market Elasticity", value = FALSE, width = NULL),
@@ -16,7 +19,7 @@ shinyUI(fluidPage(
           condition = "input.calcElast == false",
           numericInput("enterElast", "Enter Market Elasticity:", value=-1,min=-Inf,max=0,step=.1#, width='75%'
                        )
-        ),
+        ),hr(),
         #checkboxInput("incEff", "Include Proportional Cost Changes (negative values imply cost reductions)", value = FALSE, width = NULL),
         
         radioButtons("supply", "Supply Specification:",
@@ -57,22 +60,22 @@ shinyUI(fluidPage(
           condition = "input.supply == '2nd Score Auction' && input.calcElast == true",
           selectInput("demand_2nd_alm", "Demand Specification:",
                       choices = c("logit (unknown elasticity)"))
-        ),
+        ),hr(),
         conditionalPanel(
           condition = "input.supply == 'Cournot'",
-          helpText("Note: only the first non-missing inputted price and product name is used for Cournot.")
+          helpText(tags$b("Note:"), "only the first non-missing inputted price and product name is used for Cournot.")
           ),
         conditionalPanel(
           condition = "input.supply != '2nd Score Auction'",
-          helpText("Note: margins must be between 0 and 1.")
+          helpText(tags$b("Note:"), "margins must be between 0 and 1.")
         ),
         conditionalPanel(
           condition = "input.supply == '2nd Score Auction'",
-          helpText("Note: margins must be \u00A4/unit")
+          helpText(tags$b("Note:"), "margins must be \u00A4/unit")
         ),
         conditionalPanel(
           condition = "input.demand_bert == 'pcaids'",
-          helpText("Note: Only first non-missing inputted margin is used for pcaids. This margin should belong to a single product firm.")
+          helpText(tags$b("Note:"), "Only first non-missing inputted margin is used for pcaids. This margin should belong to a single product firm.")
         )
       ),
       mainPanel(
@@ -88,7 +91,14 @@ shinyUI(fluidPage(
                                                 choices = c("Pre-Merger",
                                                             "Post-Merger"
                                                 ), inline = TRUE),
-                   tableOutput("results_elast"))
+                   tableOutput("results_elast"),
+                   conditionalPanel("input.supply != 'Cournot'",
+                   helpText(tags$b("Note:"), "diagonal elements are own-price elasticities.","Off-diagonal elements are the cross-price elasticities of row with respect to column.")
+                   ),
+                   conditionalPanel("input.supply == 'Cournot'",
+                                    helpText(tags$b("Note:"), "above are own-price elasticities")
+                   )
+                   )
         )
         
       )
