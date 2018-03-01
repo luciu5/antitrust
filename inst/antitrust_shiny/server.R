@@ -92,7 +92,7 @@ shinyServer(function(input, output, session) {
 
     })
 
-    observe({
+    observeEvent(input$simulate,{
 
        supply <- input$supply
        calcElast <- input$calcElast
@@ -103,13 +103,12 @@ shinyServer(function(input, output, session) {
                                ifelse(calcElast,input$demand_cournot_alm, input$demand_cournot), 
                                ifelse(calcElast,input$demand_2nd_alm, input$demand_2nd)))
        
-       
+       simulate <- input$simulate
       
       #updateCheckboxInput(session, inputId = "dispDetails", value = FALSE)      
       updateTabsetPanel(session,inputId  = "inTabset", selected = "respanel")
       
       if (!is.null(input$hot) 
-          #&& input$simulate == 0
           ) {
         values$inputData = hot_to_r(input$hot)
       }
@@ -129,22 +128,14 @@ shinyServer(function(input, output, session) {
 
 
     
-    sims <- reactive({
+    #sims <- reactive({
       
       
-      if(is.null(input$hot)){return()}
+      #if(is.null(input$hot)){return()}
       
-      supply <- input$supply
-      calcElast <- input$calcElast
-      demand <- ifelse(supply =="Bertrand", 
-                       ifelse(calcElast,input$demand_bert_alm,input$demand_bert),
-                       ifelse(supply == "Cournot", 
-                              ifelse(calcElast,input$demand_cournot_alm, input$demand_cournot), 
-                              ifelse(calcElast,input$demand_2nd_alm, input$demand_2nd)))
-      
-      mktElast <- input$enterElast
-      
-      
+    thisSim <- NULL
+    
+    observeEvent(input$simulate,{
       
       #if(input$dispDetails){updateCheckboxInput(session, inputId = "dispDetails", value = TRUE)}
       
@@ -170,9 +161,19 @@ shinyServer(function(input, output, session) {
       ownerPost = model.matrix(~-1+indata$ownerPost)
       ownerPost = tcrossprod(ownerPost)
     
-    isolate({  
+    #isolate({  
      
-        switch(supply,
+      supply <- input$supply
+      calcElast <- input$calcElast
+      demand <- ifelse(supply =="Bertrand",
+                       ifelse(calcElast,input$demand_bert_alm,input$demand_bert),
+                       ifelse(supply == "Cournot",
+                              ifelse(calcElast,input$demand_cournot_alm, input$demand_cournot),
+                              ifelse(calcElast,input$demand_2nd_alm, input$demand_2nd)))
+
+      mktElast <- input$enterElast
+
+     thisSim <<-   switch(supply,
                Bertrand =
                  switch(demand,
                         `logit (unknown elasticity)`= logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
@@ -261,7 +262,7 @@ shinyServer(function(input, output, session) {
         )
       
       
-    })
+    #})
         
       
       
@@ -271,16 +272,16 @@ shinyServer(function(input, output, session) {
     })
     
     
-    thisSim <- NULL
+    #thisSim <- NULL
     
     output$results <-
           
           renderTable({
            
-            if(is.null(input$hot)){return()}
+            if(is.null(input$hot) || input$simulate == 0){return()}
          
             if(input$inTabset!= "respanel"){return()}   
-            thisSim <<- sims()
+            #thisSim <<- sims()
             supply <- input$supply
             calcElast <- input$calcElast
             demand <- ifelse(supply =="Bertrand", 
@@ -297,7 +298,7 @@ shinyServer(function(input, output, session) {
         
     output$results_detailed <- renderTable({
        
-      if(input$inTabset== "detpanel"){
+      if(input$inTabset== "detpanel" && input$simulate != 0 ){
         
         if(input$supply == "Cournot"){
           
@@ -329,7 +330,7 @@ shinyServer(function(input, output, session) {
     
     output$results_elast <- renderTable({
       
-      if(input$inTabset== "elastpanel"){
+      if(input$inTabset== "elastpanel" && input$simulate != 0){
         
        if(input$pre_elast == "Pre-Merger"){ preMerger = TRUE}
         else{preMerger =FALSE}

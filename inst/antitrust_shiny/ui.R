@@ -80,9 +80,9 @@ shinyUI(fluidPage(
       ),
       mainPanel(
         h2("Enter Inputs"),
-        rHandsontableOutput("hot"),
-        
-        br(), br(),
+        rHandsontableOutput("hot"), br(),
+        actionButton(inputId ="simulate" , label = tags$b("Simulate")),
+        br(), br(),br(),
         tabsetPanel(id = "inTabset",
           tabPanel("Summary", value = "respanel", br(),br(),tableOutput("results")), 
           tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_detailed")), 
