@@ -15,9 +15,6 @@ shinyServer(function(input, output, session) {
        Name = c("Prod1","Prod2","Prod3","Prod4"),
        ownerPre  = c("Firm1","Firm2","Firm3","Firm3"),
        ownerPost = c("Firm1","Firm1","Firm3","Firm3"),
-       #'Prices \n(\u00A4/unit)'  = c(6.46, 6.25, 6.10),
-       #Shares = c( 0.2643934, 0.3438824, 0.3917243),
-       #Margins = c(0.3, 0.4,0.28),
        'Prices \n(\u00A4/unit)'    =c(.0441,.0328,.0409,.0396)*100,
        Shares   =c(0.09734513, 0.25368732, 0.37315634, 0.27581121),
        Margins =c(.3830,.5515,.5421,.5557),
@@ -39,9 +36,12 @@ shinyServer(function(input, output, session) {
 
    }
    
-   gensum <- function(res,supply,demand){
+   gensum <- function(res){
      
-     if(supply=="Cournot"){ 
+     isCournot <- grepl("Cournot",class(res))
+     isRevDemand <- grepl("ces|aids",class(res),ignore.case = TRUE)
+     
+     if(isCournot){ 
       
        capture.output( s <- summary(res, market = FALSE))
         s$sharesPost <- s$quantityPost/sum(s$quantityPost,na.rm=TRUE)*100
@@ -61,7 +61,7 @@ shinyServer(function(input, output, session) {
            'HHI Change' = hhi(res,preMerger=FALSE) -  hhi(res,preMerger=TRUE),
            'Industry Price Change (%)' = sum((s$priceDelta)*s$sharesPost/100,na.rm=TRUE),
            'Merging Party Price Change (%)'= sum(((s$priceDelta)*s$sharesPost)[s$isParty == "*"] / s$sharesPost[s$isParty== "*"],na.rm=TRUE),
-           'Compensating Marginal Cost Reduction (%)' = ifelse(supply == "Cournot", thiscmcr, sum(thiscmcr*s$sharesPost[s$isParty== "*"]/sum(s$sharesPost[s$isParty== "*"],na.rm=TRUE))),
+           'Compensating Marginal Cost Reduction (%)' = ifelse(isCournot, thiscmcr, sum(thiscmcr*s$sharesPost[s$isParty== "*"]/sum(s$sharesPost[s$isParty== "*"],na.rm=TRUE))),
            'Consumer Harm (\u00A4/unit)' = -1*thiscv,
            'Producer Benefit (\u00A4/unit)' = thispsdelta,
            'Overall Effect (\u00A4/unit)'= -1*thiscv + thispsdelta,
@@ -70,7 +70,7 @@ shinyServer(function(input, output, session) {
            check.names=FALSE
      )
      
-     if(demand %in% c("aids","ces","pcaids")){
+     if(isRevDemand){
        res$'Overall Effect (\u00A4/unit)' <- NULL
        colnames(res) <- gsub('(?<=Consumer Harm\\s)\\(\\\u00A4/unit\\)',"(% Expenditure)",colnames(res), perl=TRUE)
        }
@@ -82,36 +82,126 @@ shinyServer(function(input, output, session) {
    }
 
 
-   values <- reactiveValues(inputData = NULL)
+   
+   runSims <- function(supply, demand, indata, mktElast){
+     
+     
+     firstMargin <- which(!is.na(indata$Margins))[1]
+     firstPrice <- which(!is.na(indata[,"Prices \n(\u00A4/unit)"]))[1]
+     
+     
+     ownerPre = model.matrix(~-1+indata$ownerPre)
+     ownerPre = tcrossprod(ownerPre)
+     ownerPost = model.matrix(~-1+indata$ownerPost)
+     ownerPost = tcrossprod(ownerPost)
+     
+     
+     switch(supply,
+            Bertrand =
+              switch(demand,
+                     `logit (unknown elasticity)`= logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                                             shares= indata[,"Output"],
+                                                             margins= indata$Margins,
+                                                             ownerPre= ownerPre,
+                                                             ownerPost= ownerPost,
+                                                             mcDelta = indata$mcDelta, labels=indata$Name),
+                     `ces (unknown elasticity)`= ces.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                                         shares= indata[,"Output"],
+                                                         margins= indata$Margins,
+                                                         ownerPre= ownerPre,
+                                                         ownerPost= ownerPost,
+                                                         mcDelta = indata$mcDelta, labels=indata$Name),
+                     linear=linear(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                   quantities= indata[,"Output"],
+                                   margins= indata$Margins,
+                                   ownerPre= ownerPre,
+                                   ownerPost= ownerPost,
+                                   mcDelta = indata$mcDelta, labels=indata$Name),
+                     aids=aids(prices= indata[,"Prices \n(\u00A4/unit)"],
+                               shares= indata[,"Output"],
+                               margins= indata$Margins,
+                               ownerPre= ownerPre,
+                               ownerPost= ownerPost,
+                               mcDelta = indata$mcDelta, labels=indata$Name),
+                     logit= logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                      shares= indata[,"Output"],
+                                      margins= indata$Margins,
+                                      ownerPre= ownerPre,
+                                      ownerPost= ownerPost,
+                                      mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast ),
+                     ces = ces.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                   shares= indata[,"Output"],
+                                   margins= indata$Margins,
+                                   ownerPre= ownerPre,
+                                   ownerPost= ownerPost,
+                                   mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast),
+                     linear=linear(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                   quantities= indata[,"Output"],
+                                   margins= indata$Margins,
+                                   ownerPre= ownerPre,
+                                   ownerPost= ownerPost,
+                                   mcDelta = indata$mcDelta, labels=indata$Name),
+                     pcaids=pcaids(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                   shares= indata[,"Output"],
+                                   knownElast = -1/indata$Margins[firstMargin],
+                                   knownElastIndex = firstMargin,
+                                   mktElast = mktElast,
+                                   ownerPre= ownerPre,
+                                   ownerPost= ownerPost,
+                                   mcDelta = indata$mcDelta, labels=indata$Name)
+              ),
+            Cournot = 
+              
+              cournot(prices= indata[,"Prices \n(\u00A4/unit)"][firstPrice],
+                      demand = gsub("\\s+\\(.*","",demand,perl=TRUE),
+                      cost= rep("linear", nrow(indata)),
+                      quantities = as.matrix(indata[,"Output"]),
+                      margins= as.matrix(indata$Margins),
+                      ownerPre= ownerPre,
+                      ownerPost= ownerPost,
+                      mktElast = ifelse( grepl("unknown elasticity", demand),
+                                         NA_real_, mktElast),
+                      mcDelta = indata$mcDelta, 
+                      labels=list(as.character(indata$ownerPre),indata$Name[firstPrice]))
+            ,
+            `2nd Score Auction`= switch(demand,
+                                        `logit (unknown elasticity)` = auction2nd.logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                                                                            shares= indata[,"Output"],
+                                                                                            margins= indata$Margins,
+                                                                                            ownerPre= ownerPre,
+                                                                                            ownerPost= ownerPost,
+                                                                                            mcDelta = indata$mcDelta, labels=indata$Name),
+                                        logit = auction2nd.logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                                                     shares= indata[,"Output"],
+                                                                     margins= indata$Margins,
+                                                                     ownerPre= ownerPre,
+                                                                     ownerPost= ownerPost,
+                                                                     mcDelta = indata$mcDelta, labels=indata$Name, 
+                                                                     mktElast = mktElast)
+                                        
+            )
+     )
+   }
+   
+   
+   
+   demand <- eventReactive(input$simulate, {ifelse(input$supply =="Bertrand", 
 
-
-    observe({
-
-      
-     values$inputData <- genInputData()
-
-    })
-
-    observeEvent(input$simulate,{
-
-       supply <- input$supply
-       calcElast <- input$calcElast
-       mktElast <- input$enterElast
-       demand <- ifelse(supply =="Bertrand", 
-                        ifelse(calcElast,input$demand_bert_alm,input$demand_bert),
-                        ifelse(supply == "Cournot", 
-                               ifelse(calcElast,input$demand_cournot_alm, input$demand_cournot), 
-                               ifelse(calcElast,input$demand_2nd_alm, input$demand_2nd)))
-       
-       simulate <- input$simulate
-      
-      #updateCheckboxInput(session, inputId = "dispDetails", value = FALSE)      
+                                              ifelse(input$calcElast == "at least 2 margins",input$demand_bert_alm,input$demand_bert),
+                                                      ifelse(input$supply == "Cournot",
+                                                     ifelse(input$calcElast == "at least 2 margins",input$demand_cournot_alm, input$demand_cournot),
+                                                     ifelse(input$calcElast == "at least 2 margins",input$demand_2nd_alm, input$demand_2nd)))
+                      })
+   
+   
+   values <- reactiveValues(inputData = genInputData(), sim = NULL)
+                           
+   
+    eventReactive(input$simulate,{
+    
       updateTabsetPanel(session,inputId  = "inTabset", selected = "respanel")
-      
-      if (!is.null(input$hot) 
-          ) {
-        values$inputData = hot_to_r(input$hot)
-      }
+      values$inputData = hot_to_r(input$hot)
+     
     })
     
 
@@ -128,26 +218,16 @@ shinyServer(function(input, output, session) {
 
 
     
-    #sims <- reactive({
+   observeEvent(input$simulate,{
       
-      
-      #if(is.null(input$hot)){return()}
-      
-    thisSim <- NULL
-    
-    observeEvent(input$simulate,{
-      
-      #if(input$dispDetails){updateCheckboxInput(session, inputId = "dispDetails", value = TRUE)}
+
       
       indata <- values[["inputData"]]
       
-      outstring <- colnames(indata[colnames(indata) %in% c("Quantities","Shares")])
+      colnames(indata)[colnames(indata) %in% c("Quantities","Shares")] <- "Output"
       
-      indata <- indata[!is.na(indata[,outstring]),]
+      indata <- indata[!is.na(indata[,"Output"]),]
       
-      
-      firstMargin <- which(!is.na(indata$Margins))[1]
-      firstPrice <- which(!is.na(indata[,"Prices \n(\u00A4/unit)"]))[1]
       
       #if(!input$incEff) indata$mcDelta <- 0
       indata$mcDelta <- 0
@@ -156,154 +236,39 @@ shinyServer(function(input, output, session) {
       indata$ownerPost <- factor(indata$ownerPost,levels=levels(indata$ownerPre))
       
       
-      ownerPre = model.matrix(~-1+indata$ownerPre)
-      ownerPre = tcrossprod(ownerPre)
-      ownerPost = model.matrix(~-1+indata$ownerPost)
-      ownerPost = tcrossprod(ownerPost)
-    
-    #isolate({  
      
-      supply <- input$supply
-      calcElast <- input$calcElast
-      demand <- ifelse(supply =="Bertrand",
-                       ifelse(calcElast,input$demand_bert_alm,input$demand_bert),
-                       ifelse(supply == "Cournot",
-                              ifelse(calcElast,input$demand_cournot_alm, input$demand_cournot),
-                              ifelse(calcElast,input$demand_2nd_alm, input$demand_2nd)))
+      
 
-      mktElast <- input$enterElast
-
-     thisSim <<-   switch(supply,
-               Bertrand =
-                 switch(demand,
-                        `logit (unknown elasticity)`= logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                      shares= indata[,outstring],
-                                      margins= indata$Margins,
-                                      ownerPre= ownerPre,
-                                      ownerPost= ownerPost,
-                                      mcDelta = indata$mcDelta, labels=indata$Name),
-                        `ces (unknown elasticity)`= ces.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                 shares= indata[,outstring],
-                                 margins= indata$Margins,
-                                 ownerPre= ownerPre,
-                                 ownerPost= ownerPost,
-                                 mcDelta = indata$mcDelta, labels=indata$Name),
-                         linear=linear(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                       quantities= indata[,outstring],
-                                       margins= indata$Margins,
-                                       ownerPre= ownerPre,
-                                       ownerPost= ownerPost,
-                                       mcDelta = indata$mcDelta, labels=indata$Name),
-                        aids=aids(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                  shares= indata[,outstring],
-                                  margins= indata$Margins,
-                                  ownerPre= ownerPre,
-                                  ownerPost= ownerPost,
-                                  mcDelta = indata$mcDelta, labels=indata$Name),
-                        logit= logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                     shares= indata[,outstring],
-                                     margins= indata$Margins,
-                                     ownerPre= ownerPre,
-                                     ownerPost= ownerPost,
-                                     mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast ),
-                        ces = ces.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                 shares= indata[,outstring],
-                                 margins= indata$Margins,
-                                 ownerPre= ownerPre,
-                                 ownerPost= ownerPost,
-                                 mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast),
-                        linear=linear(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                      quantities= indata[,outstring],
-                                      margins= indata$Margins,
-                                      ownerPre= ownerPre,
-                                      ownerPost= ownerPost,
-                                      mcDelta = indata$mcDelta, labels=indata$Name),
-                        pcaids=pcaids(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                      shares= indata[,outstring],
-                                      knownElast = -1/indata$Margins[firstMargin],
-                                      knownElastIndex = firstMargin,
-                                      mktElast = mktElast,
-                                      ownerPre= ownerPre,
-                                      ownerPost= ownerPost,
-                                      mcDelta = indata$mcDelta, labels=indata$Name)
-                 ),
-               Cournot = 
-
-                                 cournot(prices= indata[,"Prices \n(\u00A4/unit)"][firstPrice],
-                                                                                   demand = gsub("\\s+\\(.*","",demand,perl=TRUE),
-                                                                                   cost= rep("linear", nrow(indata)),
-                                                                                   quantities = as.matrix(indata[,outstring]),
-                                                                                   margins= as.matrix(indata$Margins),
-                                                                                   ownerPre= ownerPre,
-                                                                                   ownerPost= ownerPost,
-                                                                                   mktElast = ifelse( grepl("unknown elasticity", demand),
-                                                                                                      NA_real_, mktElast),
-                                                                                   mcDelta = indata$mcDelta, 
-                                                                                   labels=list(as.character(indata$ownerPre),indata$Name[firstPrice]))
-                                ,
-               `2nd Score Auction`= switch(demand,
-                                           `logit (unknown elasticity)` = auction2nd.logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                                    shares= indata[,outstring],
-                                                    margins= indata$Margins,
-                                                    ownerPre= ownerPre,
-                                                    ownerPost= ownerPost,
-                                                    mcDelta = indata$mcDelta, labels=indata$Name),
-                                            logit = auction2nd.logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
-                                                                                shares= indata[,outstring],
-                                                                                margins= indata$Margins,
-                                                                                ownerPre= ownerPre,
-                                                                                ownerPost= ownerPost,
-                                                                                mcDelta = indata$mcDelta, labels=indata$Name, 
-                                                                               mktElast = mktElast)
-                                           
-               )
+     values[["sim"]] <-  runSims(supply = input$supply,demand = demand(), indata = indata, mktElast = input$enterElast )
                
                
-        )
-      
-      
-    #})
-        
-      
-      
-     
       
       
     })
     
     
-    #thisSim <- NULL
-    
+   
+      
+      
     output$results <-
           
           renderTable({
            
-            if(is.null(input$hot) || input$simulate == 0){return()}
+            if(input$inTabset != "respanel" || input$simulate == 0){return()}
          
-            if(input$inTabset!= "respanel"){return()}   
-            #thisSim <<- sims()
-            supply <- input$supply
-            calcElast <- input$calcElast
-            demand <- ifelse(supply =="Bertrand", 
-                             ifelse(calcElast,input$demand_bert_alm,input$demand_bert),
-                             ifelse(supply == "Cournot", 
-                                    ifelse(calcElast,input$demand_cournot_alm, input$demand_cournot), 
-                                    ifelse(calcElast,input$demand_2nd_alm, input$demand_2nd)))
-            
-            
-            
-            #if(input$simulate == 0) return(cat("Enter Inputs"))
-            gensum(thisSim,supply,demand)
+           
+            gensum(values[["sim"]])
           })
-        
+  
+          
     output$results_detailed <- renderTable({
        
-      if(input$inTabset== "detpanel" && input$simulate != 0 ){
+      if(input$inTabset!= "detpanel" || input$simulate == 0 ){return()}
         
         if(input$supply == "Cournot"){
           
           
-          capture.output(res <- summary(thisSim, market=FALSE))
+          capture.output(res <- summary(values[["sim"]], market=FALSE))
           
           res$product <- res$mcDelta <- NULL
           
@@ -313,7 +278,7 @@ shinyServer(function(input, output, session) {
         
         else{
           
-          capture.output(res <- summary(thisSim))
+          capture.output(res <- summary(values[["sim"]]))
           res$Name <- rownames(res)
           res <- res[,c(1, ncol(res), 2 : (ncol(res)  - 1))]
           colnames(res) <- c("Party","Name","Pre-Merger Price","Post-Merger Price", "Price Change (%)","Pre-Merger Share (%)","Post-Merger Share (%)", "Share Change (%)")
@@ -322,7 +287,7 @@ shinyServer(function(input, output, session) {
         
         print(res)
         
-      }
+      
       })  
     
     
@@ -330,15 +295,15 @@ shinyServer(function(input, output, session) {
     
     output$results_elast <- renderTable({
       
-      if(input$inTabset== "elastpanel" && input$simulate != 0){
+      if(input$inTabset!= "elastpanel" || input$simulate == 0 ){return()}
         
        if(input$pre_elast == "Pre-Merger"){ preMerger = TRUE}
         else{preMerger =FALSE}
         
-        res <- elast(thisSim, preMerger=preMerger)
+        res <- elast(values[["sim"]], preMerger=preMerger)
         print(res)
         
-      }
+      
     }, rownames = TRUE)   
   
 
