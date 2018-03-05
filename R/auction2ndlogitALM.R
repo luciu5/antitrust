@@ -76,7 +76,7 @@ setMethod(
                                 lower= lowerB,upper=upperB,
                                 control=object@control.slopes)$par
 
-              if(isTRUE(all.equal(minTheta[2],0,check.names=FALSE))){stop("ERROR: Estimated outside share is close to 0. Use `auction2nd.logit' function instead")}
+              if(isTRUE(all.equal(minTheta[2],0,check.names=FALSE))){warning("Estimated outside share is close to 0. Use `auction2nd.logit' function instead")}
               
               
               meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) 

@@ -83,7 +83,7 @@ setMethod(
                                 lower= lowerB,upper=upperB,
                                 control=object@control.slopes)$par
 
-              if(isTRUE(all.equal(minGamma[2],0,check.names=FALSE))){stop("ERROR: Estimated outside share is close to 0. Use `ces' function instead")}
+              if(isTRUE(all.equal(minGamma[2],0,check.names=FALSE))){warning("Estimated outside share is close to 0. Use `ces' function instead")}
               
               
               meanval <- log(shares * (1 - minGamma[2])) - log(minGamma[2]) + (minGamma[1] - 1) * (log(prices) - log(object@priceOutside))
