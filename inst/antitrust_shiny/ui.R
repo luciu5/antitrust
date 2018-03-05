@@ -6,7 +6,7 @@ shinyUI(fluidPage(
     titlePanel("Simulate a Merger"),
     sidebarLayout(
       sidebarPanel(
-       
+       h5(tags$b("Directions:")),
         helpText(tags$ul(tags$li("Simulate a merger between 'Firm1' and 'Firm2'"),
                  tags$li("Copy and paste (or enter) shares, margins, and prices in Inputs table (right)."),
                  tags$li("shares must be between 0 and 1.")
@@ -14,9 +14,14 @@ shinyUI(fluidPage(
                  ),hr(),
 
         #checkboxInput("dispDetails", "Display Detailed Results", value = FALSE, width = NULL),
-        checkboxInput("calcElast", "Calibrate Market Elasticity", value = FALSE, width = NULL),
+        #checkboxInput("calcElast", "Calibrate Market Elasticity", value = FALSE, width = NULL),
+        radioButtons("calcElast", "Calibrate model parameters using:",
+                     choices = c("market elasticity and at least 1 margin",
+                                 "at least 2 margins"
+                     )),
+        
         conditionalPanel(
-          condition = "input.calcElast == false",
+          condition = "input.calcElast == 'market elasticity and at least 1 margin'",
           numericInput("enterElast", "Enter Market Elasticity:", value=-1,min=-Inf,max=0,step=.1#, width='75%'
                        )
         ),hr(),
@@ -28,36 +33,36 @@ shinyUI(fluidPage(
                                 "Cournot"
                                 )),
         conditionalPanel(
-          condition = "input.supply == 'Bertrand' && input.calcElast == true",
+          condition = "input.supply == 'Bertrand' && input.calcElast == 'at least 2 margins'",
           selectInput("demand_bert_alm", "Demand Specification:",
                       choices = c("logit (unknown elasticity)", "ces (unknown elasticity)", 
                                   #"linear",
                                   "aids"))
         ),
         conditionalPanel(
-          condition = "input.supply == 'Bertrand'  && input.calcElast == false",
+          condition = "input.supply == 'Bertrand'  && input.calcElast == 'market elasticity and at least 1 margin'",
           selectInput("demand_bert", "Demand Specification:",
                       choices = c("logit", "ces", 
                                   #"linear",
                                   "pcaids"))
         ),
         conditionalPanel(
-          condition = "input.supply == 'Cournot'  && input.calcElast == true",
+          condition = "input.supply == 'Cournot'  && input.calcElast == 'at least 2 margins' ",
           selectInput("demand_cournot_alm", "Demand Specification:",
                       choices = c("linear (unknown elasticity)","log (unknown elasticity)"))
         ),
         conditionalPanel(
-          condition = "input.supply == 'Cournot'  && input.calcElast == false",
+          condition = "input.supply == 'Cournot'  && input.calcElast  == 'market elasticity and at least 1 margin' ",
           selectInput("demand_cournot", "Demand Specification:",
                       choices = c("linear","log"))
         ),
         conditionalPanel(
-          condition = "input.supply == '2nd Score Auction' && input.calcElast == false",
+          condition = "input.supply == '2nd Score Auction' && input.calcElast  ==  'market elasticity and at least 1 margin' ",
           selectInput("demand_2nd", "Demand Specification:",
                       choices = c("logit"))
         ),
         conditionalPanel(
-          condition = "input.supply == '2nd Score Auction' && input.calcElast == true",
+          condition = "input.supply == '2nd Score Auction' && input.calcElast == 'at least 2 margins'",
           selectInput("demand_2nd_alm", "Demand Specification:",
                       choices = c("logit (unknown elasticity)"))
         ),hr(),
