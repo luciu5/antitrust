@@ -9,7 +9,7 @@ shinyServer(function(input, output, session) {
    
    
    genInputData <- function(){
-
+    # a function to generate default input data set for simulations
      
      inputData <- data.frame(
        Name = c("Prod1","Prod2","Prod3","Prod4"),
@@ -37,6 +37,7 @@ shinyServer(function(input, output, session) {
    }
    
    gensum <- function(res){
+     #a function to generate summary stats for results tab
      
      isCournot <- grepl("Cournot",class(res))
      isRevDemand <- grepl("ces|aids",class(res),ignore.case = TRUE)
@@ -84,7 +85,7 @@ shinyServer(function(input, output, session) {
 
    
    runSims <- function(supply, demand, indata, mktElast){
-     
+     # a function to execute code from antitrust package based on ui inputs
      
      firstMargin <- which(!is.na(indata$Margins))[1]
      firstPrice <- which(!is.na(indata[,"Prices \n(\u00A4/unit)"]))[1]
@@ -185,6 +186,7 @@ shinyServer(function(input, output, session) {
    
    
    
+   ## create a reactive object that tracks which demand is being used
    demand <- eventReactive(input$simulate, {ifelse(input$supply =="Bertrand", 
 
                                               ifelse(input$calcElast == "at least 2 margins",input$demand_bert_alm,input$demand_bert),
@@ -194,17 +196,23 @@ shinyServer(function(input, output, session) {
                       })
    
    
+   ## create a reactive list of objects
    values <- reactiveValues(inputData = genInputData(), sim = NULL)
-                           
+      
    
-    eventReactive(input$simulate,{
+                        
+   ## update reactive list whenever changes are made to input
+    observe({
     
-      updateTabsetPanel(session,inputId  = "inTabset", selected = "respanel")
-      values$inputData = hot_to_r(input$hot)
-     
+      
+      if(!is.null(input$hot)){
+        values$inputData = hot_to_r(input$hot)
+        
+      }
     })
     
 
+    ## display inputs 
     output$hot <- renderRHandsontable({
       
       inputData <- values[["inputData"]]
@@ -218,9 +226,11 @@ shinyServer(function(input, output, session) {
 
 
     
+  ## simulate merger when the "simulate" button is clicked
    observeEvent(input$simulate,{
       
 
+     updateTabsetPanel(session,inputId  = "inTabset", selected = "respanel")
       
       indata <- values[["inputData"]]
       
@@ -229,7 +239,7 @@ shinyServer(function(input, output, session) {
       indata <- indata[!is.na(indata[,"Output"]),]
       
       
-      #if(!input$incEff) indata$mcDelta <- 0
+      
       indata$mcDelta <- 0
       
       indata$ownerPre <- factor(indata$ownerPre)
@@ -249,7 +259,7 @@ shinyServer(function(input, output, session) {
     
    
       
-      
+    ## display summary results from gensum to results tab  
     output$results <-
           
           renderTable({
@@ -260,7 +270,8 @@ shinyServer(function(input, output, session) {
             gensum(values[["sim"]])
           })
   
-          
+    
+  ## display summary values to details tab      
     output$results_detailed <- renderTable({
        
       if(input$inTabset!= "detpanel" || input$simulate == 0 ){return()}
@@ -292,7 +303,7 @@ shinyServer(function(input, output, session) {
     
     
    
-    
+    ## display elasticities to elasticity tab
     output$results_elast <- renderTable({
       
       if(input$inTabset!= "elastpanel" || input$simulate == 0 ){return()}
