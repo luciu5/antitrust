@@ -38,6 +38,7 @@ Objects can be created by calls of the form \code{new("Cournot", ...)}.
     \item{\code{capacitiesPost}:}{A length-n logical vector whose elements equal to post-merger plant capacities. Infinite values are allowed.}
   \item{\code{demand}:}{A length k character vector specifying whether product demand is linear ("linear") or log-linear ("log").}
   \item{\code{cost}:}{A length k character vector equal to "linear" if a plant's marginal cost curve is assumed to be linear or "constant" if a plant's marginal curve is assumed to be constant. Returns an error if a multi-plant firm with constant marginal costs does not have capacity constraints.}
+  \item{\code{mktElast}:}{A length k vector of market elasticities. }
 }}
  \section{Extends}{
    Class \code{\linkS4class{Bertrand}}, directly.

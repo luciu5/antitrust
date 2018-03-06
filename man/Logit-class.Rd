@@ -37,6 +37,7 @@ Objects can be created by using the constructor function \code{\link{logit}}.
       is 0.}
      \item{\code{slopes}:}{A list containing the coefficient on price (\sQuote{alpha}) and the vector of mean
       valuations (\sQuote{meanval})}
+       \item{\code{mktElast}:}{A length 1 vector of market elasticities. }
 
   }
 }

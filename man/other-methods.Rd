@@ -64,6 +64,7 @@
 \alias{calcSlopes,LogLin-method}
 \alias{calcSlopes,Logit-method}
 \alias{calcSlopes,LogitALM-method}
+\alias{calcSlopes,CESALM-method}
 \alias{calcSlopes,LogitCap-method}
 \alias{calcSlopes,LogitNests-method}
 \alias{calcSlopes,LogitNestsALM-method}

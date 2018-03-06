@@ -90,7 +90,7 @@ setClass(
     if(any(object@prices<=0,na.rm=TRUE))             stop("'prices' values must be positive")
     if(any(object@quantities<=0,na.rm=TRUE))          stop("'quantities' values must be positive")
     if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
-    if(any(colSums(object@margins,na.rm=TRUE) == 0)  && all(is.na(object@mktElast))) stop("at least one plant margin or a market elasticity must be supplied for each product")
+    if(any(colSums(object@margins,na.rm=TRUE) == 0  & is.na(object@mktElast))) stop("at least one plant margin or a market elasticity must be supplied for each product")
     
     if(all(!(object@demand %in% c("linear","log")))){stop("'demand' must equal 'linear' or 'log'")}
     if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")

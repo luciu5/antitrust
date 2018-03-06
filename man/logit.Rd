@@ -27,7 +27,7 @@ logit(prices,shares,margins,
                 )
 logit.alm(prices,shares,margins,
                 ownerPre,ownerPost,
-                mktElast = NA_numeric_,
+                mktElast = NA_real_,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
                 priceOutside = 0,

@@ -13,8 +13,8 @@
 \usage{
 
 
-       cournot(prices,quantities,
-                    mktElast = rep(NA_real_, length(prices)), 
+      cournot(prices,quantities,
+                    margins = matrix(NA_real_ , nrow(quantities),ncol(quantities)), 
                     demand = rep("linear",length(prices)),
                     cost   =   rep("linear",nrow(quantities)),
                     mcfunPre=list(),
@@ -32,8 +32,8 @@
                     control.slopes,
                     control.equ,
                     labels,
-                   ...
-                     )
+                    ...
+)
                      
     stackelberg(prices,quantities,margins, 
                     demand = rep("linear",length(prices)),
