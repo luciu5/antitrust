@@ -315,7 +315,7 @@ shinyServer(function(input, output, session) {
           
           res$product <- res$mcDelta <- NULL
           
-          try(colnames(res) <- c("Party","Name","Pre-Merger Price","Post-Merger Price", "Price Change (%)","Pre-Merger Quantity","Post-Merger Quantity", "Output Change (%)"),silent=TRUE)
+          try(colnames(res) <- c("Merging Party","Name","Pre-Merger Price","Post-Merger Price", "Price Change (%)","Pre-Merger Quantity","Post-Merger Quantity", "Output Change (%)"),silent=TRUE)
           
           }
         
@@ -324,7 +324,7 @@ shinyServer(function(input, output, session) {
           capture.output(res <- summary(values[["sim"]]))
           res$Name <- rownames(res)
           res <- res[,c(1, ncol(res), 2 : (ncol(res)  - 1))]
-          colnames(res) <- c("Party","Name","Pre-Merger Price","Post-Merger Price", "Price Change (%)","Pre-Merger Share (%)","Post-Merger Share (%)", "Share Change (%)")
+          colnames(res) <- c("Merging Party","Name","Pre-Merger Price","Post-Merger Price", "Price Change (%)","Pre-Merger Share (%)","Post-Merger Share (%)", "Share Change (%)")
         }
         
         
