@@ -86,7 +86,12 @@ shinyUI(fluidPage(
       mainPanel(
         h2("Enter Inputs"),
         rHandsontableOutput("hot"), br(),
-        actionButton(inputId ="simulate" , label = tags$b("Simulate")),
+        #tags$head(
+        #  tags$style(HTML('#run{color:white;background-color:black}'))
+        #),
+        actionButton(inputId ="simulate" , label = tags$b("Simulate"),style='padding:4px; font-size:125%')
+      #)
+        ,
         br(), br(),br(),
         tabsetPanel(id = "inTabset",
           tabPanel("Summary", value = "respanel", br(),br(),tableOutput("results")), 
@@ -95,7 +100,8 @@ shinyUI(fluidPage(
                    radioButtons("pre_elast", "",
                                                 choices = c("Pre-Merger",
                                                             "Post-Merger"
-                                                ), inline = TRUE),
+                                                ), inline = TRUE),br(),
+                   tableOutput("results_mktelast"),br(),
                    tableOutput("results_elast"),
                    conditionalPanel("input.supply != 'Cournot'",
                    helpText(tags$b("Note:"), "diagonal elements are own-price elasticities.","Off-diagonal elements are the cross-price elasticities of row with respect to column.")
@@ -103,7 +109,9 @@ shinyUI(fluidPage(
                    conditionalPanel("input.supply == 'Cournot'",
                                     helpText(tags$b("Note:"), "above are own-price elasticities")
                    )
-                   )
+                   ),
+          tabPanel("Messages", value = "msgpanel", br(),h4("Warnings"),  verbatimTextOutput("warnings"), br(),h4("Errors"),  verbatimTextOutput("errors"))
+          
         )
         
       )

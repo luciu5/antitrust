@@ -7,6 +7,29 @@ shinyServer(function(input, output, session) {
 
    nPossProds <- 10 #only allow 10 products
    
+   msgCatcher <- 
+
+   function(expr)
+   {
+     W <- NULL
+     E <- NULL
+     
+     w.handler <- function(w){ # warning handler
+       W <<- append(W,conditionMessage(w))
+       #invokeRestart("muffleWarning")
+     }
+     e.handler <- function(e){ # error handler
+       E <<- append(E, conditionMessage(e))
+       NULL
+       
+     }
+     list(value = withCallingHandlers(tryCatch(expr, error = e.handler),
+                                      warning = w.handler),
+          warning = W, error = E)
+   }
+   
+   
+   
    
    genInputData <- function(){
     # a function to generate default input data set for simulations
@@ -15,7 +38,7 @@ shinyServer(function(input, output, session) {
        Name = c("Prod1","Prod2","Prod3","Prod4"),
        ownerPre  = c("Firm1","Firm2","Firm3","Firm3"),
        ownerPost = c("Firm1","Firm1","Firm3","Firm3"),
-       'Prices \n(\u00A4/unit)'    =c(.0441,.0328,.0409,.0396)*100,
+       'Prices \n($/unit)'    =c(.0441,.0328,.0409,.0396)*100,
        Shares   =c(0.09734513, 0.25368732, 0.37315634, 0.27581121),
        Margins =c(.3830,.5515,.5421,.5557),
        stringsAsFactors = FALSE,
@@ -39,6 +62,8 @@ shinyServer(function(input, output, session) {
    gensum <- function(res){
      #a function to generate summary stats for results tab
      
+     
+       
      isCournot <- grepl("Cournot",class(res))
      isRevDemand <- grepl("ces|aids",class(res),ignore.case = TRUE)
      
@@ -50,30 +75,31 @@ shinyServer(function(input, output, session) {
      
      else{capture.output(s <- summary(res))}
      
-     thiscmcr <- NA
+     thiscmcr <- thisCV <- NA
      try(thiscmcr <- cmcr(res), silent=TRUE)
-     thiscv <- CV(res)
-     thiselast <- elast(res,market=TRUE)
+     try(thiscv <- CV(res),silent = TRUE)
+     #thiselast <- elast(res,market=TRUE)
      
      
      thispsdelta  <- sum(calcProducerSurplus(res,preMerger=FALSE) -calcProducerSurplus(res,preMerger=TRUE),na.rm=TRUE)
      
+     ## $ is the symbol for generic currency. replace in favor of $
      res <- data.frame(
-           'HHI Change' = hhi(res,preMerger=FALSE) -  hhi(res,preMerger=TRUE),
+           'HHI Change' = as.integer(round(hhi(res,preMerger=FALSE) -  hhi(res,preMerger=TRUE))),
            'Industry Price Change (%)' = sum((s$priceDelta)*s$sharesPost/100,na.rm=TRUE),
            'Merging Party Price Change (%)'= sum(((s$priceDelta)*s$sharesPost)[s$isParty == "*"] / s$sharesPost[s$isParty== "*"],na.rm=TRUE),
            'Compensating Marginal Cost Reduction (%)' = ifelse(isCournot, thiscmcr, sum(thiscmcr*s$sharesPost[s$isParty== "*"]/sum(s$sharesPost[s$isParty== "*"],na.rm=TRUE))),
-           'Consumer Harm (\u00A4/unit)' = -1*thiscv,
-           'Producer Benefit (\u00A4/unit)' = thispsdelta,
-           'Overall Effect (\u00A4/unit)'= -1*thiscv + thispsdelta,
+           'Consumer Harm ($/unit)' = -1*thiscv,
+           'Producer Benefit ($/unit)' = thispsdelta,
+           'Overall Effect ($/unit)'= -1*thiscv + thispsdelta,
            
-           'Estimated Market Elasticity' = thiselast,
+           #'Estimated Market Elasticity' = thiselast,
            check.names=FALSE
      )
      
      if(isRevDemand){
-       res$'Overall Effect (\u00A4/unit)' <- NULL
-       colnames(res) <- gsub('(?<=Consumer Harm\\s)\\(\\\u00A4/unit\\)',"(% Expenditure)",colnames(res), perl=TRUE)
+       res$'Overall Effect ($/unit)' <- NULL
+       colnames(res) <- gsub('(?<=Consumer Harm\\s)\\(\\$/unit\\)',"(% Expenditure)",colnames(res), perl=TRUE)
        }
      
      
@@ -88,7 +114,7 @@ shinyServer(function(input, output, session) {
      # a function to execute code from antitrust package based on ui inputs
      
      firstMargin <- which(!is.na(indata$Margins))[1]
-     firstPrice <- which(!is.na(indata[,"Prices \n(\u00A4/unit)"]))[1]
+     firstPrice <- which(!is.na(indata[,"Prices \n($/unit)"]))[1]
      
      
      ownerPre = model.matrix(~-1+indata$ownerPre)
@@ -100,49 +126,49 @@ shinyServer(function(input, output, session) {
      switch(supply,
             Bertrand =
               switch(demand,
-                     `logit (unknown elasticity)`= logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                     `logit (unknown elasticity)`= logit.alm(prices= indata[,"Prices \n($/unit)"],
                                                              shares= indata[,"Output"],
                                                              margins= indata$Margins,
                                                              ownerPre= ownerPre,
                                                              ownerPost= ownerPost,
                                                              mcDelta = indata$mcDelta, labels=indata$Name),
-                     `ces (unknown elasticity)`= ces.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                     `ces (unknown elasticity)`= ces.alm(prices= indata[,"Prices \n($/unit)"],
                                                          shares= indata[,"Output"],
                                                          margins= indata$Margins,
                                                          ownerPre= ownerPre,
                                                          ownerPost= ownerPost,
                                                          mcDelta = indata$mcDelta, labels=indata$Name),
-                     linear=linear(prices= indata[,"Prices \n(\u00A4/unit)"],
+                     linear=linear(prices= indata[,"Prices \n($/unit)"],
                                    quantities= indata[,"Output"],
                                    margins= indata$Margins,
                                    ownerPre= ownerPre,
                                    ownerPost= ownerPost,
                                    mcDelta = indata$mcDelta, labels=indata$Name),
-                     aids=aids(prices= indata[,"Prices \n(\u00A4/unit)"],
+                     aids=aids(prices= indata[,"Prices \n($/unit)"],
                                shares= indata[,"Output"],
                                margins= indata$Margins,
                                ownerPre= ownerPre,
                                ownerPost= ownerPost,
                                mcDelta = indata$mcDelta, labels=indata$Name),
-                     logit= logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                     logit= logit.alm(prices= indata[,"Prices \n($/unit)"],
                                       shares= indata[,"Output"],
                                       margins= indata$Margins,
                                       ownerPre= ownerPre,
                                       ownerPost= ownerPost,
                                       mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast ),
-                     ces = ces.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                     ces = ces.alm(prices= indata[,"Prices \n($/unit)"],
                                    shares= indata[,"Output"],
                                    margins= indata$Margins,
                                    ownerPre= ownerPre,
                                    ownerPost= ownerPost,
                                    mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast),
-                     linear=linear(prices= indata[,"Prices \n(\u00A4/unit)"],
+                     linear=linear(prices= indata[,"Prices \n($/unit)"],
                                    quantities= indata[,"Output"],
                                    margins= indata$Margins,
                                    ownerPre= ownerPre,
                                    ownerPost= ownerPost,
                                    mcDelta = indata$mcDelta, labels=indata$Name),
-                     pcaids=pcaids(prices= indata[,"Prices \n(\u00A4/unit)"],
+                     pcaids=pcaids(prices= indata[,"Prices \n($/unit)"],
                                    shares= indata[,"Output"],
                                    knownElast = -1/indata$Margins[firstMargin],
                                    knownElastIndex = firstMargin,
@@ -153,7 +179,7 @@ shinyServer(function(input, output, session) {
               ),
             Cournot = 
               
-              cournot(prices= indata[,"Prices \n(\u00A4/unit)"][firstPrice],
+              cournot(prices= indata[,"Prices \n($/unit)"][firstPrice],
                       demand = gsub("\\s+\\(.*","",demand,perl=TRUE),
                       cost= rep("linear", nrow(indata)),
                       quantities = as.matrix(indata[,"Output"]),
@@ -166,13 +192,13 @@ shinyServer(function(input, output, session) {
                       labels=list(as.character(indata$ownerPre),indata$Name[firstPrice]))
             ,
             `2nd Score Auction`= switch(demand,
-                                        `logit (unknown elasticity)` = auction2nd.logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                        `logit (unknown elasticity)` = auction2nd.logit.alm(prices= indata[,"Prices \n($/unit)"],
                                                                                             shares= indata[,"Output"],
                                                                                             margins= indata$Margins,
                                                                                             ownerPre= ownerPre,
                                                                                             ownerPost= ownerPost,
                                                                                             mcDelta = indata$mcDelta, labels=indata$Name),
-                                        logit = auction2nd.logit.alm(prices= indata[,"Prices \n(\u00A4/unit)"],
+                                        logit = auction2nd.logit.alm(prices= indata[,"Prices \n($/unit)"],
                                                                      shares= indata[,"Output"],
                                                                      margins= indata$Margins,
                                                                      ownerPre= ownerPre,
@@ -197,7 +223,7 @@ shinyServer(function(input, output, session) {
    
    
    ## create a reactive list of objects
-   values <- reactiveValues(inputData = genInputData(), sim = NULL)
+   values <- reactiveValues(inputData = genInputData(), sim = NULL, msg = NULL)
       
    
                         
@@ -230,6 +256,8 @@ shinyServer(function(input, output, session) {
    observeEvent(input$simulate,{
       
 
+     values[["sim"]] <- values[["msg"]] <-  NULL
+     
      updateTabsetPanel(session,inputId  = "inTabset", selected = "respanel")
       
       indata <- values[["inputData"]]
@@ -247,12 +275,15 @@ shinyServer(function(input, output, session) {
       
       
      
-      
+      thisSim <- msgCatcher(
+                          runSims(supply = input$supply,demand = demand(), indata = indata, mktElast = input$enterElast )
+      )
 
-     values[["sim"]] <-  runSims(supply = input$supply,demand = demand(), indata = indata, mktElast = input$enterElast )
+     values[["sim"]] <-  thisSim$value
                
-               
+     values[["msg"]] <-  list(error=thisSim$error,warning=thisSim$warning)        
       
+     if(!is.null(thisSim$error)) updateTabsetPanel(session,inputId  = "inTabset", selected = "msgpanel")
       
     })
     
@@ -264,7 +295,7 @@ shinyServer(function(input, output, session) {
           
           renderTable({
            
-            if(input$inTabset != "respanel" || input$simulate == 0){return()}
+            if(input$inTabset != "respanel" || input$simulate == 0|| is.null(values[["sim"]])){return()}
          
            
             gensum(values[["sim"]])
@@ -274,12 +305,13 @@ shinyServer(function(input, output, session) {
   ## display summary values to details tab      
     output$results_detailed <- renderTable({
        
-      if(input$inTabset!= "detpanel" || input$simulate == 0 ){return()}
+      if(input$inTabset!= "detpanel" || input$simulate == 0  || is.null(values[["sim"]])){return()}
         
         if(input$supply == "Cournot"){
           
+          res <- NULL
+          capture.output(try(res <- summary(values[["sim"]], market=FALSE),silent=TRUE))
           
-          capture.output(res <- summary(values[["sim"]], market=FALSE))
           
           res$product <- res$mcDelta <- NULL
           
@@ -306,7 +338,7 @@ shinyServer(function(input, output, session) {
     ## display elasticities to elasticity tab
     output$results_elast <- renderTable({
       
-      if(input$inTabset!= "elastpanel" || input$simulate == 0 ){return()}
+      if(input$inTabset!= "elastpanel" || input$simulate == 0 || is.null(values[["sim"]])){return()}
         
        if(input$pre_elast == "Pre-Merger"){ preMerger = TRUE}
         else{preMerger =FALSE}
@@ -317,10 +349,39 @@ shinyServer(function(input, output, session) {
       
     }, rownames = TRUE)   
   
+    
+    output$results_mktelast <- renderTable({
+      
+      if(input$inTabset!= "elastpanel" || input$simulate == 0 || is.null(values[["sim"]])){return()}
+      
+      if(input$pre_elast == "Pre-Merger"){ preMerger = TRUE}
+      else{preMerger =FALSE}
+      
+      res <- as.matrix(elast(values[["sim"]], preMerger=preMerger, market = TRUE))
+      colnames(res)= "Market"
+      print(res)
+      
+    }, rownames = FALSE)   
 
 
+    ## display messages to message tab
+   output$warnings <- renderPrint({
+    
+      if(input$inTabset!= "msgpanel" || input$simulate == 0 || is.null(values[["msg"]]$warning)){return()}  
+     
+      print(values[["msg"]]$warning)
+      
+      
+   })  
 
-
+   output$errors <- renderPrint({
+     
+     if(input$inTabset!= "msgpanel" || input$simulate == 0 || is.null(values[["msg"]]$error)){cat(return())}  
+     
+     print(values[["msg"]]$error)
+     
+     
+   })  
 
   })
 
