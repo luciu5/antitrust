@@ -14,7 +14,7 @@
   calibrate a nested Logit
   demand system under the assumption that the share of the outside
   product is not known. Once the model parameters have been calibrated,
-  methods exist that perform a merger analysis under the assumption that
+  methods exist that perform a merger simulation analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game.
 %%  ~~ A concise (1-5 lines) description of what the class is. ~~
 }

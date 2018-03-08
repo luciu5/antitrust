@@ -12,7 +12,7 @@
 \description{
   The \dQuote{LogitCap} class contains all the information needed to
   calibrate a Logit
-  demand system and perform a merger analysis under the assumption that
+  demand system and perform a merger simulation analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game with
   capacity constraints.
 %%  ~~ A concise (1-5 lines) description of what the class is. ~~

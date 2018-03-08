@@ -12,7 +12,7 @@
 \description{
   The \dQuote{CESALM} class contains all the information needed to
   calibrate a CES
-  demand system and perform a merger analysis under the assumption that
+  demand system and perform a merger simulation analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game with
   unknown market elasticity.
 %%  ~~ A concise (1-5 lines) description of what the class is. ~~
