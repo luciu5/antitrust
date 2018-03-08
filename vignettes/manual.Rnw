@@ -2224,7 +2224,7 @@ sensible default values and then does the following:
 
 \begin{figure}[h]
  \caption{}
-\includegraphics{ClassDiagram.pdf}
+\includegraphics{ClassDiagram.png}
 \label{fig:S4Classes}
 \end{figure}
 
