@@ -328,7 +328,7 @@ shinyServer(function(input, output, session) {
         }
         
         
-        print(res)
+        res
         
       
       })  
@@ -344,7 +344,7 @@ shinyServer(function(input, output, session) {
         else{preMerger =FALSE}
         
         res <- elast(values[["sim"]], preMerger=preMerger)
-        print(res)
+        res
         
       
     }, rownames = TRUE)   
@@ -359,7 +359,7 @@ shinyServer(function(input, output, session) {
       
       res <- as.matrix(elast(values[["sim"]], preMerger=preMerger, market = TRUE))
       colnames(res)= "Market"
-      print(res)
+      res
       
     }, rownames = FALSE)   
 
