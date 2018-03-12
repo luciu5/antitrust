@@ -1,5 +1,6 @@
 require(shiny)
 require(rhandsontable)
+require(antitrust)
 
 shinyUI(fluidPage(
 
