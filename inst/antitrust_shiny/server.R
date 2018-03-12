@@ -279,11 +279,15 @@ shinyServer(function(input, output, session) {
                           runSims(supply = input$supply,demand = demand(), indata = indata, mktElast = input$enterElast )
       )
 
+    
+     thisSim$warning <- grep("Estimated outside share is close to 0", thisSim$warning, value= TRUE, invert=TRUE)
+     if(length(thisSim$warning) == 0){thisSim$warning = NULL}
+       
      values[["sim"]] <-  thisSim$value
                
      values[["msg"]] <-  list(error=thisSim$error,warning=thisSim$warning)        
       
-     if(!is.null(thisSim$error)) updateTabsetPanel(session,inputId  = "inTabset", selected = "msgpanel")
+     if(!is.null(thisSim$error) || !is.null(thisSim$warning)) updateTabsetPanel(session,inputId  = "inTabset", selected = "msgpanel")
       
     })
     

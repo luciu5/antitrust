@@ -137,7 +137,17 @@ setMethod(
     
     names(mc) <- object@labels
     
-    return(as.vector(mc))
+    mc <- as.vector(mc)
+    
+    isNegMC <- mc < 0
+    
+    if( preMerger && any(isNegMC, na.rm = TRUE)){
+      
+      warning(paste("Negative marginal costs were calibrated for the following firms:", paste(object@labels[isNegMC], sep=",")))
+      
+    }
+    
+    return(mc)
   }
 )
 
