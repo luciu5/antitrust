@@ -280,11 +280,11 @@ setMethod(
     if(exAnte){sharesPost <- calcShares(object, preMerger=FALSE)}
     else{sharesPost <- rep(1,length(subset))}
     
-    if(levels){
+    
       result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte,subset=subset) + mcDelta*sharesPost -
         calcMargins(object, preMerger=TRUE,exAnte=exAnte)
-    }
-    else{result <- result/calcPrices(object,preMerger = TRUE, exAnte = exAnte )}
+    
+  if(!levels){result <- result/calcPrices(object,preMerger = TRUE, exAnte = exAnte )}
     
     names(result) <- object@labels
     return(result)

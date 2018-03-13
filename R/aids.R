@@ -479,7 +479,7 @@ setMethod(
 setMethod(
  f= "summary",
  signature= "AIDS",
- definition=function(object,revenue=TRUE,parameters=FALSE,digits=2,...){
+ definition=function(object,revenue=TRUE,levels=TRUE, parameters=FALSE,digits=2,...){
 
 
      curWidth <-  getOption("width")

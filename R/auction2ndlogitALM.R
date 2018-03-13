@@ -16,6 +16,8 @@ setClass(
 
 
              nMargins  <- length(object@margins[!is.na(object@margins)])
+             
+             if(!is.na(object@mktElast) && all(is.na(object@prices))){stop("At least 1 price must be supplied")}
 
              if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
             
@@ -42,7 +44,7 @@ setMethod(
               mktElast     <-  object@mktElast
               prices       <-  object@prices
               
-              avgPrice     <- sum(shares * prices)
+              avgPrice     <- sum(shares * prices,na.rm=TRUE)/sum(shares[!is.na(prices)])
              
 
               nprods <- length(object@shares)
@@ -77,6 +79,7 @@ setMethod(
                                 control=object@control.slopes)$par
 
               if(isTRUE(all.equal(minTheta[2],0,check.names=FALSE))){warning("Estimated outside share is close to 0. Use `auction2nd.logit' function instead")}
+              if(isTRUE(all.equal(minTheta[2],1,check.names=FALSE))){stop("Estimated outside share is close to 1.")}
               
               
               meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) 
