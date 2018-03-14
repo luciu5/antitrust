@@ -127,6 +127,7 @@ setMethod(
  signature= "CES",
  definition=function(object,preMerger=TRUE,market=FALSE){
 
+   
      gamma    <- object@slopes$gamma
 
      shares <-  calcShares(object,preMerger,revenue=TRUE)
@@ -134,10 +135,15 @@ setMethod(
 
       if(market){
 
+        if(preMerger){ prices <- object@pricePre}
+        else{          prices <- object@pricePost}
+        
+          avgPrice <- sum(prices*shares)/sum(shares)
+          
           alpha       <- object@slopes$alpha
           if(is.null(alpha)){
               stop("'shareInside' must be between 0 and 1 to  calculate Market Elasticity")}
-          elast <- (1+alpha) * (1-gamma) * sum(shares) * (1 - sum(shares))
+          elast <- ( 1 - gamma  )  * (1 - sum(shares)) * avgPrice 
 
          }
 

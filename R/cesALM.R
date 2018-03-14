@@ -41,6 +41,8 @@ setMethod(
               margins      <-  object@margins
               prices       <-  object@prices
               mktElast    <-   object@mktElast
+              
+              avgPrice <- sum(prices*shares)/sum(shares)
 
               nprods <- length(object@shares)
 
@@ -54,25 +56,25 @@ setMethod(
 
                   gamma <- theta[1]
                   sOut  <- theta[2]
-                  
-                  alpha <- 1/( 1  - sOut)
+                
 
                   probs <- shares * (1 - sOut)
+                  
                   elasticity <- (gamma - 1 ) * matrix(probs,ncol=nprods,nrow=nprods)
                   diag(elasticity) <- -gamma + diag(elasticity)
                   
-                  revenues <- probs * prices
-                  marginsCand <- -1 * as.vector(MASS::ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  
+                  marginsCand <- -1 * as.vector(MASS::ginv(elasticity * ownerPre) %*% (probs * diag(ownerPre))) / probs
                   
                   m1 <- margins - marginsCand
-                  m2 <- mktElast/ ((1 + alpha) * sum(probs)) - (1 - gamma)
+                  m2 <- mktElast/(( 1 - gamma ) * avgPrice )  -   sOut   
                   measure <- sum(c(m1 , m2)^2,na.rm=TRUE)
 
                   
                   return(measure)
               }
 
-               ## Constrain optimizer to look  alpha > 1,  0 < sOut < 1
+               ## Constrain optimizer to look  gamma > 1,  0 < sOut < 1
               lowerB <- c(1,0)
               upperB <- c(Inf,.99999)
 
@@ -94,7 +96,7 @@ setMethod(
               names(meanval)   <- object@labels
 
 
-              object@slopes      <- list(alpha=1/(1 - minGamma[2]) - 1,gamma=minGamma[1],meanval=meanval)
+              object@slopes      <- list(alpha=1/minGamma[2] - 1  ,gamma=minGamma[1],meanval=meanval)
               object@shareInside <- 1-minGamma[2]
 
               return(object)

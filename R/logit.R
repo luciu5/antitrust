@@ -121,7 +121,7 @@ setMethod(
 
               nprods <- length(shares)
               
-              avgPrice <- sum(shares * prices, na.rm=TRUE)
+              avgPrice <- sum(shares * prices, na.rm=TRUE) / sum(shares)
 
               ## identify which products have enough margin information
               ##  to impute Bertrand margins
@@ -311,7 +311,7 @@ setMethod(
 
      alpha    <- object@slopes$alpha
 
-     shares <-  calcShares(object,preMerger)
+     shares <-  calcShares(object,preMerger = preMerger)
 
      if(market){
 

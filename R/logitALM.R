@@ -60,7 +60,7 @@ setMethod(
 
                   probs <- shares * (1 - sOut)
                   elast <- -alpha *  matrix(prices * probs,ncol=nprods,nrow=nprods)
-                  diag(elast) <- alpha*prices - diag(elast)
+                  diag(elast) <- alpha*prices + diag(elast)
 
                   revenues <- probs * prices
                   marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues

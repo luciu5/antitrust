@@ -57,19 +57,13 @@ setMethod(
      shareKnown <- shares[idx]
 
 
-     minD <- function(betas){
+     minD <- function(bknown){
 
        #enforce symmetry
-       bknown = betas[1]
-       betas  =  betas[-1]
+       betas <- -diversion[idx,]/diversion[,idx] * bknown
+       
 
-
-        B = diag(nprod)
-
-       B[upper.tri(B)] <- betas
-       B=t(B)
-       B[upper.tri(B)] <- betas
-       diag(B)= 1-rowSums(B)
+       B = t(diversion * betas)
 
 
 
@@ -85,31 +79,15 @@ setMethod(
      }
 
 
-     ## Create starting values for optimizer
-     bKnown = shareKnown * (object@knownElast + 1 - shareKnown * (object@mktElast + 1))
-     bStart <- bKnown*diversion[idx,]/diversion[,idx]
-     bStart = -diversion*bStart
-     bStart = c(bKnown,bStart[upper.tri(bStart)])
+     bestBeta <- optimize(minD,
+                     upper=0,lower=-1e6)
 
 
-     ## create bounds for optimizer
-     upper<-lower<-bStart
-     upper[1]=0
-     upper[-(1)]=Inf
-     lower[1]=-Inf
-     lower[-(1)]=0
-
-     bestBetas=optim(bStart,minD,method="L-BFGS-B",
-                     upper=upper,lower=lower,
-                     control=object@control.slopes)
-
-
-     B = diag(nprod)
-     B[upper.tri(B)] <- bestBetas$par[-(1)]
-     B=t(B)
-     B[upper.tri(B)] <- bestBetas$par[-(1)]
-     diag(B)= 1-rowSums(B)
-
+     betas <- -diversion[idx,]/diversion[,idx] * bestBeta$minimum
+     
+     
+     B = t(diversion * betas)
+     
 
      dimnames(B) <- list(labels,labels)
      object@slopes <- B

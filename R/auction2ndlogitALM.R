@@ -61,7 +61,7 @@ setMethod(
                   
                   
                   m1 <- 1 - (log((1-firmShares))/( alpha * firmShares))/margins
-                  m2 <-  mktElast / (avgPrice) - alpha*sOut 
+                  m2 <-  mktElast / (alpha * avgPrice) - sOut 
                   measure <- sum(c(m1 , m2)^2,na.rm=TRUE)
 
                   return(measure)
