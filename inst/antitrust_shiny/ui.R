@@ -8,8 +8,9 @@ shinyUI(fluidPage(
     sidebarLayout(
       sidebarPanel(
        h5(tags$b("Directions:")),
-        helpText(tags$ul(tags$li("Simulate a merger between 'Firm2' and 'Firm3'"),
-                 tags$li("Copy and paste (or enter) shares, margins, and prices in Inputs table (right)."),
+        helpText(tags$ul(
+                 tags$li("Copy and paste (or enter) shares, margins, and prices in Inputs table (right) to simulate a merger between 'Firm1' and 'Firm2'"),
+                 tags$li(helpText("See the vignette to the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package for more details about the models used here." )),
                  tags$li("Shares must be between 0 and 1."),
                  tags$li("Margins should exclude fixed costs.")
                  )
@@ -78,12 +79,24 @@ shinyUI(fluidPage(
         ),
         conditionalPanel(
           condition = "input.supply == '2nd Score Auction'",
-          helpText(tags$b("Note:"), "margins must be $/unit")
+          helpText(tags$b("Note:"), "2nd Score Auction requires $/unit margins.")
         ),
+       conditionalPanel(
+         condition = "input.supply == '2nd Score Auction' && input.calcElast  == 'market elasticity and 1 or more margins'",
+         helpText(tags$b("Note:"), "2nd score Auction only requires a single price.")
+       ),
+       conditionalPanel(
+         condition = "input.supply == '2nd Score Auction' && input.calcElast  == '2 or more margins'",
+         helpText(tags$b("Note:"), "2nd score Auction does not require prices.")
+       ),
         conditionalPanel(
           condition = "input.demand_bert == 'pcaids'",
           helpText(tags$b("Note:"), "Only first non-missing inputted margin is used for pcaids. This margin should belong to a single product firm.")
-        )
+        ),
+       conditionalPanel(
+         condition = "input.demand_bert == 'pcaids'",
+         helpText(tags$b("Note:"), "pcaids does not require pricing information.")
+       )
       ),
       mainPanel(
         h2("Enter Inputs"),
@@ -97,10 +110,13 @@ shinyUI(fluidPage(
         br(), br(),br(),
         tabsetPanel(id = "inTabset",
           tabPanel("Summary", value = "respanel", br(),br(),tableOutput("results"), br(),
-                   helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages.")
+                   helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages."),
+                   conditionalPanel("input.demand_bert == 'pcaids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
+                                    helpText(tags$b("Note:"), "shares are revenue-based.")
+                   )
           ),
           tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_detailed"),
-                   helpText(tags$b("Note:"), "shares include outside good."),
+                   helpText(tags$b("Note:"), "shares include an outside good."),
                    conditionalPanel("input.demand_bert == 'pcaids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
                                     helpText(tags$b("Note:"), "shares are revenue-based.")
                    )), 

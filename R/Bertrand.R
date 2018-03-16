@@ -293,7 +293,7 @@ setMethod(
       output <- calcQuantities(object,preMerger)
     }
     else{
-      warning("'calcQuantities' method not defined for class ",class(object),". Using 'calcShares' instead")
+      #warning("'calcQuantities' method not defined for class ",class(object),". Using 'calcShares' instead")
       output <- calcShares(object,preMerger,revenue=FALSE)
     }
 

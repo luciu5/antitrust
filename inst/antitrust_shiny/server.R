@@ -37,7 +37,7 @@ shinyServer(function(input, output, session) {
      inputData <- data.frame(
        Name = c("Prod1","Prod2","Prod3","Prod4"),
        ownerPre  = c("Firm1","Firm2","Firm3","Firm3"),
-       ownerPost = c("Firm1","Firm3","Firm3","Firm3"),
+       ownerPost = c("Firm1","Firm1","Firm3","Firm3"),
        'Prices \n($/unit)'    =c(.0441,.0328,.0409,.0396)*100,
        'Quantity Shares'   =c(0.09734513, 0.25368732, 0.37315634, 0.27581121),
        Margins =c(NA,.5515,.5421,.49),
