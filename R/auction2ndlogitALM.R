@@ -78,17 +78,25 @@ setMethod(
                                 lower= lowerB,upper=upperB,
                                 control=object@control.slopes)$par
 
-              if(isTRUE(all.equal(minTheta[2],0,check.names=FALSE))){warning("Estimated outside share is close to 0. Use `auction2nd.logit' function instead")}
+              if(isTRUE(all.equal(minTheta[2],0,check.names=FALSE))){warning("Estimated outside share is close to 0. Normalizing relative to largest good.")
+                idx <- which.max(shares)
+                meanval <- log(shares) - log(shares[idx]) 
+                minTheta[2] <- 0
+                object@normIndex <- idx
+                
+              }
+              else{ meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) }
               if(isTRUE(all.equal(minTheta[2],1,check.names=FALSE))){stop("Estimated outside share is close to 1.")}
               
               
-              meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) 
+             
 
               names(meanval)   <- object@labels
 
 
               object@slopes      <- list(alpha=minTheta[1],meanval=meanval)
               object@shareInside <- 1-minTheta[2]
+              
 
               return(object)
 

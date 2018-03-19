@@ -82,6 +82,7 @@ setMethod(
               names(meanval)   <- object@labels
 
               object@slopes    <- list(alpha=alpha,gamma=minGamma,meanval=meanval)
+              object@priceOutside <- idxPrice
 
 
               return(object)
@@ -104,7 +105,9 @@ setMethod(
      gamma    <- object@slopes$gamma
      meanval  <- object@slopes$meanval
 
-     outVal <- ifelse(object@shareInside<1, object@priceOutside^(1-gamma), 0)
+     #outVal <- ifelse(object@shareInside<1, object@priceOutside^(1-gamma), 0)
+     outVal <- ifelse(is.na(object@normIndex), object@priceOutside^(1-gamma), 0)
+     
      shares <- meanval*prices^(1-gamma)
      shares <- shares/(sum(shares,na.rm=TRUE) + outVal)
 
@@ -140,11 +143,8 @@ setMethod(
         
           avgPrice <- sum(prices*shares)/sum(shares)
           
-          alpha       <- object@slopes$alpha
-          if(is.null(alpha)){
-              stop("'shareInside' must be between 0 and 1 to  calculate Market Elasticity")}
           elast <- ( 1 - gamma  )  * (1 - sum(shares)) * avgPrice 
-
+          
          }
 
      else{

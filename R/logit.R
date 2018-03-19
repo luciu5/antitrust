@@ -184,7 +184,7 @@ setMethod(
               names(meanval)   <- object@labels
 
               object@slopes    <- list(alpha=minAlpha,meanval=meanval)
-
+              object@priceOutside <- idxPrice
 
               return(object)
           }
@@ -282,8 +282,9 @@ setMethod(
      alpha    <- object@slopes$alpha
      meanval  <- object@slopes$meanval
 
-     outVal <- ifelse(object@shareInside<1, 1, 0)
-
+     #outVal <- ifelse(object@shareInside<1, 1, 0)
+     outVal <- ifelse(is.na(object@normIndex), 1, 0)
+     
      shares <- exp(meanval + alpha*(prices - object@priceOutside))
      shares <- shares/(outVal + sum(shares,na.rm=TRUE))
 
@@ -347,7 +348,8 @@ setMethod(
               meanval     <- object@slopes$meanval
               subset <- object@subset
       
-              outVal <- ifelse(object@shareInside<1, 1, 0)
+              # outVal <- ifelse(object@shareInside<1, 1, 0)
+              outVal <- ifelse(is.na(object@normIndex), 1, 0)
               
               VPre  <- sum(exp(meanval + (object@pricePre - object@priceOutside)*alpha))  + outVal
               VPost <- sum(exp(meanval + (object@pricePost - object@priceOutside)*alpha)[subset] ) + outVal

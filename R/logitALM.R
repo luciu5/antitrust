@@ -42,6 +42,7 @@ setMethod(
               margins      <-  object@margins
               prices       <-  object@prices
               mktElast     <-  object@mktElast 
+              priceOutside <- object@priceOutside
               
               avgPrice <- sum(shares*prices)
 
@@ -66,7 +67,7 @@ setMethod(
                   marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
                   
                   m1 <- margins - marginsCand
-                  m2 <- mktElast/(avgPrice * alpha) - sOut  
+                  m2 <- mktElast/(avgPrice ) - sOut * alpha  
                   measure <- sum(c(m1,m2)^2,na.rm=TRUE)
 
                   #elast      <-   elast[isMargin,isMargin]
@@ -97,16 +98,31 @@ setMethod(
                                 lower= lowerB,upper=upperB,
                                 control=object@control.slopes)$par
 
-              if(isTRUE(all.equal(minTheta[2],0,check.names=FALSE))){warning("Estimated outside share is close to 0. Use `logit' function instead")}
+              if(isTRUE(all.equal(minTheta[2],0,check.names=FALSE))){
+                
+                warning("Estimated outside share is close to 0. Normalizing relative to largest good.")
+
+              idx <- which.max(shares)
+              shares[idx]
+              priceOutside <- prices[idx]
+              minTheta[2] <- 0
+              object@normIndex <- idx
+              
+              meanval <- log(shares)  - log(shares[idx]) - minTheta[1] * (prices - priceOutside)
+              
+              }
+              else{meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) - minTheta[1] * (prices - priceOutside)}
+              
               if(isTRUE(all.equal(minTheta[2],1,check.names=FALSE))){stop("Estimated outside share is close to 1.")}
               
-              meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) - minTheta[1] * (prices - object@priceOutside)
+              
 
               names(meanval)   <- object@labels
 
 
               object@slopes      <- list(alpha=minTheta[1],meanval=meanval)
               object@shareInside <- 1-minTheta[2]
+              object@priceOutside <- priceOutside
 
               return(object)
 
