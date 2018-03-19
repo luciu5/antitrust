@@ -36,11 +36,11 @@ shinyServer(function(input, output, session) {
      
      inputData <- data.frame(
        Name = c("Prod1","Prod2","Prod3","Prod4"),
-       ownerPre  = c("Firm1","Firm2","Firm3","Firm3"),
-       ownerPost = c("Firm1","Firm1","Firm3","Firm3"),
+       'Pre-merger\n Owner'  = c("Firm1","Firm2","Firm3","Firm3"),
+       'Post-merger\n Owner' = c("Firm1","Firm1","Firm3","Firm3"),
        'Prices \n($/unit)'    =c(.0441,.0328,.0409,.0396)*100,
        'Quantity Shares'   =c(0.09734513, 0.25368732, 0.37315634, 0.27581121),
-       Margins =c(NA,.5515,.5421,.49),
+       'Margins\n(prop)' =c(NA,.5515,.5421,.49),
        stringsAsFactors = FALSE,
        check.names=FALSE
      )
@@ -76,10 +76,15 @@ shinyServer(function(input, output, session) {
      if(isCournot){ 
       
        capture.output( s <- summary(res, market = FALSE))
+       theseshares <- drop(res@quantities/sum(res@quantities))
+       
         s$sharesPost <- s$quantityPost/sum(s$quantityPost,na.rm=TRUE)*100
      }
      
-     else{capture.output(s <- summary(res, revenue = isRevDemand,levels = inLevels))}
+     else{
+       capture.output(s <- summary(res, revenue = isRevDemand,levels = inLevels))
+       theseshares <- res@shares
+       }
      
      isparty <- s$isParty == "*"
      
@@ -92,9 +97,10 @@ shinyServer(function(input, output, session) {
      try(thispsdelta  <- sum(calcProducerSurplus(res,preMerger=FALSE) - calcProducerSurplus(res,preMerger=TRUE),na.rm=TRUE),silent=TRUE)
      partyshare <- s$sharesPost[isparty]
      
-     ## $ is the symbol for generic currency. replace in favor of $
+     
      res <- with(s, data.frame(
-           'HHI Change' = as.integer(round(hhi(res,preMerger=FALSE) -  hhi(res,preMerger=TRUE))),
+           #'HHI Change' = as.integer(round(hhi(res,preMerger=FALSE) -  hhi(res,preMerger=TRUE))),
+           'HHI Change' = as.integer(HHI(theseshares,owner=res@ownerPost) - HHI(theseshares,owner=res@ownerPre)),
            'Industry Price Change (%)' = sum(priceDelta * sharesPost/100,na.rm=TRUE),
            'Merging Party Price Change (%)'= sum(priceDelta[isparty] * partyshare, na.rm=TRUE) / sum(partyshare),
            'Compensating Marginal Cost Reduction (%)' = ifelse(isCournot, thiscmcr, sum(thiscmcr * partyshare) / sum(partyshare)),
@@ -130,9 +136,9 @@ shinyServer(function(input, output, session) {
      firstPrice <- which(!is.na(indata[,"Prices \n($/unit)"]))[1]
      
      
-     ownerPre = model.matrix(~-1+indata$ownerPre)
+     ownerPre = model.matrix(~-1+indata$'Pre-merger\n Owner')
      ownerPre = tcrossprod(ownerPre)
-     ownerPost = model.matrix(~-1+indata$ownerPost)
+     ownerPost = model.matrix(~-1+indata$'Post-merger\n Owner')
      ownerPost = tcrossprod(ownerPost)
      
      
@@ -202,7 +208,7 @@ shinyServer(function(input, output, session) {
                       mktElast = ifelse( grepl("unknown elasticity", demand),
                                          NA_real_, mktElast),
                       mcDelta = indata$mcDelta, 
-                      labels=list(as.character(indata$ownerPre),indata$Name[firstPrice]))
+                      labels=list(as.character(indata$'Pre-merger\n Owner'),indata$Name[firstPrice]))
             ,
             `2nd Score Auction`= switch(demand,
                                         `logit (unknown elasticity)` = auction2nd.logit.alm(prices= indata[,"Prices \n($/unit)"],
@@ -256,6 +262,8 @@ shinyServer(function(input, output, session) {
       
       inputData <- values[["inputData"]]
       
+      if(input$supply =="2nd Score Auction"){colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n ($/unit)"}
+      else{colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n (prop)"}
       if(input$supply =="Cournot"){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Quantities"}
       else if (any(grepl("ces|pcaids",c(input$demand_bert_alm,input$demand_bert,input$demand_2nd_alm, input$demand_2nd), perl=TRUE), na.rm=TRUE)){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Revenue\nShares"}
       else{{colnames(inputData)[grepl("Quant|Shares",colnames(inputData))] <- "Quantity\nShares"}}
@@ -276,16 +284,21 @@ shinyServer(function(input, output, session) {
       
       indata <- values[["inputData"]]
       
-      colnames(indata)[grepl("Quantities|Shares",colnames(indata),perl = TRUE)] <- "Output"
+      isShares <-  grepl("Quantities|Shares",colnames(indata),perl = TRUE)
+     
+      colnames(indata)[ grepl("Margins",colnames(indata),perl = TRUE)] <- "Margins"
+      
+      colnames(indata)[isShares] <- "Output"
       
       indata <- indata[!is.na(indata[,"Output"]),]
       
+      if(any(isShares)) indata$Output <- indata$Output/sum(indata$Output, na.rm=TRUE) ## normalize shares to sum to 1
       
       
       indata$mcDelta <- 0
       
-      indata$ownerPre <- factor(indata$ownerPre)
-      indata$ownerPost <- factor(indata$ownerPost,levels=levels(indata$ownerPre))
+      indata$'Pre-merger\n Owner' <- factor(indata$'Pre-merger\n Owner')
+      indata$'Post-merger\n Owner' <- factor(indata$'Post-merger\n Owner',levels=levels(indata$'Pre-merger\n Owner'))
       
       
      
@@ -294,8 +307,8 @@ shinyServer(function(input, output, session) {
       )
 
     
-     thisSim$warning <- grep("Estimated outside share is close to 0", thisSim$warning, value= TRUE, invert=TRUE)
-     if(length(thisSim$warning) == 0){thisSim$warning = NULL}
+     #thisSim$warning <- grep("Estimated outside share is close to 0", thisSim$warning, value= TRUE, invert=TRUE)
+     #if(length(thisSim$warning) == 0){thisSim$warning = NULL}
        
      values[["sim"]] <-  thisSim$value
                
