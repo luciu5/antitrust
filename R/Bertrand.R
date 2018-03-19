@@ -248,7 +248,7 @@ setMethod(
               object@pricePre <- object@prices
 
 
-              marginPre <- calcMargins(object,TRUE)
+              marginPre <- calcMargins(object,preMerger = TRUE)
 
               mc <- (1 - marginPre) * object@prices
 
@@ -264,7 +264,7 @@ setMethod(
 
              if( preMerger && any(isNegMC, na.rm = TRUE)){
                 
-               warning(paste("Negative marginal costs were calibrated for the following firms:", paste(object@labels[isNegMC], sep=",")))
+               warning(paste("Negative marginal costs were calibrated for the following firms:", paste(object@labels[isNegMC], collapse=",")))
              }
              
               return(mc)
@@ -667,12 +667,12 @@ setMethod(
      isParty <- rowSums( abs(object@ownerPost - object@ownerPre) ) > 0
 
      ##Compute pre-merger margins
-     marginPre  <- calcMargins(object,TRUE)
+     marginPre  <- calcMargins(object,preMerger=TRUE)
 
 
      ##compute post-merger margins evaluated at pre-merger prices
      object@ownerPre <- object@ownerPost
-     marginPost <- calcMargins(object,TRUE)
+     marginPost <- calcMargins(object,preMerger=TRUE)
 
      cmcr <- (marginPost - marginPre)/(1 - marginPre)
      names(cmcr) <- object@labels
