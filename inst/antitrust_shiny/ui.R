@@ -11,7 +11,7 @@ shinyUI(fluidPage(
         helpText(tags$ul(
                  tags$li("Copy and paste (or enter) shares, margins, and prices in Inputs table (right) to simulate a merger between 'Firm1' and 'Firm2'"),
                  tags$li(helpText("See the vignette to the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package for more details about the models used here." )),
-                 tags$li("Shares must be between 0 and 1."),
+                 #tags$li("Shares must be between 0 and 1."),
                  tags$li("Margins should exclude fixed costs.")
                  )
                  ),hr(),
@@ -73,14 +73,14 @@ shinyUI(fluidPage(
           condition = "input.supply == 'Cournot'",
           helpText(tags$b("Note:"), "only the first non-missing inputted price and product name is used for Cournot.")
           ),
-        conditionalPanel(
-          condition = "input.supply != '2nd Score Auction'",
-          helpText(tags$b("Note:"), "margins must be between 0 and 1.")
-        ),
-        conditionalPanel(
-          condition = "input.supply == '2nd Score Auction'",
-          helpText(tags$b("Note:"), "2nd Score Auction requires $/unit margins.")
-        ),
+        #conditionalPanel(
+        #  condition = "input.supply != '2nd Score Auction'",
+        #  helpText(tags$b("Note:"), "margins must be between 0 and 1.")
+        #),
+        #conditionalPanel(
+        #  condition = "input.supply == '2nd Score Auction'",
+        #  helpText(tags$b("Note:"), "2nd Score Auction requires $/unit margins.")
+        #),
        conditionalPanel(
          condition = "input.supply == '2nd Score Auction' && input.calcElast  == 'market elasticity and 1 or more margins'",
          helpText(tags$b("Note:"), "2nd score Auction only requires a single price.")
