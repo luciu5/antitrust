@@ -142,6 +142,7 @@ shinyServer(function(input, output, session) {
     obsMargins <- res@margins
     obsElast <- res@mktElast
     
+    if(length(obsMargins[!is.na(obsMargins)]) <= 2){return()}
     prePrices <- unname(drop(res@pricePre))
     preMargins <- drop(calcMargins(res, preMerger=TRUE))
     preShares <- drop(calcShares(res, preMerger=TRUE))

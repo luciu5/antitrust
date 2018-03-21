@@ -120,7 +120,7 @@ shinyUI(fluidPage(
                    conditionalPanel("input.demand_bert == 'aids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
                                     helpText(tags$b("Note:"), "shares are revenue-based.")
                    )), 
-          tabPanel("Diagnostics", value = "diagpanel", br(),br(), helpText("% Difference between predicted and observed values:"), 
+          tabPanel("Diagnostics", value = "diagpanel", br(),br(), helpText("% Difference between predicted and observed values. Only non-negligible values displayed."), 
                    tableOutput("results_diagnostics")
                   ), 
           tabPanel("Elasticities", value = "elastpanel",  br(),br(),
