@@ -9,7 +9,7 @@ shinyUI(fluidPage(
       sidebarPanel(
        h5(tags$b("Directions:")),
         helpText(tags$ul(
-                 tags$li("Copy and paste (or enter) shares, margins, and prices in Inputs table (right) to simulate a merger between 'Firm1' and 'Firm2'"),
+                 tags$li("Copy and paste (or enter) information into Inputs table (right) to simulate a merger between 'Firm1' and 'Firm2'"),
                  tags$li(helpText("See the vignette to the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package for more details about the models used here." )),
                  #tags$li("Shares must be between 0 and 1."),
                  tags$li("Margins should exclude fixed costs.")
@@ -40,14 +40,14 @@ shinyUI(fluidPage(
           selectInput("demand_bert_alm", "Demand Specification:",
                       choices = c("logit (unknown elasticity)", "ces (unknown elasticity)", 
                                   #"linear",
-                                  "aids"))
+                                  "aids (unknown elasticity)"))
         ),
         conditionalPanel(
           condition = "input.supply == 'Bertrand'  && input.calcElast == 'market elasticity and 1 or more margins'",
           selectInput("demand_bert", "Demand Specification:",
                       choices = c("logit", "ces", 
                                   #"linear",
-                                  "pcaids"))
+                                  "aids"))
         ),
         conditionalPanel(
           condition = "input.supply == 'Cournot'  && input.calcElast == '2 or more margins' ",
@@ -89,13 +89,13 @@ shinyUI(fluidPage(
          condition = "input.supply == '2nd Score Auction' && input.calcElast  == '2 or more margins'",
          helpText(tags$b("Note:"), "2nd score Auction does not require prices.")
        ),
-        conditionalPanel(
-          condition = "input.demand_bert == 'pcaids'",
-          helpText(tags$b("Note:"), "Only first non-missing inputted margin is used for pcaids. This margin should belong to a single product firm.")
-        ),
+        # conditionalPanel(
+        #   condition = "input.demand_bert == 'aids'",
+        #   helpText(tags$b("Note:"), "Only first non-missing inputted margin is used for pcaids. This margin should belong to a single product firm.")
+        # ),
        conditionalPanel(
-         condition = "input.demand_bert == 'pcaids'",
-         helpText(tags$b("Note:"), "pcaids does not require pricing information.")
+         condition = "input.demand_bert == 'aids'",
+         helpText(tags$b("Note:"), "aids does not require pricing information.")
        )
       ),
       mainPanel(
@@ -111,15 +111,18 @@ shinyUI(fluidPage(
         tabsetPanel(id = "inTabset",
           tabPanel("Summary", value = "respanel", br(),br(),tableOutput("results"), br(),
                    helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages."),
-                   conditionalPanel("input.demand_bert == 'pcaids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
+                   conditionalPanel("input.demand_bert == 'aids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
                                     helpText(tags$b("Note:"), "shares are revenue-based.")
                    )
           ),
           tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_detailed"),
                    helpText(tags$b("Note:"), "shares include an outside good."),
-                   conditionalPanel("input.demand_bert == 'pcaids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
+                   conditionalPanel("input.demand_bert == 'aids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
                                     helpText(tags$b("Note:"), "shares are revenue-based.")
                    )), 
+          tabPanel("Diagnostics", value = "diagpanel", br(),br(), helpText("% Difference between predicted and observed values:"), 
+                   tableOutput("results_diagnostics")
+                  ), 
           tabPanel("Elasticities", value = "elastpanel",  br(),br(),
                    radioButtons("pre_elast", "",
                                                 choices = c("Pre-Merger",

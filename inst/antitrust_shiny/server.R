@@ -129,6 +129,47 @@ shinyServer(function(input, output, session) {
 
 
    
+   gendiag <- function(res){
+     #a function to generate diagnostics data
+     
+    isCournot <- grepl("Cournot",class(res))
+    
+    if(isCournot){labels= res@labels[[1]]}
+    else{labels=res@labels}
+    
+    obsPrices <- res@prices
+    obsShares <- res@shares
+    obsMargins <- res@margins
+    obsElast <- res@mktElast
+    
+    prePrices <- unname(drop(res@pricePre))
+    preMargins <- drop(calcMargins(res, preMerger=TRUE))
+    preShares <- drop(calcShares(res, preMerger=TRUE))
+    preShares <- drop(preShares/sum(preShares))
+    preElast <- elast(res, preMerger=TRUE, market=TRUE)
+    
+    res <- data.frame(
+      Prices= 1 - obsPrices/prePrices,
+      Shares=1 - obsShares/preShares,
+      Margins= 1 - obsMargins/preMargins,
+      'Market Elasticity'= 1 - obsElast/preElast,
+      check.names = FALSE
+    )*100
+    
+    rmThese <- colSums(abs(res),na.rm=TRUE)
+    
+    res[-1,'Market Elasticity'] <- NA
+   
+    if(isCournot)  res[-1,'Prices'] <- NA
+     
+    res <- res[,rmThese >1e-3,drop=FALSE]
+    
+    
+    if(!isCournot) rownames(res) <- labels
+    
+    return(res)
+   }
+   
    runSims <- function(supply, demand, indata, mktElast){
      # a function to execute code from antitrust package based on ui inputs
      
@@ -151,6 +192,12 @@ shinyServer(function(input, output, session) {
                                                              ownerPre= ownerPre,
                                                              ownerPost= ownerPost,
                                                              mcDelta = indata$mcDelta, labels=indata$Name),
+                     `aids (unknown elasticity)` = aids(prices= indata[,"Prices \n($/unit)"],
+                               shares= indata[,"Output"],
+                               margins= indata$Margins,
+                               ownerPre= ownerPre,
+                               ownerPost= ownerPost,
+                               mcDelta = indata$mcDelta, labels=indata$Name),
                      `ces (unknown elasticity)`= ces.alm(prices= indata[,"Prices \n($/unit)"],
                                                          shares= indata[,"Output"],
                                                          margins= indata$Margins,
@@ -168,7 +215,7 @@ shinyServer(function(input, output, session) {
                                margins= indata$Margins,
                                ownerPre= ownerPre,
                                ownerPost= ownerPost,
-                               mcDelta = indata$mcDelta, labels=indata$Name),
+                               mcDelta = indata$mcDelta, labels=indata$Name, mktElast = mktElast),
                      logit= logit.alm(prices= indata[,"Prices \n($/unit)"],
                                       shares= indata[,"Output"],
                                       margins= indata$Margins,
@@ -208,7 +255,7 @@ shinyServer(function(input, output, session) {
                       mktElast = ifelse( grepl("unknown elasticity", demand),
                                          NA_real_, mktElast),
                       mcDelta = indata$mcDelta, 
-                      labels=list(as.character(indata$'Pre-merger\n Owner'),indata$Name[firstPrice]))
+                      labels=list(as.character(indata$Name),indata$Name[firstPrice]))
             ,
             `2nd Score Auction`= switch(demand,
                                         `logit (unknown elasticity)` = auction2nd.logit.alm(prices= indata[,"Prices \n($/unit)"],
@@ -379,6 +426,19 @@ shinyServer(function(input, output, session) {
       
       })  
     
+    
+    ## display results to diagnostics tab
+    output$results_diagnostics <- renderTable({
+      
+      if(input$inTabset!= "diagpanel" || input$simulate == 0 || is.null(values[["sim"]])){return()}
+      
+      res <- gendiag(values[["sim"]])
+      
+      res
+      
+      
+      
+    }, digits =0,rownames = TRUE)   
     
    
     ## display elasticities to elasticity tab
