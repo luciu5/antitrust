@@ -12,6 +12,7 @@
 
 aids(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
+                 mktElast = NA_real_,
                  mcDelta=rep(0, length(shares)),
                  subset=rep(TRUE, length(shares)),
                  parmStart= rep(NA_real_,2),
@@ -62,7 +63,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
   \item{knownElast}{A negative number equal to the pre-merger own-price
     elasticity for any of the k products.}
   \item{mktElast}{A negative number equal to the industry pre-merger
-    price elasticity. Default is -1.}
+    price elasticity. Default is NAfor  \code{aids} and -1 for \code{pcaids} .}
   \item{diversions}{A k x k matrix of diversion ratios with diagonal
     elements equal to -1. Default is missing, in which case diversion
     according to revenue share is assumed.}

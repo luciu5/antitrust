@@ -29,11 +29,16 @@ setClass(
              if(!isTRUE(all.equal(sum(object@shares),1,check.names=FALSE,tolerance=1e-3))){
                  stop("The sum of 'shares' values must equal 1")}
 
-             if(length(object@margins[!is.na(object@margins)])<2){
-                 stop("'margins' must contain at least two non-missing margins in order to calibrate demand parameters")
-             }
+             nMargins <- length(object@margins[!is.na(object@margins)])
+             
+             
+             
+             if(nMargins<2 && isTRUE(is.na(object@mktElast))){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
+             if(nMargins<1 && !isTRUE(is.na(object@mktElast))){stop("At least 1 element of 'margins' must not be NA in order to calibrate demand parameters")}
+             
 
 
+             return(NULL)
 
          }
 
@@ -60,6 +65,7 @@ setMethod(
      labels     <- object@labels
      ownerPre   <- object@ownerPre
      parmStart  <- object@parmStart
+     mktElast   <- ifelse(length(object@mktElast) == 0, NA, object@mktElast)
      nprod=length(shares)
 
      cancalibrate <- apply(diversion,1,function(x){!any(x==0)})
@@ -74,7 +80,7 @@ setMethod(
      minD <- function(s){
 
        #enforce symmetry
-       mktElast = s[2]
+       thismktElast = s[2]
        betas  =   s[1]
 
        betas <- -diversion[idx,]/diversion[,idx] * betas
@@ -82,7 +88,7 @@ setMethod(
        B = t(diversion * betas)
        #diag(B)=  betas - rowSums(B) #enforce homogeneity of degree zero
 
-       elast <- t(B/shares) + shares * (mktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
+       elast <- t(B/shares) + shares * (thismktElast + 1) #Caution: returns TRANSPOSED elasticity matrix
        diag(elast) <- diag(elast) - 1
 
        marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
@@ -92,10 +98,11 @@ setMethod(
        m2 <- diversion/t(diversion) - tcrossprod(1/betas,betas) 
        m2 <-  m2[upper.tri(m2)]
        m2 <- m2[is.finite(m2) & m2 != 0]
+       m3 <- thismktElast - mktElast
        #m2 <- as.vector(diversion +  t(B)/diag(B)) #measure distance between observed and predicted diversion
 
 
-       measure=c(m1,m2)
+       measure=c(m1,m2,m3)
 
       
        return(sum(measure^2,na.rm=TRUE))
@@ -580,6 +587,7 @@ setMethod(
 
 aids <- function(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
+                 mktElast = NA_real_,
                  mcDelta=rep(0, length(shares)),
                  subset=rep(TRUE, length(shares)),
                  parmStart= rep(NA_real_,2),
@@ -605,7 +613,7 @@ aids <- function(shares,margins,prices,diversions,
 
     ## Create AIDS container to store relevant data
     result <- new("AIDS",shares=shares,mcDelta=mcDelta,subset=subset,
-                  margins=margins, prices=prices, quantities=shares,
+                  margins=margins, prices=prices, quantities=shares,  mktElast = mktElast,
                   ownerPre=ownerPre,ownerPost=ownerPost, parmStart=parmStart,
                   diversion=diversions,
                   priceStart=priceStart,labels=labels)
