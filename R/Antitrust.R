@@ -113,8 +113,9 @@ setMethod(
  signature= "Antitrust",
  definition=function(object){
 
-    print(calcPriceDelta(object))
-
+    try(res <- summary(object,market=TRUE), silent = TRUE)
+  
+  return(NULL)
 }
           )
 
