@@ -40,7 +40,7 @@ shinyServer(function(input, output, session) {
        'Post-merger\n Owner' = c("Firm1","Firm1","Firm3","Firm3"),
        'Prices \n($/unit)'    =c(.0441,.0328,.0409,.0396)*100,
        'Quantity Shares'   =c(0.09734513, 0.25368732, 0.37315634, 0.27581121),
-       'Margins\n(prop)' =c(NA,.5515,.5421,.49),
+       'Margins\n(proportion)' =c(NA,.5515,.5421,.49),
        stringsAsFactors = FALSE,
        check.names=FALSE
      )
@@ -174,8 +174,20 @@ shinyServer(function(input, output, session) {
    runSims <- function(supply, demand, indata, mktElast){
      # a function to execute code from antitrust package based on ui inputs
      
-     firstMargin <- which(!is.na(indata$Margins))[1]
-     firstPrice <- which(!is.na(indata[,"Prices \n($/unit)"]))[1]
+     prices <- indata[,"Prices \n($/unit)"]
+     margins <- indata$Margins
+     
+     missPrices <- any(is.na(prices))
+     
+     shares_quantity <- shares_revenue <- indata[,"Output"]
+     if(!missPrices){ 
+       
+       shares_revenue <- prices * shares_revenue / sum(prices * shares_revenue)
+       if(supply == "2nd Score Auction") margins <- margins * prices # convert to level margins
+     }
+     
+     firstMargin <- which(!is.na(margins))[1]
+     firstPrice <- which(!is.na(prices))[1]
      
      
      ownerPre = model.matrix(~-1+indata$'Pre-merger\n Owner')
@@ -187,57 +199,57 @@ shinyServer(function(input, output, session) {
      switch(supply,
             Bertrand =
               switch(demand,
-                     `logit (unknown elasticity)`= logit.alm(prices= indata[,"Prices \n($/unit)"],
-                                                             shares= indata[,"Output"],
-                                                             margins= indata$Margins,
+                     `logit (unknown elasticity)`= logit.alm(prices= prices,
+                                                             shares= shares_quantity,
+                                                             margins= margins,
                                                              ownerPre= ownerPre,
                                                              ownerPost= ownerPost,
                                                              mcDelta = indata$mcDelta, labels=indata$Name),
-                     `aids (unknown elasticity)` = aids(prices= indata[,"Prices \n($/unit)"],
-                               shares= indata[,"Output"],
-                               margins= indata$Margins,
+                     `aids (unknown elasticity)` = aids(prices= prices,
+                               shares= shares_revenue,
+                               margins= margins,
                                ownerPre= ownerPre,
                                ownerPost= ownerPost,
                                mcDelta = indata$mcDelta, labels=indata$Name),
-                     `ces (unknown elasticity)`= ces.alm(prices= indata[,"Prices \n($/unit)"],
-                                                         shares= indata[,"Output"],
-                                                         margins= indata$Margins,
+                     `ces (unknown elasticity)`= ces.alm(prices= prices,
+                                                         shares= shares_revenue,
+                                                         margins= margins,
                                                          ownerPre= ownerPre,
                                                          ownerPost= ownerPost,
                                                          mcDelta = indata$mcDelta, labels=indata$Name),
-                     linear=linear(prices= indata[,"Prices \n($/unit)"],
+                     linear=linear(prices= prices,
                                    quantities= indata[,"Output"],
-                                   margins= indata$Margins,
+                                   margins= margins,
                                    ownerPre= ownerPre,
                                    ownerPost= ownerPost,
                                    mcDelta = indata$mcDelta, labels=indata$Name),
-                     aids=aids(prices= indata[,"Prices \n($/unit)"],
-                               shares= indata[,"Output"],
-                               margins= indata$Margins,
+                     aids=aids(prices= prices,
+                               shares= shares_revenue,
+                               margins= margins,
                                ownerPre= ownerPre,
                                ownerPost= ownerPost,
                                mcDelta = indata$mcDelta, labels=indata$Name, mktElast = mktElast),
-                     logit= logit.alm(prices= indata[,"Prices \n($/unit)"],
-                                      shares= indata[,"Output"],
-                                      margins= indata$Margins,
+                     logit= logit.alm(prices= prices,
+                                      shares= shares_quantity,
+                                      margins= margins,
                                       ownerPre= ownerPre,
                                       ownerPost= ownerPost,
                                       mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast ),
-                     ces = ces.alm(prices= indata[,"Prices \n($/unit)"],
-                                   shares= indata[,"Output"],
-                                   margins= indata$Margins,
+                     ces = ces.alm(prices= prices,
+                                   shares= shares_revenue,
+                                   margins= margins,
                                    ownerPre= ownerPre,
                                    ownerPost= ownerPost,
                                    mcDelta = indata$mcDelta, labels=indata$Name,  mktElast = mktElast),
-                     linear=linear(prices= indata[,"Prices \n($/unit)"],
+                     linear=linear(prices= prices,
                                    quantities= indata[,"Output"],
-                                   margins= indata$Margins,
+                                   margins= margins,
                                    ownerPre= ownerPre,
                                    ownerPost= ownerPost,
                                    mcDelta = indata$mcDelta, labels=indata$Name),
-                     pcaids=pcaids(prices= indata[,"Prices \n($/unit)"],
-                                   shares= indata[,"Output"],
-                                   knownElast = -1/indata$Margins[firstMargin],
+                     pcaids=pcaids(prices= prices,
+                                   shares= shares_revenue,
+                                   knownElast = -1/margins[firstMargin],
                                    knownElastIndex = firstMargin,
                                    mktElast = mktElast,
                                    ownerPre= ownerPre,
@@ -246,11 +258,11 @@ shinyServer(function(input, output, session) {
               ),
             Cournot = 
               
-              cournot(prices= indata[,"Prices \n($/unit)"][firstPrice],
+              cournot(prices= prices[firstPrice],
                       demand = gsub("\\s+\\(.*","",demand,perl=TRUE),
                       cost= rep("linear", nrow(indata)),
                       quantities = as.matrix(indata[,"Output"]),
-                      margins= as.matrix(indata$Margins),
+                      margins= as.matrix(margins),
                       ownerPre= ownerPre,
                       ownerPost= ownerPost,
                       mktElast = ifelse( grepl("unknown elasticity", demand),
@@ -259,15 +271,15 @@ shinyServer(function(input, output, session) {
                       labels=list(as.character(indata$Name),indata$Name[firstPrice]))
             ,
             `2nd Score Auction`= switch(demand,
-                                        `logit (unknown elasticity)` = auction2nd.logit.alm(prices= indata[,"Prices \n($/unit)"],
-                                                                                            shares= indata[,"Output"],
-                                                                                            margins= indata$Margins,
+                                        `logit (unknown elasticity)` = auction2nd.logit.alm(prices= prices,
+                                                                                            shares= shares_quantity,
+                                                                                            margins= margins,
                                                                                             ownerPre= ownerPre,
                                                                                             ownerPost= ownerPost,
                                                                                             mcDelta = indata$mcDelta, labels=indata$Name),
-                                        logit = auction2nd.logit.alm(prices= indata[,"Prices \n($/unit)"],
-                                                                     shares= indata[,"Output"],
-                                                                     margins= indata$Margins,
+                                        logit = auction2nd.logit.alm(prices= prices,
+                                                                     shares= shares_quantity,
+                                                                     margins= margins,
                                                                      ownerPre= ownerPre,
                                                                      ownerPost= ownerPost,
                                                                      mcDelta = indata$mcDelta, labels=indata$Name, 
@@ -310,14 +322,20 @@ shinyServer(function(input, output, session) {
       
       inputData <- values[["inputData"]]
       
-      if(input$supply =="2nd Score Auction"){colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n ($/unit)"}
-      else{colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n (prop)"}
+      prices <- inputData[,"Prices \n($/unit)"]
+      shares <- inputData[,grepl("Shares",colnames(inputData))]
+      
+      missPrices <- isTRUE(any(is.na(prices[ !is.na(shares) ] ) ))
+      
+      if(missPrices && input$supply =="2nd Score Auction"){colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n ($/unit)"}
+      else{colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n (proportion)"}
       if(input$supply =="Cournot"){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Quantities"}
-      else if (any(grepl("ces|aids",c(input$demand_bert_alm,input$demand_bert,input$demand_2nd_alm, input$demand_2nd), perl=TRUE), na.rm=TRUE)){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Revenue\nShares"}
+      else if (missPrices && any(grepl("ces|aids",c(input$demand_bert_alm,input$demand_bert,input$demand_2nd_alm, input$demand_2nd), perl=TRUE), na.rm=TRUE)){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Revenue\nShares"}
       else{{colnames(inputData)[grepl("Quant|Shares",colnames(inputData))] <- "Quantity\nShares"}}
       
       if (!is.null(inputData))
-        rhandsontable(inputData, stretchH = "all")
+        rhandsontable(inputData, stretchH = "all") %>% hot_col(col = 1:ncol(inputData), valign = "htMiddle") %>%
+        hot_col(col = which (sapply(inputData,is.numeric)),halign = "htCenter" )
     })
 
 
