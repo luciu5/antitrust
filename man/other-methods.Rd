@@ -55,6 +55,7 @@
 \alias{calcdMC}
 \alias{calcdMC,ANY-method}
 \alias{calcdMC,Stackelberg-method}
+\alias{calcDiagnostics,Bertrand-method}
 \alias{calcSlopes}
 \alias{calcSlopes,ANY-method}
 \alias{calcSlopes,AIDS-method}
@@ -74,6 +75,7 @@
 \alias{calcSlopes,Auction2ndLogitALM-method}
 \alias{calcSlopes,Cournot-method}
 \alias{calcSlopes,Stackelberg-method}
+\alias{getParms,Bertrand-method}
 \alias{hhi}
 \alias{hhi,ANY-method}
 \alias{hhi,Bertrand-method}
@@ -106,11 +108,13 @@
 \S4method{calcMargins}{ANY}(object,preMerger=TRUE)
 \S4method{calcMC}{Bertrand}(object,preMerger=TRUE)
 \S4method{calcSlopes}{ANY}(object,preMerger=TRUE)
+\S4method{calcDiagnostics}{Bertrand}(object,labels=object@labels)
+\S4method{getParms}{Bertrand}(object,digits=10)
 \S4method{hhi}{Bertrand}(object,preMerger=TRUE,revenue=FALSE,insideonly=TRUE)
 \S4method{ownerToMatrix}{Antitrust}(object,preMerger=TRUE)
 \S4method{ownerToVec}{Antitrust}(object,preMerger=TRUE)
 \S4method{plot}{Bertrand}(x,scale=.1)
-\S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,digits=2,...)
+\S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,market=FALSE,digits=2,...)
 
 
 }
@@ -135,9 +139,11 @@
     is FALSE}
      \item{levels}{If TRUE, report results in levels. If FALSE, report results in percents. Default is FALSE}
     \item{digits}{The number of significant digits to round
-  printed results. Default is 2}
+  printed results.}
   \item{scale}{The proportion below marginal cost and above equilbrium price that should be plotted. Default is .1 }
   \item{insideonly}{If TRUE, excludes the share of the outside good from the calculation. Default is TRUE.}
+  \item{market}{If TRUE, reports market-level summary. Otherwise reports product/plant level summary. Default
+    is FALSE}
   \item{...}{Arguments to be passed to non-linear solver, OR for
     \code{summary} to \code{CV}.}
 }

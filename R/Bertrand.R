@@ -63,6 +63,11 @@ setGeneric (
  )
 
 setGeneric (
+  name= "calcDiagnostics",
+  def=function(object,...){standardGeneric("calcDiagnostics")}
+)
+
+setGeneric (
  name= "calcQuantities",
  def=function(object,...){standardGeneric("calcQuantities")}
  )
@@ -151,6 +156,11 @@ setGeneric (
  name= "cmcr",
  def=function(object,...){standardGeneric("cmcr")}
  )
+
+setGeneric (
+  name= "getParms",
+  def=function(object,...){standardGeneric("getParms")}
+)
 
 
 setGeneric (
@@ -805,3 +815,59 @@ setMethod(
 
               }
           )
+
+setMethod(
+  f= "calcDiagnostics",
+  signature= "Bertrand",
+  definition=function(object,labels=object@labels){
+    
+    obsPrices <- object@prices
+    obsShares <- object@shares
+    obsMargins <- object@margins
+    obsElast <- object@mktElast
+    
+    prePrices <- unname(drop(object@pricePre))
+    preMargins <- drop(calcMargins(object, preMerger=TRUE))
+    preShares <- drop(calcShares(object, preMerger=TRUE))
+    preShares <- drop(preShares/sum(preShares))
+    preElast <- elast(object, preMerger=TRUE, market=TRUE)
+    
+    res <- data.frame(
+      Prices= 1 - obsPrices/prePrices,
+      Shares=1 - obsShares/preShares,
+      Margins= 1 - obsMargins/preMargins,
+      'Market Elasticity'= 1 - obsElast/preElast,
+      check.names = FALSE
+    )*100
+    
+    rmThese <- colSums(abs(res),na.rm=TRUE)
+    
+    res[-1,'Market Elasticity'] <- NA
+    
+    
+  
+     rownames(res) <- labels
+    
+    
+    return(res)
+  }
+)
+
+
+setMethod(
+  f= "getParms",
+  signature= "Bertrand",
+  definition=function(object,digits=10){
+if(is.list(object@slopes)){
+  return(lapply(object@slopes,round,digits=digits))
+}
+else{
+  return(
+    list(slopes = round(object@slopes,digits),
+         intercepts =  round(object@intercepts,digits)
+         )
+    )
+}
+
+  })
+
