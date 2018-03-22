@@ -55,6 +55,7 @@
 \alias{calcdMC}
 \alias{calcdMC,ANY-method}
 \alias{calcdMC,Stackelberg-method}
+\alias{calcDiagnostics,ANY-method}
 \alias{calcDiagnostics,Bertrand-method}
 \alias{calcSlopes}
 \alias{calcSlopes,ANY-method}
@@ -75,6 +76,7 @@
 \alias{calcSlopes,Auction2ndLogitALM-method}
 \alias{calcSlopes,Cournot-method}
 \alias{calcSlopes,Stackelberg-method}
+\alias{getParms,ANY-method}
 \alias{getParms,Bertrand-method}
 \alias{hhi}
 \alias{hhi,ANY-method}
@@ -114,7 +116,8 @@
 \S4method{ownerToMatrix}{Antitrust}(object,preMerger=TRUE)
 \S4method{ownerToVec}{Antitrust}(object,preMerger=TRUE)
 \S4method{plot}{Bertrand}(x,scale=.1)
-\S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,market=FALSE,digits=2,...)
+\S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,levels=FALSE,
+parameters=FALSE,market=FALSE,digits=2,...)
 
 
 }
@@ -144,6 +147,7 @@
   \item{insideonly}{If TRUE, excludes the share of the outside good from the calculation. Default is TRUE.}
   \item{market}{If TRUE, reports market-level summary. Otherwise reports product/plant level summary. Default
     is FALSE}
+  \item{labels}{A length-k vector product labels. Defauult is object@labels}
   \item{...}{Arguments to be passed to non-linear solver, OR for
     \code{summary} to \code{CV}.}
 }

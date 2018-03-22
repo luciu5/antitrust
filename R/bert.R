@@ -61,7 +61,7 @@ else if (demand %in% c("logit","ces")){
   
 result <-   switch(demand,
          aids=new("AIDS",shares=shares_revenue,mcDelta=mcDelta,subset=subset,
-                  margins=margins, prices=prices, quantities=shares,  mktElast = mktElast,
+                  margins=margins, prices=prices, quantities=shares_revenue,  mktElast = mktElast,
                   ownerPre=ownerPre,ownerPost=ownerPost, parmStart=parmStart,
                   diversion=diversions,
                   priceStart=priceStart,labels=labels),
@@ -75,7 +75,7 @@ result <-   switch(demand,
                      subset=subset,
                      priceOutside=priceOutside,
                      priceStart=priceStart,
-                     shareInside= sum(shares),
+                     shareInside= sum(shares_quantity),
                      parmsStart=parmStart,
                      labels=labels),
          
@@ -88,13 +88,13 @@ result <-   switch(demand,
                    subset=subset,
                    priceOutside=priceOutside,
                    priceStart=priceStart,
-                   shareInside=sum(shares),
+                   shareInside=sum(shares_revenue),
                    parmsStart=parmStart,
                    labels=labels),
          
          linear=new("Linear",prices=prices, quantities=shares_quantity,margins=margins,
-                    shares=shares,mcDelta=mcDelta, subset=subset,
-                    ownerPre=ownerPre,diversion=diversions, symmetry=symmetry,
+                    shares=shares_quantity,mcDelta=mcDelta, subset=subset,
+                    ownerPre=ownerPre,diversion=diversions, symmetry=TRUE,
                     ownerPost=ownerPost, priceStart=priceStart,labels=labels)
   )
   
