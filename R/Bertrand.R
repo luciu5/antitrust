@@ -525,7 +525,13 @@ setMethod(
 
      pricePre   <-  object@pricePre
      pricePost  <-  object@pricePost
-     priceDelta <- calcPriceDelta(object,levels=levels)
+     
+     if(grepl("aids",class(object),ignore.case=TRUE)){
+     
+       priceDelta <-  object@priceDelta 
+     }
+     else{ priceDelta <- calcPriceDelta(object,levels=levels)}
+     
      if(!levels) priceDelta <- priceDelta *100
 
      if(!shares && hasMethod("calcQuantities",class(object))){

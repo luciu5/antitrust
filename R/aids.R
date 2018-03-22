@@ -12,7 +12,6 @@ setClass(
         mktElast         =  numeric(),
         parmStart        =  numeric(),
         control.slopes = list( 
-          factr = 1e7 
         )
        ),
        
@@ -468,17 +467,6 @@ setMethod(
 
  })
 
-
-
-setMethod(
- f= "show",
- signature= "AIDS",
- definition=function(object){
-
-     print(object@priceDelta*100)
-
-}
- )
 
 
 
