@@ -313,7 +313,7 @@ shinyServer(function(input, output, session) {
       if(input$supply =="2nd Score Auction"){colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n ($/unit)"}
       else{colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n (prop)"}
       if(input$supply =="Cournot"){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Quantities"}
-      else if (any(grepl("ces|pcaids",c(input$demand_bert_alm,input$demand_bert,input$demand_2nd_alm, input$demand_2nd), perl=TRUE), na.rm=TRUE)){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Revenue\nShares"}
+      else if (any(grepl("ces|aids",c(input$demand_bert_alm,input$demand_bert,input$demand_2nd_alm, input$demand_2nd), perl=TRUE), na.rm=TRUE)){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Revenue\nShares"}
       else{{colnames(inputData)[grepl("Quant|Shares",colnames(inputData))] <- "Quantity\nShares"}}
       
       if (!is.null(inputData))
@@ -403,7 +403,7 @@ shinyServer(function(input, output, session) {
           isAuction <- grepl("Auction",class(values[["sim"]]))
           isRevDemand <- grepl("ces|aids",class(values[["sim"]]),ignore.case = TRUE)
           inLevels <- FALSE
-          isAIDS <- grepl("aids",class(values[["sim"]]),ignore.case = TRUE)
+          #isAIDS <- grepl("aids",class(values[["sim"]]),ignore.case = TRUE)
           missPrice <- any(is.na(values[["sim"]]@prices)) 
           if(isAuction && missPrice){inLevels = TRUE}
           
@@ -413,7 +413,7 @@ shinyServer(function(input, output, session) {
           
           thesenames <-  c("Merging Party","Name","Pre-Merger Price","Post-Merger Price", "Price Change (%)","Pre-Merger Share (%)","Post-Merger Share (%)", "Share Change (%)")
           
-          if(isAIDS && missPrice){thesenames <- thesenames[!thesenames %in% c("Pre-Merger Price","Post-Merger Price")]}
+          #if(isAIDS && missPrice){thesenames <- thesenames[!thesenames %in% c("Pre-Merger Price","Post-Merger Price")]}
           
           colnames(res) <- thesenames
         
