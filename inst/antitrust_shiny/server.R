@@ -428,6 +428,24 @@ shinyServer(function(input, output, session) {
       })  
     
     
+    output$results_shareOut <- renderTable({
+      
+      if(input$inTabset!= "detpanel" || input$simulate == 0  || is.null(values[["sim"]])){return()}
+      if( grepl("aids|cournot",class(values[["sim"]]),ignore.case = TRUE)){return()}
+        
+      isRevDemand <- grepl("ces",class(values[["sim"]]),ignore.case = TRUE)
+      
+      res <- data.frame('Outside\n Share (%)'= c(
+                         1 - sum(calcShares(values[["sim"]], preMerger=TRUE,revenue=isRevDemand)),
+                         1 - sum(calcShares(values[["sim"]], preMerger=FALSE,revenue=isRevDemand))
+                         )
+                        ,check.names = FALSE
+                        )*100
+      rownames(res) <- c("Pre-Merger","Post-Merger")
+      return(res)
+      
+      }, rownames = TRUE, digits=0,align="c")
+    
     ## display results to diagnostics tab
     output$results_diagnostics <- renderTable({
       
@@ -439,7 +457,18 @@ shinyServer(function(input, output, session) {
       
       
       
-    }, digits =0,rownames = TRUE)   
+    }, digits =0,rownames = TRUE)
+    
+    
+    ## display parameters to diagnostics tab
+    output$parameters <- renderPrint({
+      
+      if(input$inTabset!= "diagpanel" || input$simulate == 0  || is.null(values[["sim"]])){return()}  
+      
+      print(getParms(values[["sim"]],digits=2))
+      
+      
+    })  
     
    
     ## display elasticities to elasticity tab
