@@ -589,12 +589,12 @@ equations than unknowns to identify both the unknown demand parameters
 described above as well as $\epsilon$. 
 
 The \verb@calcSlopes@ method, called by the \verb@aids@
-function to calibrate the AIDS parameters uses a minimum distance algorithm to find the $\epsilon$ and off-diagonal elements of $B$ that best satisfy i) all the FOCs for which there is sufficient information and ii) the diversion equations $d_{ij}=-\frac{\beta_{ji}}{\beta_{ii}}$. The $\beta_{ii}$s are recovered from the fact that $\sum_{j}d_{ij}=0$; customers must switch to a product included in the model.
+function to calibrate the AIDS parameters uses a minimum distance algorithm to find the $\epsilon$ and a single diagonal element of $B$ that best satisfy i) all the FOCs for which there is sufficient information and ii) the diversion equations $d_{ij}=-\frac{\beta_{ji}}{\beta_{ii}}$, and iii) the market elasticity (if supplied using the `mktElast' argument). The $\beta_{ii}$s are recovered from the fact that $\sum_{j}d_{ij}=0$; customers must switch to a product included in the model.
 
 If only a single product's own-price elasticity and $\epsilon$ is observed, then \verb@pcaids@ may be used in lieu of \verb@aids@ to calibrate
 the LA-AIDS parameters.\footnote{The main difference between
   \texttt{pcaids} and  \texttt{aids} is that while \texttt{aids} requires
-  users to supply revenue shares and at least two margins as inputs,  \texttt{pcaids} requires the
+  users to supply revenue shares and at least two margins (or a single margin and the market elasticity) as inputs,  \texttt{pcaids} requires the
   user to supply revenue shares, $\epsilon$ (using the `mktElast' argument), and the own-price
   elasticity for one of the products (using the `knownElast'
   argument). A value for `knownElast' may be found by
