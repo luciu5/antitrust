@@ -129,7 +129,7 @@ shinyServer(function(input, output, session) {
 
 
    
-   gendiag <- function(res){
+   gendiag <- function(res,mktElast=FALSE){
      #a function to generate diagnostics data
      
     isCournot <- grepl("Cournot",class(res))
@@ -149,17 +149,19 @@ shinyServer(function(input, output, session) {
     preShares <- drop(preShares/sum(preShares))
     preElast <- elast(res, preMerger=TRUE, market=TRUE)
     
+    if(!mktElast){
+      
     res <- data.frame(
       Prices= 1 - obsPrices/prePrices,
       Shares=1 - obsShares/preShares,
       Margins= 1 - obsMargins/preMargins,
-      'Market Elasticity'= 1 - obsElast/preElast,
+      #'Market Elasticity'= 1 - obsElast/preElast,
       check.names = FALSE
     )*100
     
     rmThese <- colSums(abs(res),na.rm=TRUE)
     
-    res[-1,'Market Elasticity'] <- NA
+  
    
     if(isCournot)  res[-1,'Prices'] <- NA
      
@@ -168,6 +170,13 @@ shinyServer(function(input, output, session) {
     
     if(!isCournot) rownames(res) <- labels
     
+    }
+    
+    else{ res <- data.frame('Market Elasticity'= 1 - obsElast/preElast,
+                            check.names = FALSE)*100
+    
+    if(res < 1e-3) res <- NULL
+    }
     return(res)
    }
    
@@ -434,6 +443,8 @@ shinyServer(function(input, output, session) {
           #if(isAIDS && missPrice){thesenames <- thesenames[!thesenames %in% c("Pre-Merger Price","Post-Merger Price")]}
           
           colnames(res) <- thesenames
+          
+          res[,c("Pre-Merger Share (%)","Post-Merger Share (%)")] <-  res[,c("Pre-Merger Share (%)","Post-Merger Share (%)")] * 100 / colSums( res[,c("Pre-Merger Share (%)","Post-Merger Share (%)")])
         
           if(inLevels){ colnames(res)[ colnames(res) == "Price Change (%)"] = "Price Change ($/unit)"}
           
@@ -443,7 +454,7 @@ shinyServer(function(input, output, session) {
         res
         
       
-      })  
+      }, digits = 1)  
     
     
     output$results_shareOut <- renderTable({
@@ -462,7 +473,7 @@ shinyServer(function(input, output, session) {
       rownames(res) <- c("Pre-Merger","Post-Merger")
       return(res)
       
-      }, rownames = TRUE, digits=0,align="c")
+      }, rownames = TRUE, digits=1,align="c")
     
     ## display results to diagnostics tab
     output$results_diagnostics <- renderTable({
@@ -475,9 +486,23 @@ shinyServer(function(input, output, session) {
       
       
       
-    }, digits =0,rownames = TRUE)
+    }, digits =0,rownames = TRUE,align="c")
+    
+    ## display market elasticity gap to diagnostics tab
+    output$results_diag_elast <- renderTable({
+      
+      if(input$inTabset!= "diagpanel" || input$simulate == 0 || is.null(values[["sim"]])){return()}
+      
+      res <- gendiag(values[["sim"]], mktElast=TRUE)
+      
+      res
+      
+      
+      
+    }, digits =0,rownames = FALSE,align="c")
     
     
+      
     ## display parameters to diagnostics tab
     output$parameters <- renderPrint({
       

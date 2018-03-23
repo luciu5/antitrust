@@ -116,16 +116,12 @@ shinyUI(fluidPage(
                    )
           ),
           tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_shareOut"),br(), tableOutput("results_detailed"),
-                   conditionalPanel("input.demand_bert != 'aids' && input.supply != 'cournot'",
-                      helpText(tags$b("Note:"), "shares include an outside good.")
-                    ),
+                   # conditionalPanel("input.demand_bert != 'aids' && input.supply != 'cournot'",
+                   #    helpText(tags$b("Note:"), "shares include an outside good.")
+                   #  ),
                    conditionalPanel("input.demand_bert == 'aids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
                                     helpText(tags$b("Note:"), "shares are revenue-based.")
                    )), 
-          tabPanel("Diagnostics", value = "diagpanel", br(),br(), h4("% Difference between predicted and observed values"), 
-                   tableOutput("results_diagnostics"),helpText(tags$b("Note:"), "Only non-negligible values displayed."),br(),
-                   h4("Parameters"),verbatimTextOutput("parameters")
-                  ), 
           tabPanel("Elasticities", value = "elastpanel",  br(),br(),
                    radioButtons("pre_elast", "",
                                                 choices = c("Pre-Merger",
@@ -140,6 +136,12 @@ shinyUI(fluidPage(
                                     helpText(tags$b("Note:"), "above are own-price elasticities")
                    )
                    ),
+          tabPanel("Diagnostics", value = "diagpanel", br(),br(), h4("% Difference between predicted and observed values"), 
+                   tableOutput("results_diag_elast"),
+                   tableOutput("results_diagnostics"),
+                   helpText(tags$b("Note:"), "Only non-negligible values displayed. Negative numbers mean that observed values are larger than predicted values."),br(),
+                   h4("Parameters"),verbatimTextOutput("parameters")
+          ), 
           tabPanel("Messages", value = "msgpanel", br(),h4("Warnings"),  verbatimTextOutput("warnings"), br(),h4("Errors"),  verbatimTextOutput("errors"))
           
         )
