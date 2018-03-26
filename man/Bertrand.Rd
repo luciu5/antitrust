@@ -33,7 +33,7 @@
 
 \arguments{
   \item{}{Let k denote the number of products produced by all firms.}
-  \item{deman}{A character vector indicating which demand system to use. Currently allows logit (default), ces, or aids.}
+  \item{demand}{A character vector indicating which demand system to use. Currently allows logit (default), ces, or aids.}
   \item{prices}{A length k vector product prices. Default is missing, in
   which case demand intercepts are not calibrated.}
   \item{shares_quantity}{A length k vector of product revenue shares. All shares must
@@ -69,10 +69,7 @@
   distribution.}
 \item{isMax}{If TRUE, checks to see whether computed price equilibrium
   locally maximizes firm profits and returns a warning if not. Default is FALSE.}
-\item{nestsParmStart}{A vector of starting values used to solve for
-  price coefficient and nest parameters. If missing then the random
-  draws with the appropriate restrictions are employed.}
-    \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
+\item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
     \item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters passed to the non-linear equation solver (typically the \code{calcPrices} method).}
   \item{labels}{A k-length vector of labels.}
   \item{...}{Additional options to feed to the \code{\link[BB]{BBsolve}}

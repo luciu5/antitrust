@@ -55,6 +55,7 @@
 \alias{calcdMC}
 \alias{calcdMC,ANY-method}
 \alias{calcdMC,Stackelberg-method}
+\alias{calcDiagnostics}
 \alias{calcDiagnostics,ANY-method}
 \alias{calcDiagnostics,Bertrand-method}
 \alias{calcSlopes}
@@ -76,6 +77,7 @@
 \alias{calcSlopes,Auction2ndLogitALM-method}
 \alias{calcSlopes,Cournot-method}
 \alias{calcSlopes,Stackelberg-method}
+\alias{getParms}
 \alias{getParms,ANY-method}
 \alias{getParms,Bertrand-method}
 \alias{hhi}
@@ -194,6 +196,9 @@ parameters=FALSE,market=FALSE,digits=2,...)
     Nash-Bertrand or Cournot game. For "LogitCap", assumes firms are
     playing a Nash-Bertrand or Cournot game with capacity constraints.
   }
+  \item{calcDiagnostics}{\code{signature(object=Bertrand,labels=object@labels)}}{
+    Computes he perentage difference between predicted and observed pre-merger prices, shares, margins and market elasticities (if supplied) . \sQuote{labels} is used to specify row labels.
+  }
    \item{calcVC}{\code{signature(object=Cournot,preMerger=TRUE)}}{
     Computes either pre- or post-merger variable costs. Variable costs
     are assumed to be quadratic by default. Post-merger variable costs are equal to
@@ -220,10 +225,13 @@ parameters=FALSE,market=FALSE,digits=2,...)
     Computes demand parameters assuming that firms are playing a
     Nash-Bertrand or Cournot game.
   }
+  \item{getParms}{\code{signature(object=Bertrand,digits=10)}}{
+  Returns a list of model-specific demand parameters. \sQuote{digits} specifies the number of significant digit to return (default 10).
+  }
    \item{hhi}{\code{signature(object=Bertrand,preMerger=TRUE,revenue=FALSE, insideonly=TRUE)}}{
 
     Computes the  Herfindahl-Hirschman Index (HHI) using simulated market
-    shares and either pre- or post-merger ownership information.
+    shares and either pre- or post-merger ownership information.Outside shares are excluded from the calculation.
   }
   \item{ownerToMatrix}{\code{signature(object=Antitrust,preMerger=TRUE)}}{
 

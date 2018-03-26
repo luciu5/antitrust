@@ -10,9 +10,9 @@ shinyUI(fluidPage(
        h5(tags$b("Directions:")),
         helpText(tags$ul(
                  tags$li("Copy and paste (or enter) information into Inputs table (right) to simulate a merger between 'Firm1' and 'Firm2'"),
-                 tags$li(helpText("See the vignette to the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package for more details about the models used here." )),
+                 tags$li(helpText("See the vignette to the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package for more details about the models used here." ))
                  #tags$li("Shares must be between 0 and 1."),
-                 tags$li("Margins should exclude fixed costs.")
+                 #tags$li("Margins should exclude fixed costs.")
                  )
                  ),hr(),
 
