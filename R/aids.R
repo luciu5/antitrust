@@ -334,7 +334,7 @@ setMethod(
 
 
      Bpost      <- divPre * sharesPre * ownerPost
-     marginPost <- -1 * as.vector(ginv(Bpost) %*% (diag(ownerPost)/diag(elastPre))
+     marginPost <- -1 * as.vector(MASS::ginv(Bpost) %*% (diag(ownerPost)/diag(elastPre))
                                   )
 
      cmcr <- (marginPost - marginPre)/(1 - marginPre)
@@ -389,7 +389,7 @@ setMethod(
      shares     <- calcShares(object,TRUE)
 
      elastPre <-  t(elast(object,TRUE))
-     marginPre <-  -1 * as.vector(ginv(elastPre * ownerPre) %*% (shares * diag(ownerPre))) / shares
+     marginPre <-  -1 * as.vector(MASS::ginv(elastPre * ownerPre) %*% (shares * diag(ownerPre))) / shares
 
      if(preMerger){
          names(marginPre) <- object@labels

@@ -64,7 +64,7 @@ setMethod(
                   ownerPre   <- ownerPre[isMargin,isMargin]
                   margins    <- margins[isMargin]
 
-                  #marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (shares * diag(ownerPre))) / shares
+                  #marginsCand <- -1 * as.vector(MASS::ginv(elasticity * ownerPre) %*% (shares * diag(ownerPre))) / shares
                   #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
                    FOC <- (shares * diag(ownerPre)) + (elasticity * ownerPre) %*% (shares * margins)
                    measure<-sum(FOC^2,na.rm=TRUE)

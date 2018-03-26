@@ -132,7 +132,7 @@ setMethod(
          owner  <- object@ownerPre
          revenue<- calcShares(object,preMerger,revenue=TRUE)[!constrained]
          elast <-  elast(object,preMerger)
-         margins[!constrained] <-  -1 * as.vector(ginv(t(elast*owner)[!constrained,!constrained]) %*% revenue) / revenue
+         margins[!constrained] <-  -1 * as.vector(MASS::ginv(t(elast*owner)[!constrained,!constrained]) %*% revenue) / revenue
 
      }
 

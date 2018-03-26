@@ -227,7 +227,7 @@ setMethod(
          revenue<- calcShares(object,preMerger,revenue=TRUE)
 
          elast <-  elast(object,preMerger)
-         margins <-  -1 * as.vector(ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
+         margins <-  -1 * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
 
 
      }
@@ -493,14 +493,14 @@ setMethod(
     equilibria$Cost=equilibria$Demand
 
 
-    thisPlot=ggplot(result,(aes_string(x='output',y='price',color='Demand',group='Demand'))) + geom_line() + theme_bw() + theme(legend.position="bottom", legend.direction="horizontal",legend.title=element_blank())
-    thisPlot=thisPlot + facet_wrap(~prod,scales="free_x")
+    thisPlot=ggplot2::ggplot(result,(ggplot2::aes_string(x='output',y='price',color='Demand',group='Demand'))) + ggplot2::geom_line() + ggplot2::theme_bw() + ggplot2::theme(legend.position="bottom", legend.direction="horizontal",legend.title=ggplot2::element_blank())
+    thisPlot=thisPlot + ggplot2::facet_wrap(~prod,scales="free_x")
 
-    thisPlot=thisPlot + geom_vline(aes_string(xintercept = "output",group="Demand",colour="Demand"),linetype=3,equilibria[,c("output","Demand","prod")] )
-    thisPlot=thisPlot + geom_hline(aes_string(yintercept = "price",group="Demand",colour="Demand"),linetype=3,equilibria[,c("price","Demand","prod")] )
-    thisPlot=thisPlot + geom_point(aes_string(y="price",x="output",color="Demand",group="Demand"),equilibria)
+    thisPlot=thisPlot + ggplot2::geom_vline(ggplot2::aes_string(xintercept = "output",group="Demand",colour="Demand"),linetype=3,equilibria[,c("output","Demand","prod")] )
+    thisPlot=thisPlot + ggplot2::geom_hline(ggplot2::aes_string(yintercept = "price",group="Demand",colour="Demand"),linetype=3,equilibria[,c("price","Demand","prod")] )
+    thisPlot=thisPlot + ggplot2::geom_point(ggplot2::aes_string(y="price",x="output",color="Demand",group="Demand"),equilibria)
 
-    thisPlot=thisPlot + geom_hline(aes_string(yintercept = "mc",group="Cost",color="Cost"),data=equilibria[,c("mc","Cost","prod")],show_guide=TRUE)
+    thisPlot=thisPlot + ggplot2::geom_hline(ggplot2::aes_string(yintercept = "mc",group="Cost",color="Cost"),data=equilibria[,c("mc","Cost","prod")],show_guide=TRUE)
 
     #if(!isTRUE(all.equal(mcPre,mcPost,check.names=FALSE))){
     #  thisPlot=thisPlot + geom_hline(aes(yintercept = mc), color="orange",data=data.frame(mc=mcPost[mcPost!=mcPre],prod=labels[mcPost!=mcPre]),show_guide=TRUE)

@@ -245,7 +245,7 @@ parameters=FALSE,market=FALSE,digits=2,...)
 
   }
    \item{plot}{\code{signature(x,scale=.1)}}{
-Use \code{\link{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. \sQuote{scale} controls the amount above marginal cost and below equilbrium price that is plotted.
+Use \code{\link[ggplot2]{ggplot}} to plot pre- and post-merger demand, marginal cost and equilibria. \sQuote{scale} controls the amount above marginal cost and below equilbrium price that is plotted.
   }
   \item{show}{\code{signature(object=Antitrust)}}{
     Displays the percentage change in prices due to the merger.

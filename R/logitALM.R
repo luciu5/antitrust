@@ -64,7 +64,7 @@ setMethod(
                   diag(elast) <- alpha*prices + diag(elast)
 
                   revenues <- probs * prices
-                  marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  marginsCand <- -1 * as.vector(MASS::ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
                   
                   m1 <- margins - marginsCand
                   m2 <- mktElast/(avgPrice ) - sOut * alpha  
@@ -75,7 +75,7 @@ setMethod(
                   #ownerPre   <-   ownerPre[isMargin,isMargin]
                   #margins    <-   margins[isMargin]
 
-                  #marginsCand <- -1 * as.vector(ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  #marginsCand <- -1 * as.vector(MASS::ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
                   #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
                   #measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))

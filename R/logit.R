@@ -154,7 +154,7 @@ setMethod(
                   #margins    <- margins[isMargin]
 
                   
-                  marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+                  marginsCand <- -1 * as.vector(MASS::ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
                   m1 <- margins - marginsCand
                   #m2 <- mktElast - alpha*avgPrice*( 1- shareInside)
                   measure <- sum(c(m1*100 )^2,na.rm=TRUE)

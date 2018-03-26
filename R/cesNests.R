@@ -145,7 +145,7 @@ Normalizing these parameters to 1.")
 
                   diag(elast) <- diag(elast) - sigma[nests]
 
-                  #marginsCand <- -1 * as.vector(ginv(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
+                  #marginsCand <- -1 * as.vector(MASS::ginv(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
                   #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
 
