@@ -46,7 +46,7 @@ setClass(
              if(is.matrix(object@ownerPre)){
 
                  if(nprods != ncol(object@ownerPre)){
-                     stop("The number of rows and columns in 'ownerPre' must equal the number of products")}
+                     stop("The number of rows and columns in 'ownerPre' must equal the number of products (plants in Cournot)")}
                  if(nrow(object@ownerPre) != ncol(object@ownerPre)){
                      stop("'ownerPre' must be a square matrix ")}
 
@@ -157,7 +157,9 @@ setMethod(
 
               if(is.vector(thisOwner) || is.factor(thisOwner)){
 
-                  nprod <- length(object@labels)
+                if(is.list(object@labels)){nprod <- length(object@labels[[1]])}  
+                else{nprod <- length(object@labels)}
+                
                   owners <- as.numeric(factor(thisOwner))
                   thisOwner <- matrix(0,ncol=nprod,nrow=nprod)
 

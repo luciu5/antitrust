@@ -40,7 +40,7 @@ shinyServer(function(input, output, session) {
        'Post-merger\n Owner' = c("Firm1","Firm1","Firm3","Firm3"),
        'Prices \n($/unit)'    =c(.0441,.0328,.0409,.0396)*100,
        'Quantity Shares'   =c(0.09734513, 0.25368732, 0.37315634, 0.27581121),
-       'Margins\n(proportion)' =c(NA,.5515,.5421,.49),
+       'Margins\n(proportion)' =c(NA,.5515,NA,.49),
        stringsAsFactors = FALSE,
        check.names=FALSE
      )
@@ -52,6 +52,7 @@ shinyServer(function(input, output, session) {
      #if(input$incEff) inputData$mcDelta <- 0
      
      inputData[(nDefProd+1):nPossProds,] <- NA
+     inputData <- inputData[order(inputData$`Quantity Shares`, decreasing = TRUE),]
      rownames(inputData) <- NULL
      
     
@@ -142,7 +143,9 @@ shinyServer(function(input, output, session) {
     obsMargins <- res@margins
     obsElast <- res@mktElast
     
-    if(length(obsMargins[!is.na(obsMargins)]) <= 2){return()}
+    if(length(obsMargins[!is.na(obsMargins)]) < 2){return()}
+    
+    
     prePrices <- unname(drop(res@pricePre))
     preMargins <- drop(calcMargins(res, preMerger=TRUE))
     preShares <- drop(calcShares(res, preMerger=TRUE))
@@ -159,13 +162,13 @@ shinyServer(function(input, output, session) {
       check.names = FALSE
     )*100
     
-    rmThese <- colSums(abs(res),na.rm=TRUE)
+    #rmThese <- colSums(abs(res),na.rm=TRUE)
     
   
    
     if(isCournot)  res[-1,'Prices'] <- NA
      
-    res <- res[,rmThese >1e-3,drop=FALSE]
+    #res <- res[,rmThese >1e-3,drop=FALSE]
     
     
     if(!isCournot) rownames(res) <- labels
@@ -175,7 +178,7 @@ shinyServer(function(input, output, session) {
     else{ res <- data.frame('Market Elasticity'= 1 - obsElast/preElast,
                             check.names = FALSE)*100
     
-    if(res < 1e-3) res <- NULL
+    #if(res < 1e-3) res <- NULL
     }
     return(res)
    }
@@ -343,8 +346,8 @@ shinyServer(function(input, output, session) {
       else{{colnames(inputData)[grepl("Quant|Shares",colnames(inputData))] <- "Quantity\nShares"}}
       
       if (!is.null(inputData))
-        rhandsontable(inputData, stretchH = "all") %>% hot_col(col = 1:ncol(inputData), valign = "htMiddle") %>%
-        hot_col(col = which (sapply(inputData,is.numeric)),halign = "htCenter" )
+        rhandsontable(inputData, stretchH = "all", contextMenu = FALSE ) %>% hot_col(col = 1:ncol(inputData), valign = "htMiddle") %>%
+        hot_col(col = which (sapply(inputData,is.numeric)),halign = "htCenter" ) %>% hot_cols(columnSorting = TRUE)
     })
 
 
