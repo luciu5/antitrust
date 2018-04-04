@@ -98,7 +98,7 @@ setClass(
     if(all(!(object@cost %in% c("linear","constant")))){stop("'cost' must equal 'linear' or 'constant'")}
     if(length(object@cost) != nplants) stop("the length of 'cost' must equal the number of products")
     
-    if(any(rowSums(object@ownerPre) > 0 & !(is.finite(object@capacitiesPre) & is.finite(object@capacitiesPost))  & object@cost == "constant")){ stop("multi-plant firms with 'cost' equal to 'constant' must have finite pre- and post-merger capacity constraints")}
+    #if(any(rowSums(object@ownerPre) > 0 & !(is.finite(object@capacitiesPre) & is.finite(object@capacitiesPost))  & object@cost == "constant")){ stop("multi-plant firms with 'cost' equal to 'constant' must have finite pre- and post-merger capacity constraints")}
     
     if(length(object@prices) != nprods) stop("the length of 'prices' must equal the number of products")
     
@@ -296,14 +296,14 @@ setMethod(
       
       
       thisFOC <- (t(quantities) * thisPartial ) %*% owner  + thisprices 
-      thisFOC <- t(thisFOC) -   mcPre  
+      thisFOC <- t(thisFOC)/mcPre - 1  
       thisFOC <- thisFOC[!isConstrained,]
       
-      dist <- c(thisFOC,thisprices - prices, mktElast * quantTot/prices - 1/thisPartial)
+      dist <- c(thisFOC,thisprices/prices -1 , (1/mktElast)/(thisPartial*quantTot/prices) - 1 )
       
-      if(noCosts){ dist <- c(dist, mcPre - mc)}
+      if(noCosts){ dist <- c(dist, mcPre/mc - 1)}
       
-      return(sum(dist^2,na.rm=TRUE))
+      return(sum((dist*10)^2,na.rm=TRUE))
     }
     
     
@@ -320,20 +320,29 @@ setMethod(
     
     parmStart   =   c( intStart,bStart)
     
+    lowerB <- c(rep(0, nprods), rep(-Inf, nprods))
+    upperB <- c(rep(Inf,  nprods), rep(0, nprods))
+    
     if(noCosts){
       
-      if(isLinearD){margStart <- rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE)}
-      else{margStart <- rowMeans(-sharesOwner*bStart,na.rm=TRUE)} 
+      if(isLinearD) {margStart <- rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE) }
+      else{margStart <-  rowMeans(-sharesOwner*bStart,na.rm=TRUE)}
       
       mcStart  <- abs(prices*(margStart - 1)) 
       capStart <- ifelse(isLinearC, quantPlants/mcStart, mcStart)  
       parmStart <- c(capStart,parmStart)
+      
+      lowerB <- c(rep(0, nplants), lowerB)
+      upperB <- c(rep(Inf,nplants), upperB)
     }
     
     
-    bestParms=optim(parmStart,minDemand)$par
     
+    bestParms=optim(parmStart,minDemand, method="L-BFGS-B", lower=lowerB, upper= upperB)$par
     
+    if(isTRUE(all.equal(bestParms[1:nplants],rep(0, nplants),check.names=FALSE))){warning("Some plant-level cost parameters are close to 0.")}
+    if(isTRUE(all.equal(bestParms[-(1:nplants)],rep(0, nprods),check.names=FALSE))){warning("Some demand parameters are close to 0.")}
+        
     
     
     ## if no marginal cost functions are supplied 
@@ -489,6 +498,14 @@ setMethod(
   
 )
 
+setMethod(
+  f= "calcDiagnostics",
+  signature= "Cournot",
+  definition=function(object){
+    
+  callNextMethod(object,label=object@labels[[1]])
+    
+    })
 
 setMethod(
   f= "calcQuantities",
@@ -498,6 +515,7 @@ setMethod(
     slopes <- object@slopes
     intercepts <- object@intercepts
     quantityStart <- object@quantityStart
+    #quantityStart[is.na(quantityStart)] = 0
     
     if(preMerger){ owner  <- object@ownerPre
     products  <- object@productsPre
@@ -509,7 +527,7 @@ setMethod(
     }
     
     nprods <- ncol(products)
-    isProducts <- rowSums(products) > 0
+    #isProducts <- rowSums(products) > 0
     products <- as.vector(products)
     
     isConstrained <- is.finite(cap)
@@ -518,36 +536,36 @@ setMethod(
       
       #quantCand <- quantCand^2 # constrain positive
       
-      allquant <- rep(0,length(products))
-      allquant[products] <- quantCand
-      quantCand <- matrix(allquant,ncol=nprods)
+      thisQuant <- rep(0,length(products))
+      thisQuant[products] = quantCand
+      thisQuant = matrix(thisQuant,ncol=nprods)
       
-      if(preMerger){ object@quantityPre  <- quantCand}
-      else{          object@quantityPost <- quantCand}
+      if(preMerger){ object@quantityPre  <- thisQuant}
+      else{          object@quantityPost <- thisQuant}
       
       thisPrice <- calcPrices(object, preMerger= preMerger)
       
       thisMC <- calcMC(object, preMerger= preMerger) 
       
       
-      mktQuant <- colSums(quantCand, na.rm=TRUE)
-      plantQuant <- rowSums(quantCand, na.rm=TRUE)
+      mktQuant <- colSums(thisQuant, na.rm=TRUE)
+      plantQuant <- rowSums(thisQuant, na.rm=TRUE)
       
       thisPartial <- ifelse(object@demand=="linear", 
                             slopes,
                             exp(intercepts)*slopes*mktQuant^(slopes - 1))
       
       
-      thisFOC <- (t(quantCand) * thisPartial) %*% owner + thisPrice
-      thisFOC <- t(thisFOC) - thisMC
-      thisFOC <- t(t(thisFOC)/thisPrice) # rescale
+      thisFOC <- (t(thisQuant) * thisPartial) %*% owner + thisPrice
+      thisFOC <- t(thisFOC)/thisMC - 1
+      #thisFOC <- t(t(thisFOC)/thisPrice) # rescale
       #thisCons <- (plantQuant - cap)/cap # rescale
       #thisFOC[isConstrained,] <- thisFOC[isConstrained,] + 
       #   thisCons[isConstrained] + 
       #  sqrt(thisFOC[isConstrained,]^2 + 
       #         thisCons[isConstrained]^2)
-        thisFOC <- thisFOC[isProducts,]
-      return(as.vector(thisFOC))
+        thisFOC <- as.vector(thisFOC)[products]
+      return(thisFOC)
     }
     
     
@@ -557,7 +575,7 @@ setMethod(
     
     
     ## Find price changes that set FOCs equal to 0
-    minResult <- BBsolve( quantityStart,FOC, quiet=TRUE,control=object@control.equ,...)
+    minResult <- BB::BBsolve( quantityStart,FOC, quiet=TRUE,control=object@control.equ,...)
     
     if(minResult$convergence != 0){warning("'calcQuantities' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
     
@@ -636,7 +654,7 @@ setMethod(
     if(nrow(shares) == 1 ){shares <- rbind(shares,shares)}
     mktElast <- elast(object, preMerger= TRUE,market=TRUE)
     
-    cmcr <- -2 * apply(shares,2,prod) / (mktElast * colSums(shares) )
+    cmcr <- 2 * apply(shares,2,prod) / (-mktElast * colSums(shares) - colSums(shares^2) )
     
     return(cmcr * 100)
   })
