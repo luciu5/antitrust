@@ -37,10 +37,10 @@ shinyServer(function(input, output, session) {
      inputData <- data.frame(
        Name = c("Prod1","Prod2","Prod3","Prod4"),
        'Pre-merger\n Owner'  = c("Firm1","Firm2","Firm3","Firm3"),
-       'Post-merger\n Owner' = c("Firm1","Firm1","Firm3","Firm3"),
-       'Prices \n($/unit)'    =c(.0441,.0328,.0409,.0396)*100,
-       'Quantity Shares'   =c(0.09734513, 0.25368732, 0.37315634, 0.27581121),
-       'Margins\n(proportion)' =c(NA,.5515,NA,.49),
+       'Post-merger\n Owner' = c("Firm3","Firm2","Firm3","Firm3"),
+       'Prices \n($/unit)'    =c(44.46,47.16,48.14,76.72),
+       'Quantity Shares'   =c(0.11, 0.25, 0.37, 0.27),
+       'Margins\n(p-c)/p' =c(NA,.47,NA,.35),
        stringsAsFactors = FALSE,
        check.names=FALSE
      )
@@ -84,7 +84,8 @@ shinyServer(function(input, output, session) {
      
      else{
        capture.output(s <- summary(res, revenue = isRevDemand,levels = inLevels))
-       theseshares <- res@shares
+       theseshares <- calcShares(res, revenue=FALSE)
+       theseshares <- theseshares/sum(theseshares)
        }
      
      isparty <- s$isParty == "*"
@@ -143,7 +144,7 @@ shinyServer(function(input, output, session) {
     obsMargins <- res@margins
     obsElast <- res@mktElast
     
-    if(length(obsMargins[!is.na(obsMargins)]) < 2){return()}
+    #if(length(obsMargins[!is.na(obsMargins)]) < 2){return()}
     
     
     prePrices <- unname(drop(res@pricePre))
@@ -340,7 +341,7 @@ shinyServer(function(input, output, session) {
       missPrices <- isTRUE(any(is.na(prices[ !is.na(shares) ] ) ))
       
       if(missPrices && input$supply =="2nd Score Auction"){colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n ($/unit)"}
-      else{colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n (proportion)"}
+      else{colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n (p-c)/p"}
       if(input$supply =="Cournot"){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Quantities"}
       else if (missPrices && any(grepl("ces|aids",c(input$demand_bert_alm,input$demand_bert,input$demand_2nd_alm, input$demand_2nd), perl=TRUE), na.rm=TRUE)){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Revenue\nShares"}
       else{{colnames(inputData)[grepl("Quant|Shares",colnames(inputData))] <- "Quantity\nShares"}}
@@ -362,11 +363,12 @@ shinyServer(function(input, output, session) {
       
       indata <- values[["inputData"]]
       
-      isShares <-  grepl("Quantities|Shares",colnames(indata),perl = TRUE)
-     
+      isOutput <-  grepl("Quantities|Shares",colnames(indata),perl = TRUE)
+      isShares <-  grepl("Shares",colnames(indata),perl = TRUE)
+      
       colnames(indata)[ grepl("Margins",colnames(indata),perl = TRUE)] <- "Margins"
       
-      colnames(indata)[isShares] <- "Output"
+      colnames(indata)[isOutput] <- "Output"
       
       indata <- indata[!is.na(indata[,"Output"]),]
       
@@ -522,10 +524,14 @@ shinyServer(function(input, output, session) {
       
       if(input$inTabset!= "elastpanel" || input$simulate == 0 || is.null(values[["sim"]])){return()}
         
+      isCournot <- grepl("Cournot",class(values[["sim"]]))
+      
        if(input$pre_elast == "Pre-Merger"){ preMerger = TRUE}
         else{preMerger =FALSE}
         
         res <- elast(values[["sim"]], preMerger=preMerger)
+        if(isCournot){colnames(res) <- "Elasticity"}
+        
         res
         
       

@@ -266,9 +266,11 @@ setMethod(
                   mc <- mc*(1+object@mcDelta)
               }
 
+             mc <- as.vector(mc)
+              
              names(mc) <- object@labels
              
-             mc <- as.vector(mc)
+            
              
              isNegMC <- mc < 0
 
@@ -846,9 +848,9 @@ setMethod(
       check.names = FALSE
     )*100
     
-    rmThese <- colSums(abs(res),na.rm=TRUE)
+    #rmThese <- colSums(abs(res),na.rm=TRUE)
     
-    res[-1,'Market Elasticity'] <- NA
+    #res[-1,'Market Elasticity'] <- NA
     
     
   
@@ -865,15 +867,19 @@ setMethod(
   signature= "Bertrand",
   definition=function(object,digits=10){
 if(is.list(object@slopes)){
-  return(lapply(object@slopes,round,digits=digits))
+  result <- lapply(object@slopes,round,digits=digits)
 }
 else{
-  return(
-    list(slopes = round(object@slopes,digits),
+  
+ result <-  list(slopes = round(object@slopes,digits),
          intercepts =  round(object@intercepts,digits)
          )
-    )
+    
 }
 
+    result$mc <- round(calcMC(object, preMerger=TRUE),digits)
+    
+    return(result)
+    
   })
 

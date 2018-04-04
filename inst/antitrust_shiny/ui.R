@@ -9,7 +9,7 @@ shinyUI(fluidPage(
       sidebarPanel(
        h5(tags$b("Directions:")),
         helpText(tags$ul(
-                 tags$li("Copy and paste (or enter) information into Inputs table (right) to simulate a merger between 'Firm1' and 'Firm2'"),
+                 tags$li("Copy and paste (or enter) information into Inputs table (right) to simulate a merger between 'Firm1' and 'Firm3'"),
                  tags$li(helpText("See the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package vignette for more details about the models used here." ))
                  #tags$li("Shares must be between 0 and 1."),
                  #tags$li("Margins should exclude fixed costs.")
@@ -110,10 +110,10 @@ shinyUI(fluidPage(
         br(), br(),br(),
         tabsetPanel(id = "inTabset",
           tabPanel("Summary", value = "respanel", br(),br(),tableOutput("results"), br(),
-                   helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages."),
-                   conditionalPanel("input.demand_bert == 'aids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
-                                    helpText(tags$b("Note:"), "shares are revenue-based.")
-                   )
+                   helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages.")#,
+                   #conditionalPanel("input.demand_bert == 'aids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
+                   #                helpText(tags$b("Note:"), "shares are revenue-based.")
+                   #)
           ),
           tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_shareOut"),br(), tableOutput("results_detailed"),
                    # conditionalPanel("input.demand_bert != 'aids' && input.supply != 'cournot'",
