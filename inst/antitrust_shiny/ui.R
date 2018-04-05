@@ -98,14 +98,14 @@ shinyUI(fluidPage(
        ),
        conditionalPanel(
          condition = "input.supply == '2nd Score Auction' && input.calcElast_other  == '2 or more margins'",
-         helpText(tags$b("Note:"), "2nd score Auction does not require prices.")
+         helpText(tags$b("Note:"), "2nd Score Auction does not require prices.")
        ),
         # conditionalPanel(
         #   condition = "input.demand_bert == 'aids'",
         #   helpText(tags$b("Note:"), "Only first non-missing inputted margin is used for pcaids. This margin should belong to a single product firm.")
         # ),
        conditionalPanel(
-         condition = "input.demand_bert == 'aids'",
+         condition = "input.supply == 'Bertrand' && input.demand_bert == 'aids'",
          helpText(tags$b("Note:"), "aids does not require pricing information.")
        )
       ),
