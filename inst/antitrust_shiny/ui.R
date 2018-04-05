@@ -9,7 +9,7 @@ shinyUI(fluidPage(
       sidebarPanel(
        h5(tags$b("Directions:")),
         helpText(tags$ul(
-                 tags$li("Copy and paste (or enter) information into Inputs table (right) to simulate a merger between 'Firm1' and 'Firm3'"),
+                 tags$li("Copy and paste (or enter) information into Inputs table (right) to simulate a merger between 'Firm1' and 'Firm2'"),
                  tags$li(helpText("See the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package vignette for more details about the models used here." ))
                  #tags$li("Shares must be between 0 and 1."),
                  #tags$li("Margins should exclude fixed costs.")
@@ -18,13 +18,24 @@ shinyUI(fluidPage(
 
         #checkboxInput("dispDetails", "Display Detailed Results", value = FALSE, width = NULL),
         #checkboxInput("calcElast", "Calibrate Market Elasticity", value = FALSE, width = NULL),
-        radioButtons("calcElast", "Calibrate model parameters using:",
+       conditionalPanel(
+         condition = "input.supply != 'Cournot'", 
+       radioButtons("calcElast_other", "Calibrate model parameters using:",
                      choices = c("market elasticity and 1 or more margins",
                                  "2 or more margins"
-                     )),
-        
+                     ),selected ="market elasticity and 1 or more margins"
+                    )
+       ),
+       conditionalPanel(
+         condition = "input.supply == 'Cournot'", 
+         radioButtons("calcElast_cournot", "Calibrate model parameters using:",
+                      choices = c("market elasticity and 0 or more margins",
+                                  "1 or more margins"
+                      ),selected ="market elasticity and 0 or more margins"
+         )
+       ),
         conditionalPanel(
-          condition = "input.calcElast == 'market elasticity and 1 or more margins'",
+          condition = "input.calcElast_other == 'market elasticity and 1 or more margins' || input.calcElast_cournot == 'market elasticity and 0 or more margins' ",
           numericInput("enterElast", "Enter Market Elasticity:", value=-1,min=-Inf,max=0,step=.1#, width='75%'
                        )
         ),hr(),
@@ -36,36 +47,36 @@ shinyUI(fluidPage(
                                 "Cournot"
                                 )),
         conditionalPanel(
-          condition = "input.supply == 'Bertrand' && input.calcElast == '2 or more margins'",
+          condition = "input.supply == 'Bertrand' && input.calcElast_other == '2 or more margins'",
           selectInput("demand_bert_alm", "Demand Specification:",
                       choices = c("logit (unknown elasticity)", "ces (unknown elasticity)", 
                                   #"linear",
                                   "aids (unknown elasticity)"))
         ),
         conditionalPanel(
-          condition = "input.supply == 'Bertrand'  && input.calcElast == 'market elasticity and 1 or more margins'",
+          condition = "input.supply == 'Bertrand'  && input.calcElast_other == 'market elasticity and 1 or more margins'",
           selectInput("demand_bert", "Demand Specification:",
                       choices = c("logit", "ces", 
                                   #"linear",
                                   "aids"))
         ),
         conditionalPanel(
-          condition = "input.supply == 'Cournot'  && input.calcElast == '2 or more margins' ",
+          condition = "input.supply == 'Cournot'  && input.calcElast_cournot == '1 or more margins' ",
           selectInput("demand_cournot_alm", "Demand Specification:",
                       choices = c("linear (unknown elasticity)","log (unknown elasticity)"))
         ),
         conditionalPanel(
-          condition = "input.supply == 'Cournot'  && input.calcElast  == 'market elasticity and 1 or more margins' ",
+          condition = "input.supply == 'Cournot'  && input.calcElast_cournot  == 'market elasticity and 0 or more margins' ",
           selectInput("demand_cournot", "Demand Specification:",
                       choices = c("linear","log"))
         ),
         conditionalPanel(
-          condition = "input.supply == '2nd Score Auction' && input.calcElast  ==  'market elasticity and 1 or more margins' ",
+          condition = "input.supply == '2nd Score Auction' && input.calcElast_other  ==  'market elasticity and 1 or more margins' ",
           selectInput("demand_2nd", "Demand Specification:",
                       choices = c("logit"))
         ),
         conditionalPanel(
-          condition = "input.supply == '2nd Score Auction' && input.calcElast == '2 or more margins'",
+          condition = "input.supply == '2nd Score Auction' && input.calcElast_other == '2 or more margins'",
           selectInput("demand_2nd_alm", "Demand Specification:",
                       choices = c("logit (unknown elasticity)"))
         ),hr(),
@@ -82,11 +93,11 @@ shinyUI(fluidPage(
         #  helpText(tags$b("Note:"), "2nd Score Auction requires $/unit margins.")
         #),
        conditionalPanel(
-         condition = "input.supply == '2nd Score Auction' && input.calcElast  == 'market elasticity and 1 or more margins'",
+         condition = "input.supply == '2nd Score Auction' && input.calcElast_other  == 'market elasticity and 1 or more margins'",
          helpText(tags$b("Note:"), "2nd score Auction only requires a single price.")
        ),
        conditionalPanel(
-         condition = "input.supply == '2nd Score Auction' && input.calcElast  == '2 or more margins'",
+         condition = "input.supply == '2nd Score Auction' && input.calcElast_other  == '2 or more margins'",
          helpText(tags$b("Note:"), "2nd score Auction does not require prices.")
        ),
         # conditionalPanel(

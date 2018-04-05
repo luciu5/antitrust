@@ -37,10 +37,10 @@ shinyServer(function(input, output, session) {
      inputData <- data.frame(
        Name = c("Prod1","Prod2","Prod3","Prod4"),
        'Pre-merger\n Owner'  = c("Firm1","Firm2","Firm3","Firm3"),
-       'Post-merger\n Owner' = c("Firm3","Firm2","Firm3","Firm3"),
-       'Prices \n($/unit)'    =c(44.46,47.16,48.14,76.72),
-       'Quantity Shares'   =c(0.11, 0.25, 0.37, 0.27),
-       'Margins\n(p-c)/p' =c(NA,.47,NA,.35),
+       'Post-merger\n Owner' = c("Firm1","Firm1","Firm3","Firm3"),
+       'Prices \n($/unit)'    = rep(10,4),
+       'Quantity Shares'   =c(0.5,.2,.15,.05),
+       'Margins\n(p-c)/p' =c(0.3,NA,NA,NA),
        stringsAsFactors = FALSE,
        check.names=FALSE
      )
@@ -307,10 +307,10 @@ shinyServer(function(input, output, session) {
    ## create a reactive object that tracks which demand is being used
    demand <- eventReactive(input$simulate, {ifelse(input$supply =="Bertrand", 
 
-                                              ifelse(input$calcElast == "2 or more margins",input$demand_bert_alm,input$demand_bert),
+                                              ifelse(input$calcElast_other == "2 or more margins",input$demand_bert_alm,input$demand_bert),
                                                       ifelse(input$supply == "Cournot",
-                                                     ifelse(input$calcElast == "2 or more margins",input$demand_cournot_alm, input$demand_cournot),
-                                                     ifelse(input$calcElast == "2 or more margins",input$demand_2nd_alm, input$demand_2nd)))
+                                                     ifelse(input$calcElast_cournot == "1 or more margins",input$demand_cournot_alm, input$demand_cournot),
+                                                     ifelse(input$calcElast_other == "2 or more margins",input$demand_2nd_alm, input$demand_2nd)))
                       })
    
    
