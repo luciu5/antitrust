@@ -67,7 +67,7 @@ setMethod(
                   marginsCand <- -1 * as.vector(MASS::ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
                   
                   m1 <- margins - marginsCand
-                  m2 <- mktElast/(avgPrice ) - sOut * alpha  
+                  m2 <- mktElast/(avgPrice * alpha ) - sOut   
                   measure <- sum(c(m1,m2)^2,na.rm=TRUE)
 
                   #elast      <-   elast[isMargin,isMargin]
