@@ -39,8 +39,9 @@ shinyServer(function(input, output, session) {
        'Pre-merger\n Owner'  = c("Firm1","Firm2","Firm3","Firm3"),
        'Post-merger\n Owner' = c("Firm1","Firm1","Firm3","Firm3"),
        'Prices \n($/unit)'    = rep(10,4),
-       'Quantity Shares'   =c(0.5,.2,.15,.05),
-       'Margins\n(p-c)/p' =c(0.3,NA,NA,NA),
+       'Quantities'   =c(0.5,.25,.15,.1)*100,
+       'Margins\n(p-c)/p' =c(0.5,NA,NA,NA),
+       'Post-merger\n Cost Changes\n(Proportion)' = rep(0,4),
        stringsAsFactors = FALSE,
        check.names=FALSE
      )
@@ -52,7 +53,7 @@ shinyServer(function(input, output, session) {
      #if(input$incEff) inputData$mcDelta <- 0
      
      inputData[(nDefProd+1):nPossProds,] <- NA
-     inputData <- inputData[order(inputData$`Quantity Shares`, decreasing = TRUE),]
+     inputData <- inputData[order(inputData$`Quantities`, decreasing = TRUE),]
      rownames(inputData) <- NULL
      
     
@@ -67,10 +68,11 @@ shinyServer(function(input, output, session) {
      isCournot <- grepl("Cournot",class(res))
      isAuction <- grepl("Auction",class(res))
      isRevDemand <- grepl("ces|aids",class(res),ignore.case = TRUE)
+     missPrices <- any(is.na(res@prices))
      
      inLevels <- FALSE
      
-     if(isAuction && any(is.na(res@prices))){inLevels = TRUE}
+     if(isAuction && missPrices){inLevels = TRUE}
 
      
      
@@ -83,8 +85,8 @@ shinyServer(function(input, output, session) {
      }
      
      else{
-       capture.output(s <- summary(res, revenue = isRevDemand,levels = inLevels))
-       theseshares <- calcShares(res, revenue=FALSE)
+       capture.output(s <- summary(res, revenue = isRevDemand & missPrices,levels = inLevels))
+       theseshares <- calcShares(res, revenue=isRevDemand & missPrices)
        theseshares <- theseshares/sum(theseshares)
        }
      
@@ -102,6 +104,7 @@ shinyServer(function(input, output, session) {
      
      res <- with(s, data.frame(
            #'HHI Change' = as.integer(round(hhi(res,preMerger=FALSE) -  hhi(res,preMerger=TRUE))),
+           'Pre-Merger HHI' =  as.integer(HHI(theseshares,owner=res@ownerPre)),
            'HHI Change' = as.integer(HHI(theseshares,owner=res@ownerPost) - HHI(theseshares,owner=res@ownerPre)),
            'Industry Price Change (%)' = sum(priceDelta * sharesPost/100,na.rm=TRUE),
            'Merging Party Price Change (%)'= sum(priceDelta[isparty] * partyshare, na.rm=TRUE) / sum(partyshare),
@@ -304,15 +307,16 @@ shinyServer(function(input, output, session) {
    
    
    
-   ## create a reactive object that tracks which demand is being used
-   demand <- eventReactive(input$simulate, {ifelse(input$supply =="Bertrand", 
-
-                                              ifelse(input$calcElast_other == "2 or more margins",input$demand_bert_alm,input$demand_bert),
-                                                      ifelse(input$supply == "Cournot",
-                                                     ifelse(input$calcElast_cournot == "1 or more margins",input$demand_cournot_alm, input$demand_cournot),
-                                                     ifelse(input$calcElast_other == "2 or more margins",input$demand_2nd_alm, input$demand_2nd)))
-                      })
-   
+   # ## create a reactive object that tracks which demand is being used
+   # demand <- eventReactive(input$simulate, {
+   #                                         ifelse(input$supply =="Bertrand", 
+   # 
+   #                                            ifelse(input$calcElast == "2 or more margins",input$demand_bert_alm,input$demand_bert),
+   #                                                    ifelse(input$supply == "Cournot",
+   #                                                   ifelse(input$calcElast == "1 or more margins",input$demand_cournot_alm, input$demand_cournot),
+   #                                                   ifelse(input$calcElast == "2 or more margins",input$demand_2nd_alm, input$demand_2nd)))
+   #                    })
+   # 
    
    ## create a reactive list of objects
    values <- reactiveValues(inputData = genInputData(), sim = NULL, msg = NULL)
@@ -322,6 +326,47 @@ shinyServer(function(input, output, session) {
    ## update reactive list whenever changes are made to input
     observe({
     
+      supply <- input$supply
+      demand <- gsub("\\s*(unknown elasticity)","",input$demand,perl=TRUE)
+      
+      provElast <- grepl('elasticity',input$calcElast)
+      defElast <- ifelse(provElast, 1 , 2)
+      
+     if(supply == 'Cournot'){
+       theseChoices <- c("market elasticity and 0 or more margins",
+                         "1 or more margins"
+       )
+       
+       
+       demandChoices<- c("linear","log")
+       
+       }
+      
+    else{
+      theseChoices <- c("market elasticity and 1 or more margins",
+                        "2 or more margins"
+      )
+      updateRadioButtons(session = session, "calcElast", "Calibrate model parameters using:",
+                         choices = theseChoices , selected = theseChoices[defElast]) 
+      
+      if(supply == 'Bertrand'){demandChoices<- c('logit','ces','aids')}
+      else{demandChoices<- c('logit')}
+      
+     
+      
+    }
+      
+      if( !provElast ){ demandChoices <- paste(demandChoices,"(unknown elasticity)")}
+      
+      updateRadioButtons(session = session, "calcElast", "Calibrate model parameters using:",
+                         choices = theseChoices , selected = theseChoices[defElast])
+      
+      provDemand <- grep(demand, demandChoices)
+      provDemand <- ifelse(length(provDemand) > 0 , provDemand, 1)
+      
+      updateSelectInput(session=session, "demand", "Demand Specification:",
+                        choices = demandChoices, selected = demandChoices[provDemand])
+      
       
       if(!is.null(input$hot)){
         values$inputData = hot_to_r(input$hot)
@@ -336,15 +381,15 @@ shinyServer(function(input, output, session) {
       inputData <- values[["inputData"]]
       
       prices <- inputData[,"Prices \n($/unit)"]
-      shares <- inputData[,grepl("Shares",colnames(inputData))]
+      output <- inputData[,grepl("Quantities|Revenue",colnames(inputData), perl=TRUE)]
       
-      missPrices <- isTRUE(any(is.na(prices[ !is.na(shares) ] ) ))
+      missPrices <- isTRUE(any(is.na(prices[ !is.na(output) ] ) ))
       
       if(missPrices && input$supply =="2nd Score Auction"){colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n ($/unit)"}
       else{colnames(inputData)[grepl("Margins",colnames(inputData))] <- "Margins\n (p-c)/p"}
-      if(input$supply =="Cournot"){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Quantities"}
-      else if (missPrices && any(grepl("ces|aids",c(input$demand_bert_alm,input$demand_bert,input$demand_2nd_alm, input$demand_2nd), perl=TRUE), na.rm=TRUE)){colnames(inputData)[grepl("Shares",colnames(inputData))] <- "Revenue\nShares"}
-      else{{colnames(inputData)[grepl("Quant|Shares",colnames(inputData))] <- "Quantity\nShares"}}
+
+      if (missPrices && any(grepl("ces|aids",input$demand, perl=TRUE), na.rm=TRUE)){colnames(inputData)[grepl("Quantities",colnames(inputData))] <- "Revenues"}
+      else{{colnames(inputData)[grepl("Revenues",colnames(inputData))] <- "Quantities"}}
       
       if (!is.null(inputData))
         rhandsontable(inputData, stretchH = "all", contextMenu = FALSE ) %>% hot_col(col = 1:ncol(inputData), valign = "htMiddle") %>%
@@ -363,8 +408,8 @@ shinyServer(function(input, output, session) {
       
       indata <- values[["inputData"]]
       
-      isOutput <-  grepl("Quantities|Shares",colnames(indata),perl = TRUE)
-      isShares <-  grepl("Shares",colnames(indata),perl = TRUE)
+      isOutput <-  grepl("Quantities|Revenues",colnames(indata),perl = TRUE)
+      isCournot <- input$supply == "Cournot"
       
       colnames(indata)[ grepl("Margins",colnames(indata),perl = TRUE)] <- "Margins"
       
@@ -372,10 +417,10 @@ shinyServer(function(input, output, session) {
       
       indata <- indata[!is.na(indata[,"Output"]),]
       
-      if(any(isShares)) indata$Output <- indata$Output/sum(indata$Output, na.rm=TRUE) ## normalize shares to sum to 1
+      if(!isCournot) indata$Output <- indata$Output/sum(indata$Output, na.rm=TRUE) ## normalize shares to sum to 1
       
       
-      indata$mcDelta <- 0
+      indata$mcDelta <- indata$'Post-merger\n Cost Changes\n(Proportion)'
       
       indata$'Pre-merger\n Owner' <- factor(indata$'Pre-merger\n Owner')
       indata$'Post-merger\n Owner' <- factor(indata$'Post-merger\n Owner',levels=levels(indata$'Pre-merger\n Owner'))
@@ -383,7 +428,7 @@ shinyServer(function(input, output, session) {
       
      
       thisSim <- msgCatcher(
-                          runSims(supply = input$supply,demand = demand(), indata = indata, mktElast = input$enterElast )
+                          runSims(supply = input$supply,demand = input$demand, indata = indata, mktElast = input$enterElast )
       )
 
     
@@ -439,17 +484,23 @@ shinyServer(function(input, output, session) {
           missPrice <- any(is.na(values[["sim"]]@prices)) 
           if(isAuction && missPrice){inLevels = TRUE}
           
-          capture.output(res <- summary(values[["sim"]], revenue=isRevDemand, levels=inLevels))
+          capture.output(res <- summary(values[["sim"]], revenue=isRevDemand & missPrice, levels=inLevels))
           res$Name <- rownames(res)
+          res$mcDelta <- NULL
           res <- res[,c(1, ncol(res), 2 : (ncol(res)  - 1))]
+          res$cmcr <- NA
+          try(res$cmcr[res$isParty=="*"] <- cmcr(values[["sim"]]))
           
-          thesenames <-  c("Merging Party","Name","Pre-Merger Price","Post-Merger Price", "Price Change (%)","Pre-Merger Share (%)","Post-Merger Share (%)", "Share Change (%)")
+          thesenames <-  c("Merging Party","Name","Pre-Merger Price","Post-Merger Price", "Price Change (%)","Pre-Merger Share (%)","Post-Merger Share (%)", "Share Change (%)",'Compensating Marginal Cost Reduction (%)')
+          
           
           #if(isAIDS && missPrice){thesenames <- thesenames[!thesenames %in% c("Pre-Merger Price","Post-Merger Price")]}
           
           colnames(res) <- thesenames
           
-          res[,c("Pre-Merger Share (%)","Post-Merger Share (%)")] <-  res[,c("Pre-Merger Share (%)","Post-Merger Share (%)")] * 100 / colSums( res[,c("Pre-Merger Share (%)","Post-Merger Share (%)")])
+          if(all(is.na(res$`Compensating Marginal Cost Reduction (%)`))) res$`Compensating Marginal Cost Reduction (%)` <- NULL
+          
+          #res[,c("Pre-Merger Share (%)","Post-Merger Share (%)")] <-  res[,c("Pre-Merger Share (%)","Post-Merger Share (%)")] * 100 / colSums( res[,c("Pre-Merger Share (%)","Post-Merger Share (%)")])
         
           if(inLevels){ colnames(res)[ colnames(res) == "Price Change (%)"] = "Price Change ($/unit)"}
           

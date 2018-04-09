@@ -15,28 +15,13 @@ shinyUI(fluidPage(
                  #tags$li("Margins should exclude fixed costs.")
                  )
                  ),hr(),
-
-        #checkboxInput("dispDetails", "Display Detailed Results", value = FALSE, width = NULL),
-        #checkboxInput("calcElast", "Calibrate Market Elasticity", value = FALSE, width = NULL),
-       conditionalPanel(
-         condition = "input.supply != 'Cournot'", 
-       radioButtons("calcElast_other", "Calibrate model parameters using:",
+       radioButtons("calcElast", "Calibrate model parameters using:",
                      choices = c("market elasticity and 1 or more margins",
-                                 "2 or more margins"
-                     ),selected ="market elasticity and 1 or more margins"
-                    )
-       ),
-       conditionalPanel(
-         condition = "input.supply == 'Cournot'", 
-         radioButtons("calcElast_cournot", "Calibrate model parameters using:",
-                      choices = c("market elasticity and 0 or more margins",
-                                  "1 or more margins"
-                      ),selected ="market elasticity and 0 or more margins"
-         )
-       ),
+                                 "2 or more margins"), selected="market elasticity and 1 or more margins"
+                    ),
         conditionalPanel(
-          condition = "input.calcElast_other == 'market elasticity and 1 or more margins' || input.calcElast_cournot == 'market elasticity and 0 or more margins' ",
-          numericInput("enterElast", "Enter Market Elasticity:", value=-1,min=-Inf,max=0,step=.1#, width='75%'
+          condition = "input.calcElast.includes('elasticity') == true ",
+          numericInput("enterElast", "Enter Market Elasticity:", value=-1.5,min=-Inf,max=0,step=.1#, width='75%'
                        )
         ),hr(),
         #checkboxInput("incEff", "Include Proportional Cost Changes (negative values imply cost reductions)", value = FALSE, width = NULL),
@@ -46,66 +31,26 @@ shinyUI(fluidPage(
                                 "2nd Score Auction",
                                 "Cournot"
                                 )),
-        conditionalPanel(
-          condition = "input.supply == 'Bertrand' && input.calcElast_other == '2 or more margins'",
-          selectInput("demand_bert_alm", "Demand Specification:",
-                      choices = c("logit (unknown elasticity)", "ces (unknown elasticity)", 
-                                  #"linear",
-                                  "aids (unknown elasticity)"))
-        ),
-        conditionalPanel(
-          condition = "input.supply == 'Bertrand'  && input.calcElast_other == 'market elasticity and 1 or more margins'",
-          selectInput("demand_bert", "Demand Specification:",
+      
+          selectInput("demand", "Demand Specification:",
                       choices = c("logit", "ces", 
                                   #"linear",
-                                  "aids"))
-        ),
-        conditionalPanel(
-          condition = "input.supply == 'Cournot'  && input.calcElast_cournot == '1 or more margins' ",
-          selectInput("demand_cournot_alm", "Demand Specification:",
-                      choices = c("linear (unknown elasticity)","log (unknown elasticity)"))
-        ),
-        conditionalPanel(
-          condition = "input.supply == 'Cournot'  && input.calcElast_cournot  == 'market elasticity and 0 or more margins' ",
-          selectInput("demand_cournot", "Demand Specification:",
-                      choices = c("linear","log"))
-        ),
-        conditionalPanel(
-          condition = "input.supply == '2nd Score Auction' && input.calcElast_other  ==  'market elasticity and 1 or more margins' ",
-          selectInput("demand_2nd", "Demand Specification:",
-                      choices = c("logit"))
-        ),
-        conditionalPanel(
-          condition = "input.supply == '2nd Score Auction' && input.calcElast_other == '2 or more margins'",
-          selectInput("demand_2nd_alm", "Demand Specification:",
-                      choices = c("logit (unknown elasticity)"))
-        ),hr(),
+                                  "aids")),
+       hr(),
         conditionalPanel(
           condition = "input.supply == 'Cournot'",
           helpText(tags$b("Note:"), "only the first non-missing inputted price and product name is used for Cournot.")
           ),
-        #conditionalPanel(
-        #  condition = "input.supply != '2nd Score Auction'",
-        #  helpText(tags$b("Note:"), "margins must be between 0 and 1.")
-        #),
-        #conditionalPanel(
-        #  condition = "input.supply == '2nd Score Auction'",
-        #  helpText(tags$b("Note:"), "2nd Score Auction requires $/unit margins.")
-        #),
        conditionalPanel(
-         condition = "input.supply == '2nd Score Auction' && input.calcElast_other  == 'market elasticity and 1 or more margins'",
+         condition = "input.supply == '2nd Score Auction' && input.calcElast.includes('elasticity') == true",
          helpText(tags$b("Note:"), "2nd score Auction only requires a single price.")
        ),
        conditionalPanel(
-         condition = "input.supply == '2nd Score Auction' && input.calcElast_other  == '2 or more margins'",
+         condition = "input.supply == '2nd Score Auction' && input.calcElast.includes('elasticity') == false",
          helpText(tags$b("Note:"), "2nd Score Auction does not require prices.")
        ),
-        # conditionalPanel(
-        #   condition = "input.demand_bert == 'aids'",
-        #   helpText(tags$b("Note:"), "Only first non-missing inputted margin is used for pcaids. This margin should belong to a single product firm.")
-        # ),
        conditionalPanel(
-         condition = "input.supply == 'Bertrand' && input.demand_bert == 'aids'",
+         condition = "input.supply == 'Bertrand' && input.demand == 'aids'",
          helpText(tags$b("Note:"), "aids does not require pricing information.")
        )
       ),
@@ -121,18 +66,14 @@ shinyUI(fluidPage(
         br(), br(),br(),
         tabsetPanel(id = "inTabset",
           tabPanel("Summary", value = "respanel", br(),br(),tableOutput("results"), br(),
-                   helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages.")#,
-                   #conditionalPanel("input.demand_bert == 'aids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
-                   #                helpText(tags$b("Note:"), "shares are revenue-based.")
-                   #)
+                   helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages.")
           ),
-          tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_shareOut"),br(), tableOutput("results_detailed"),
-                   # conditionalPanel("input.demand_bert != 'aids' && input.supply != 'cournot'",
-                   #    helpText(tags$b("Note:"), "shares include an outside good.")
-                   #  ),
-                   conditionalPanel("input.demand_bert == 'aids' || input.demand_bert == 'ces' || input.demand_bert_alm == 'ces (unknown elasticity)'",
-                                    helpText(tags$b("Note:"), "shares are revenue-based.")
-                   )), 
+          tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_shareOut"),br(), tableOutput("results_detailed")
+                   
+                   #,conditionalPanel("input.demand == 'aids' || input.demand == 'ces' || input.demand == 'ces (unknown elasticity)'",
+                   #                  helpText(tags$b("Note:"), "shares are revenue-based.")
+                   #)
+                   ), 
           tabPanel("Elasticities", value = "elastpanel",  br(),br(),
                    radioButtons("pre_elast", "",
                                                 choices = c("Pre-Merger",
@@ -140,7 +81,7 @@ shinyUI(fluidPage(
                                                 ), inline = TRUE),br(),
                    tableOutput("results_mktelast"),br(),
                    tableOutput("results_elast"),
-                   conditionalPanel("input.supply != 'Cournot'",
+                   conditionalPanel("input.supply !=='Cournot'",
                    helpText(tags$b("Note:"), "diagonal elements are own-price elasticities.","Off-diagonal elements are the cross-price elasticities of row with respect to column.")
                    ),
                    conditionalPanel("input.supply == 'Cournot'",
