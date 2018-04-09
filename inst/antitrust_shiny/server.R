@@ -510,7 +510,7 @@ shinyServer(function(input, output, session) {
         res
         
       
-      }, digits = 1)  
+      }, digits = 2)  
     
     
     output$results_shareOut <- renderTable({
