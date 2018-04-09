@@ -26,7 +26,7 @@ shinyUI(fluidPage(
         ),hr(),
         #checkboxInput("incEff", "Include Proportional Cost Changes (negative values imply cost reductions)", value = FALSE, width = NULL),
         
-        radioButtons("supply", "Supply Specification:",
+        radioButtons("supply", "Competitive Interaction:",
                     choices = c("Bertrand",
                                 "2nd Score Auction",
                                 "Cournot"
