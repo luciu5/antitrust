@@ -119,7 +119,7 @@
 \S4method{ownerToVec}{Antitrust}(object,preMerger=TRUE)
 \S4method{plot}{Bertrand}(x,scale=.1)
 \S4method{summary}{Bertrand}(object,revenue=TRUE,shares=TRUE,levels=FALSE,
-parameters=FALSE,market=FALSE,digits=2,...)
+parameters=FALSE,market=FALSE,insideOnly=TRUE,digits=2,...)
 
 
 }
@@ -143,6 +143,8 @@ parameters=FALSE,market=FALSE,digits=2,...)
   \item{parameters}{If TRUE, reports demand and cost parameters. Default
     is FALSE}
      \item{levels}{If TRUE, report results in levels. If FALSE, report results in percents. Default is FALSE}
+     \item{insideOnly}{If TRUE, normalizes sum of inside shares to 1. Default
+    is FALSE}
     \item{digits}{The number of significant digits to round
   printed results.}
   \item{scale}{The proportion below marginal cost and above equilbrium price that should be plotted. Default is .1 }

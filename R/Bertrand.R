@@ -520,7 +520,7 @@ setMethod(
 setMethod(
  f= "summary",
  signature= "Bertrand",
- definition=function(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,market=FALSE,digits=2,...){
+ definition=function(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,market=FALSE,insideOnly = TRUE,digits=2,...){
 
      curWidth <-  getOption("width")
 
@@ -551,9 +551,14 @@ setMethod(
      else{
          if(!shares){warning("'shares' equals FALSE but 'calcQuantities' not defined. Reporting shares instead of quantities")}
 
-         outPre  <-  calcShares(object,preMerger=TRUE,revenue=revenue) * 100
-         outPost <-  calcShares(object,preMerger=FALSE,revenue=revenue) * 100
-
+         outPre  <-  calcShares(object,preMerger=TRUE,revenue=revenue)
+         outPost <-  calcShares(object,preMerger=FALSE,revenue=revenue)
+         
+         if(insideOnly){
+            outPre <- outPre/sum(outPre)* 100
+            outPost <- outPost/sum(outPost)* 100
+         }
+         
          sumlabels=paste("shares",c("Pre","Post"),sep="")
      }
 
