@@ -580,7 +580,10 @@ shinyServer(function(input, output, session) {
        if(input$pre_elast == "Pre-Merger"){ preMerger = TRUE}
         else{preMerger =FALSE}
         
-        res <- elast(values[["sim"]], preMerger=preMerger)
+      if(!isCournot && input$diversions){
+        res <- diversion(values[["sim"]], preMerger=preMerger)
+      }
+      else{  res <- elast(values[["sim"]], preMerger=preMerger)}
         if(isCournot){colnames(res) <- "Elasticity"}
         
         res

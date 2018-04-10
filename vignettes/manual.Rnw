@@ -34,7 +34,7 @@
 public domain without warranty of any kind, expressed or implied. We
 thank Ronald Drennan, Robert Majure, Russell Pittman, Gloria Sheu,
 Nathan Miller, Randy Chugh, Marc Remer, Alexander Raskovich, William Drake, Thomas
-Jeitschko, Greg Werden,  Nicholas Hill, and Conor Ryan. Address: Economic Analysis Group, Antitrust Division, U.S. Department of Justice, 450 5th St. NW, Washington DC 20530.  E-mail: \href{mailto:charles.taragin@usdoj.gov}{charles.taragin@usdoj.gov}
+Jeitschko, Greg Werden,  Luke Froeb, Nicholas Hill, and Conor Ryan. Address: Economic Analysis Group, Antitrust Division, U.S. Department of Justice, 450 5th St. NW, Washington DC 20530.  E-mail: \href{mailto:charles.taragin@usdoj.gov}{charles.taragin@usdoj.gov}
 and
 \href{mailto:michael.sandfort@usdoj.gov}{michael.sandfort@usdoj.gov}.}\and
 Michael Sandfort\samethanks}

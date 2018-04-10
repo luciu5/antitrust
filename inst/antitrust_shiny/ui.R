@@ -78,10 +78,12 @@ shinyUI(fluidPage(
                    radioButtons("pre_elast", "",
                                                 choices = c("Pre-Merger",
                                                             "Post-Merger"
-                                                ), inline = TRUE),br(),
+                                                ), inline = TRUE),
+                    br(),
                    tableOutput("results_mktelast"),br(),
-                   tableOutput("results_elast"),
+                   tableOutput("results_elast"), 
                    conditionalPanel("input.supply !=='Cournot'",
+                                    checkboxInput("diversions", "Report diversions", value =FALSE),
                    helpText(tags$b("Note:"), "diagonal elements are own-price elasticities.","Off-diagonal elements are the cross-price elasticities of row with respect to column.")
                    ),
                    conditionalPanel("input.supply == 'Cournot'",
