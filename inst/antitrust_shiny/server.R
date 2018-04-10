@@ -484,7 +484,7 @@ shinyServer(function(input, output, session) {
           missPrice <- any(is.na(values[["sim"]]@prices)) 
           if(isAuction && missPrice){inLevels = TRUE}
           
-          capture.output(res <- summary(values[["sim"]], revenue=isRevDemand & missPrice, levels=inLevels))
+          capture.output(res <- summary(values[["sim"]], revenue=isRevDemand & missPrice, insideOnly=TRUE, levels=inLevels))
           res$Name <- rownames(res)
           res$mcDelta <- NULL
           res <- res[,c(1, ncol(res), 2 : (ncol(res)  - 1))]

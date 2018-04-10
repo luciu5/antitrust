@@ -551,8 +551,8 @@ setMethod(
      else{
          if(!shares){warning("'shares' equals FALSE but 'calcQuantities' not defined. Reporting shares instead of quantities")}
 
-         outPre  <-  calcShares(object,preMerger=TRUE,revenue=revenue)
-         outPost <-  calcShares(object,preMerger=FALSE,revenue=revenue)
+         outPre  <-  calcShares(object,preMerger=TRUE,revenue=revenue) * 100
+         outPost <-  calcShares(object,preMerger=FALSE,revenue=revenue) * 100 
          
          if(insideOnly){
             outPre <- outPre/sum(outPre)* 100
