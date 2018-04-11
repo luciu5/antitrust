@@ -13,7 +13,7 @@
 
 
       bertrand.alm(demand = c("logit","ces","aids"),
-  prices,shares_quantity,margins,
+  prices,quantities,margins,
   ownerPre,ownerPost,
   mktElast = NA_real_,
   diversions,

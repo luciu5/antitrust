@@ -58,6 +58,7 @@
 \alias{calcDiagnostics}
 \alias{calcDiagnostics,ANY-method}
 \alias{calcDiagnostics,Bertrand-method}
+\alias{calcDiagnostics,Cournot-method}
 \alias{calcSlopes}
 \alias{calcSlopes,ANY-method}
 \alias{calcSlopes,AIDS-method}
@@ -198,7 +199,7 @@ parameters=FALSE,market=FALSE,insideOnly=TRUE,digits=2,...)
     Nash-Bertrand or Cournot game. For "LogitCap", assumes firms are
     playing a Nash-Bertrand or Cournot game with capacity constraints.
   }
-  \item{calcDiagnostics}{\code{signature(object=Bertrand,labels=object@labels)}}{
+  \item{calcDiagnostics}{\code{signature(object=c(Bertrand,Cournot),labels}}{
     Computes the percentage difference between predicted and observed pre-merger prices, shares, margins and market elasticities (if supplied) . \sQuote{labels} is used to specify row labels.
   }
    \item{calcVC}{\code{signature(object=Cournot,preMerger=TRUE)}}{
