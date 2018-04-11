@@ -136,7 +136,7 @@ ces.alm <- function(prices,shares,margins,
     if(missing(parmsStart)){
         parmsStart <- rep(.1,2)
         nm <- which(!is.na(margins))[1] 
-        parmsStart[1] <- 1/(margins[nm]*(1-shares[nm])) - shares[nm]/(1-shares[nm]) #ballpark alpha for starting values
+        parmsStart[1] <- 1/(margins[nm]*(1-shares[nm])) - shares[nm]/(1-shares[nm]) #ballpark gamma for starting values
     }
 
    

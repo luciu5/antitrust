@@ -84,7 +84,7 @@ setClass(
     if(!is.list(object@labels)) stop("'labels' must be a list") 
     if (isTRUE(nplants != length(object@labels[[1]]))) stop("'labels' length must be a list whose first element is a vector whose length equals the number of plants")
     
-    if (isTRUE(nprods != length(object@labels[[2]]))) stop("'labels' length must be a list whose 2nd element is a vector whose length equals the number of productsS")
+    if (isTRUE(nprods != length(object@labels[[2]]))) stop("'labels' length must be a list whose 2nd element is a vector whose length equals the number of products")
     
     
     if(any(object@prices<=0,na.rm=TRUE))             stop("'prices' values must be positive")

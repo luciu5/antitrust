@@ -36,8 +36,7 @@
   \item{demand}{A character vector indicating which demand system to use. Currently allows logit (default), ces, or aids.}
   \item{prices}{A length k vector product prices. Default is missing, in
   which case demand intercepts are not calibrated.}
-  \item{shares_quantity}{A length k vector of product revenue shares. All shares must
-    be between 0 and 1.}
+  \item{quantities}{A length k vector of product quantities.}
   \item{margins}{A length k vector of product margins. All margins must
     be either be between 0 and 1, or NA.}
   \item{diversions}{A k x k matrix of diversion ratios with diagonal

@@ -3,7 +3,7 @@
 
 bertrand.alm <- function(
   demand = c("logit","ces","aids"),
-  prices,shares_quantity,margins,
+  prices,quantities,margins,
   ownerPre,ownerPost,
   mktElast = NA_real_,
   diversions,
@@ -23,7 +23,7 @@ demand <- match.arg(demand)
 
 
 
-shares_revenue <- shares_quantity <- shares_quantity/sum(shares_quantity)
+shares_revenue <- shares_quantity <- quantities/sum(quantities)
 
 
 
@@ -33,7 +33,7 @@ if(demand == "aids"){
   
   if(missing(prices)){ prices <- rep(NA_real_,length(shares_revenue))}
   
-  if(missing(parmStart))rep(NA_real_,2)
+  if(missing(parmStart)) parmStart <- rep(NA_real_,2)
   
   if(missing(diversions)){
     diversions <- tcrossprod(1/(1-shares_revenue),shares_revenue)
@@ -49,8 +49,11 @@ else if (demand %in% c("logit","ces")){
   if(missing(parmStart)){
     parmStart <- rep(.1,2)
     nm <- which(!is.na(margins))[1] 
+    if(demand == "logit"){
     parmStart[1] <- -1/(margins[nm]*prices[nm]*(1-shares_quantity[nm])) #ballpark alpha for starting values
-  }
+    }
+    else{parmStart[1] <- 1/(margins[nm]*(1-shares_revenue[nm])) - shares_revenue[nm]/(1-shares_revenue[nm])} #ballpark gamma for starting values
+    }
   
 }
 

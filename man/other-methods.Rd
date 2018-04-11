@@ -199,7 +199,7 @@ parameters=FALSE,market=FALSE,insideOnly=TRUE,digits=2,...)
     playing a Nash-Bertrand or Cournot game with capacity constraints.
   }
   \item{calcDiagnostics}{\code{signature(object=Bertrand,labels=object@labels)}}{
-    Computes he perentage difference between predicted and observed pre-merger prices, shares, margins and market elasticities (if supplied) . \sQuote{labels} is used to specify row labels.
+    Computes the percentage difference between predicted and observed pre-merger prices, shares, margins and market elasticities (if supplied) . \sQuote{labels} is used to specify row labels.
   }
    \item{calcVC}{\code{signature(object=Cournot,preMerger=TRUE)}}{
     Computes either pre- or post-merger variable costs. Variable costs

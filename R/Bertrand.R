@@ -607,6 +607,8 @@ setMethod(
                          'Overall Effect ($/unit)'= -1*thiscv + thispsdelta,
                          check.names=FALSE
                        ))
+       
+       if(levels){colnames(results) <- gsub("%","$/unit",colnames(results))}
       
                        
      }
