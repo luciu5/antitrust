@@ -83,7 +83,7 @@ shinyUI(fluidPage(
                    tableOutput("results_mktelast"),br(),
                    tableOutput("results_elast"), 
                    conditionalPanel("input.supply !=='Cournot'",
-                                    checkboxInput("diversions", "Report diversions", value =FALSE),
+                                    checkboxInput("diversions", "Report diversion ratios", value =FALSE),
                    helpText(tags$b("Note:"), "diagonal elements are own-price elasticities.","Off-diagonal elements are the cross-price elasticities of row with respect to column.")
                    ),
                    conditionalPanel("input.supply == 'Cournot'",
@@ -97,6 +97,7 @@ shinyUI(fluidPage(
                    h4("Parameters"),verbatimTextOutput("parameters"),
                    helpText("See the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package vignette for more details about the parameters displayed here." )
           ), 
+          tabPanel("R Code", value = "codepanel", br(),verbatimTextOutput("results_code")),
           tabPanel("Messages", value = "msgpanel", br(),h4("Warnings"),  verbatimTextOutput("warnings"), br(),h4("Errors"),  verbatimTextOutput("errors"))
           
         )
