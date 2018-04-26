@@ -626,9 +626,9 @@ setMethod(
                          'Industry Price Change (%)' = sum(priceDelta * outputPost/sum(outputPost),na.rm=TRUE),
                          'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty]),
                          'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty]),
-                         'Consumer Harm ($/unit)' = thiscv,
-                         'Producer Benefit ($/unit)' = thispsdelta,
-                         'Net Harm ($/unit)'= thiscv - thispsdelta,
+                         'Consumer Harm ($)' = thiscv,
+                         'Producer Benefit ($)' = thispsdelta,
+                         'Net Harm ($)'= thiscv - thispsdelta,
                          check.names=FALSE
                        ))
        
