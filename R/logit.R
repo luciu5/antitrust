@@ -10,11 +10,15 @@ setClass(
          normIndex        = "vector",
          shareInside      = "numeric",
          priceOutside     = "numeric",
-         mktElast         = "numeric"
+         mktElast         = "numeric",
+         insideSize          = "numeric",
+         mktSize             = "numeric"
 
          ),
     prototype=prototype(
       mktElast = NA_real_,
+      insideSize  = NA_real_,
+      mktSize = 1,
       priceStart  = numeric(),
       normIndex   = 1,
       shareInside = numeric(),
@@ -30,6 +34,7 @@ setClass(
              nprods <- length(object@shares)
             
 
+             
              if(
                  nprods != length(margins) ||
                  nprods != length(object@prices)){
@@ -83,8 +88,11 @@ setClass(
                 ){stop("'priceOutside' must be a non-negative number")}
 
              if(!is.na(object@mktElast) && object@mktElast >0 ) stop("'mktElast' must be negative")
-             if(!is.na(object@mktElast) && sum(object@shares, na.rm=TRUE) != 1 ) stop("`shares' must sum to 1 when 'mktElast' is supplied")
+             if(!is.na(object@mktElast) && !isTRUE(all.equal(sum(object@shares, na.rm=TRUE),1)) ) stop("`shares' must sum to 1 when 'mktElast' is supplied")
              
+             if(length(object@mktSize)!=1 || 
+                (!is.na(object@mktSize) && isTRUE(object@mktSize<0))){
+               stop("mktSize must be a positive number")}
              return(TRUE)
 
          })
@@ -105,7 +113,8 @@ setMethod(
               prices       <-  object@prices
               idx          <-  object@normIndex
               mktElast     <-  object@mktElast 
-              shareInside  <-  object@shareInside  
+              shareInside  <-  object@shareInside
+              insideSize   <-  object@Insidesize 
 
               if(is.na(idx)){
                   idxShare <- 1 - shareInside
@@ -137,7 +146,7 @@ setMethod(
                 
                 if(!is.na(mktElast)){
                   shareInside <-   1 - mktElast/( alpha * avgPrice )
-                  probs <- probs * shareInside
+                  probs <- probs/sum(probs,na.rm=TRUE) * shareInside
                   
                 }
                 
@@ -181,10 +190,17 @@ setMethod(
 
               meanval <- log(shares) - log(idxShare) - minAlpha * (prices - idxPrice)
 
+              
+              
+              
+              
               names(meanval)   <- object@labels
+              
+              
 
               object@slopes    <- list(alpha=minAlpha,meanval=meanval)
               object@priceOutside <- idxPrice
+              object@mktSize <- insideSize/object@shareInside
 
               return(object)
           }
@@ -270,6 +286,20 @@ setMethod(
 
 
 setMethod(
+  f= "calcQuantities",
+  signature= "Logit",
+  definition=function(object,preMerger=TRUE, market=FALSE){
+    
+    mktSize <- object@mktSize
+    
+    shares <- calcShares(object, preMerger= preMerger, revenue = FALSE)
+    if(market) shares <- sum(shares,na.rm=TRUE)
+    return(mktSize*shares)
+    
+    
+  })
+
+setMethod(
  f= "calcShares",
  signature= "Logit",
  definition=function(object,preMerger=TRUE,revenue=FALSE){
@@ -347,7 +377,8 @@ setMethod(
               alpha       <- object@slopes$alpha
               meanval     <- object@slopes$meanval
               subset <- object@subset
-      
+              mktSize <- object@mktSize
+              
               # outVal <- ifelse(object@shareInside<1, 1, 0)
               outVal <- ifelse(is.na(object@normIndex), 1, 0)
               
@@ -355,6 +386,8 @@ setMethod(
               VPost <- sum(exp(meanval + (object@pricePost - object@priceOutside)*alpha)[subset] ) + outVal
 
               result <- log(VPost/VPre)/alpha
+              
+              if(!is.na(mktSize)){ result <- result * mktSize}
 
               return(result)
 

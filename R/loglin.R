@@ -112,7 +112,7 @@ if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not ha
 setMethod(
  f= "calcQuantities",
  signature= "LogLin",
- definition=function(object,preMerger=TRUE,...){
+ definition=function(object,preMerger=TRUE,market=FALSE,...){
 
 
      if(preMerger){ prices <- object@pricePre}
@@ -123,6 +123,8 @@ setMethod(
      quantities <- exp(intercept) * apply(prices^t(slopes),2,prod)
      names(quantities) <- object@labels
 
+     if (market) quantities <- sum(quantities, na.rm=TRUE)
+     
      return(quantities)
 
 }

@@ -16,6 +16,7 @@
   prices,quantities,margins,
   ownerPre,ownerPost,
   mktElast = NA_real_,
+  insideSize = ifelse(demand == "logit",sum(quantities,na.rm=TRUE), sum(prices*quantities,na.rm=TRUE)),
   diversions,
   mcDelta=rep(0,length(prices)),
   subset=rep(TRUE,length(prices)),
@@ -49,7 +50,8 @@
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
     \item{mktElast}{A negative number equal to the industry pre-merger
-    price elasticity. Default is NAfor  \code{aids} and -1 for \code{pcaids} .}
+    price elasticity. Default is NA .}
+      \item{insideSize}{Size of all units included in the market. For logit, this defaults to total quantity, while for aids and ces this defaults to total revenues. }
   \item{mcDelta}{A vector of length k where each element equals the
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not

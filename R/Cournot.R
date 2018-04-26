@@ -510,18 +510,22 @@ setMethod(
 setMethod(
   f= "calcQuantities",
   signature= "Cournot",
-  definition=function(object,preMerger=TRUE,...){
+  definition=function(object,preMerger=TRUE,market=FALSE,...){
     
     slopes <- object@slopes
     intercepts <- object@intercepts
     quantityStart <- object@quantityStart
     #quantityStart[is.na(quantityStart)] = 0
     
-    if(preMerger){ owner  <- object@ownerPre
+    if(preMerger){ 
+    if(market) return(sum(object@quantityPre, na.rm=TRUE))  
+    owner  <- object@ownerPre
     products  <- object@productsPre
     cap <- object@capacitiesPre
     }
-    else{          owner <-  object@ownerPost
+    else{    
+      if(market) return(sum(object@quantityPost, na.rm=TRUE))  
+    owner <-  object@ownerPost
     products <-  object@productsPost
     cap <- object@capacitiesPost
     }
@@ -642,7 +646,7 @@ setMethod(
 setMethod(
   f= "cmcr",
   signature= "Cournot",
-  definition=function(object){
+  definition=function(object,...){
     
     owner <- object@ownerPre
     isParty <- rowSums( abs(object@ownerPost - object@ownerPre) ) > 0

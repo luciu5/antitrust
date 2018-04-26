@@ -5,9 +5,11 @@ setClass(
          priceStart  = "numeric",
          priceDelta       = "numeric",
          mktElast         = "numeric",
-         parmStart="numeric"
+         parmStart="numeric",
+         insideSize          = "numeric"
          ),
         prototype=prototype(
+        insideSize       =  NA_real_,
         priceDelta       =  numeric(),
         mktElast         =  numeric(),
         parmStart        =  numeric(),
@@ -146,9 +148,10 @@ setMethod(
 setMethod(
  f= "calcPriceDelta",
  signature= "AIDS",
- definition=function(object,isMax=FALSE,levels=FALSE,subset,...){
+ definition=function(object,isMax=FALSE,levels=FALSE,subset,market=FALSE,...){
 
-
+   if(market) return(sum(object@priceDelta * calcShares(object, preMerger = FALSE),na.rm=TRUE))
+   
      ownerPost <- object@ownerPost
 
       nprods <- length(object@shares)
@@ -177,7 +180,7 @@ setMethod(
 
 
      ## Find price changes that set FOCs equal to 0
-     minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+     minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ)
 
 
      if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
@@ -195,6 +198,16 @@ setMethod(
      names(deltaPrice) <- object@labels
 
      if(levels){deltaPrice <- calcPrices(object,FALSE) - calcPrices(object,TRUE)}
+     
+     if(market){
+       sharePost <-  calcShares(object,FALSE,...)
+       sharePost <- sharePost/sum(sharePost, na.rm=TRUE)
+       
+      deltaPrice <- sum(deltaPrice*sharePost,na.rm=TRUE)  
+       
+     }
+     
+     
      
      return(deltaPrice)
  }
@@ -216,6 +229,67 @@ setMethod(
      return(prices)
      }
           )
+
+
+
+
+## compute product revenues
+setMethod(
+  f= "calcRevenues",
+  signature= "AIDS",
+  definition=function(object,preMerger=TRUE, market =FALSE){
+    
+    shares <- calcShares(object, preMerger = preMerger, revenue=TRUE)
+    
+    insideSize <- object@insideSize
+    
+    
+    if(!preMerger){
+      
+      # source: epstein and rubinfeld Assumption C (appendix)
+      insideSizeDelta <- sum( shares * object@priceDelta) * (object@mktElast + 1) 
+      
+      insideSize <- insideSize*( 1 + insideSizeDelta)
+      
+    }
+    
+    if(market){return(insideSize)}
+    
+    res <- shares * insideSize
+      
+    return(res)
+    
+  })
+
+setMethod(
+  f= "calcQuantities",
+  signature= "AIDS",
+  definition=function(object,preMerger=TRUE, market=FALSE){
+    
+    if(preMerger){ prices <- object@pricePre}
+    else{          prices <- object@pricePost}
+    
+    insideSize <- object@insideSize
+    
+    shares <- calcShares(object, preMerger = preMerger, revenue=TRUE)
+    
+    if(!preMerger){
+      
+    # source: epstein and rubinfeld Assumption C (appendix)
+    insideSizeDelta <- sum( shares * object@priceDelta) * (object@mktElast + 1) 
+    
+    insideSize <- insideSize*( 1 + insideSizeDelta)
+    
+    }
+    
+    shares <- calcShares(object, preMerger= preMerger, revenue = TRUE)
+    
+    res <- insideSize*shares / prices
+    if(market) res <- sum(res)
+    return(res )
+    
+    
+  })
 
 setMethod(
  f= "calcShares",
@@ -314,7 +388,7 @@ setMethod(
 setMethod(
  f= "cmcr",
  signature= "AIDS",
- definition=function(object){
+ definition=function(object, market= FALSE){
 
 
      ownerPre  <- object@ownerPre
@@ -342,6 +416,15 @@ setMethod(
 
      cmcr <- cmcr[isParty]
 
+     if(market){
+       sharePost <- calcShares(object, preMerger=FALSE, revenue =FALSE)
+       if(all(is.na(sharePost))) sharePost <- calcShares(object, preMerger=FALSE, revenue = TRUE)
+       sharePost <- sharePost[isParty]
+       sharePost <- sharePost/sum(sharePost)
+       
+       cmcr <- sum( cmcr * sharePost )
+     }
+     
     return(cmcr * 100)
 }
  )
@@ -352,27 +435,36 @@ setMethod(
 setMethod(
           f= "CV",
           signature= "AIDS",
-          definition=function(object,totalRevenue){
+          definition=function(object){
 
               ## computes compensating variation using the closed-form solution found in LaFrance 2004, equation 10
 
               if(any(is.na(object@prices))){stop("Compensating Variation cannot be calculated without supplying values to 'prices'")}
 
+              
 
               slopes <- object@slopes
               intercepts <- object@intercepts
               pricePre <- log(object@pricePre)
               pricePost <- log(object@pricePost)
-
+              insideSizePre <- object@insideSize
+              
+              sharePost <- calcShares(object, preMerger = FALSE, revenue = TRUE)
+              
+              # source: epstein and rubinfeld Assumption C (appendix)
+              insideSizeDelta <- sum( sharePost * object@priceDelta) * (object@mktElast + 1) 
+              
+              insideSizePost <- insideSizePre*( 1 + insideSizeDelta)
+              
               result <- sum(intercepts*(pricePost-pricePre)) + .5 * as.vector(t(pricePost)%*%slopes%*%pricePost - t(pricePre)%*%slopes%*%pricePre)
 
 
-              if(missing(totalRevenue)){
-                  warning("'totalRevenue' is missing. Calculating CV as a percentage change in (aggregate) income")
+              if(is.na(insideSizePost)){
+                  warning("Slot 'insideSize' is missing. Calculating CV as a percentage change in (aggregate) income")
                   return(result*100)}
 
                else{
-                  return(totalRevenue*(exp(result)-1))
+                  return(insideSizePost*(exp(result)-1))
               }
 
           }
@@ -475,6 +567,7 @@ setMethod(
 aids <- function(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
                  mktElast = NA_real_,
+                 insideSize = NA_real_,
                  mcDelta=rep(0, length(shares)),
                  subset=rep(TRUE, length(shares)),
                  parmStart= rep(NA_real_,2),
@@ -501,7 +594,7 @@ aids <- function(shares,margins,prices,diversions,
     ## Create AIDS container to store relevant data
     result <- new("AIDS",shares=shares,mcDelta=mcDelta,subset=subset,
                   margins=margins, prices=prices, quantities=shares,  mktElast = mktElast,
-                  ownerPre=ownerPre,ownerPost=ownerPost, parmStart=parmStart,
+                  ownerPre=ownerPre,ownerPost=ownerPost, parmStart=parmStart, insideSize = insideSize,
                   diversion=diversions,
                   priceStart=priceStart,labels=labels)
 

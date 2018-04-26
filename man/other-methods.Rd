@@ -11,11 +11,19 @@
 \alias{calcShares,LogitNests-method}
 \alias{calcShares,Auction2ndLogit-method}
 \alias{calcShares,Cournot-method}
+\alias{calcRevenues}
+\alias{calcRevenues,ANY-method}
+\alias{calcRevenues,Bertrand-method}
+\alias{calcRevenues,CES-method}
+\alias{calcRevenues,AIDS-method}
 \alias{calcQuantities}
 \alias{calcQuantities,ANY-method}
+\alias{calcQuantities,Logit-method}
+\alias{calcQuantities,CES-method}
 \alias{calcQuantities,Linear-method}
 \alias{calcQuantities,LogLin-method}
 \alias{calcQuantities,LogitCap-method}
+\alias{calcQuantities,Logit-method}
 \alias{calcQuantities,Cournot-method}
 \alias{calcQuantities,Stackelberg-method}
 \alias{calcPrices}
@@ -105,10 +113,11 @@
 }
 \usage{
 \S4method{calcShares}{ANY}(object,preMerger=TRUE,revenue=FALSE)
-\S4method{calcQuantities}{ANY}(object,preMerger=TRUE)
+\S4method{calcQuantities}{ANY}(object,preMerger=TRUE, market=FALSE)
+\S4method{calcRevenues}{ANY}(object,preMerger=TRUE, market=FLASE)
 \S4method{calcPrices}{ANY}(object,preMerger=TRUE,subset,...)
-\S4method{calcPriceDelta}{Antitrust}(object,levels=FALSE)
-\S4method{calcPriceDelta}{AIDS}(object,isMax=FALSE,levels=FALSE,subset,...)
+\S4method{calcPriceDelta}{Antitrust}(object,levels=FALSE,market=FALSE)
+\S4method{calcPriceDelta}{AIDS}(object,isMax=FALSE,levels=FALSE,subset,market=FALSE,...)
 \S4method{calcProducerSurplus}{Bertrand}(object,preMerger=TRUE)
 \S4method{calcMargins}{ANY}(object,preMerger=TRUE)
 \S4method{calcMC}{Bertrand}(object,preMerger=TRUE)
@@ -168,10 +177,15 @@ parameters=FALSE,market=FALSE,insideOnly=TRUE,digits=2,...)
     on a value of TRUE or FALSE, where TRUE calculates revenue shares,
     while FALSE calculates quantity shares.
   }
-  \item{calcQuantities}{\code{signature(object=c(Linear,LogLin,LogitCap),preMerger=TRUE)}}{
+  \item{calcQuantities}{\code{signature(object=c(AIDS,CES,Cournot,Linear,Logit,LogLin,Logit,LogitCap,Stackelberg),preMerger=TRUE, market=FALSE)}}{
 
     Computes equilibrium product quantities assuming that firms are playing a
-    Nash-Bertrand or Cournot game.
+    Nash-Bertrand, 2nd Score Auction, or Cournot game. Setting `market' to TRUE returns total market quantity.
+  }
+   \item{calcRevenues}{\code{signature(object=c(Bertrand, AIDS, CES),preMerger=TRUE, market=FALSE)}}{
+
+    Computes equilibrium product revenues assuming that firms are playing a
+    Nash-Bertrand, 2nd Score Auction, or Cournot game. Setting `market' to TRUE returns total market revenue.
   }
   \item{calcPrices}{\code{signature(object=c(Linear,LogLin,AIDS,Logit,LogitNests,LogitCap,CES,CESNests),preMerger=TRUE,subset,...)}}{
     Computes equilibrium product price levels assuming that firms are playing a
@@ -180,12 +194,12 @@ parameters=FALSE,market=FALSE,insideOnly=TRUE,digits=2,...)
     prices. Typically, \code{\link[BB]{BBsolve}} is used, but see
     the appropriate document for further details.
   }
-   \item{calcPriceDelta}{\code{signature(object=Antitrust)}}{
+   \item{calcPriceDelta}{\code{signature(object=Antitrust, market=FALSE)}}{
     Computes equilibrium price changes due to a merger assuming that firms are playing a
     Nash-Bertrand or Cournot game. This is a wrapper method for computing
     the difference between pre- and post-merger equilbrium prices
   }
-   \item{calcPriceDelta}{\code{signature(object=AIDS,isMax=FALSE,subset,...)}}{
+   \item{calcPriceDelta}{\code{signature(object=AIDS,isMax=FALSE,subset,market=FALSE,...)}}{
     Computes equilibrium price changes due to a merger assuming that firms are playing a
     Nash-Bertrand or Cournot game and LA-AIDS. This method calls a non-linear
     equations solver to find a sequence of price changes that satisfy

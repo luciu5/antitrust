@@ -71,7 +71,10 @@ setGeneric (
  name= "calcQuantities",
  def=function(object,...){standardGeneric("calcQuantities")}
  )
-
+setGeneric (
+  name= "calcRevenues",
+  def=function(object,...){standardGeneric("calcRevenues")}
+)
 setGeneric (
  name= "calcShares",
  def=function(object,...){standardGeneric("calcShares")}
@@ -285,6 +288,25 @@ setMethod(
 
 
 
+## compute product revenues
+setMethod(
+  f= "calcRevenues",
+  signature= "Bertrand",
+  definition=function(object,preMerger=TRUE, market = FALSE){
+    
+    
+    if( preMerger) { prices <- object@pricePre}
+    else{prices <- object@pricePost}
+    
+    quantities <- calcQuantities(object, preMerger)
+    
+    res <- prices * quantities
+    if(market){return( sum(res) )}
+    else{return(res)}
+    
+    
+    
+  })
 
 ## compute producer surplus
 setMethod(
@@ -301,11 +323,11 @@ setMethod(
          mc     <- object@mcPost
     }
 
-    if(hasMethod("calcQuantities",class(object))){
-      output <- calcQuantities(object,preMerger)
-    }
-    else{
-      #warning("'calcQuantities' method not defined for class ",class(object),". Using 'calcShares' instead")
+   
+   output <- calcQuantities(object,preMerger)
+    
+    if (all(is.na(output))){
+      warning("'calcQuantities' yielded all NAs. Using 'calcShares' instead")
       output <- calcShares(object,preMerger,revenue=FALSE)
     }
 
@@ -451,13 +473,15 @@ setMethod(
     isParty <- ifelse(isParty,"*","")
     labels  <- paste(isParty,labels,sep="")
 
-    if(hasMethod("calcQuantities",class(object))){
-      outPre=calcQuantities(object,preMerger=TRUE)
-      outPost=calcQuantities(object,preMerger=FALSE)
-    }
-    else{
+    missPrices <- all(is.na(object@pricePre))
+    
+    if(missPrices){
       outPre=calcShares(object,preMerger=TRUE)
       outPost=calcShares(object,preMerger=FALSE)
+    }
+    else{
+      outPre=calcQuantities(object,preMerger=TRUE)
+      outPost=calcQuantities(object,preMerger=FALSE)
     }
 
     prices<-quantPre<-quantPost<-prod<-NULL
@@ -467,7 +491,7 @@ setMethod(
       if(preMerger){thisObj@pricePre[idx]=price}
       else{thisObj@pricePost[idx]=price}
 
-      if(hasMethod("calcQuantities",class(thisObj))){
+      if(!missPrices){
         return(calcQuantities(thisObj,preMerger=preMerger)[idx])
       }
       else{return(calcShares(thisObj,preMerger=preMerger)[idx])}
@@ -536,7 +560,7 @@ setMethod(
      
      if(!levels) priceDelta <- priceDelta *100
 
-     if(!shares && hasMethod("calcQuantities",class(object))){
+     if(!shares && !missPrices){
          outPre  <-  calcQuantities(object,preMerger=TRUE)
          outPost <-  calcQuantities(object,preMerger=FALSE)
 
@@ -602,9 +626,9 @@ setMethod(
                          'Industry Price Change (%)' = sum(priceDelta * outputPost/sum(outputPost),na.rm=TRUE),
                          'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty]),
                          'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty]),
-                         'Consumer Harm ($/unit)' = -1*thiscv,
+                         'Consumer Harm ($/unit)' = thiscv,
                          'Producer Benefit ($/unit)' = thispsdelta,
-                         'Overall Effect ($/unit)'= -1*thiscv + thispsdelta,
+                         'Net Harm ($/unit)'= thiscv - thispsdelta,
                          check.names=FALSE
                        ))
        
@@ -708,7 +732,7 @@ setMethod(
 setMethod(
  f= "cmcr",
  signature= "Bertrand",
- definition=function(object){
+ definition=function(object, market=FALSE){
 
      isParty <- rowSums( abs(object@ownerPost - object@ownerPre) ) > 0
 
@@ -724,6 +748,16 @@ setMethod(
      names(cmcr) <- object@labels
 
      cmcr <- cmcr[isParty]
+     
+     if(market){
+       sharePost <- calcShares(object, preMerger=FALSE, revenue =FALSE)
+       if(all(is.na(sharePost))) sharePost <- calcShares(object, preMerger=FALSE, revenue = TRUE)
+       sharePost <- sharePost[isParty]
+       sharePost <- sharePost/sum(sharePost)
+       
+       cmcr <- sum( cmcr * sharePost )
+     }
+     
      return(cmcr * 100)
 }
  )

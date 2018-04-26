@@ -13,6 +13,7 @@
 aids(shares,margins,prices,diversions,
                  ownerPre,ownerPost,
                  mktElast = NA_real_,
+                 insideSize = NA_real_,
                  mcDelta=rep(0, length(shares)),
                  subset=rep(TRUE, length(shares)),
                  parmStart= rep(NA_real_,2),
@@ -27,6 +28,7 @@ pcaids(shares,knownElast,mktElast=-1,
               prices,diversions,
               ownerPre,ownerPost,
               knownElastIndex=1,
+              insideSize = NA_real_,
               mcDelta=rep(0, length(shares)),
               subset=rep(TRUE, length(shares)),
               priceStart=runif(length(shares)),
@@ -40,6 +42,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
               prices,ownerPre,ownerPost,
               nests=rep(1,length(shares)),
               knownElastIndex=1,
+              insideSize = NA_real_,
               mcDelta=rep(0, length(shares)),
               subset=rep(TRUE, length(shares)),
               priceStart=runif(length(shares)),
@@ -77,6 +80,7 @@ pcaids.nests(shares,margins,knownElast,mktElast=-1,
     \sQuote{knownElast} product in the \sQuote{shares} vector. Default is 1, which
     assumes that the own-price elasticity of the first product is
     known. }
+  \item{insideSize}{ Total expenditure (revenues) on products included in the simulation.}
   \item{nests}{A length k vector identifying which nest a product
   belongs to. Default is that all products belong to a single nest.}
   \item{mcDelta}{A vector of length k where each element equals the
@@ -252,9 +256,6 @@ HypoMonTest(result.aids,prodIndex=1:2)
 CV(result.aids)        #calculate compensating variation as a percent of
                        #representative consumer income
                        #CV can only be calculated if prices are supplied
-
-CV(result.aids,14.5e12)     #calculate compensating variation in dollars
-                            #14.5e12 is an estimate of total US GDP
 
 
 ## Get a detailed description of the 'AIDS' class slots

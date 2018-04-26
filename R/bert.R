@@ -6,11 +6,12 @@ bertrand.alm <- function(
   prices,quantities,margins,
   ownerPre,ownerPost,
   mktElast = NA_real_,
+  insideSize = ifelse(demand == "logit",sum(quantities,na.rm=TRUE), sum(prices*quantities,na.rm=TRUE)),
   diversions,
   mcDelta=rep(0,length(prices)),
   subset=rep(TRUE,length(prices)),
   priceOutside=ifelse(demand== "logit",0, 1),
-  priceStart = prices,
+  priceStart,
   isMax=FALSE,
   parmStart,
   control.slopes,
@@ -20,7 +21,6 @@ bertrand.alm <- function(
   
 
 demand <- match.arg(demand)
-
 
 
 shares_revenue <- shares_quantity <- quantities/sum(quantities)
@@ -34,6 +34,8 @@ if(demand == "aids"){
   if(missing(prices)){ prices <- rep(NA_real_,length(shares_revenue))}
   
   if(missing(parmStart)) parmStart <- rep(NA_real_,2)
+  
+  if(missing(priceStart)) priceStart <- runif(length(shares_revenue))
   
   if(missing(diversions)){
     diversions <- tcrossprod(1/(1-shares_revenue),shares_revenue)
@@ -54,7 +56,7 @@ else if (demand %in% c("logit","ces")){
     }
     else{parmStart[1] <- 1/(margins[nm]*(1-shares_revenue[nm])) - shares_revenue[nm]/(1-shares_revenue[nm])} #ballpark gamma for starting values
     }
-  
+  if(missing(priceStart)) priceStart <- prices
 }
 
 
@@ -65,6 +67,7 @@ else if (demand %in% c("logit","ces")){
 result <-   switch(demand,
          aids=new("AIDS",shares=shares_revenue,mcDelta=mcDelta,subset=subset,
                   margins=margins, prices=prices, quantities=shares_revenue,  mktElast = mktElast,
+                  insideSize = insideSize,
                   ownerPre=ownerPre,ownerPost=ownerPost, parmStart=parmStart,
                   diversion=diversions,
                   priceStart=priceStart,labels=labels),
@@ -80,6 +83,7 @@ result <-   switch(demand,
                      priceStart=priceStart,
                      shareInside= sum(shares_quantity),
                      parmsStart=parmStart,
+                     insideSize = insideSize,
                      labels=labels),
          
          ces = new("CESALM",prices=prices, shares=shares_revenue,
@@ -93,6 +97,7 @@ result <-   switch(demand,
                    priceStart=priceStart,
                    shareInside=sum(shares_revenue),
                    parmsStart=parmStart,
+                   insideSize =insideSize,
                    labels=labels),
          
          linear=new("Linear",prices=prices, quantities=shares_quantity,margins=margins,

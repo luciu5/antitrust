@@ -11,7 +11,6 @@
 
 \usage{ces(prices,shares,margins,
                 ownerPre,ownerPost,
-                shareInside = 1,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
@@ -42,7 +41,6 @@ ces.alm(prices,shares,margins,
 ces.nests(prices,shares,margins,
                 ownerPre,ownerPost,
                 nests=rep(1,length(shares)),
-                shareInside = 1,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
@@ -74,11 +72,6 @@ ces.nests(prices,shares,margins,
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
     \item{mktElast}{a negative value indicating market elasticity. Default is NA.}
-  \item{shareInside}{The proportion that a typical consumer spends on
-     all products included in the \sQuote{prices} vector. Only needed to calculate
-     compensating variation.
-     Default is 1, meaning that all of a consumer's
-     income is spent on products within the market.}
   \item{normIndex}{An integer specifying the product index against which
      the mean values of all other products are normalized. Default is 1.}
   \item{mcDelta}{A vector of length k where each element equals the
@@ -208,7 +201,7 @@ names(price) <-
     prodNames
 
 result.ces <-ces(price,shares,margins,ownerPre=ownerPre,ownerPost=ownerPost,
-                 shareInside=.99,labels=prodNames)
+                labels=prodNames)
 
 print(result.ces)           # return predicted price change
 summary(result.ces)         # summarize merger simulation

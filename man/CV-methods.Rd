@@ -21,21 +21,14 @@
 \section{Methods}{
 \describe{
 
-  \item{\code{signature(object = c(Logit,LogitNests))}}{
+  \item{\code{signature(object = c(Logit,LogitNests, CES, CESNests))}}{
     All the information needed to
-    compute CV is already available within the Logit and Nested Logit classes.
+    compute CV is already available within the Logit, Nested Logit CES and Nested CES classes. 
+    In CES and Nested CES, CV cannot be calculated if the outside share cannot be inferred.
   }
 
 
-  \item{\code{signature(object = c(CES, CESNests), revenueInside)}}{
-    The CV method for the \dQuote{CES} and nested \dQuote{CES} classes has an additional
-    parameter, `revenueInside', which must be set equal to
-    the total amount that consumers have spent on
-    products  inside the market in order for CV to be calculated.
-  }
-
-
-  \item{\code{signature(object = AIDS , totalRevenue)}}{
+  \item{\code{signature(object = AIDS)}}{
     The CV method for \dQuote{AIDS} has an additional parameter, \sQuote{totalRevenue},
     which should aggregate income (e.g. GDP). If supplied computes CV in terms of dollars. If missing, CV is
     calculated as a percentage change in aggregate in income. must be set equal to the vector of pre-merger prices for all

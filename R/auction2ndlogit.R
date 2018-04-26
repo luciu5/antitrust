@@ -277,11 +277,14 @@ setMethod(
     
     mcDelta <- object@mcDelta
     
-    if(exAnte){sharesPost <- calcShares(object, preMerger=FALSE)}
+    if(exAnte){
+      sharesPost <- calcShares(object, preMerger=FALSE)
+      mcDelta <- mcDelta*sharesPost
+    }
     else{sharesPost <- rep(1,length(subset))}
     
     
-      result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte,subset=subset) + mcDelta*sharesPost -
+      result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte,subset=subset) + mcDelta -
         calcMargins(object, preMerger=TRUE,exAnte=exAnte)
     
   if(!levels){result <- result/calcPrices(object,preMerger = TRUE, exAnte = exAnte )}
@@ -307,7 +310,7 @@ setMethod(
 setMethod(
   f= "cmcr",
   signature= "Auction2ndLogit",
-  definition=function(object){
+  definition=function(object,...){
    
     stop("'cmcr' is currently not available")
   }
@@ -356,6 +359,9 @@ setMethod(
   alpha <- object@slopes$alpha
   sigma <- -1/alpha
   
+  mktSize = object@mktSize
+  
+  
   mcDelta <- object@mcDelta
   mcDelta[is.na(mcDelta)] <- 0
   
@@ -395,6 +401,8 @@ setMethod(
   csPost <- (sigma/firmSharePost) * (csPost - (1-firmSharePost)*incValPost)
   
   result <-  mcDeltaOut + sum(csPre*sharePre) - sum(csPost*sharePost)
+  
+  if(!is.na(mktSize)) result <- mktSize*result
   
   return(result)
   })

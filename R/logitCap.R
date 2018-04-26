@@ -3,7 +3,6 @@ setClass(
          Class   = "LogitCap",
          contains="Logit",
          representation=representation(
-         mktSize               = "numeric",
          capacities           = "numeric"
 
          ),
@@ -25,7 +24,6 @@ setClass(
                     !is.finite(object@capacities) |
                     object@capacities<0 ,na.rm=TRUE)){stop("'capacities' values must be positive, finite numbers")}
 
-             if(length(object@mktSize)!=1 || isTRUE(object@mktSize<0)){stop("mktSize must be a positive number")}
 
              if(any(object@mktSize*object@shares > object@capacities)){stop("utilization is greater than capacity")}
 
@@ -109,10 +107,10 @@ setMethod(
 setMethod(
  f= "calcQuantities",
  signature= "LogitCap",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE, market=FALSE){
 
      quantities <- object@mktSize * calcShares(object,preMerger,revenue=FALSE)
-
+     if (market) quantities <- sum(quantities, na.rm=TRUE)
      return(quantities)
 
  }

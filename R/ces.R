@@ -21,6 +21,7 @@ setMethod(
               prices       <-  object@prices
               idx          <-  object@normIndex
               shareInside  <-  object@shareInside
+              insideSize   <-  object@insideSize
 
               ## uncover Numeraire Coefficients
               if(shareInside <= 1 && shareInside>0) {alpha <- 1/shareInside - 1}
@@ -83,12 +84,51 @@ setMethod(
 
               object@slopes    <- list(alpha=alpha,gamma=minGamma,meanval=meanval)
               object@priceOutside <- idxPrice
+              object@mktSize <- insideSize*(1+alpha)
 
 
               return(object)
           }
           )
 
+## compute product revenues
+setMethod(
+  f= "calcRevenues",
+  signature= "CES",
+  definition=function(object,preMerger=TRUE, market =FALSE){
+    
+    shares <- calcShares(object, preMerger = preMerger, revenue=TRUE)
+    
+    mktSize <- object@mktSize
+    
+    
+    res <- shares * mktSize
+    
+    if(market){return(sum(res))}
+    
+    else{return(res)}
+    
+  })
+
+
+setMethod(
+  f= "calcQuantities",
+  signature= "CES",
+  definition=function(object,preMerger=TRUE, market=FALSE){
+    
+    if(preMerger){ prices <- object@pricePre}
+    else{          prices <- object@pricePost}
+    
+    mktSize <- object@mktSize
+    
+    shares <- calcShares(object, preMerger= preMerger, revenue = TRUE) / prices
+    
+    if(market) shares <- sum(shares,na.rm=TRUE)
+    
+    return(mktSize*shares )
+    
+    
+  })
 
 setMethod(
  f= "calcShares",
@@ -104,15 +144,16 @@ setMethod(
 
      gamma    <- object@slopes$gamma
      meanval  <- object@slopes$meanval
+     priceOutside <- object@priceOutside
 
      #outVal <- ifelse(object@shareInside<1, object@priceOutside^(1-gamma), 0)
-     outVal <- ifelse(is.na(object@normIndex), object@priceOutside^(1-gamma), 0)
+     outVal <- ifelse(is.na(object@normIndex), priceOutside^(1-gamma), 0)
      
      shares <- meanval*prices^(1-gamma)
      shares <- shares/(sum(shares,na.rm=TRUE) + outVal)
 
      ##transform revenue shares to quantity shares
-     if(!revenue){shares <- (shares/prices)/sum((1-sum(shares,na.rm=TRUE))/object@priceOutside,shares/prices,na.rm=TRUE)}
+     if(!revenue){shares <- (shares/prices)/sum((1-sum(shares,na.rm=TRUE))/priceOutside,shares/prices,na.rm=TRUE)}
 
      names(shares) <- object@labels
 
@@ -165,12 +206,12 @@ setMethod(
 setMethod(
           f= "CV",
           signature= "CES",
-          definition=function(object,revenueInside){
+          definition=function(object){
 
               alpha       <- object@slopes$alpha
-
-
-             if(is.null(alpha)) stop("'shareInside' must be between 0 and 1 to  calculate Compensating Variation")
+              mktSize  <- object@mktSize 
+  
+             if(is.null(alpha)) stop(" Sum of 'shares' must be less than 1  calculate Compensating Variation")
 
               gamma       <- object@slopes$gamma
               meanval     <- object@slopes$meanval
@@ -183,14 +224,16 @@ setMethod(
               VPost <- sum(meanval * (object@pricePost/ object@priceOutside)^(1-gamma),na.rm=TRUE) + outVal
 
               result <- log(VPost/VPre) / ((1+alpha)*(1-gamma))
+              
+              result <- exp(result) - 1
 
-              if(missing(revenueInside)){
-                  warning("'revenueInside' is missing. Calculating CV as a percentage change in (aggregate) income")
+              if(is.na(mktSize)){
+                  warning("'insideSize' is NA. Calculating CV as a percentage of (aggregate) expenditure")
                   return(result*100)}
 
               else{
-                  totExp <- revenueInside*(1+alpha)
-                  return(totExp*(exp(result)-1))
+                  
+                  return(mktSize*result)
               }
 
 
@@ -199,8 +242,8 @@ setMethod(
 
 ces <- function(prices,shares,margins,
                 ownerPre,ownerPost,
-                shareInside = 1,
                 normIndex=ifelse(sum(shares)<1,NA,1),
+                insideSize = NA_real_,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE,length(prices)),
                 priceOutside=1,
@@ -219,12 +262,13 @@ ces <- function(prices,shares,margins,
     result <- new("CES",prices=prices, shares=shares, margins=margins,
                   normIndex=normIndex,
                   mcDelta=mcDelta,
+                  insideSize = insideSize,
                   subset=subset,
                   priceOutside=priceOutside,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   priceStart=priceStart,
-                  shareInside=shareInside,labels=labels)
+                  shareInside= sum(shares),labels=labels)
 
     if(!missing(control.slopes)){
       result@control.slopes <- control.slopes

@@ -281,18 +281,23 @@ setMethod(
 setMethod(
   f= "calcQuantities",
   signature= "Stackelberg",
-  definition=function(object,preMerger=TRUE,...){
+  definition=function(object,preMerger=TRUE,market=FALSE,...){
     
     slopes <- object@slopes
     intercepts <- object@intercepts
     isLinearD <- object@demand=="linear"
     
     
-    if(preMerger){ owner  <- object@ownerPre
+    if(preMerger){ 
+      if(market) return(sum(object@quantityPre,na.rm=TRUE))
+      owner  <- object@ownerPre
                    products  <- object@productsPre
                    isLeader <- object@isLeaderPre
                    }
-    else{          owner <-  object@ownerPost
+    else{          
+      
+      if(market) return(sum(object@quantityPost,na.rm=TRUE))
+                owner <-  object@ownerPost
                    products <-  object@productsPost
                    isLeader <- object@isLeaderPost
                    }

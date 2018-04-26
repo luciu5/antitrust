@@ -98,7 +98,7 @@ setMethod(
                                 lower= lowerB,upper=upperB,
                                 control=object@control.slopes)$par
 
-              if(isTRUE(all.equal(minTheta[2],0,check.names=FALSE))){
+              if(isTRUE(all.equal(minTheta[2],lowerB[2],check.names=FALSE))){
                 
                 warning("Estimated outside share is close to 0. Normalizing relative to largest good.")
 
@@ -113,7 +113,7 @@ setMethod(
               }
               else{meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) - minTheta[1] * (prices - priceOutside)}
               
-              if(isTRUE(all.equal(minTheta[2],1,check.names=FALSE))){stop("Estimated outside share is close to 1.")}
+              if(isTRUE(all.equal(minTheta[2],upperB[2],check.names=FALSE))){stop("Estimated outside share is close to 1.")}
               
               
 
@@ -123,6 +123,7 @@ setMethod(
               object@slopes      <- list(alpha=minTheta[1],meanval=meanval)
               object@shareInside <- 1-minTheta[2]
               object@priceOutside <- priceOutside
+              object@mktSize <-  object@insideSize/object@shareInside
 
               return(object)
 
@@ -134,6 +135,7 @@ setMethod(
 logit.alm <- function(prices,shares,margins,
                       ownerPre,ownerPost,
                       mktElast = NA_real_,
+                      insideSize = NA_real_,
                       mcDelta=rep(0,length(prices)),
                       subset=rep(TRUE,length(prices)),
                       priceOutside=0,
@@ -161,6 +163,7 @@ logit.alm <- function(prices,shares,margins,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   mktElast = mktElast,
+                  insideSize = insideSize,
                   mcDelta=mcDelta,
                   subset=subset,
                   priceOutside=priceOutside,

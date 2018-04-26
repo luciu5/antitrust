@@ -285,7 +285,7 @@ setMethod(
 setMethod(
  f= "calcQuantities",
  signature= "Linear",
- definition=function(object,preMerger=TRUE){
+ definition=function(object,preMerger=TRUE, market = FALSE){
 
      if(preMerger){ prices <- object@pricePre}
      else{          prices <- object@pricePost}
@@ -297,6 +297,8 @@ setMethod(
      quantities <- as.vector(intercept+slopes %*% prices)
      names(quantities) <- object@labels
 
+     if (market) quantities <- sum(quantities, na.rm=TRUE)
+     
      return(quantities)
 
 }

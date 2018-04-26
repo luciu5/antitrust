@@ -86,7 +86,7 @@ setMethod(
                                 lower= lowerB,upper=upperB,
                                 control=object@control.slopes)$par
 
-              if(isTRUE(all.equal(minGamma[2],0,check.names=FALSE))){warning("Estimated outside share is close to 0. Normalizing relative to largest good.")
+              if(isTRUE(all.equal(minGamma[2],lowerB[2],check.names=FALSE))){warning("Estimated outside share is close to 0. Normalizing relative to largest good.")
               
                 idx <- which.max(shares)
                 object@normIndex <- idx
@@ -96,7 +96,7 @@ setMethod(
                 meanval <- log(shares) - log(shares[idx]) + (minGamma[1] - 1) * (log(prices) - log(priceOutside))
               }
               else{ meanval <- log(shares * (1 - minGamma[2])) - log(minGamma[2]) + (minGamma[1] - 1) * (log(prices) - log(object@priceOutside))}
-              if(isTRUE(all.equal(minGamma[2],1,check.names=FALSE))){stop("Estimated outside share is close to 1.")}
+              if(isTRUE(all.equal(minGamma[2],upperB[2],check.names=FALSE))){stop("Estimated outside share is close to 1.")}
               
              
               meanval <- exp(meanval)
@@ -106,10 +106,10 @@ setMethod(
               names(meanval)   <- object@labels
 
 
-              object@slopes      <- list(alpha=1/minGamma[2] - 1  ,gamma=minGamma[1],meanval=meanval)
+              object@slopes      <- list(alpha=1/(1 - minGamma[2]) - 1  ,gamma=minGamma[1],meanval=meanval)
               object@shareInside <- 1-minGamma[2]
               object@priceOutside <- priceOutside
-
+              object@mktSize <- object@insideSize*(1+object@slopes$alpha)
               return(object)
 
           }
@@ -120,6 +120,7 @@ setMethod(
 ces.alm <- function(prices,shares,margins,
                       ownerPre,ownerPost,
                       mktElast = NA_real_,
+                      insideSize = NA_real_,
                       mcDelta=rep(0,length(prices)),
                       subset=rep(TRUE,length(prices)),
                       priceOutside=1,
@@ -147,6 +148,7 @@ ces.alm <- function(prices,shares,margins,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
                   mktElast = mktElast,
+                  insideSize = insideSize,
                   mcDelta=mcDelta,
                   subset=subset,
                   priceOutside=priceOutside,

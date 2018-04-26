@@ -125,7 +125,7 @@ setMethod(
 setMethod(
           f= "calcPriceDelta",
           signature= "Antitrust",
-          definition=function(object,levels=FALSE){
+          definition=function(object, levels = FALSE, market = FALSE, ...  ){
 
               pricePre  <- object@pricePre
               pricePost <- object@pricePost
@@ -134,6 +134,12 @@ setMethod(
               else{priceDelta <- pricePost/pricePre - 1}
               #names(priceDelta) <- object@labels
 
+              if(market){
+                shares <- calcShares(object, ...)
+                shares <- shares/sum(shares,na.rm=TRUE)
+                priceDelta <- sum(priceDelta*shares,na.rm=TRUE)
+              }
+              
               return(priceDelta)
 
           }
@@ -160,7 +166,7 @@ setMethod(
                 if(is.list(object@labels)){nprod <- length(object@labels[[1]])}  
                 else{nprod <- length(object@labels)}
                 
-                  owners <- as.numeric(factor(thisOwner))
+                  owners <- as.numeric(factor(thisOwner, levels= unique(thisOwner)))
                   thisOwner <- matrix(0,ncol=nprod,nrow=nprod)
 
 

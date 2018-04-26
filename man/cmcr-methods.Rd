@@ -24,12 +24,13 @@ Upwards Pricing Pressure Index (Bertrand)}
 }
 
 \usage{
-\S4method{cmcr}{ANY}(object)
+\S4method{cmcr}{ANY}(object,market=FALSE)
 \S4method{upp}{ANY}(object)
 }
 
 \arguments{
   \item{object}{An instance of one of the classes listed above.}
+   \item{market}{If TRUE, calculates (post-merger) share-weighted average of metric. Default is FALSE.}
 }
 
 \details{
