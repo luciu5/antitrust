@@ -4,9 +4,14 @@ require(antitrust)
 
 shinyUI(fluidPage(
 
-    titlePanel("Simulate a Merger"),
+
+  titlePanel("Simulate a Merger") ,
+
     sidebarLayout(
       sidebarPanel(
+        
+      htmlOutput("urlText"),hr(),
+         
        h5(tags$b("Directions:")),
         helpText(tags$ul(
                  tags$li("Copy and paste (or enter) information into Inputs table (right) to simulate a merger between 'Firm1' and 'Firm2'"),
@@ -21,7 +26,7 @@ shinyUI(fluidPage(
                     ),
         conditionalPanel(
           condition = "input.calcElast.includes('elasticity') == true ",
-          numericInput("enterElast", "Enter Market Elasticity:", value=-1.5,min=-Inf,max=0,step=.1#, width='75%'
+          numericInput("enterElast", "Enter Market Elasticity:", value=-1,min=-Inf,max=0,step=.1#, width='75%'
                        )
         ),hr(),
         #checkboxInput("incEff", "Include Proportional Cost Changes (negative values imply cost reductions)", value = FALSE, width = NULL),
@@ -66,7 +71,8 @@ shinyUI(fluidPage(
         br(), br(),br(),
         tabsetPanel(id = "inTabset",
           tabPanel("Summary", value = "respanel", br(),br(),tableOutput("results"), br(),
-                   helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages.")
+                   helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages. 
+                            A negative Consumer Harm number denotes benefit, while a negative Producer Benefit number denotes harm.")
           ),
           tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_shareOut"),br(), tableOutput("results_detailed")
                    
@@ -90,10 +96,11 @@ shinyUI(fluidPage(
                                     helpText(tags$b("Note:"), "above are own-price elasticities")
                    )
                    ),
-          tabPanel("Diagnostics", value = "diagpanel", br(),br(), h4("% Difference between predicted and observed values"), 
+          tabPanel("Diagnostics", value = "diagpanel", br(),br(), h4("Inputted vs. Fitted Values"), 
                    tableOutput("results_diag_elast"),
                    tableOutput("results_diagnostics"),
-                   helpText(tags$b("Note:"), "Negative numbers mean that observed values are larger than predicted values."),br(),
+                   htmlOutput("overIDText"),br(),
+                   #helpText(tags$b("Note:"), "Negative numbers mean that observed values are larger than predicted values."),br(),
                    h4("Parameters"),verbatimTextOutput("parameters"),
                    helpText("See the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package vignette for more details about the parameters displayed here." )
           ), 
