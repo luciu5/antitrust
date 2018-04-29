@@ -66,8 +66,7 @@
   Default either equals 1 for Logit demand or 0 for CES demand.}
   \item{priceStart}{A vector of length k who elements equal to an
   initial guess of the proportional change in price caused by the
-  merger. The default is to draw k random elements from a [0,1] uniform
-  distribution.}
+  merger.  For aids, the default is to draw k random elements from a [0,1] uniform distribution. For ces and logit, the default is prices.}
 \item{isMax}{If TRUE, checks to see whether computed price equilibrium
   locally maximizes firm profits and returns a warning if not. Default is FALSE.}
 \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
@@ -103,7 +102,7 @@
 
 }
 
-\value{\code{Bertrand} returns an instance of class \code{\linkS4class{LogitALM}}, 
+\value{\code{bertrand.alm} returns an instance of class \code{\linkS4class{LogitALM}}, 
 \code{\linkS4class{CESALM}}, or \code{\linkS4class{AIDS}}, depending upon the value of the ``demand'' argument.}
 
 
