@@ -125,6 +125,29 @@ setGeneric (
 ##
 
 
+
+## compute product revenues
+setMethod(
+  f= "calcRevenues",
+  signature= "Cournot",
+  definition=function(object,preMerger=TRUE, market = FALSE){
+    
+    
+    if( preMerger) { quantities <- object@quantityPre}
+    else{quantities <- object@quantityPost}
+    
+    prices <- calcPrices(object, preMerger)
+    
+    res <- t(prices * t(quantities))
+    
+    if(market){return( sum(res) )}
+    else{return(res)}
+    
+    
+    
+  })
+
+
 setMethod(
   f= "calcShares",
   signature= "Cournot",
@@ -476,21 +499,10 @@ setMethod(
   definition=function(object,preMerger=TRUE){
     
     
-    if( preMerger) {
-      prices <- object@pricePre
-      quantities <- object@quantityPre
-      
-    }
-    else{prices <- object@pricePost
-    quantities <- object@quantityPost
-    
-    }
-    
-    
-    
+    rev <-  calcRevenues(object, preMerger= preMerger)
     vc <- calcVC(object, preMerger= preMerger)
     
-    ps <- colSums(prices*t(quantities), na.rm=TRUE) - vc
+    ps <- rowSums(rev, na.rm=TRUE) - vc
     names(ps) <- object@labels[[1]]
     
     return(ps)
@@ -579,7 +591,7 @@ setMethod(
     
     
     ## Find price changes that set FOCs equal to 0
-    minResult <- BB::BBsolve( quantityStart,FOC, quiet=TRUE,control=object@control.equ,...)
+    minResult <- BB::BBsolve( quantityStart,FOC, quiet=TRUE,control=object@control.equ)
     
     if(minResult$convergence != 0){warning("'calcQuantities' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
     
