@@ -404,7 +404,7 @@ shinyServer(function(input, output, session) {
       
       if(!is.null(input$hot)){
         values$inputData = hot_to_r(input$hot)
-        
+        values$inputData[!is.na(values$inputData$Name) & values$inputData$Name != '',]
       }
     })
     
@@ -705,8 +705,11 @@ shinyServer(function(input, output, session) {
       
       if(input$inTabset!= "codepanel"){return()}  
       
+       
+      
       indata <- values[["inputData"]]
-      indata <- indata[!is.na(indata$Name),]
+      indata <- indata[!is.na(indata$Name) & indata$Name != '',] 
+      cat(NULL)
       
       cnames <- colnames(indata)
       cnames <- gsub("\n","",cnames)
