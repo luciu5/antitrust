@@ -142,7 +142,7 @@ shinyServer(function(input, output, session) {
     
     
  
-     if(is.na(result[,"Compensating Marginal Cost Reduction (%)"])) result[,"Compensating Marginal Cost Reduction (%)"] <- NULL
+     if(all(is.na(result[,"Compensating Marginal Cost Reduction (%)"]))) result[,"Compensating Marginal Cost Reduction (%)"] <- NULL
      
      return(result)
    }
