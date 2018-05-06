@@ -95,7 +95,7 @@ source platform will facilitate discussion and collaboration among practitioners
 %also modify and extend the software as they see fit.
 
 
-Third, \atr{} includes a web interface built using \verb@shiny@. While this interface does not give users acess to the full array of functionality in \atr{}, it is simple to use and may provide first-time users, particularly those who are unfamiliar with \rlan{}, a gentler introduction to \atr{}. The interface may be invoked using the  \verb@antitrust_shiny@ function. Note that because shiny does not report the full gamut of warnings in the web interface, we recommend using the interface for exploratory purposes and checking final results directly in \rlan{}.   
+Third, \atr{} includes a web interface built using \verb@shiny@. While this interface does not give users acess to the full array of functionality in \atr{}, it is simple to use and may provide first-time users, particularly those who are unfamiliar with \rlan{}, a gentler introduction to \atr{}. The interface may be invoked using the  \verb@antitrust_shiny@ function.   
 
 %This document provides an introduction to the fundamental concepts
 %underlying the \atr{} package:  {\bf calibration}, and
@@ -1413,7 +1413,7 @@ be a twice differentiable function of \emph{all} firm quantities with $\frac{\pa
 Differentiating profits with respect to each $q_j^r$  yields the following first order conditions (FOCs):
 
 \begin{align}
-  \partial q_j^r&\equiv p_j + q_j^r\frac{\partial p_j}{\partial q_j^r} - \frac{\partial c^r}{\partial q_j^r}=0& \mbox{ for all $j\in J_k$, $r\in n_k$}\label{eqn:cournotFOC} 
+  \partial q_j^r&\equiv p_j + \sum_{l\in n_k}q_j^l\frac{\partial p_j}{\partial q_j^r} - \frac{\partial c^r}{\partial q_j^r}=0& \mbox{ for all $j\in J_k$, $r\in n_k$}\label{eqn:cournotFOC} 
 \end{align}
 
 
