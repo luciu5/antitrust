@@ -112,7 +112,7 @@ shinyServer(function(input, output, session) {
      partyshare <- s$sharesPost[isparty]
      
      
-     res <- with(s, data.frame(
+     result <- with(s, data.frame(
            #'HHI Change' = as.integer(round(hhi(res,preMerger=FALSE) -  hhi(res,preMerger=TRUE))),
            'Pre-Merger HHI' =  as.integer(HHI(theseshares,owner=res@ownerPre)),
            'HHI Change' = as.integer(HHI(theseshares,owner=res@ownerPost) - HHI(theseshares,owner=res@ownerPre)),
@@ -126,20 +126,25 @@ shinyServer(function(input, output, session) {
            #'Estimated Market Elasticity' = thiselast,
            check.names=FALSE
      ))
+    
+     
+     ## Append parenthetical with % of post-merger revenues
+     result <- rbind(result,result)
+     result[2, !grepl("\\$",colnames(result))] <- NA
+     result[,-(1:2)] <- round(result[,-(1:2)],digits = 1)
+     result[2,grepl("\\$",colnames(result))] <- paste0("(",round(result[2 , grepl("\\$",colnames(result))]*100 / calcRevenues(res, preMerger = FALSE, market=TRUE), digits = 1), "%)")
+     
      
      if(inLevels){
-       colnames(res) <- gsub('(?<=Price Change\\s)\\(%\\)',"($/unit)",colnames(res), perl=TRUE)
+       colnames(result) <- gsub('(?<=Price Change\\s)\\(%\\)',"($/unit)",colnames(result), perl=TRUE)
      }
      
-    # if(isRevDemand){
-    #   res$'Overall Effect ($)' <- NULL
-    #   colnames(res) <- gsub('(?<=Consumer Harm\\s)\\(\\$\\)',"(% Expenditure)",colnames(res), perl=TRUE)
-    #   }
-     
+    
+    
  
-     if(is.na(res[,"Compensating Marginal Cost Reduction (%)"])) res[,"Compensating Marginal Cost Reduction (%)"] <- NULL
+     if(is.na(result[,"Compensating Marginal Cost Reduction (%)"])) result[,"Compensating Marginal Cost Reduction (%)"] <- NULL
      
-     return(res)
+     return(result)
    }
 
 
@@ -540,7 +545,7 @@ shinyServer(function(input, output, session) {
             inputData <- values[["inputData"]]
             
             gensum(values[["sim"]])
-          })
+          }, na="", digits =1)
   
     
   ## display summary values to details tab      

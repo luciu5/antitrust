@@ -72,7 +72,8 @@ shinyUI(fluidPage(
         tabsetPanel(id = "inTabset",
           tabPanel("Summary", value = "respanel", br(),br(),tableOutput("results"), br(),
                    helpText(tags$b("Note:"), "all price changes as well as compensating marginal cost reduction are (post-merger) share-weighted averages. 
-                            A negative Consumer Harm number denotes benefit, while a negative Producer Benefit number denotes harm.")
+                            A negative Consumer Harm number denotes benefit, while a negative Producer Benefit number denotes harm. 
+                            Numbers in parentheses denote harm and benefit as a percentage of post-merger revenues.")
           ),
           tabPanel("Details", value = "detpanel", br(),br(), tableOutput("results_shareOut"),br(), tableOutput("results_detailed")
                    
