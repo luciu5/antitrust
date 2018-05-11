@@ -774,7 +774,8 @@ shinyServer(function(input, output, session) {
         argvalues[grep("margins", argvalues)] <- paste0("margins = as.matrix(simdata$`",grep("Margin",cnames,value = TRUE),"`)")
 
         argvalues[grep("labels", argvalues)] <- sprintf("labels = list(as.character(simdata$Name),as.character(simdata$Name[%d]))",firstPrice) 
-}
+        argvalues[grep("insideSize", argvalues)] <- NULL
+        }
       else if( input$supply =="Bertrand"){atrfun <- "bertrand.alm"}
       else{atrfun <- "auction2nd.logit.alm"
            argvalues <- argvalues[-1]

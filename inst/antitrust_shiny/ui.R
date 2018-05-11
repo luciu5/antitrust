@@ -2,7 +2,12 @@ require(shiny)
 require(rhandsontable)
 require(antitrust)
 
-shinyUI(fluidPage(
+shinyUI(
+  
+  
+  # navbarPage("",
+  #            tabPanel("Horizontal",
+                      fluidPage(
 
 
   titlePanel("Simulate a Merger") ,
@@ -115,5 +120,11 @@ shinyUI(fluidPage(
     )
   )
   )
-
+  # ,tabPanel("Documentation",
+  #           tags$iframe(style="height:500px; width:100%; scrolling=yes", 
+  #                       src="https://cran.r-project.org/web/packages/antitrust/vignettes/manual.pdf")
+  #           )
+  #           
+#)
+#)
  
