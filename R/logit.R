@@ -114,7 +114,7 @@ setMethod(
               idx          <-  object@normIndex
               mktElast     <-  object@mktElast 
               shareInside  <-  object@shareInside
-              insideSize   <-  object@Insidesize 
+              
 
               if(is.na(idx)){
                   idxShare <- 1 - shareInside
@@ -200,7 +200,8 @@ setMethod(
 
               object@slopes    <- list(alpha=minAlpha,meanval=meanval)
               object@priceOutside <- idxPrice
-              object@mktSize <- insideSize/object@shareInside
+              object@mktSize <- object@insideSize / sum(shares)
+              
 
               return(object)
           }
@@ -435,6 +436,7 @@ logit <- function(prices,shares,margins,
                   normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
                   mcDelta=rep(0,length(prices)),
                   subset=rep(TRUE,length(prices)),
+                  insideSize = NA_real_,
                   priceOutside = 0,
                   priceStart = prices,
                   isMax=FALSE,
@@ -451,6 +453,7 @@ logit <- function(prices,shares,margins,
                   normIndex=normIndex,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
+                  insideSize=insideSize,
                   mcDelta=mcDelta,
                   subset=subset,
                   priceOutside=priceOutside,

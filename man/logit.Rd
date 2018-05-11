@@ -4,6 +4,7 @@
 \alias{logit.nests.alm}
 \alias{logit.cap}
 \alias{logit.alm}
+\alias{logit.cap.alm}
 \title{(Nested) Logit Demand Calibration and Merger Simulation}
 
 \description{Calibrates consumer demand using (Nested) Logit and then simulates the price effect of a merger between two firms
@@ -17,6 +18,7 @@ logit(prices,shares,margins,
                           check.names=FALSE)), 1 , NA ),
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
+                insideSize = NA_real_,
                 priceOutside = 0,
                 priceStart = prices,
                 isMax=FALSE,
@@ -28,6 +30,7 @@ logit(prices,shares,margins,
 logit.alm(prices,shares,margins,
                 ownerPre,ownerPost,
                 mktElast = NA_real_,
+                insideSize = NA_real_,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
                 priceOutside = 0,
@@ -75,8 +78,9 @@ logit.nests.alm(prices,shares,margins,
 
 logit.cap(prices,shares,margins,
                 ownerPre,ownerPost,
-                capacities,
-                mktSize,
+                capacitiesPre=rep(Inf,length(prices)),
+                capacitiesPost=capacitiesPre,
+                insidesize,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
@@ -88,7 +92,25 @@ logit.cap(prices,shares,margins,
                 labels=paste("Prod",1:length(prices),sep=""),
                 ...
                 )
-
+        
+                
+logit.cap.alm(prices,shares,margins,
+                      ownerPre,ownerPost,
+                      capacitiesPre= rep(Inf,length(prices)),
+                      capacitiesPost = capacitiesPre,
+                      mktElast = NA_real_,
+                      insideSize,
+                      mcDelta=rep(0,length(prices)),
+                      subset=rep(TRUE,length(prices)),
+                      priceOutside=0,
+                      priceStart = prices,
+                      isMax=FALSE,
+                      parmsStart,
+                      control.slopes,
+                      control.equ,
+                      labels=paste("Prod",1:length(prices),sep=""),
+                      ...
+                      )
 
              }
 \arguments{
@@ -101,11 +123,11 @@ logit.cap(prices,shares,margins,
     equal NA.}
   \item{nests}{A length k vector identifying the nest that each
     product belongs to.}
-  \item{capacities}{A length k vector of product capacities. Capacities
-    must be at least as great as shares * mktSize.}
-  \item{mktSize}{An integer equal to the number of potential
-    customers. If an outside option is present, should include
-    individuals who chose that option.}
+  \item{capacitiesPre}{A length k vector of pre-merger product capacities. Capacities
+    must be at least as great as shares * insideSize.}
+    \item{capacitiesPre}{A length k vector of post-merger product capacities.}
+  \item{insideSize}{An integer equal to total pre-merger units sold.
+  If shares sum to one, this also equals the size of the market.}
   \item{normIndex}{An integer equalling the index (position) of the
     inside product whose mean valuation will be normalized to 1. Default
     is 1, unless \sQuote{shares} sum to less than 1, in which case the default is
@@ -265,12 +287,17 @@ price    <- c(.0441,.0328,.0409,.0396,.0387,.0497)
 shares   <- c(.066,.172,.253,.187,.099,.223)
 margins <- c(.3830,.5515,.5421,.5557,.4453,.3769)
 
+insideSize <- 1000
+
 names(price) <-
     names(shares) <-
     names(margins) <-
     prodNames
 
-result.logit <- logit(price,shares,margins,ownerPre=ownerPre,ownerPost=ownerPost,labels=prodNames)
+result.logit <- logit(price,shares,margins,
+                      ownerPre=ownerPre,ownerPost=ownerPost,
+                      insideSize = insideSize,
+                      labels=prodNames)
 
 
 
@@ -315,10 +342,10 @@ getMethod("elast","Logit")
 # Logit With capacity Constraints
 #
 
-mktSize <- 1000
+
 cap     <- c(66,200,300,200,99,300) # BUD and OTHER-LITE are capacity constrained
-result.cap <- logit.cap(price,shares,margins,capacities=cap,
-                        mktSize=mktSize,ownerPre=ownerPre,
+result.cap <- logit.cap(price,shares,margins,capacitiesPre=cap,
+                        insideSize=insideSize,ownerPre=ownerPre,
                         ownerPost=ownerPost,labels=prodNames)
 print(result.cap)
 
