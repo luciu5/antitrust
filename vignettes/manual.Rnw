@@ -713,13 +713,6 @@ surviving FOCs is then employed to estimate the price
 coefficient. Once the price coefficient has been estimated, the
 technique outlined above may be used to uncover the vector of mean valuations.
 
-To determine whether a capacity constraint is binding pre-merger,
-Logit quantity shares must be transformed into
-levels. This is accomplished by noting that $s_i\equiv\frac{q_i
-}{mktSize}$, and employing the user-supplied value for 'mktSize' to
-recover $q_i$.
-
-
 
 
 \subsubsection{Nested Logit}

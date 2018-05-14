@@ -212,7 +212,7 @@ setMethod(
 
          
          
-         measure <- thisFOC + constraint + sqrt(thisFOC^2 + constraint^2)
+         measure <- ifelse( constraint != 0, thisFOC + constraint + sqrt(thisFOC^2 + constraint^2), thisFOC)
 
          return(measure)
      }
