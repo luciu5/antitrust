@@ -121,7 +121,7 @@ shinyServer(function(input, output, session) {
            'Compensating Marginal Cost Reduction (%)' = ifelse(isCournot, thiscmcr, sum(thiscmcr * partyshare) / sum(partyshare)),
            'Consumer Harm ($)' = thiscv,
            'Producer Benefit ($)' = thispsdelta,
-           'Net Harm ($)'= thiscv - thispsdelta,
+           'Difference ($)'= thiscv - thispsdelta,
            
            #'Estimated Market Elasticity' = thiselast,
            check.names=FALSE

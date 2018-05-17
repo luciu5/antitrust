@@ -84,14 +84,6 @@ Objects can be created by using the constructor function \code{\link{aids}}.
     \item{\code{\link{elast}}}{\code{signature(object , preMerger
 	= TRUE)}}{ Computes a k x k matrix of own and cross-price
       elasticities.}
-    \item{\code{show}}{\code{signature(object)}}{ Displays
-      the percentage change in prices due to the merger. }
-    \item{summary}{\code{signature(object,revenue=TRUE,parameters=FALSE,digits=2,..)}}{ Summarizes
-      the effect of the merger, including price and revenue
-      changes. Setting \sQuote{revenue} equal to FALSE reports quantity rather
-      than revenue changes. Setting \sQuote{parameters} equal to TRUE reports
-      all demand parameters. \sQuote{digits} controls the number of significant
-      digits reported in output.}
   }
 }
 

@@ -3,22 +3,12 @@
 \alias{antitrust}
 \docType{package}
 \title{
-Antitrust Library
+\packageTitle{antitrust}
 }
 \description{
-  A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects mergers under different competitive regimes.
+\packageDescription{antitrust}
 }
 
-\details{
-\tabular{ll}{
-Package: \tab antitrust\cr
-Type: \tab Package\cr
-Version: \tab 0.94\cr
-Date: \tab 2014-06-24\cr
-License: \tab Unlimited \cr
-LazyLoad: \tab yes\cr
-}
-}
 
 \section{Disclaimer}{
 The views expressed herein are entirely those of the authors and should
@@ -30,14 +20,20 @@ Justice, 450 5th St. NW, Washington DC 20530.
 E-mail: charles.taragin@usdoj.gov and michael.sandfort@usdoj.gov.
 }
 
-\section{Getting Started}{
+\details{
+
+The DESCRIPTION file:
+\packageDESCRIPTION{antitrust}
+\packageIndices{antitrust}
+
+To get Started:
   \enumerate{
     \item Collect data on product prices, shares, margins and diversions
     (optional).
+    \item Specify how firms interact strategically (e.g. Bertrand, Cournot, Auction)
     \item If you have data on many/all products in the market consider
     calibrating a demand system and simulating a merger with either
-    a \code{\link{aids}},\code{\link{logit}}, \code{\link{ces}},
-    \code{\link{linear}}, or \code{\link{loglin}} demand system.
+    a \code{\link{bertrand.alm}},\code{\link{cournot}}, or \code{\link{auction2nd.logit}}.
     \item If you only have data on the merging parties' products, consider
     using \code{\link{cmcr.bertrand}} or \code{\link{cmcr.cournot}} to
     uncover the marginal cost reductions needed to offset a post-merger increase.
@@ -45,12 +41,14 @@ E-mail: charles.taragin@usdoj.gov and michael.sandfort@usdoj.gov.
   }
 
 }
-
-
 \author{
-Charles Taragin and Michael Sandfort
+\packageAuthor{antitrust}
 
-Maintainer: Charles Taragin \email{charles.taragin@usdoj.gov}
+Maintainer: \packageMaintainer{antitrust}
 }
+
+
+
+
 
 

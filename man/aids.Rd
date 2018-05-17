@@ -254,7 +254,7 @@ HypoMonTest(result.aids,prodIndex=1:2)
 
 
 CV(result.aids)        #calculate compensating variation as a percent of
-                       #representative consumer income
+                       #total expenditure
                        #CV can only be calculated if prices are supplied
 
 

@@ -29,10 +29,9 @@
 
 
   \item{\code{signature(object = AIDS)}}{
-    The CV method for \dQuote{AIDS} has an additional parameter, \sQuote{totalRevenue},
-    which should aggregate income (e.g. GDP). If supplied computes CV in terms of dollars. If missing, CV is
-    calculated as a percentage change in aggregate in income. must be set equal to the vector of pre-merger prices for all
-    products in the market in order for CV to be calculated.
+    If the  \sQuote{insideSize}  slot to the \dQuote{AIDS} class equals NA, CV is calculated as a percentage of 
+    total expenditure (revenues) on products included in the simulation. Otherwise CV is calculated in terms of dollars. 
+    Pre-merger prices for all products in the market must be supplied in order for CV to be calculated.
   }
 
   \item{\code{signature(object = c(Linear,LogLin))}}{
