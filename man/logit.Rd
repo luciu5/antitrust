@@ -80,7 +80,7 @@ logit.cap(prices,shares,margins,
                 ownerPre,ownerPost,
                 capacitiesPre=rep(Inf,length(prices)),
                 capacitiesPost=capacitiesPre,
-                insidesize,
+                insideSize,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
@@ -95,21 +95,21 @@ logit.cap(prices,shares,margins,
         
                 
 logit.cap.alm(prices,shares,margins,
-                      ownerPre,ownerPost,
-                      capacitiesPre= rep(Inf,length(prices)),
-                      capacitiesPost = capacitiesPre,
-                      mktElast = NA_real_,
-                      insideSize,
-                      mcDelta=rep(0,length(prices)),
-                      subset=rep(TRUE,length(prices)),
-                      priceOutside=0,
-                      priceStart = prices,
-                      isMax=FALSE,
-                      parmsStart,
-                      control.slopes,
-                      control.equ,
-                      labels=paste("Prod",1:length(prices),sep=""),
-                      ...
+                             ownerPre,ownerPost,
+                             capacitiesPre=rep(Inf,length(prices)),
+                             capacitiesPost=capacitiesPre,
+                             mktElast = NA_real_,
+                             insideSize,
+                             mcDelta=rep(0,length(prices)),
+                             subset=rep(TRUE,length(prices)),
+                             priceOutside = 0,
+                             priceStart = prices,
+                             isMax=FALSE,
+                             parmsStart,
+                             control.slopes,
+                             control.equ,
+                             labels=paste("Prod",1:length(prices),sep=""),
+                             ...
                       )
 
              }
@@ -125,7 +125,7 @@ logit.cap.alm(prices,shares,margins,
     product belongs to.}
   \item{capacitiesPre}{A length k vector of pre-merger product capacities. Capacities
     must be at least as great as shares * insideSize.}
-    \item{capacitiesPre}{A length k vector of post-merger product capacities.}
+    \item{capacitiesPost}{A length k vector of post-merger product capacities.}
   \item{insideSize}{An integer equal to total pre-merger units sold.
   If shares sum to one, this also equals the size of the market.}
   \item{normIndex}{An integer equalling the index (position) of the
@@ -157,10 +157,11 @@ logit.cap.alm(prices,shares,margins,
     equilibrium price. Default is the \sQuote{prices} vector.}
   \item{isMax}{If TRUE, checks to see whether computed price equilibrium
     locally maximizes firm profits and returns a warning if not. Default is FALSE.}
-  \item{parmsStart}{A vector of starting values used to solve for
-    price coefficient and nest parameters. The first element should
-    always be the price coefficient and the remaining elements should be
-    nesting parameters. Theory requires the nesting parameters to be
+  \item{parmsStart}{For \code{logit.cap.alm}, a length-2 vector of starting values 
+    used to solve for the price coefficient and outside share (in that order). For
+    \code{logit.nets}, rhe first element should
+    always be the price coefficient and the remaining elements should be 
+    the nesting parameters. Theory requires the nesting parameters to be
     greater than the price coefficient. If missing then the random
     draws with the appropriate restrictions are employed.}
   \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}

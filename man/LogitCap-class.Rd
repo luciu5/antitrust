@@ -2,33 +2,35 @@
 \Rdversion{1.1}
 \docType{class}
 \alias{LogitCap-class}
+\alias{LogitCapALM-class}
 %\alias{calcShares,LogitCap-method}
 %\alias{calcSlopes,LogitCap-method}
 %\alias{getNestsParms,LogitCap-method}
 %%\alias{CV,LogitCap-method}
 %%\alias{elast,LogitCap-method}
 
-\title{Class \dQuote{LogitCap}}
+\title{Class \dQuote{LogitCap} and \dQuote{LogitCapALM}}
 \description{
   The \dQuote{LogitCap} class contains all the information needed to
   calibrate a Logit
   demand system and perform a merger simulation analysis under the assumption that
   firms are playing a differentiated products Bertrand pricing game with
-  capacity constraints.
+  capacity constraints.\dQuote{LogitCapALM} extends \dQuote{LogitCap} to allow for an unobserved
+  outside share.
 %%  ~~ A concise (1-5 lines) description of what the class is. ~~
 }
 \section{Objects from the Class}{
-Objects can be created by using the constructor function \code{\link{logit.cap}}.
+Objects can be created by using the constructor function \code{\link{logit.cap}} 
+and \code{\link{logit.cap.alm}}.
 %%  ~~ describe objects here ~~
 }
 \section{Slots}{
   Let k denote the number of products produced by all firms.
   \describe{
-    \item{\code{mktSize}:}{A vector of length 1 equal to the number of
-      consumers in the market. This count should include the
-      number of consumers who purchase the outside option (if specified).}
-    \item{\code{capacities}:}{A length k vector whose elements equal
-      product capacities.}
+    \item{\code{capacitiesPre}:}{A length k vector whose elements equal
+      pre-merger product capacities.}
+     \item{\code{capacitiesPost}:}{A length k vector whose elements equal
+      post-merger product capacities.}
   }
 }
 \section{Extends}{

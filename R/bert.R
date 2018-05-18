@@ -11,7 +11,7 @@ bertrand.alm <- function(
   mcDelta=rep(0,length(prices)),
   subset=rep(TRUE,length(prices)),
   priceOutside=ifelse(demand== "logit",0, 1),
-  priceStart,
+  priceStart=prices,
   isMax=FALSE,
   parmStart,
   control.slopes,

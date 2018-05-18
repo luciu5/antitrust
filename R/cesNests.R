@@ -84,7 +84,8 @@ setMethod(
               nests        <- object@nests
               parmsStart   <- object@parmsStart
               constraint   <- object@constraint
-
+              insideSize   <- object@insideSize
+              
               nestCnt      <- tapply(prices,nests,length)
 
 
@@ -219,7 +220,8 @@ Normalizing these parameters to 1.")
               names(meanval)   <- object@labels
 
               object@slopes    <- list(alpha=alpha,gamma=minGamma,sigma=minSigmaOut,meanval=meanval)
-
+              object@mktSize <- insideSize*(1+alpha)
+              
               return(object)
           }
           )
@@ -309,10 +311,12 @@ setMethod(
 setMethod(
           f= "CV",
           signature= "CESNests",
-          definition=function(object,revenueInside){
+          definition=function(object){
 
               alpha       <- object@slopes$alpha
-
+              mktSize  <- object@mktSize 
+              
+              
                 if(is.null(alpha)) stop("'shareInside' must be between 0 and 1 to  calculate Compensating Variation")
 
               nests       <- object@nests
@@ -320,6 +324,7 @@ setMethod(
               sigma       <- object@slopes$sigma
               meanval     <- object@slopes$meanval
               shareInside <- object@shareInside
+              
 
 
               VPre  <- sum(tapply(meanval *  object@pricePre^(1-sigma[nests]),nests,sum,na.rm=TRUE) ^((1-gamma)/(1-sigma)))
@@ -334,12 +339,13 @@ setMethod(
 
               result <- log(VPost/VPre) / ((1+alpha)*(1-gamma))
               names(result) <- NULL
-              if(missing(revenueInside)){
-                  warning("'revenueInside' is missing. Calculating CV as a percentage change in (aggregate) income")
-                  return(result*100)}
+              
+              if(is.na(mktSize)){
+                warning("'insideSize' is NA. Calculating CV as a percentage of (aggregate) expenditure")
+                return(result*100)}
 
               else{
-                  totExp <- revenueInside*(1+alpha)
+                  totExp <- mktSize*(1+alpha)
                   return(totExp*(exp(result)-1))
                   }
 
@@ -350,8 +356,8 @@ setMethod(
 ces.nests <- function(prices,shares,margins,
                       ownerPre,ownerPost,
                       nests=rep(1,length(shares)),
-                      shareInside = 1,
                       normIndex=ifelse(sum(shares) < 1,NA,1),
+                      insideSize = NA_real_,
                       mcDelta=rep(0,length(prices)),
                       subset=rep(TRUE,length(prices)),
                       priceOutside=1,
@@ -380,6 +386,7 @@ ces.nests <- function(prices,shares,margins,
     ## Create CESNests  container to store relevant data
     result <- new("CESNests",prices=prices, shares=shares,margins=margins,
                   mcDelta=mcDelta,
+                  insideSize = insideSize,
                   subset=subset,
                   priceOutside=priceOutside,
                   ownerPre=ownerPre,
@@ -389,7 +396,7 @@ ces.nests <- function(prices,shares,margins,
                   parmsStart=parmsStart,
                   priceStart=priceStart,
                   constraint=constraint,
-                  shareInside=shareInside,labels=labels)
+                  shareInside=sum(shares),labels=labels)
 
     
     if(!missing(control.slopes)){

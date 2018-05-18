@@ -24,6 +24,7 @@ auction2nd.logit(prices,shares,margins,
 auction2nd.logit.alm(prices,shares,margins,
                              ownerPre,ownerPost,
                              mktElast = NA_real_,
+                             insideSize = NA_real_,
                              mcDelta=rep(0,length(prices)),
                              subset=rep(TRUE,length(prices)),
                              mcDeltaOutside=0,
@@ -52,6 +53,8 @@ auction2nd.logit.alm(prices,shares,margins,
     indicate which firm produced a product after the merger OR
     a k x k matrix of post-merger ownership shares.}
     \item{mktElast}{a negative value indicating market elasticity. Default is NA.}
+    \item{insideSize}{An integer equal to total pre-merger units sold.
+  If shares sum to one, this also equals the size of the market.}
   \item{mcDelta}{A vector of length k where each element equals the
     (level) change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not

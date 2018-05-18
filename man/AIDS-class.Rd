@@ -25,14 +25,15 @@
 Objects can be created by using the constructor function \code{\link{aids}}.
 %%  ~~ describe objects here ~~
 }
+
 \section{Slots}{
    Let k denote the number of products produced by all firms.
   \describe{
+  \item{\code{priceStart}:}{A length-k vector of starting prices for the non-linear solver}
+  \item{\code{insideSize}:}{A positive number equal to total pre-merger revenues for all products
+                            included in the simulation.}
     \item{\code{mktElast}:}{A negative number equal to the industry pre-merger
       price elasticity.}
-    \item{\code{priceStart}:}{A length k vector who elements equal to an
-      initial guess of the proportional change in prices caused by the
-      merger.}
       \item{\code{parmStart}:}{A length 2 vector who elements equal to an
       initial of a single diagonal element of the matrix of slope coefficients, as well as the market elasticity. }
     \item{\code{priceDelta}:}{A length k vector containing the

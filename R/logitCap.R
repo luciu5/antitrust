@@ -295,7 +295,7 @@ setMethod(
 
 logit.cap <- function(prices,shares,margins,
                       ownerPre,ownerPost,
-                      capacitiesPre = rep(Inf , length(shares)),
+                      capacitiesPre = rep(Inf , length(prices)),
                       capacitiesPost = capacitiesPre,
                       insideSize,
                       normIndex=ifelse(sum(shares)<1,NA,1),

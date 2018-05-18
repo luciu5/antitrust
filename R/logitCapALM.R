@@ -143,38 +143,7 @@ setMethod(
               
               return(object)
               
-              
-              
-              
-              
-              ## Minimize the distance between observed and predicted margins
-              minD <- function(alpha){
-
-                  ## the following returns the elasticity TRANSPOSED
-                  elast <- -alpha *  matrix(prices * shares,ncol=nprods,nrow=nprods)
-                  diag(elast) <- alpha*prices + diag(elast)
-
-
-                  FOC <- revenues * diag(ownerPre) + (elast * ownerPre * notBinds) %*% (margins * revenues)
-
-                  ## omit the FOCs of single product, capacity constrained firms
-                  measure <- sum(as.vector(FOC[!singleConstrained])^2,na.rm=TRUE)
-
-                  return(measure)
-              }
-
-              minAlpha <- optimize(minD,c(-1e6,0),
-                                   tol=object@control.slopes$reltol)$minimum
-
-
-              meanval <- log(shares) - log(idxShare) - minAlpha * (prices - idxPrice)
-
-              names(meanval)   <- object@labels
-
-              object@slopes    <- list(alpha=minAlpha,meanval=meanval)
-
-
-              return(object)
+            
           }
           )
 

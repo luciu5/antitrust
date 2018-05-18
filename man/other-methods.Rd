@@ -16,6 +16,7 @@
 \alias{calcRevenues,Bertrand-method}
 \alias{calcRevenues,CES-method}
 \alias{calcRevenues,AIDS-method}
+\alias{calcRevenues,Cournot-method}
 \alias{calcQuantities}
 \alias{calcQuantities,ANY-method}
 \alias{calcQuantities,Logit-method}
@@ -26,6 +27,7 @@
 \alias{calcQuantities,Logit-method}
 \alias{calcQuantities,Cournot-method}
 \alias{calcQuantities,Stackelberg-method}
+\alias{calcQuantities,AIDS-method}
 \alias{calcPrices}
 \alias{calcPrices,ANY-method}
 \alias{calcPrices,AIDS-method}
@@ -78,6 +80,7 @@
 \alias{calcSlopes,LogitALM-method}
 \alias{calcSlopes,CESALM-method}
 \alias{calcSlopes,LogitCap-method}
+\alias{calcSlopes,LogitCapALM-method}
 \alias{calcSlopes,LogitNests-method}
 \alias{calcSlopes,LogitNestsALM-method}
 \alias{calcSlopes,PCAIDS-method}
@@ -116,7 +119,7 @@
 \S4method{calcQuantities}{ANY}(object,preMerger=TRUE, market=FALSE)
 \S4method{calcRevenues}{ANY}(object,preMerger=TRUE, market=FLASE)
 \S4method{calcPrices}{ANY}(object,preMerger=TRUE,subset,...)
-\S4method{calcPriceDelta}{Antitrust}(object,levels=FALSE,market=FALSE)
+\S4method{calcPriceDelta}{Antitrust}(object,levels=FALSE,market=FALSE,...)
 \S4method{calcPriceDelta}{AIDS}(object,isMax=FALSE,levels=FALSE,subset,market=FALSE,...)
 \S4method{calcProducerSurplus}{Bertrand}(object,preMerger=TRUE)
 \S4method{calcMargins}{ANY}(object,preMerger=TRUE)
@@ -194,7 +197,7 @@ parameters=FALSE,market=FALSE,insideOnly=TRUE,digits=2,...)
     prices. Typically, \code{\link[BB]{BBsolve}} is used, but see
     the appropriate document for further details.
   }
-   \item{calcPriceDelta}{\code{signature(object=Antitrust, market=FALSE)}}{
+   \item{calcPriceDelta}{\code{signature(object=Antitrust, market=FALSE, ...)}}{
     Computes equilibrium price changes due to a merger assuming that firms are playing a
     Nash-Bertrand or Cournot game. This is a wrapper method for computing
     the difference between pre- and post-merger equilbrium prices

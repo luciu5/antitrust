@@ -12,6 +12,7 @@
 \usage{ces(prices,shares,margins,
                 ownerPre,ownerPost,
                 normIndex=ifelse(sum(shares)<1,NA,1),
+                insideSize = NA_real_,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
                 priceOutside = 1,
@@ -26,6 +27,7 @@
 ces.alm(prices,shares,margins,
                 ownerPre,ownerPost,
                 mktElast = NA_real_,
+                insideSize = NA_real_,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE,length(prices)),
                 priceOutside=1,
@@ -42,6 +44,7 @@ ces.nests(prices,shares,margins,
                 ownerPre,ownerPost,
                 nests=rep(1,length(shares)),
                 normIndex=ifelse(sum(shares)<1,NA,1),
+                insideSize = NA_real_,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE, length(prices)),
                 priceOutside = 1,
@@ -74,6 +77,7 @@ ces.nests(prices,shares,margins,
     \item{mktElast}{a negative value indicating market elasticity. Default is NA.}
   \item{normIndex}{An integer specifying the product index against which
      the mean values of all other products are normalized. Default is 1.}
+  \item{insideSize}{total revenues included in the market. }
   \item{mcDelta}{A vector of length k where each element equals the
     proportional change in a product's marginal costs due to
     the merger. Default is 0, which assumes that the merger does not
@@ -217,8 +221,6 @@ upp(result.ces)             #calculate Upwards Pricing Pressure Index
 
 CV(result.ces)              #calculate compensating variation as a percent of
                             #representative consumer income
-CV(result.ces,1e9)          #calculate compensating variation in dollars
-                            #1e9 is an estimate of total US beer expenditure
 
 ## Implement the Hypothetical Monopolist Test
 ## for BUD and OLD STYLE using a 5\% SSNIP

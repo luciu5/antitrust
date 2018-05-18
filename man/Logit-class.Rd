@@ -19,16 +19,16 @@
 Objects can be created by using the constructor function \code{\link{logit}}.
 %%  ~~ describe objects here ~~
 }
+
+
+
+      
 \section{Slots}{
   Let k denote the number of products produced by all firms.
   \describe{
     \item{\code{prices}:}{A length k vector of product prices.}
     \item{\code{margins}:}{A length k vector of product margins, some of which may
       equal NA.}
-    \item{\code{pricePre}:}{A length k vector of simulated pre-merger prices.}
-    \item{\code{pricePost}:}{A length k vector of simulated post-merger prices.}
-    \item{\code{priceStart}:}{A length k vector of starting values used to solve for
-    equilibrium price.}
     \item{\code{normIndex}:}{An integer specifying the product index against which
      the mean values of all other products are normalized.}
     \item{\code{shareInside}:}{The share of customers that purchase any of the
@@ -38,7 +38,15 @@ Objects can be created by using the constructor function \code{\link{logit}}.
      \item{\code{slopes}:}{A list containing the coefficient on price (\sQuote{alpha}) and the vector of mean
       valuations (\sQuote{meanval})}
        \item{\code{mktElast}:}{A length 1 vector of market elasticities. }
-
+ \item{\code{priceStart}:}{A length-k vector of starting prices for the non-linear solver}
+  \item{\code{insideSize}:}{A positive number equal to total pre-merger quantities (revenues for CES) 
+                            for all products
+                            included in the simulation.}
+   \item{\code{mktSize}:}{A positive number equal to total quantities (revenues for CES) 
+   pre-merger for all products in the simulations
+                          as well as the outside good.}                          
+                            
+  
   }
 }
 \section{Extends}{

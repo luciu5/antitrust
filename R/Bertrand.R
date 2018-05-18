@@ -560,7 +560,7 @@ setMethod(
      
      if(!levels) priceDelta <- priceDelta *100
 
-     if(!shares && !missPrices){
+     if(!shares && !all(is.na(object@prices))){
          outPre  <-  calcQuantities(object,preMerger=TRUE)
          outPost <-  calcQuantities(object,preMerger=FALSE)
 
@@ -628,7 +628,7 @@ setMethod(
                          'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty]),
                          'Consumer Harm ($)' = thiscv,
                          'Producer Benefit ($)' = thispsdelta,
-                         'Net Harm ($)'= thiscv - thispsdelta,
+                         'Difference ($)'= thiscv - thispsdelta,
                          check.names=FALSE
                        ))
        
