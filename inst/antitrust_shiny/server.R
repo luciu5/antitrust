@@ -180,8 +180,8 @@ shinyServer(function(input, output, session) {
       "Inputted Shares (%)" = obsShares*100,
       "Fitted Shares(%)"=preShares*100,
       "Share Change (%)"=(1 - obsShares/preShares)*100,
-      "Inputted Margins" = obsMargins,
-      "Fitted  Margins"=preMargins,
+      "Inputted Margins (%)" = obsMargins*100,
+      "Fitted  Margins (%)"=preMargins *100,
       "Margin Change (%)"= (1 - obsMargins/preMargins)*100,
       #'Market Elasticity'= 1 - obsElast/preElast,
       check.names = FALSE
@@ -203,7 +203,7 @@ shinyServer(function(input, output, session) {
     else{ res <- data.frame(
                     'Inputted Elasticity' = obsElast,
                     'Fitted Elasticity' = preElast,
-                     'Elasticity Change'= (1 - obsElast/preElast)*100,
+                     'Elasticity Change (%)'= (1 - obsElast/preElast)*100,
                             check.names = FALSE)
     
     #if(res < 1e-3) res <- NULL
