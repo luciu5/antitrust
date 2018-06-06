@@ -368,10 +368,12 @@ setMethod(
   idx <- object@normIndex
   if(is.na(idx)){
     mcDeltaOut <- object@priceOutside
+    outVal <- 1
   }
   
   else{
     mcDeltaOut <- object@mcDelta[idx]
+    outVal <- 0
   }
 
   meanvalPost <-   meanvalPre + alpha*(mcDelta - mcDeltaOut)
@@ -382,14 +384,14 @@ setMethod(
   firmSharePre <- drop(object@ownerPre %*% sharePre)  
   firmSharePost <- drop(object@ownerPost %*% sharePost)
   
-  incValPre <- log(sum(exp(meanvalPre)))
-  incValPost <- log(sum(exp(meanvalPost)))
+  incValPre <- log(sum(exp(meanvalPre) + outVal))
+  incValPost <- log(sum(exp(meanvalPost) + outVal))
   
   firmIncVal <- function(x, preMerger = TRUE){
     x <- x == 0
     
-    if(preMerger){return(log(sum(exp(meanvalPre[x]))))}
-    else{return(log(sum(exp(meanvalPost[x]))))}
+    if(preMerger){return(log(sum(exp(meanvalPre[x]) + outVal)))}
+    else{return(log(sum(exp(meanvalPost[x]) + outVal)))}
     
     }
   
