@@ -355,56 +355,14 @@ setMethod(
   signature= "Auction2ndLogit",
   definition=function(object){
     
-  meanvalPre <-   meanvalPost <- object@slopes$meanval
-  alpha <- object@slopes$alpha
-  sigma <- -1/alpha
-  
   mktSize = object@mktSize
   
+  marginPre <- calcMargins(object, preMerger = TRUE, exAnte= TRUE)
+  marginPost <- calcMargins(object, preMerger = FALSE, exAnte= TRUE)
   
-  mcDelta <- object@mcDelta
-  mcDelta[is.na(mcDelta)] <- 0
+  result <- sum(marginPost) - sum(marginPre)
   
-  idx <- object@normIndex
-  if(is.na(idx)){
-    mcDeltaOut <- object@priceOutside
-    outVal <- 1
-  }
-  
-  else{
-    mcDeltaOut <- object@mcDelta[idx]
-    outVal <- 0
-  }
-
-  meanvalPost <-   meanvalPre + alpha*(mcDelta - mcDeltaOut)
-  
-  sharePre <- calcShares(object,preMerger=TRUE)
-  sharePost <- calcShares(object,preMerger=FALSE)
-  
-  firmSharePre <- drop(object@ownerPre %*% sharePre)  
-  firmSharePost <- drop(object@ownerPost %*% sharePost)
-  
-  incValPre <- log(sum(exp(meanvalPre) + outVal))
-  incValPost <- log(sum(exp(meanvalPost) + outVal))
-  
-  firmIncVal <- function(x, preMerger = TRUE){
-    x <- x == 0
-    
-    if(preMerger){return(log(sum(exp(meanvalPre[x]) + outVal)))}
-    else{return(log(sum(exp(meanvalPost[x]) + outVal)))}
-    
-    }
-  
-  csPre <- apply(object@ownerPre, 1,firmIncVal,preMerger=TRUE )
-  csPost <- apply(object@ownerPost, 1,firmIncVal,preMerger=FALSE )  
-  
-  csPre <- (sigma/firmSharePre) * (csPre - (1-firmSharePre)*incValPre)
-  
-  csPost <- (sigma/firmSharePost) * (csPost - (1-firmSharePost)*incValPost)
-  
-  result <-  mcDeltaOut + sum(csPre*sharePre) - sum(csPost*sharePost)
-  
-  if(!is.na(mktSize)) result <- mktSize*result
+  if(!is.na(mktSize)){result <- mktSize * result}
   
   return(result)
   })

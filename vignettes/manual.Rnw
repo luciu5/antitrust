@@ -1693,7 +1693,7 @@ capacities due to the merger.
 
 \section{2nd Score Auction with Differentiated Products}
 
-Here, we describe a 2nd score procurement auction where the features of the products -- including cost -- are both horizontally and vertically differentiated. This section is largely based on \cite{miller2014}. This auction model may be executed using \atr{}'s \verb@auction2nd.logit@ function.
+Here, we describe a 2nd score procurement auction where the features of the products -- including cost -- are both horizontally and vertically differentiated. This section is largely based on \cite{Brannman2000} and \cite{miller2014}. This auction model may be executed using \atr{}'s \verb@auction2nd.logit@ function.
 
 \subsection{The Game}
 Suppose that a buyer is interested in either purchasing a single unit of a

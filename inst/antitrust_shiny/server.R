@@ -16,7 +16,7 @@ shinyServer(function(input, output, session) {
      
      w.handler <- function(w){ # warning handler
        W <<- append(W,conditionMessage(w))
-       #invokeRestart("muffleWarning")
+       invokeRestart("muffleWarning")
      }
      e.handler <- function(e){ # error handler
        E <<- append(E, conditionMessage(e))
@@ -237,8 +237,11 @@ shinyServer(function(input, output, session) {
      
      ownerPre = model.matrix(~-1+indata$'Pre-merger\n Owner')
      ownerPre = tcrossprod(ownerPre)
-     ownerPost = model.matrix(~-1+indata$'Post-merger\n Owner')
-     ownerPost = tcrossprod(ownerPost)
+     if(nlevels(indata$'Post-merger\n Owner') > 1){
+       ownerPost = model.matrix(~-1+indata$'Post-merger\n Owner')
+       ownerPost = tcrossprod(ownerPost)
+     }
+     else{ownerPost <- matrix(1, ncol=length(indata$Output), nrow = length(indata$Output))}
      
      
      
@@ -816,20 +819,20 @@ shinyServer(function(input, output, session) {
     })  
     
     ## display messages to message tab
-   output$warnings <- renderPrint({
+   output$warnings <- renderText({
     
       if(input$inTabset!= "msgpanel" || input$simulate == 0 || is.null(values[["msg"]]$warning)){return()}  
      
-      print(values[["msg"]]$warning)
+      paste(values[["msg"]]$warning,collapse="\n")
       
       
    })  
 
-   output$errors <- renderPrint({
+   output$errors <- renderText({
      
      if(input$inTabset!= "msgpanel" || input$simulate == 0 || is.null(values[["msg"]]$error)){cat(return())}  
      
-     print(values[["msg"]]$error)
+     paste(values[["msg"]]$error,collapse="\n")
      
      
    })  

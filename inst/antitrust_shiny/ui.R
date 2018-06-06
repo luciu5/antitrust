@@ -111,7 +111,9 @@ shinyUI(
                    helpText("See the",tags$a(href="https://CRAN.R-project.org/package=antitrust", "antitrust"),"R package vignette for more details about the parameters displayed here." )
           ), 
           tabPanel("R Code", value = "codepanel", br(),verbatimTextOutput("results_code")),
-          tabPanel("Messages", value = "msgpanel", br(),h4("Warnings"),  verbatimTextOutput("warnings"), br(),h4("Errors"),  verbatimTextOutput("errors"))
+          tabPanel("Messages", value = "msgpanel", br(),h4("Warnings"),  span(textOutput("warnings"), style="color:orange"), br(),
+                   h4("Errors"),  
+                   span(textOutput("errors"), style="color:red"))
           
         )
         
