@@ -552,6 +552,8 @@ setMethod(
      pricePre   <-  object@pricePre
      pricePost  <-  object@pricePost
      
+     mcDelta <- object@mcDelta
+     
      if(grepl("aids",class(object),ignore.case=TRUE)){
      
        priceDelta <-  object@priceDelta 
@@ -586,8 +588,10 @@ setMethod(
          sumlabels=paste("shares",c("Pre","Post"),sep="")
      }
 
-     mcDelta <- object@mcDelta * 100
-
+     if(!grepl("Auction2ndLogit", class(object),ignore.case=TRUE)){
+        mcDelta <- mcDelta * 100
+     }
+     
      if(levels){outDelta <- outPost - outPre}
      else{outDelta <- (outPost/outPre - 1) * 100}
 
