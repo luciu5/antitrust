@@ -356,9 +356,9 @@ setMethod(
   definition=function(object){
     
   mktSize = object@mktSize
-  
+
   result <- sum(calcPriceDelta(object, exAnte = TRUE))
- 
+
   if(!is.na(mktSize)){result <- mktSize * result}
   
   return(result)
