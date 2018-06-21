@@ -328,20 +328,21 @@ shinyServer(function(input, output, session) {
                       labels=list(as.character(indata$Name),indata$Name[firstPrice]))
             ,
             `2nd Score Auction`= switch(demand,
-                                        `logit (unknown elasticity)` = auction2nd.logit.alm(prices= prices,
+                                        `logit (unknown elasticity)` = auction2nd.logit(prices= prices,
                                                                                             shares= shares_quantity,
                                                                                             margins= margins,
                                                                                             ownerPre= ownerPre,
                                                                                             ownerPost= ownerPost,
                                                                                             mcDelta = indata$mcDelta, labels=indata$Name),
-                                        logit = auction2nd.logit.alm(prices= prices,
+                                        logit = auction2nd.logit(prices= prices,
                                                                      shares= shares_quantity,
                                                                      margins= margins,
                                                                      ownerPre= ownerPre,
                                                                      ownerPost= ownerPost,
                                                                      insideSize = insideSize,
-                                                                     mcDelta = indata$mcDelta, labels=indata$Name, 
-                                                                     mktElast = mktElast)
+                                                                     mcDelta = indata$mcDelta, labels=indata$Name 
+                                                                     #,mktElast = mktElast
+                                                                 )
                                         
             )
      )
@@ -382,7 +383,12 @@ shinyServer(function(input, output, session) {
        
        demandChoices<- c("linear","log")
        
-       }
+     }
+    else if ( supply == "2nd Score Auction"){
+      theseChoices <- "1 or more margins"
+      demandChoices<- c('logit')
+      defElast <- 1
+    }
       
     else{
       theseChoices <- c("market elasticity and 1 or more margins",
@@ -391,8 +397,9 @@ shinyServer(function(input, output, session) {
       updateRadioButtons(session = session, "calcElast", "Calibrate model parameters using:",
                          choices = theseChoices , selected = theseChoices[defElast]) 
       
-      if(supply == 'Bertrand'){demandChoices<- c('logit','ces','aids')}
-      else{demandChoices<- c('logit')}
+      demandChoices<- c('logit','ces','aids')
+      #if(supply == 'Bertrand'){demandChoices<- c('logit','ces','aids')}
+      #else{demandChoices<- c('logit')}
       
      
       
@@ -626,7 +633,10 @@ shinyServer(function(input, output, session) {
     
       
       rownames(res) <- c("Pre-Merger","Post-Merger")
-      
+      if( grepl("auction2nd",class(values[["sim"]]),ignore.case = TRUE)){
+        totQuant <- sum(values[["inputData"]]$`Quantities`,na.rm=TRUE)
+        res$'Revenues ($)' <- res$'Revenues ($)'*totQuant
+      }
       if( grepl("aids",class(values[["sim"]]),ignore.case = TRUE)) res$'No-purchase\n Share (%)' <- NULL
       
       return(res)
@@ -780,13 +790,16 @@ shinyServer(function(input, output, session) {
         argvalues[grep("insideSize", argvalues)] <- NULL
         }
       else if( input$supply =="Bertrand"){atrfun <- "bertrand.alm"}
-      else{atrfun <- "auction2nd.logit.alm"
+      else{atrfun <- "auction2nd.logit"
            argvalues <- argvalues[-1]
            argvalues[grep("quantities", argvalues)] <- "shares = simdata$`Quantities` / sum( simdata$`Quantities` ) "
            argvalues[grep("margins", argvalues)] <- paste0("margins = simdata$`",
                                                            grep("Margin",cnames,value = TRUE),
                                                             "` * ", "simdata$`", grep("Price", cnames, value=TRUE),"`")
-           }
+          
+           
+           argvalues <- grep("mktElast", argvalues,value=TRUE,invert=TRUE)
+            }
       
       atrfun <- paste0("simres <- ",atrfun,"(\n\t",paste0(argvalues,collapse = ",\n\t"),")",collapse = "\n")
       
