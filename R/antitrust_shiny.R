@@ -19,5 +19,5 @@ NULL
 #'@export
 antitrust_shiny <- function() {
   requireNamespace("rhandsontable")
-  shiny::runApp(system.file('antitrust_shiny', package='AntitrustTesting'))
+  shiny::runApp(system.file('antitrust_shiny', package='antitrust'))
 }

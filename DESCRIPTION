@@ -5,9 +5,49 @@ Version: 0.99.10
 Date: 2018-06-09
 Author: Charles Taragin and Michael Sandfort
 Maintainer: Charles Taragin <charles.taragin@usdoj.gov>
-Imports:  methods, MASS, evd, BB, numDeriv
-Suggests:  ggplot2, shiny, rhandsontable
+Imports: methods, MASS, evd, BB, numDeriv
+Suggests: ggplot2, shiny, rhandsontable
 Description: A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects of mergers under different competitive regimes.
-License:  Unlimited
+License: Unlimited
 LazyLoad: yes
-Collate: Antitrust.R Bertrand.R logit.R linear.R loglin.R logitALM.R logitNests.R logitNestsALM.R logitCap.R  ces.R cesNests.R aids.R pcaids.R pcaidsNests.R  cmcr.R upp.R hhi.R sim.R auction2ndcap.R auction2ndlogit.R  Cournot.R  Stackelberg.R  auction2ndlogitALM.R antitrust_shiny.R cesALM.R  logitCapALM.R bert.R
+Collate: 
+    'AntitrustClasses.R'
+    'BertrandClasses.R'
+    'BertrandRUMClasses.R'
+    'AuctionClasses.R'
+    'CournotClasses.R'
+    'AntitrustMethods.R'
+    'SummaryMethods.R'
+    'ShowMethods.R'
+    'AuctionCapMethods.R'
+    'PricesMethods.R'
+    'CostMethods.R'
+    'MarginsMethods.R'
+    'ParamsMethods.R'
+    'PriceDeltaMethods.R'
+    'PSMethods.R'
+    'OutputMethods.R'
+    'PlotMethods.R'
+    'HypoMonMethods.R'
+    'HHIMethods.R'
+    'UPPMethods.R'
+    'DiversionMethods.R'
+    'ElastMethods.R'
+    'CMCRMethods.R'
+    'CVMethods.R'
+    'DiagnosticsMethods.R'
+    'AIDSFunctions.R'
+    'Auction2ndCapFunctions.R'
+    'Auction2ndCapLogitFunctions.R'
+    'BertrandFunctions.R'
+    'CESFunctions.R'
+    'CMCRBertrandFunctions.R'
+    'CMCRCournotFunctions.R'
+    'CournotFunctions.R'
+    'HHIFunctions.R'
+    'LinearFunctions.R'
+    'LogitFunctions.R'
+    'SimFunctions.R'
+    'Antitrust_Shiny.R'
+    'AntitrustPackage.R'
+RoxygenNote: 6.0.1

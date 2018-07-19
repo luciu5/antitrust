@@ -1,6 +1,6 @@
 require(shiny)
 require(rhandsontable)
-require(AntitrustTesting)
+require(antitrust)
 require(trade)
 
 shinyUI(navbarPage("",id = "menu",
