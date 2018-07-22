@@ -78,7 +78,8 @@ setMethod(
   signature= "Bargaining",
   definition=function(object,preMerger=TRUE){
     
-    
+    shares <- calcShares(object, preMerger=preMerger, revenue=FALSE)
+    bargparm <- object@bargpower
     
     if( preMerger) {
       
@@ -86,7 +87,13 @@ setMethod(
       revenue<- calcShares(object,preMerger,revenue=TRUE)
       
       elast <-  elast(object,preMerger)
-      margins <-  -1 * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
+      div <- diversion(object, preMerger)
+      
+      elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
+      if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
+      marginsDown <-   -as.vector(elast.inv %*% shareCandDown)
+      margins <- (1-bargparm)/bargparm * as.vector(solve(ownerUp * div) %*% (ownerDown * div) %*% marginsDown)
+     
       
       
     }
