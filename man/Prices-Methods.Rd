@@ -21,6 +21,7 @@
 \alias{calcPrices,Linear-method}
 \alias{calcPrices,LogLin-method}
 \alias{calcPrices,AIDS-method}
+\alias{calcPrices,VertBargBertLogit-method}
 \title{\dQuote{Calculating Prices} Methods}
 \usage{
 \S4method{calcPrices}{Cournot}(object, preMerger = TRUE)
@@ -42,6 +43,8 @@
 \S4method{calcPrices}{LogLin}(object, preMerger = TRUE, subset, ...)
 
 \S4method{calcPrices}{AIDS}(object, preMerger = TRUE, ...)
+
+\S4method{calcPrices}{VertBargBertLogit}(object, preMerger = TRUE, ...)
 }
 \arguments{
 \item{object}{An instance of the respective class (see description for the classes)}

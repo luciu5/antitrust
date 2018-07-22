@@ -6,6 +6,7 @@
 \alias{calcMC}
 \alias{calcMC,ANY-method}
 \alias{calcMC,Bertrand-method}
+\alias{calcMC,Bargaining-method}
 \alias{calcMC,Auction2ndLogit-method}
 \alias{calcMC,Cournot-method}
 \alias{calcMC,Auction2ndCap-method}

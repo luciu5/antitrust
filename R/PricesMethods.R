@@ -10,6 +10,7 @@
 #' calcPrices,AIDS-method
 #' calcPrices,LogitCap-method
 #' calcPrices,Auction2ndLogit-method
+#' calcPrices,Auction2ndLogit-method
 #' calcPrices
 
 #' @param object An instance of the respective class (see description for the classes)
@@ -45,7 +46,7 @@
 #' that consumer demand is AIDS and firms play a differentiated product Bertrand Nash pricing game.
 #' It returns a length-k vector of NAs if the user did not supply prices.
 #'
-#' @include AuctionCapMethods.R
+#' @include AuctionCapMethods.R VerticalClasses.R
 #' @keywords methods
 NULL
 
@@ -457,5 +458,115 @@ setMethod(
 
     names(prices) <- object@labels
     return(prices)
+  }
+)
+
+#'@rdname Prices-Methods
+#'@export
+setMethod(
+  f= "calcPrices",
+  signature= "VertBargBertLogit",
+  definition=function(object,preMerger=TRUE,...){
+    
+    up <- object@up
+    down <- object@down
+    
+    
+    subset <- down@subset
+    alpha <- down@slopes$alpha
+    meanval <- down@slopes$meanval[subset]
+    bargparm <- up@bargparm[subset]
+    
+    priceStartUp <- up@priceStart
+    priceStartDown <- down@priceStart
+    priceStart <- c(priceStartUp[subset],priceStartDown[subset])
+    
+    
+    nprods <- nrow(mcDown[subset])
+    
+    FOC.1st<-function(priceCand,mkt,preMerger=TRUE  
+                      #subset=rep(TRUE,length(mkt$down$meanval))
+                      #,useEst = FALSE, level = "all"
+                      ){
+      
+       
+        
+      
+      priceCandUp= rep(NA, 1,nprods)[subset] 
+      priceCandUp <- priceCand[1:length(priceCandUp)]
+      priceCandDown <- priceCand[-(1:length(priceCandUp))]
+      
+      #v <- mkt$vertical
+      
+      if(preMerger){
+        ownerUp <- up@ownerPre[subset,subset]
+        ownerDown <- down@ownerPre[subset,subset]
+        
+        down@pricePre <- priceCandDown
+        mcUp <- up@mcPre[subset]
+        mcDown <- down@mcPre[subset]
+        
+      }
+      
+      else{
+        
+        ownerUp <- up@ownerPost[subset,subset]
+        ownerDown <- down@ownerPost[subset,subset]
+        
+        down@pricePost <- priceCandDown
+        mcUp <- up@mcPost[subset]
+        mcDown <- down@mcPost[subset]
+      
+        }
+      
+       
+        
+      
+      
+      
+      shareCandDown  <- calcShares(down, preMerger=preMerger)
+      marginsDownCand <- calcMargins(down, preMerger=preMerger)
+      
+      
+      
+      div <- tcrossprod(1/(1-shareCandDown),shareCandDown)
+      diag(div) <- -1
+      
+      
+      #if(length(v) > 0 && !preMerger){
+      #  marginsDownCand <-  marginsDownCand - elast.inv %*% ( (v$ownerPost.down * elast) %*% (priceCandUp-mcUp) )
+      #  #upFOC <- (ownerUp * div) %*% (priceCandUp-mcUp) - (v$ownerPostLambda.down * div) %*% marginsDownCand
+      #  marginsUpCand <- as.vector(solve(ownerUp * div) %*% (v$ownerPostLambda.down * div) %*% marginsDownCand) 
+      #}
+      #else{
+        
+        marginsUpCand <-  (1-bargparm)/bargparm * as.vector(solve(ownerUp * div) %*% (ownerDown * div) %*% marginsDownCand)
+        #upFOC<- as.vector(bargparm *((ownerUp * div) %*% (priceCandUp-mcUp))  -  (1-bargparm) * ((ownerDown * div) %*% marginsDownCand))
+        
+        
+      #}
+      
+      upFOC <-  priceCandUp-mcUp - marginsUpCand
+      downFOC <- priceCandDown - priceCandUp - mcDown - marginsDownCand
+      
+      
+      thisFOC= c(downFOC,upFOC)
+      
+      return(thisFOC)
+    }
+    
+   
+      minResult   <- try(nleqslv(priceStart,FOC,mkt=mkt,preMerger=preMerger, subset=subset, useEst=useEst, level = level)$x,silent=TRUE)
+      
+      minResultUp <- rep(NA, length(priceStartUp))
+      minResultDown <- rep(NA, length(priceStartDown))
+      
+        
+        
+      minResultUp[subset] <- minResult[1:length(priceStartUp[subset])] 
+      minResultDown[subset] <- minResult[-(1:length(priceStartUp[subset]))]
+    
+   
+      return(list(up=minResultUp,down=minResultDown)) 
   }
 )

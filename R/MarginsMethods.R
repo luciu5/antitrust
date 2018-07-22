@@ -6,6 +6,7 @@
 #' calcMargins,ANY-method
 #' calcMargins,AIDS-method
 #' calcMargins,Bertrand-method
+#' calcMargins,Bargaining-method
 #' calcMargins,LogitCap-method
 #' calcMargins,Auction2ndLogit-method
 #' calcMargins,Cournot-method
@@ -69,6 +70,42 @@ setMethod(
   }
 
 )
+
+#'@rdname Margins-Methods
+#'@export
+setMethod(
+  f= "calcMargins",
+  signature= "Bargaining",
+  definition=function(object,preMerger=TRUE){
+    
+    
+    
+    if( preMerger) {
+      
+      owner  <- object@ownerPre
+      revenue<- calcShares(object,preMerger,revenue=TRUE)
+      
+      elast <-  elast(object,preMerger)
+      margins <-  -1 * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
+      
+      
+    }
+    
+    else{
+      prices <- object@pricePost
+      mc     <- object@mcPost
+      
+      margins <- 1 - mc/prices
+    }
+    
+    
+    names(margins) <- object@labels
+    
+    return(as.vector(margins))
+  }
+  
+)
+
 
 #'@rdname Margins-Methods
 #'@export

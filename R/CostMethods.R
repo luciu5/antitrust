@@ -5,6 +5,7 @@
 #' @aliases calcMC
 #' calcMC,ANY-method
 #' calcMC,Bertrand-method
+#' calcMC,Bargaining-method
 #' calcMC,Auction2ndLogit-method
 #' calcMC,Cournot-method
 #' calcMC,Auction2ndCap-method
@@ -103,6 +104,7 @@ setMethod(
     return(mc)
   }
 )
+
 
 #'@rdname Cost-Methods
 #'@export

@@ -22,6 +22,7 @@
 #' calcSlopes,Auction2ndLogitALM-method
 #' calcSlopes,Cournot-method
 #' calcSlopes,Stackelberg-method
+#' calcSlopes,VertBargBertLogit-method
 #' getParms
 #' getParms,ANY-method
 #' getParms,Bertrand-method
@@ -38,13 +39,13 @@
 #' @param object An instance of the respective class (see description for the classes)
 #' @param digits Number of significant digits to report. Default is 2.
 #'
-#' @include MarginsMethods.R
+#' @include MarginsMethods.R VerticalClasses.R
 #' @keywords methods
 NULL
 
 setGeneric (
   name= "calcSlopes",
-  def=function(object){standardGeneric("calcSlopes")}
+  def=function(object,...){standardGeneric("calcSlopes")}
 )
 setGeneric (
   name= "getParms",
@@ -1957,6 +1958,84 @@ setMethod(
     return(object)
   }
 )
+
+
+
+
+#'@rdname Params-Methods
+#'@export
+setMethod(
+  f= "calcSlopes",
+  signature= "VertBargBertLogit",
+  definition=function(object, constrain=c("global","pair","wholesaler","retailer")){
+    
+    constrain <- match.arg(constrain)
+    
+    up <- object@up
+    down <- object@down
+    
+    
+    ownerPre.up <- up@ownerPre
+    ownerPre.down <- down@ownerPre
+    pricesUp <- up@prices
+    marginsUp <- up@margins
+    
+    id <- data.frame(up.firm=ownerToVec(up),
+                     up.firm=ownerToVec(down)
+                     )
+    
+    
+    #down <- calcSlopes(down)
+    
+    pricesDown <- calcPrices(down, preMerger=TRUE)
+    marginsDown <- calcMargins(down, preMerger= TRUE)
+    
+    nprods <- nrow(id)
+    
+    if(constrain == "pair"){
+      id <- with(id,interaction(up.firm,down.firm))
+    }
+    else if(constrain =="wholesaler"){
+      id <- with(id,up.firm)
+    }
+    else if(constrain =="retailer"){
+      id <- with(id,down.firm)
+    }
+    else{ id <- rep(1,nprods)}
+    
+    
+
+    marginsDown <- marginsDown*pricesDown
+    marginsUp <- marginsUp*pricesUp
+    
+    
+    
+    div <- diversion(down, preMerger=TRUE) 
+   
+    
+    regressor <- solve(ownerPre.up * div) %*% (ownerPre.down * div) %*% marginsDownPred
+    regressor <- as.vector(regressor)
+    
+    normbarg <- coef(lm(marginsUp~0+id:regressor))
+    names(normbarg) <- gsub(":.*","",names(normbarg))
+    
+    bargparm <- 1/(1+normbarg) 
+    
+    bargparm <- bargparm[id]
+    
+    
+    
+    up@bargpower <- bargparm
+    object@up <- up
+    object@down <- down
+    
+    
+    return(object)
+    
+  }
+)
+
+
 
 #'@rdname Params-Methods
 #'@export

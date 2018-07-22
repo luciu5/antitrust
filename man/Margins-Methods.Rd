@@ -7,10 +7,12 @@
 \alias{calcMargins,ANY-method}
 \alias{calcMargins,AIDS-method}
 \alias{calcMargins,Bertrand-method}
+\alias{calcMargins,Bargaining-method}
 \alias{calcMargins,LogitCap-method}
 \alias{calcMargins,Auction2ndLogit-method}
 \alias{calcMargins,Cournot-method}
 \alias{calcMargins,Bertrand-method}
+\alias{calcMargins,Bargaining-method}
 \alias{calcMargins,Auction2ndCap-method}
 \alias{calcMargins,Cournot-method}
 \alias{calcMargins,AIDS-method}
@@ -19,6 +21,8 @@
 \title{Methods for Calculating Diagnostics}
 \usage{
 \S4method{calcMargins}{Bertrand}(object, preMerger = TRUE)
+
+\S4method{calcMargins}{Bargaining}(object, preMerger = TRUE)
 
 \S4method{calcMargins}{Auction2ndCap}(object, preMerger = TRUE,
   exAnte = TRUE)

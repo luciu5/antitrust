@@ -23,6 +23,7 @@
 \alias{calcSlopes,Auction2ndLogitALM-method}
 \alias{calcSlopes,Cournot-method}
 \alias{calcSlopes,Stackelberg-method}
+\alias{calcSlopes,VertBargBertLogit-method}
 \alias{getParms}
 \alias{getParms,ANY-method}
 \alias{getParms,Bertrand-method}
@@ -46,6 +47,7 @@
 \alias{calcSlopes,CES-method}
 \alias{calcSlopes,CESALM-method}
 \alias{calcSlopes,CESNests-method}
+\alias{calcSlopes,VertBargBertLogit-method}
 \alias{getParms,Bertrand-method}
 \alias{getNestsParms,PCAIDSNests-method}
 \title{Methods for Calculating Demand Parameters}
@@ -85,6 +87,9 @@
 \S4method{calcSlopes}{CESALM}(object)
 
 \S4method{calcSlopes}{CESNests}(object)
+
+\S4method{calcSlopes}{VertBargBertLogit}(object, constrain = c("global",
+  "pair", "wholesaler", "retailer"))
 
 \S4method{getParms}{Bertrand}(object, digits = 10)
 
