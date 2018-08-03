@@ -167,7 +167,7 @@ setMethod(
 
 
     ## how to deal with multiple products?
-    stop("A work in progress!!")
+    error("A work in progress!! May not properly handle multiple products")
 
     calcMonopolySurplus <- function(quantCand){
 
@@ -441,7 +441,7 @@ setMethod(
     ownerMon <- object@ownerPre
     ownerMon[prodIndex,] <- 0
     ownerMon[,prodIndex] <- 0
-    ownerMon <- ownerMon[prodIndex,prodIndex] <- 1
+    ownerMon[prodIndex,prodIndex] <- 1
 
     object@ownerPre <- ownerMon
 
