@@ -97,13 +97,14 @@
 #' ## 2 downstream firms, each offering 
 #' ## a single product.
 #' 
-#' shareDown <- c( 0.25, 0.17, 0.25, 0.31)
-#' marginDown <- c(0.28, 0.32, 0.33, 0.38)
-#' priceDown <- c( 49.2, 42.2, 53.3, 46.3)
-#' ownerPreDown <- paste0("D",rep(c(1,2),2))
-#' marginUp <- c(0.27, 0.18, 0.25, 0.48)
-#' priceUp <- c(47.4, 69.6, 85.5, 45.6)
+#' shareDown <- c( 0.1293482, 0.1422541, 0.4631014, 0.2152962)
+#' marginDown <- c( 0.2067533, 0.2572215, 0.3082511, 0.3539681)
+#' priceDown <- c( 63.08158, 50.70465, 95.82960, 83.45267)
+#' ownerPreDown <- paste0("D",rep(c(1,2),each=2))
+#' marginUp <- c(0.5810900, 0.5331135, 0.5810900, 0.5331135)
+#' priceUp <- c( 40.11427, 27.73734, 40.11427, 27.73734)
 #' ownerPreUp <- paste0("U",rep(c(1,2),2))
+#' priceOutSide <- 10
 #'
 #'
 #' ## Simulate an upstream horizontal merger
@@ -118,7 +119,8 @@
 #' pricesUp = priceUp,
 #' marginsUp = marginUp,
 #' ownerPreUp = ownerPreUp,
-#' ownerPostUp = ownerPostUp)
+#' ownerPostUp = ownerPostUp,
+#' priceOutside = priceOutSide)
 #' 
 #' 
 #' ## simulate a horizontal 
@@ -129,15 +131,16 @@ NULL
 #'@export
 
 
-vertical.barg.bert <- function(sharesDown,
+vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
                   pricesDown,marginsDown,
                   ownerPreDown,ownerPostDown,
                   mcDeltaDown=rep(0,length(pricesDown)),
                   pricesUp,marginsUp,
                   ownerPreUp,ownerPostUp,
                   mcDeltaUp=rep(0,length(pricesUp)),
-                  normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
-                  subset=rep(TRUE,length(prices)),
+                  normIndex=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE)),1, NA),
+                  subsetDown=rep(TRUE,length(pricesDown)),
+                  subsetUp=rep(TRUE,length(pricesUp)),
                   insideSize = NA_real_,
                   priceOutside = 0,
                   priceStartDown = pricesDown,
@@ -146,7 +149,7 @@ vertical.barg.bert <- function(sharesDown,
                   constrain = c("global","pair","wholesaler","retailer"),
                   control.slopes,
                   control.equ,
-                  labels= paste("Prod1",1:length(pricesUp)),
+                  labels= paste0("Prod",1:length(pricesUp)),
                   ...
 ){
 
@@ -155,8 +158,10 @@ vertical.barg.bert <- function(sharesDown,
   
   ## Create  containers to store relevant data
   
-  up <- new("Bargaining",prices=pricesUp,
+  up <- new("Bargaining",
+              prices=pricesUp,
               shares = sharesDown,
+              subset=subsetUp,
               margins=marginsUp,
               ownerPre=ownerPreUp,
               ownerPost=ownerPostUp,
@@ -168,10 +173,7 @@ vertical.barg.bert <- function(sharesDown,
   up@ownerPre  <- ownerToMatrix(up,TRUE)
   up@ownerPost <- ownerToMatrix(up,FALSE)
   
-  ## Calculate upstream marginal costs
-  up@mcPre <-  calcMC(up,TRUE)
-  up@mcPost <- calcMC(up,FALSE)
-  
+ 
   down <- new("Logit",prices=pricesDown, shares=sharesDown,
                 margins=marginsDown,
                 normIndex=normIndex,
@@ -179,7 +181,7 @@ vertical.barg.bert <- function(sharesDown,
                 ownerPost=ownerPostDown,
                 insideSize=insideSize,
                 mcDelta=mcDeltaDown,
-                subset=subset,
+                subset=subsetDown,
                 priceOutside=priceOutside,
                 priceStart=priceStartDown,
                 shareInside=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE,tolerance=1e-3)),1,sum(sharesDown)),
@@ -193,18 +195,14 @@ vertical.barg.bert <- function(sharesDown,
   ## Calculate downstream demand slope coefficients
   down <- calcSlopes(down)
   
-  
-  ## Calculate downstream marginal costs
-  down@mcPre <-  calcMC(down,TRUE)
-  down@mcPost <- calcMC(down,FALSE)
-  
+
 
   ##save upstream and downstream data
   result <- new("VertBargBertLogit",
                 up = up,
                 down = down
                 )
-  
+ 
   if(!missing(control.slopes)){
     result@control.slopes <- control.slopes
   }
@@ -215,9 +213,22 @@ vertical.barg.bert <- function(sharesDown,
 
   ## compute bargaining paramters
   result <- calcSlopes(result, constrain = constrain)
+
  
-  ## Solve Non-Linear System for Price Changes
+  ## Calculate marginal costs
+  mcPre <- calcMC(result,TRUE)
+  mcPost <- calcMC(result,FALSE)
   
+  result@down@mcPre <-  mcPre$down
+  result@down@mcPost <- mcPost$down
+  
+  result@up@mcPre <-  mcPre$up
+  result@up@mcPost <- mcPost$up
+  
+  
+   
+  ## Solve Non-Linear System for Price Changes
+
   resultsPre  <- calcPrices(result,preMerger=TRUE)
   resultsPost <- calcPrices(result,preMerger=FALSE,subset=subset)
 
@@ -230,3 +241,5 @@ vertical.barg.bert <- function(sharesDown,
   return(result)
 
 }
+
+

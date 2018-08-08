@@ -89,7 +89,8 @@ setMethod(
     if(is.matrix(thisOwner)){
 
       thisOwner <- unique(thisOwner)
-      thisOwner <- as.numeric(thisOwner>=0.5) * (1: nrow(thisOwner))
+      mode(thisOwner) <- "numeric"
+      thisOwner <- (thisOwner>=0.5) * (1: nrow(thisOwner))
       thisOwner <- apply(thisOwner,2,max)
 
     }

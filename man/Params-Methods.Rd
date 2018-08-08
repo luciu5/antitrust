@@ -27,6 +27,7 @@
 \alias{getParms}
 \alias{getParms,ANY-method}
 \alias{getParms,Bertrand-method}
+\alias{getParms,VertBargBertLogit-method}
 \alias{getNestsParms}
 \alias{getNestsParms,PCAIDSNests-method}
 \alias{calcSlopes,Cournot-method}
@@ -49,6 +50,7 @@
 \alias{calcSlopes,CESNests-method}
 \alias{calcSlopes,VertBargBertLogit-method}
 \alias{getParms,Bertrand-method}
+\alias{getParms,VertBargBertLogit-method}
 \alias{getNestsParms,PCAIDSNests-method}
 \title{Methods for Calculating Demand Parameters}
 \usage{
@@ -92,6 +94,8 @@
   "pair", "wholesaler", "retailer"))
 
 \S4method{getParms}{Bertrand}(object, digits = 10)
+
+\S4method{getParms}{VertBargBertLogit}(object, digits = 10)
 
 \S4method{getNestsParms}{PCAIDSNests}(object)
 }

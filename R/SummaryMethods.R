@@ -78,7 +78,13 @@ setMethod(
       sumlabels=paste("shares",c("Pre","Post"),sep="")
     }
 
-    mcDelta <- object@mcDelta * 100
+    mcDelta <- object@mcDelta
+    
+    if(!grepl("auction2nd",class(object),ignore.case=TRUE)){
+      
+      mcDelta <- mcDelta * 100
+    }
+    
 
     if(levels){outDelta <- outPost - outPre}
     else{outDelta <- (outPost/outPre - 1) * 100}
@@ -185,6 +191,159 @@ setMethod(
     return(invisible(results))
 
   })
+
+
+setMethod(
+  f= "summary",
+  signature= "VertBargBertLogit",
+  definition=function(object,revenue=TRUE,
+                      #shares=TRUE,
+                      levels=FALSE,parameters=FALSE,market=FALSE,insideOnly = TRUE,digits=2,...){
+    
+    curWidth <-  getOption("width")
+    
+    up <- object@up
+    down <- object@down
+    
+    priceUpPre   <-  up@pricePre
+    priceUpPost  <-  up@pricePost
+    priceDownPre   <-  down@pricePre
+    priceDownPost  <-  down@pricePost
+    
+     priceDelta <- calcPriceDelta(object,levels=levels)
+    
+    if(!levels) priceDelta <- lapply(priceDelta, function(x){x*100})
+    
+    #if(!shares && !all(is.na(object@prices))){
+    #  outPre  <-  calcQuantities(object,preMerger=TRUE)
+    #  outPost <-  calcQuantities(object,preMerger=FALSE)
+      
+    #  if(revenue){
+    #    outPre <- pricePre*outPre
+    #    outPost <- pricePost*outPost
+    #  }
+      
+    #  sumlabels=paste("quantity",c("Pre","Post"),sep="")
+    #}
+    
+    #else{
+    #  if(!shares){warning("'shares' equals FALSE but 'calcQuantities' not defined. Reporting shares instead of quantities")}
+      
+      outPre  <-  calcShares(object,preMerger=TRUE,revenue=revenue) * 100
+      outPost <-  calcShares(object,preMerger=FALSE,revenue=revenue) * 100
+      
+      if(insideOnly){
+        outPre <- outPre/sum(outPre)* 100
+        outPost <- outPost/sum(outPost)* 100
+      }
+      
+      sumlabels=paste("shares",c("Pre","Post"),sep="")
+    #}
+    
+    mcDeltaUp   <- up@mcDelta * 100
+    mcDeltaDown <- down@mcDelta * 100
+    
+    if(levels){outDelta <- outPost - outPre}
+    else{outDelta <- (outPost/outPre - 1) * 100}
+    
+    
+    isPartyDown <- rowSums( abs(down@ownerPost - down@ownerPre))>0
+    isPartyUp <- rowSums( abs(up@ownerPost - up@ownerPre))>0
+    isParty <- factor(isPartyDown | isPartyUp,levels=c(FALSE,TRUE),labels=c(" ","*"))
+    
+    results <- data.frame(priceUpPre=priceUpPre,priceUpPost=priceUpPost,
+                          priceUpDelta=priceDelta$up,
+                          priceDownPre=priceDownPre,priceDownPost=priceDownPost,
+                          priceDownDelta=priceDelta$down,outputPre=outPre,
+                          outputPost=outPost,outputDelta=outDelta)
+    
+    
+    
+    if(sum(abs(mcDeltaUp))>0) results <- cbind(results,mcDeltaUp=mcDeltaUp)
+    if(sum(abs(mcDeltaDown))>0) results <- cbind(results,mcDeltaDown=mcDeltaDown)
+    
+    
+    rownames(results) <- paste(isParty,down@labels)
+    
+    sharesPost <- calcShares(object,FALSE,revenue)
+    
+    if(market){
+      
+      thiscmcr <- thiscv <- NA
+      #try(thiscmcr <- cmcr(object), silent=TRUE)
+      try(thiscv <- CV(object),silent = TRUE)
+      
+      #thispsdelta  <- NA_real_
+      #try(thispsdelta  <- sum(calcProducerSurplus(object,preMerger=FALSE) - calcProducerSurplus(object,preMerger=TRUE),na.rm=TRUE),silent=TRUE)
+      
+      isparty <- isParty == "*"
+      
+      
+      hhiUp <- as.integer(HHI(outputPre/sum(outputPre),owner=up@ownerPost) - HHI(outputPre/sum(outputPre),owner=up@ownerPre))
+      hhiDown <- as.integer(HHI(outputPre/sum(outputPre),owner=down@ownerPost) - HHI(outputPre/sum(outputPre),owner=down@ownerPre))
+      
+      results <- with(results,
+                      data.frame(
+                        'HHI Change' =  max(hhiUp,hhiDown),
+                        'Up Price Change (%)' = sum(priceDelta$up * outputPost/sum(outputPost),na.rm=TRUE),
+                        'Down Price Change (%)' = sum(priceDelta$down * outputPost/sum(outputPost),na.rm=TRUE),
+                        'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty]),
+                        #'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty]),
+                        'Consumer Harm ($)' = thiscv,
+                        #'Producer Benefit ($)' = thispsdelta,
+                        #'Difference ($)'= thiscv - thispsdelta,
+                        check.names=FALSE
+                      ))
+      
+      if(levels){colnames(results) <- gsub("%","$/unit",colnames(results))}
+      
+      
+    }
+    
+    colnames(results)[colnames(results) %in% c("outputPre","outputPost")] <- sumlabels
+    
+    cat("\nMerger simulation results under '",class(object),"' demand:\n\n",sep="")
+    
+    options("width"=ifelse(market,25,100)) # this width ensures that everything gets printed on the same line
+    print(round(results,digits),digits=digits, row.names=ifelse(market, FALSE, TRUE))
+    options("width"=curWidth) #restore to current width
+    
+    
+    
+    if(!market){
+      
+      results <- cbind(isParty, results)
+      rownames(results) <- down@labels
+      
+      cat("\n\tNotes: '*' indicates merging parties' products.\n ")
+      if(levels){cat("\tDeltas are level changes.\n")}
+      else{cat("\tDeltas are percent changes.\n")}
+      if(revenue){cat("\tOutput is based on revenues.\n")}
+      else{cat("\tOutput is based on units sold.\n")}
+      
+    }
+    
+    
+    
+    cat("\n\n")
+    
+    
+    if(parameters){
+      
+      print(getParms(object), digits=digits)
+        
+      
+      if(.hasSlot(object,"constraint") && object@constraint){cat("\nNote: (non-singleton) nesting parameters are constrained to be equal")}
+      cat("\n\n")
+      
+    }
+    
+    
+    return(invisible(results))
+    
+  })
+
+
 
 #'@rdname summary-methods
 #'@export

@@ -81,7 +81,7 @@
 #' \code{\linkS4class{CESALM}}, or \code{\linkS4class{AIDS}},
 #' depending upon the value of the ``demand'' argument.
 #' @author Charles Taragin \email{charles.taragin@usdoj.gov}
-#' @include Auction2ndCapLogitFunctions.R
+#' @include Auction2ndLogitFunctions.R
 NULL
 
 #'@rdname Bertrand-Functions

@@ -553,6 +553,23 @@ setMethod(
 #'@export
 setMethod(
   f= "calcShares",
+  signature= "VertBargBertLogit",
+  definition=function(object,preMerger=TRUE,revenue=FALSE){
+    
+   
+    
+    down <- object@down
+    result <- calcShares(down, preMerger=preMerger,revenue=revenue)
+    return(result)
+    
+    
+    }
+)
+
+#'@rdname Output-Methods
+#'@export
+setMethod(
+  f= "calcShares",
   signature= "Logit",
   definition=function(object,preMerger=TRUE,revenue=FALSE){
 

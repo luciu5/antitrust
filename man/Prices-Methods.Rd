@@ -33,7 +33,7 @@
   subset, ...)
 
 \S4method{calcPrices}{Auction2ndLogit}(object, preMerger = TRUE,
-  exAnte = FALSE, subset)
+  exAnte = FALSE)
 
 \S4method{calcPrices}{LogitCap}(object, preMerger = TRUE, isMax = FALSE,
   subset, ...)

@@ -5,17 +5,19 @@
 \alias{vertical}
 \alias{vertical.barg.bert}
 \alias{vertical.varg.2nd}
-\alias{vertical.barg.bert}
+\alias{vertical.barg}
 \title{Supply Chain Merger Simulation}
 \usage{
-vertical.barg.bert(sharesDown, pricesDown, marginsDown, ownerPreDown,
-  ownerPostDown, mcDeltaDown = rep(0, length(pricesDown)), pricesUp,
-  marginsUp, ownerPreUp, ownerPostUp, mcDeltaUp = rep(0, length(pricesUp)),
-  normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)),
-  1, NA), subset = rep(TRUE, length(prices)), insideSize = NA_real_,
+vertical.barg(supplyDown = c("bertrand", "2nd"), sharesDown, pricesDown,
+  marginsDown, ownerPreDown, ownerPostDown, mcDeltaDown = rep(0,
+  length(pricesDown)), pricesUp, marginsUp, ownerPreUp, ownerPostUp,
+  mcDeltaUp = rep(0, length(pricesUp)),
+  normIndex = ifelse(isTRUE(all.equal(sum(sharesDown), 1, check.names =
+  FALSE)), 1, NA), subsetDown = rep(TRUE, length(pricesDown)),
+  subsetUp = rep(TRUE, length(pricesUp)), insideSize = NA_real_,
   priceOutside = 0, priceStartDown = pricesDown, priceStartUp = pricesUp,
   isMax = FALSE, constrain = c("global", "pair", "wholesaler", "retailer"),
-  control.slopes, control.equ, labels = paste("Prod1", 1:length(pricesUp)),
+  control.slopes, control.equ, labels = paste0("Prod", 1:length(pricesUp)),
   ...)
 }
 \arguments{
@@ -60,11 +62,6 @@ inside product whose mean valuation will be normalized to 1. Default
 is 1, unless \sQuote{shares} sum to less than 1, in which case the default is
 NA and an outside good is assumed to exist.}
 
-\item{subset}{A vector of length k where each element equals TRUE if
-the product indexed by that element should be included in the
-post-merger simulation and FALSE if it should be excluded.Default is a
-length k vector of TRUE.}
-
 \item{insideSize}{An integer equal to total pre-merger units sold.
 If shares sum to one, this also equals the size of the market.}
 
@@ -95,6 +92,11 @@ optimizer used to solve for equilibrium prices.}
 
 \item{marginsup}{A length k vector of upstream product margins, some of which may
 equal NA.}
+
+\item{subset}{A vector of length k where each element equals TRUE if
+the product indexed by that element should be included in the
+post-merger simulation and FALSE if it should be excluded.Default is a
+length k vector of TRUE.}
 
 \item{parmsStart}{For \code{logit.cap.alm}, a length-2 vector of starting values
 used to solve for the price coefficient and outside share (in that order). For
@@ -136,13 +138,14 @@ calibrated parameters to simulate a merger between two firms.
 ## 2 downstream firms, each offering 
 ## a single product.
 
-shareDown <- c( 0.25, 0.17, 0.25, 0.31)
-marginDown <- c(0.28, 0.32, 0.33, 0.38)
-priceDown <- c( 49.2, 42.2, 53.3, 46.3)
-ownerPreDown <- paste0("D",rep(c(1,2),2))
-marginUp <- c(0.27, 0.18, 0.25, 0.48)
-priceUp <- c(47.4, 69.6, 85.5, 45.6)
+shareDown <- c( 0.1293482, 0.1422541, 0.4631014, 0.2152962)
+marginDown <- c( 0.2067533, 0.2572215, 0.3082511, 0.3539681)
+priceDown <- c( 63.08158, 50.70465, 95.82960, 83.45267)
+ownerPreDown <- paste0("D",rep(c(1,2),each=2))
+marginUp <- c(0.5810900, 0.5331135, 0.5810900, 0.5331135)
+priceUp <- c( 40.11427, 27.73734, 40.11427, 27.73734)
 ownerPreUp <- paste0("U",rep(c(1,2),2))
+priceOutSide <- 10
 
 
 ## Simulate an upstream horizontal merger
@@ -157,7 +160,8 @@ ownerPostDown = ownerPreDown,
 pricesUp = priceUp,
 marginsUp = marginUp,
 ownerPreUp = ownerPreUp,
-ownerPostUp = ownerPostUp)
+ownerPostUp = ownerPostUp,
+priceOutside = priceOutSide)
 
 
 ## simulate a horizontal 

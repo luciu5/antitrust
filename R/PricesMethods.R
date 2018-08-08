@@ -187,10 +187,9 @@ setMethod(
 setMethod(
   f= "calcPrices",
   signature= "Auction2ndLogit",
-  definition=function(object,preMerger=TRUE,exAnte=FALSE,subset){
+  definition=function(object,preMerger=TRUE,exAnte=FALSE){
 
     nprods <- length(object@shares)
-    if(missing(subset)){subset <- rep(TRUE,nprods)}
 
     if(preMerger){
       owner <- object@ownerPre
@@ -200,7 +199,7 @@ setMethod(
       owner <- object@ownerPost
       mc <- object@mcPost}
 
-    margins <- calcMargins(object,preMerger,exAnte=FALSE,subset=subset)
+    margins <- calcMargins(object,preMerger,exAnte=FALSE)
 
     prices <- margins + mc
 
@@ -472,19 +471,21 @@ setMethod(
     down <- object@down
     
     
-    subset <- down@subset
+    subsetDown <- down@subset
+    subsetUp <- up@subset
     alpha <- down@slopes$alpha
-    meanval <- down@slopes$meanval[subset]
-    bargparm <- up@bargparm[subset]
+    meanval <- down@slopes$meanval[subsetDown]
+    bargparm <- up@bargpower[subsetDown]
     
     priceStartUp <- up@priceStart
     priceStartDown <- down@priceStart
-    priceStart <- c(priceStartUp[subset],priceStartDown[subset])
+    priceStart <- c(priceStartUp[subsetDown],priceStartDown[subsetDown])
     
     
-    nprods <- nrow(mcDown[subset])
+    nprods <- length(meanval)
     
-    FOC.1st<-function(priceCand,mkt,preMerger=TRUE  
+    FOC <-function(priceCand
+                      #, preMerger=TRUE  
                       #subset=rep(TRUE,length(mkt$down$meanval))
                       #,useEst = FALSE, level = "all"
                       ){
@@ -492,30 +493,30 @@ setMethod(
        
         
       
-      priceCandUp= rep(NA, 1,nprods)[subset] 
+      priceCandUp= rep(NA, 1,nprods)[subsetDown] 
       priceCandUp <- priceCand[1:length(priceCandUp)]
       priceCandDown <- priceCand[-(1:length(priceCandUp))]
       
       #v <- mkt$vertical
       
       if(preMerger){
-        ownerUp <- up@ownerPre[subset,subset]
-        ownerDown <- down@ownerPre[subset,subset]
+        ownerUp <- up@ownerPre[subsetDown,subsetDown]
+        ownerDown <- down@ownerPre[subsetDown,subsetDown]
         
         down@pricePre <- priceCandDown
-        mcUp <- up@mcPre[subset]
-        mcDown <- down@mcPre[subset]
+        mcUp <- up@mcPre[subsetDown]
+        mcDown <- down@mcPre[subsetDown]
         
       }
       
       else{
         
-        ownerUp <- up@ownerPost[subset,subset]
-        ownerDown <- down@ownerPost[subset,subset]
+        ownerUp <- up@ownerPost[subsetDown,subsetDown]
+        ownerDown <- down@ownerPost[subsetDown,subsetDown]
         
         down@pricePost <- priceCandDown
-        mcUp <- up@mcPost[subset]
-        mcDown <- down@mcPost[subset]
+        mcUp <- up@mcPost[subsetDown]
+        mcDown <- down@mcPost[subsetDown]
       
         }
       
@@ -524,8 +525,15 @@ setMethod(
       
       
       
-      shareCandDown  <- calcShares(down, preMerger=preMerger)
-      marginsDownCand <- calcMargins(down, preMerger=preMerger)
+      shareCandDown  <- calcShares(down, preMerger=preMerger,revenue=FALSE)
+      #marginsDownCand <- calcMargins(down, preMerger=preMerger)*priceCandDown
+      
+     
+      elast <-  -alpha*tcrossprod(shareCandDown)
+      diag(elast) <- alpha*shareCandDown + diag(elast)
+      elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
+      if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
+      marginsDownCand <- -as.vector(elast.inv %*% shareCandDown)
       
       
       
@@ -540,7 +548,7 @@ setMethod(
       #}
       #else{
         
-        marginsUpCand <-  (1-bargparm)/bargparm * as.vector(solve(ownerUp * div) %*% (ownerDown * div) %*% marginsDownCand)
+        marginsUpCand <-  (1-bargparm)/bargparm * as.vector(MASS::ginv(ownerUp * div) %*% (ownerDown * div) %*% marginsDownCand)
         #upFOC<- as.vector(bargparm *((ownerUp * div) %*% (priceCandUp-mcUp))  -  (1-bargparm) * ((ownerDown * div) %*% marginsDownCand))
         
         
@@ -556,15 +564,15 @@ setMethod(
     }
     
    
-      minResult   <- try(nleqslv(priceStart,FOC,mkt=mkt,preMerger=preMerger, subset=subset, useEst=useEst, level = level)$x,silent=TRUE)
+      minResult   <- nleqslv(priceStart,FOC)$x
       
       minResultUp <- rep(NA, length(priceStartUp))
       minResultDown <- rep(NA, length(priceStartDown))
       
         
         
-      minResultUp[subset] <- minResult[1:length(priceStartUp[subset])] 
-      minResultDown[subset] <- minResult[-(1:length(priceStartUp[subset]))]
+      minResultUp[subsetDown] <- minResult[1:length(priceStartUp[subsetDown])] 
+      minResultDown[subsetDown] <- minResult[-(1:length(priceStartUp[subsetDown]))]
     
    
       return(list(up=minResultUp,down=minResultDown)) 

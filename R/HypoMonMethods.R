@@ -167,7 +167,7 @@ setMethod(
 
 
     ## how to deal with multiple products?
-    error("A work in progress!! May not properly handle multiple products")
+    stop("A work in progress!! May not properly handle multiple products")
 
     calcMonopolySurplus <- function(quantCand){
 

@@ -13,9 +13,10 @@ LazyLoad: yes
 Collate: 
     'AntitrustClasses.R'
     'BertrandClasses.R'
+    'BargainingClasses.R'
     'BertrandRUMClasses.R'
-    'VerticalClasses.R'
     'AuctionClasses.R'
+    'VerticalClasses.R'
     'CournotClasses.R'
     'AntitrustMethods.R'
     'SummaryMethods.R'
@@ -39,7 +40,7 @@ Collate:
     'DiagnosticsMethods.R'
     'AIDSFunctions.R'
     'Auction2ndCapFunctions.R'
-    'Auction2ndCapLogitFunctions.R'
+    'Auction2ndLogitFunctions.R'
     'BertrandFunctions.R'
     'CESFunctions.R'
     'CMCRBertrandFunctions.R'
@@ -51,6 +52,5 @@ Collate:
     'SimFunctions.R'
     'Antitrust_Shiny.R'
     'AntitrustPackage.R'
-    'BargainingClasses.R'
     'VerticalFunctions.R'
 RoxygenNote: 6.0.1

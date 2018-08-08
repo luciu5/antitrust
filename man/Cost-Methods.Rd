@@ -6,7 +6,7 @@
 \alias{calcMC}
 \alias{calcMC,ANY-method}
 \alias{calcMC,Bertrand-method}
-\alias{calcMC,Bargaining-method}
+\alias{calcMC,VertBargBertLogit-method}
 \alias{calcMC,Auction2ndLogit-method}
 \alias{calcMC,Cournot-method}
 \alias{calcMC,Auction2ndCap-method}
@@ -17,6 +17,7 @@
 \alias{calcVC,ANY-method}
 \alias{calcVC,Cournot-method}
 \alias{calcMC,Bertrand-method}
+\alias{calcMC,VertBargBertLogit-method}
 \alias{calcMC,Auction2ndCap-method}
 \alias{calcMC,Cournot-method}
 \alias{calcMC,Auction2ndLogit-method}
@@ -25,6 +26,8 @@
 \title{Methods for Calculating marginal and Variable Costs}
 \usage{
 \S4method{calcMC}{Bertrand}(object, preMerger = TRUE)
+
+\S4method{calcMC}{VertBargBertLogit}(object, preMerger = TRUE)
 
 \S4method{calcMC}{Auction2ndCap}(object, t, preMerger = TRUE, exAnte = TRUE)
 

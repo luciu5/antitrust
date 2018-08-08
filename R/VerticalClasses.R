@@ -1,6 +1,6 @@
 #'@title \dQuote{Vertical} Classes
 #'@name Vertical-Classes
-#'@include BertrandRUMClasses.R
+#'@include BertrandRUMClasses.R AuctionClasses.R BargainingClasses.R
 #'@description The \dQuote{Vertical} class is a building block used to create other classes
 #'in this package. As such, it is most likely to be useful for developers
 #'who wish to code their own calibration/simulation routines.
@@ -28,6 +28,8 @@ setClass(
 setClass(
   
   Class = "VertBarg2ndLogit",
+  contains = "VertBargBertLogit"
+  ,
   representation=representation(
     up = "Bargaining",
     down = "Auction2ndLogit"

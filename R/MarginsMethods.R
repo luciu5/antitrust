@@ -6,7 +6,7 @@
 #' calcMargins,ANY-method
 #' calcMargins,AIDS-method
 #' calcMargins,Bertrand-method
-#' calcMargins,Bargaining-method
+#' calcMargins,VertBargBertLogit-method
 #' calcMargins,LogitCap-method
 #' calcMargins,Auction2ndLogit-method
 #' calcMargins,Cournot-method
@@ -75,40 +75,63 @@ setMethod(
 #'@export
 setMethod(
   f= "calcMargins",
-  signature= "Bargaining",
+  signature= "VertBargBertLogit",
   definition=function(object,preMerger=TRUE){
     
-    shares <- calcShares(object, preMerger=preMerger, revenue=FALSE)
-    bargparm <- object@bargpower
+    up <- object@up
+    down <- object@down
+    alpha <- down@slopes$alpha
+    
+   
+    bargparm <- up@bargpower
     
     if( preMerger) {
       
-      owner  <- object@ownerPre
-      revenue<- calcShares(object,preMerger,revenue=TRUE)
+      ownerUp  <- up@ownerPre
+      if(length(up@pricePre) == 0 ){
+      priceUp <- up@prices
+      }
+      else{priceUp <- up@prices}
       
-      elast <-  elast(object,preMerger)
-      div <- diversion(object, preMerger)
+      ownerDown  <- down@ownerPre
+      if(length(down@pricePre) == 0 ){
+        priceDown <- down@prices
+        down@pricePre <- priceDown
+      }
+      else{priceDown <- down@prices}
       
-      elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
-      if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
-      marginsDown <-   -as.vector(elast.inv %*% shareCandDown)
-      margins <- (1-bargparm)/bargparm * as.vector(solve(ownerUp * div) %*% (ownerDown * div) %*% marginsDown)
+      down@mcPre <- down@mcPre + priceUp
+      marginsDown <- calcMargins(down, preMerger=preMerger )
+      
+      
+      div <- diversion(down,  preMerger=preMerger)
+      
+      
+      
+      marginsUp <- (1-bargparm)/bargparm * as.vector(solve(ownerUp * div) %*% (ownerDown * div) %*% (marginsDown*priceDown)) #margins in levels
+      marginsUp <- marginsUp/priceUp
      
       
       
     }
     
     else{
-      prices <- object@pricePost
-      mc     <- object@mcPost
+      priceUp <- up@pricePost
+      mcUp     <- up@mcPost
+      priceDown <- down@pricePost
+      mcDown     <- down@mcPost + priceUp
       
-      margins <- 1 - mc/prices
+      marginsUp <- 1 - mcUp/priceUp
+      marginsDown <- 1 - mcDown/priceDown
     }
     
     
-    names(margins) <- object@labels
     
-    return(as.vector(margins))
+    names(marginsUp) <- up@labels
+    names(marginsDown) <- down@labels
+    
+    return(list(up=as.vector(marginsUp), down = as.vector(marginsDown))
+           )
   }
   
 )
@@ -226,17 +249,12 @@ setMethod(
 setMethod(
   f= "calcMargins",
   signature= "Auction2ndLogit",
-  definition=function(object,preMerger=TRUE,exAnte=FALSE,subset){
+  definition=function(object,preMerger=TRUE,exAnte=FALSE){
 
 
     nprods <- length(object@shares)
-
-    if(missing(subset)){
-      subset <- rep(TRUE,nprods)
-    }
-
-    if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
-
+    subset <- object@subset
+   
     margins <- rep(NA,nprods)
 
     if( preMerger) {

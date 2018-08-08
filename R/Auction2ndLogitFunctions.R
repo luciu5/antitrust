@@ -1,5 +1,5 @@
 #' @title 2nd Score Procurement Auction Model
-#' @name Auction2ndCapLogit-Functions
+#' @name Auction2ndLogit-Functions
 #' @aliases auction2nd.logit
 #' auction2nd.logit.alm
 #'
@@ -109,7 +109,7 @@
 #' @include Auction2ndCapFunctions.R
 NULL
 
-#'@rdname Auction2ndCapLogit-Functions
+#'@rdname Auction2ndLogit-Functions
 #'@export
 auction2nd.logit <- function(prices,shares,margins,
                              ownerPre,ownerPost,
@@ -153,14 +153,14 @@ auction2nd.logit <- function(prices,shares,margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre  <- calcPrices(result,preMerger=TRUE)
-  result@pricePost <- calcPrices(result,preMerger=FALSE,subset=subset)
+  result@pricePost <- calcPrices(result,preMerger=FALSE)
 
   return(result)
 
 }
 
 
-#'@rdname Auction2ndCapLogit-Functions
+#'@rdname Auction2ndLogit-Functions
 #'@export
 auction2nd.logit.alm <- function(prices,shares,margins,
                                  ownerPre,ownerPost,
@@ -221,7 +221,7 @@ auction2nd.logit.alm <- function(prices,shares,margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre  <- calcPrices(result,preMerger=TRUE)
-  result@pricePost <- calcPrices(result,preMerger=FALSE,subset=subset)
+  result@pricePost <- calcPrices(result,preMerger=FALSE)
 
   return(result)
 

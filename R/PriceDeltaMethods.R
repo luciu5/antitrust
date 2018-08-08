@@ -8,6 +8,7 @@
 #' calcPriceDelta,AIDS-method
 #' calcPriceDelta,Auction2ndLogit-method
 #' calcPriceDelta,Cournot-method
+#' calcPriceDelta,VertBargBertLogit-method
 #'
 #' @description For Antitrust, the method computes equilibrium price changes
 #' due to a merger assuming that firms are playing a
@@ -65,6 +66,33 @@ setMethod(
 
     return(priceDelta)
 
+  }
+)
+
+#'@rdname PriceDelta-Methods
+#'@export
+setMethod(
+  f= "calcPriceDelta",
+  signature= "VertBargBertLogit",
+  definition=function(object, levels = FALSE, market = FALSE, ...  ){
+    
+    up <- object@up
+    down <- object@down
+    
+    downDelta <- calcPriceDelta(down,levels = levels, market = market, ...)
+    upDelta   <-  calcPriceDelta(up,levels = levels, market = FALSE, ...)
+    
+    if(market){
+      shares <- calcShares(down, ...)
+      shares <- shares/sum(shares,na.rm=TRUE)
+      upDelta <- sum(upDelta*shares,na.rm=TRUE)
+    }
+   
+    priceDelta <- list(up = upDelta,
+                       down= downDelta)
+    
+    return(priceDelta)
+    
   }
 )
 
@@ -158,7 +186,7 @@ setMethod(
     else{sharesPost <- rep(1,length(subset))}
 
 
-    result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte,subset=subset) + mcDelta -
+    result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte) + mcDelta -
       calcMargins(object, preMerger=TRUE,exAnte=exAnte)
 
     if(!levels){result <- result/calcPrices(object,preMerger = TRUE, exAnte = exAnte )}

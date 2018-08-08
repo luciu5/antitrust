@@ -5,7 +5,7 @@
 #' @aliases calcMC
 #' calcMC,ANY-method
 #' calcMC,Bertrand-method
-#' calcMC,Bargaining-method
+#' calcMC,VertBargBertLogit-method
 #' calcMC,Auction2ndLogit-method
 #' calcMC,Cournot-method
 #' calcMC,Auction2ndCap-method
@@ -102,6 +102,53 @@ setMethod(
     }
 
     return(mc)
+  }
+)
+
+#'@rdname Cost-Methods
+#'@export
+setMethod(
+  f= "calcMC",
+  signature= "VertBargBertLogit",
+  definition= function(object,preMerger=TRUE){
+    
+    up <- object@up
+    down <- object@down
+    
+    mcDown <- calcMC(down, preMerger = TRUE)
+    mcDown <- mcDown - up@prices #isolate the portion of costs that exclude wholesaer 
+    
+    
+    marginUpPre <- calcMargins(object,preMerger = TRUE)$up
+    
+    mcUp <- (1 - marginUpPre) * up@prices
+    
+    if(!preMerger){
+      mcUp <- mcUp*(1+up@mcDelta)
+      mcDown <- mcDown*(1+down@mcDelta)
+    }
+    
+    mcUp <- as.vector(mcUp)
+    mcDown <- as.vector(mcDown)
+    
+    names(mcUp) <- up@labels
+    names(mcDown) <- down@labels
+    
+    
+    
+    isNegUpMC <- mcUp < 0
+    isNegDownMC <- mcDown < 0
+    
+    if( preMerger && any(isNegUpMC, na.rm = TRUE)){
+      
+      warning(paste("Negative upstream marginal costs were calibrated for the following firms:", paste(up@labels[isNegUpMC], collapse=",")))
+    }
+    if( preMerger && any(isNegDownMC, na.rm = TRUE)){
+      
+      warning(paste("Negative downstream marginal costs were calibrated for the following firms:", paste(down@labels[isNegDownMC], collapse=",")))
+    }
+    
+    return(list(up=mcUp,down=mcDown))
   }
 )
 

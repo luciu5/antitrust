@@ -7,12 +7,12 @@
 \alias{calcMargins,ANY-method}
 \alias{calcMargins,AIDS-method}
 \alias{calcMargins,Bertrand-method}
-\alias{calcMargins,Bargaining-method}
+\alias{calcMargins,VertBargBertLogit-method}
 \alias{calcMargins,LogitCap-method}
 \alias{calcMargins,Auction2ndLogit-method}
 \alias{calcMargins,Cournot-method}
 \alias{calcMargins,Bertrand-method}
-\alias{calcMargins,Bargaining-method}
+\alias{calcMargins,VertBargBertLogit-method}
 \alias{calcMargins,Auction2ndCap-method}
 \alias{calcMargins,Cournot-method}
 \alias{calcMargins,AIDS-method}
@@ -22,7 +22,7 @@
 \usage{
 \S4method{calcMargins}{Bertrand}(object, preMerger = TRUE)
 
-\S4method{calcMargins}{Bargaining}(object, preMerger = TRUE)
+\S4method{calcMargins}{VertBargBertLogit}(object, preMerger = TRUE)
 
 \S4method{calcMargins}{Auction2ndCap}(object, preMerger = TRUE,
   exAnte = TRUE)
@@ -34,7 +34,7 @@
 \S4method{calcMargins}{LogitCap}(object, preMerger = TRUE)
 
 \S4method{calcMargins}{Auction2ndLogit}(object, preMerger = TRUE,
-  exAnte = FALSE, subset)
+  exAnte = FALSE)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

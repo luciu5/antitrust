@@ -1,6 +1,6 @@
 #'@title \dQuote{Bargaining} Classes
 #'@name Bargaining-Class
-#'@include AntitrustClasses.R
+#'@include BertrandClasses.R
 #'@description The \dQuote{Bargaining} class is a building block used to create other classes
 #'in this package. As such, it is most likely to be useful for developers
 #'who wish to code their own calibration/simulation routines.
@@ -20,7 +20,7 @@ setClass(
   representation=representation(
     bargpower       = "numeric",
     prices           = "numeric",
-    margins          = "numeric" ,
+    margins          = "numeric",
     priceStart       = "numeric"
   ),
   prototype=prototype(

@@ -26,6 +26,7 @@
 #' getParms
 #' getParms,ANY-method
 #' getParms,Bertrand-method
+#' getParms,VertBargBertLogit-method
 #' getNestsParms
 #' getNestsParms,PCAIDSNests-method
 #'
@@ -1981,13 +1982,14 @@ setMethod(
     marginsUp <- up@margins
     
     id <- data.frame(up.firm=ownerToVec(up),
-                     up.firm=ownerToVec(down)
+                     down.firm=ownerToVec(down)
                      )
     
     
-    #down <- calcSlopes(down)
+   
     
-    pricesDown <- calcPrices(down, preMerger=TRUE)
+    pricesDown <- down@prices
+    down@pricePre <- pricesDown
     marginsDown <- calcMargins(down, preMerger= TRUE)
     
     nprods <- nrow(id)
@@ -2013,7 +2015,7 @@ setMethod(
     div <- diversion(down, preMerger=TRUE) 
    
     
-    regressor <- solve(ownerPre.up * div) %*% (ownerPre.down * div) %*% marginsDownPred
+    regressor <- solve(ownerPre.up * div) %*% (ownerPre.down * div) %*% marginsDown
     regressor <- as.vector(regressor)
     
     normbarg <- coef(lm(marginsUp~0+id:regressor))
@@ -2022,11 +2024,14 @@ setMethod(
     bargparm <- 1/(1+normbarg) 
     
     bargparm <- bargparm[id]
+    names(bargparm) <- down@labels
     
     
     
     up@bargpower <- bargparm
     object@up <- up
+    
+    down@pricePre <- numeric()
     object@down <- down
     
     
@@ -2059,6 +2064,36 @@ setMethod(
     return(result)
 
   })
+
+#'@rdname Params-Methods
+#'@export
+setMethod(
+  f= "getParms",
+  signature= "VertBargBertLogit",
+  definition=function(object,digits=10){
+    up <- object@up
+    down <- object@down
+    
+    if(is.list(down@slopes)){
+      result <- lapply(down@slopes,round,digits=digits)
+    }
+    else{
+      
+      result <-  list(slopes = round(object@slopes,digits),
+                      intercepts =  round(object@intercepts,digits)
+      )
+      
+    }
+    
+    mcPre <- calcMC(object, preMerger=TRUE)
+    result$mcUpPre <- round(mcPre$up,digits)
+    result$mcDownPre <- round(mcPre$down,digits)
+    result$bargpower <- round(up@bargpower,digits)
+    
+    return(result)
+    
+  })
+
 
 #'@rdname Params-Methods
 #'@export

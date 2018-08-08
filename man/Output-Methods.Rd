@@ -43,6 +43,7 @@
 \alias{calcShares,Auction2ndCap-method}
 \alias{calcShares,Cournot-method}
 \alias{calcShares,Linear-method}
+\alias{calcShares,VertBargBertLogit-method}
 \alias{calcShares,Logit-method}
 \alias{calcShares,AIDS-method}
 \alias{calcShares,LogitNests-method}
@@ -82,6 +83,9 @@
 \S4method{calcShares}{Cournot}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{Linear}(object, preMerger = TRUE, revenue = FALSE)
+
+\S4method{calcShares}{VertBargBertLogit}(object, preMerger = TRUE,
+  revenue = FALSE)
 
 \S4method{calcShares}{Logit}(object, preMerger = TRUE, revenue = FALSE)
 
