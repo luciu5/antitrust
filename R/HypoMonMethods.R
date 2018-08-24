@@ -36,6 +36,7 @@
 #'
 #' @param object An instance of one of the classes listed above.
 #' @param prodIndex A vector of product indices that are to be placed under the control of the Hypothetical Monopolist.
+#' @param plantIndex A vector of plant indices that are to be placed under the control of the Hypothetical Monopolist (Cournot).
 #' @param ssnip A number between 0 and 1 that equals the threshold for a \dQuote{Small but Significant and
 #' Non-transitory Increase in Price} (SSNIP). Default is .05, or 5\%.
 #' @param ... Pass options to the optimizer used to solve for equilibrium prices.
@@ -154,28 +155,72 @@ setMethod(
 #'@rdname defineMarketTools-methods
 #'@export
 setMethod(
+  f= "HypoMonTest",
+  signature= "Cournot",
+  definition=function(object,plantIndex,prodIndex,ssnip=.05,...){
+    
+    ownerPre <- object@ownerPre
+    nprods   <- ncol(ownerPre)
+    nplants <- nrow(ownerPre)
+
+    
+    if(missing(plantIndex) || any(plantIndex>nplants | plantIndex <1 ) ){
+      stop("'plantIndex' must be a vector of plant indices between 1 and ",nplants)
+    }
+    
+    if(missing(prodIndex) || length(prodIndex) != 1 || any(prodIndex>nprods | prodIndex <1 ) ){
+      stop("'prodIndex' must be between between 1 and ",nprods)
+    }
+    if(length(ssnip)>1 || ssnip<0 | ssnip>1 ){stop("'ssnip' must be a number between 0 and 1")}
+    
+    isParty <- rowSums( abs(object@ownerPost - object@ownerPre) )>0 #identify which plants belong to the merging parties
+    
+    if(identical(length(intersect(which(isParty),plantIndex)),0)){
+      stop("'planIndex' does not contain any of the merging parties' plants. Add at least one of the following indices: ",
+           paste(which(isParty),collapse=","))
+    }
+    
+    
+    
+    pricesDelta <-  calcPriceDeltaHypoMon(object,prodIndex=prodIndex,plantIndex=plantIndex,...)
+    
+    
+    result <-pricesDelta > ssnip
+    
+    return( result)
+  }
+  
+)
+
+
+#'@rdname defineMarketTools-methods
+#'@export
+setMethod(
   f= "calcPricesHypoMon",
   signature= "Cournot",
-  definition=function(object,plantIndex){
-
+  definition=function(object,plantIndex,prodIndex){
+    
+    
     nhypoplants <- length(plantIndex)
-    intercept <- object@intercepts
-    nprods <- length(intercept)
-    slopes <- object@slopes
-    quantityPre <- as.vector(object@quantityPre)
-    demand <- object@demand
-
+    
+    nprods <- length(prodIndex)
+    
+    intercept <- object@intercepts[prodIndex]
+    slopes <- object@slopes[prodIndex]
+    quantityPre <- as.vector(object@quantityPre[plantIndex,prodIndex])
+    quantFixed <- colSums(object@quantityPre[-plantIndex,prodIndex,drop=FALSE])
+    demand <- object@demand[prodIndex]
+    
 
     ## how to deal with multiple products?
-    stop("A work in progress!! May not properly handle multiple products")
+    #stop("A work in progress!! May not properly handle multiple products")
 
     calcMonopolySurplus <- function(quantCand){
 
-
-      quantityPre[plantIndex] <- quantCand
-      quantCand <- matrix(quantCand,ncol=nprods)
-      object@quantityPre <- quantCand
-      mktQuant <- colSums(quantCand, na.rm = TRUE)
+      
+      quantCand <- matrix(quantCand,ncol=nprods, nrow=nhypoplants)
+      object@quantityPre[plantIndex,prodIndex] <- quantCand
+      mktQuant <- quantFixed + colSums(quantCand, na.rm = TRUE)
 
       priceCand <- ifelse(demand == "linear",
                           intercept + slopes * mktQuant,
@@ -184,7 +229,7 @@ setMethod(
       vcCand <- calcVC(object, preMerger=TRUE)
       vcCand <- vcCand[plantIndex]
 
-      revCand <-  colSums(priceCand*t(quantCand[plantIndex,]), na.rm=TRUE)
+      revCand <-  colSums(priceCand*t(quantCand), na.rm=TRUE)
 
 
       surplus <- sum(revCand - vcCand, na.rm =TRUE)
@@ -194,10 +239,11 @@ setMethod(
 
     if( nhypoplants > 1){
 
-      maxResult <- optim(object@quantityPre[plantIndex],
+      maxResult <- optim(quantityPre,
                          calcMonopolySurplus,
                          method="L-BFGS-B",
-                         lower = rep(0,nhypoplants)
+                         lower = rep(0,nhypoplants),
+                         control = list(fnscale=-1)
       )
 
       quantitiesHM <- maxResult$par
@@ -211,10 +257,16 @@ setMethod(
       quantitiesHM <- maxResult$maximum
     }
 
-    quantityPre[plantIndex]
-    names(pricesHM) <- object@labels[plantIndex]
 
-    return(pricesHM)
+    quantitiesHM <- matrix(quantitiesHM, nrow=nhypoplants,ncol=nprods)
+    mktQuant <- quantFixed + colSums(quantitiesHM)
+    priceHM <- ifelse(demand == "linear",
+                        intercept + slopes * mktQuant,
+                        exp(intercept)*mktQuant^slopes)
+    
+    
+    names(priceHM) <- object@labels[[2]][prodIndex]
+    return(priceHM)
 
 
   })
@@ -497,6 +549,23 @@ setMethod(
 
     return(pricesDelta)
 
+  })
+
+
+#'@rdname defineMarketTools-methods
+#'@export
+setMethod(
+  f= "calcPriceDeltaHypoMon",
+  signature= "Cournot",
+  definition=function(object,prodIndex,plantIndex,...){
+    
+    
+    pricesHM <-  calcPricesHypoMon(object,prodIndex=prodIndex,plantIndex=plantIndex,...)
+    
+    pricesDelta <- pricesHM/object@pricePre[prodIndex] - 1
+    
+    return(pricesDelta)
+    
   })
 
 
