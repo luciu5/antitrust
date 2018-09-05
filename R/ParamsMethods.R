@@ -1392,8 +1392,7 @@ setMethod(
     margins      <-  object@margins
     prices       <-  object@prices
     idx          <-  object@normIndex
-
-
+    
 
 
     ## Uncover price coefficient and mean valuation from margins and revenue shares
@@ -1437,7 +1436,8 @@ setMethod(
     names(meanval)   <- object@labels
 
     object@slopes    <- list(alpha=minAlpha,meanval=meanval)
-
+    object@mktSize   <- object@insideSize/object@shareInside
+    
 
     return(object)
   }
@@ -1457,6 +1457,7 @@ setMethod(
     margins      <-  object@margins
     mktElast     <-  object@mktElast
     prices       <-  object@prices
+   
 
     avgPrice     <- sum(shares * prices,na.rm=TRUE)/sum(shares[!is.na(prices)])
 
