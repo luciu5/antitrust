@@ -25,6 +25,7 @@
 \alias{diversionHypoMon,AIDS-method}
 \alias{diversionHypoMon,Bertrand-method}
 \alias{HypoMonTest,Bertrand-method}
+\alias{HypoMonTest,Cournot-method}
 \alias{calcPricesHypoMon,Cournot-method}
 \alias{calcPricesHypoMon,Linear-method}
 \alias{calcPricesHypoMon,Logit-method}
@@ -35,12 +36,16 @@
 \alias{diversionHypoMon,Bertrand-method}
 \alias{diversionHypoMon,AIDS-method}
 \alias{calcPriceDeltaHypoMon,Bertrand-method}
+\alias{calcPriceDeltaHypoMon,Cournot-method}
 \alias{calcPriceDeltaHypoMon,AIDS-method}
 \title{Methods For Implementing The Hypothetical Monopolist Test}
 \usage{
 \S4method{HypoMonTest}{Bertrand}(object, prodIndex, ssnip = 0.05, ...)
 
-\S4method{calcPricesHypoMon}{Cournot}(object, plantIndex)
+\S4method{HypoMonTest}{Cournot}(object, plantIndex, prodIndex, ssnip = 0.05,
+  ...)
+
+\S4method{calcPricesHypoMon}{Cournot}(object, plantIndex, prodIndex)
 
 \S4method{calcPricesHypoMon}{Linear}(object, prodIndex)
 
@@ -60,6 +65,8 @@
 
 \S4method{calcPriceDeltaHypoMon}{Bertrand}(object, prodIndex, ...)
 
+\S4method{calcPriceDeltaHypoMon}{Cournot}(object, prodIndex, plantIndex, ...)
+
 \S4method{calcPriceDeltaHypoMon}{AIDS}(object, prodIndex, ...)
 }
 \arguments{
@@ -71,6 +78,8 @@
 Non-transitory Increase in Price} (SSNIP). Default is .05, or 5\%.}
 
 \item{...}{Pass options to the optimizer used to solve for equilibrium prices.}
+
+\item{plantIndex}{A vector of plant indices that are to be placed under the control of the Hypothetical Monopolist (Cournot).}
 
 \item{plantIndex}{A vector of plant indices that are to be placed under the control of the Hypothetical Monopolist.}
 }
