@@ -483,8 +483,8 @@ definition=function(object,market=FALSE,revenue=FALSE,shares=FALSE,levels=FALSE,
 
 
   out <- data.frame(product=ids$product,
-                    plant=ids$plant,outPre=as.vector(t(outPre)),
-                    outPost = as.vector(t(outPost)))
+                    plant=ids$plant,outPre=as.vector(outPre),
+                    outPost = as.vector(outPost))
 
   if(market) {out$plant <- NULL}
   else{
