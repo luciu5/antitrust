@@ -86,7 +86,7 @@ setMethod(
     slopes <- object@slopes
     intercepts <- object@intercepts
     quantityStart <- object@quantityStart
-    #quantityStart[is.na(quantityStart)] = 0
+    quantityStart[is.na(quantityStart)] = 0
 
     if(preMerger){
       if(market) return(sum(object@quantityPre, na.rm=TRUE))

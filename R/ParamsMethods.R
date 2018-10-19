@@ -152,9 +152,9 @@ setMethod(
 
     if(noCosts){
 
-      if(isLinearD) {margStart <- rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE) }
-      else{margStart <-  rowMeans(-sharesOwner*bStart,na.rm=TRUE)}
-
+      margStart     <- matrix(rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE), ncol=nprods, nrow=nplants)
+      margStart[,!isLinearD]     <-  rowMeans(-sharesOwner*bStart,na.rm=TRUE)
+      
       mcStart  <- abs(prices*(margStart - 1))
       capStart <- ifelse(isLinearC, quantPlants/mcStart, mcStart)
       parmStart <- c(capStart,parmStart)

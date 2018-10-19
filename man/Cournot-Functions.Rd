@@ -45,7 +45,7 @@ be either be between 0 and 1, or NA.}
 demand curve is assumed to be linear or "log" if a product's demand curve
 is assumed to be log-linear.}
 
-\item{cost}{A length k character vector equal to "linear" if a plant's
+\item{cost}{A length n character vector equal to "linear" if a plant's
 marginal cost curve is assumed to be linear or "constant" if a plant's marginal curve
 is assumed to be constant. Returns an error if a multi-plant firm with constant marginal costs
 does not have capacity constraints.}
