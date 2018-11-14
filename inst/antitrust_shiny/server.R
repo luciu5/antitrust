@@ -981,6 +981,7 @@ shinyServer(function(input, output, session) {
                                                                                            margins= margins,
                                                                                            ownerPre= ownerPre,
                                                                                            ownerPost= ownerPost,
+                                                                                           insideSize = insideSize,
                                                                                            mcDelta = indata$mcDelta, labels=indata$Name),
                                        logit = auction2nd.logit.alm(prices= prices,
                                                                     shares= shares_quantity,
