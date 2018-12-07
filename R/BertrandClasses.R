@@ -37,7 +37,7 @@
 #'@slot prices A length k vector product prices. (Linear only)
 #'@slot quantities A length k vector of product quantities. (Linear only)
 #'@slot margins A length k vector of product margins. All margins must be between 0 and 1. (Linear only)
-#'@slot diversion A k x k matrix of diversion ratios with diagonal elements equal to 1. (Linear only)
+#'@slot diversion A k x k matrix of diversion ratios with diagonal elements equal to -1. (Linear only)
 #'@slot priceStart A length k vector of prices used as the initial guess in the nonlinear equation solver. (Linear and AIDS only)
 #'@slot symmetry If TRUE, requires the matrix of demand slope coefficients to be consistent with utility maximization theory.
 #'Default is false. (Linear and LogLin only)
