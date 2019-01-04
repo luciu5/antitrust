@@ -8,11 +8,10 @@
 \alias{diversion,ANY-method}
 \alias{diversion,AIDS-method}
 \alias{diversion,Bertrand-method}
-\alias{diversion,Bertrand-method}
-\alias{diversion,AIDS-method}
 \title{Methods For Calculating Diversion}
 \usage{
-\S4method{diversion}{Bertrand}(object, preMerger = TRUE, revenue = FALSE)
+\S4method{diversion}{Bertrand}(object, preMerger = TRUE,
+  revenue = FALSE)
 
 \S4method{diversion}{AIDS}(object, preMerger = TRUE, revenue = TRUE)
 }

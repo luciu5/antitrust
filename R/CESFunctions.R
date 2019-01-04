@@ -15,6 +15,8 @@
 #' @param shares A length k vector of product revenue shares.
 #' @param margins A length k vector of product margins, some of which may
 #' equal NA.
+#' @param diversions A k x k matrix of diversion ratios with diagonal
+#' elements equal to -1. Default is missing.
 #' @param nests A length k vector identifying the nest that each
 #' product belongs to.
 #' @param ownerPre EITHER a vector of length k whose values
@@ -175,7 +177,7 @@ NULL
 
 #'@rdname CES-Functions
 #'@export
-ces <- function(prices,shares,margins,
+ces <- function(prices,shares,margins,  diversions,
                 ownerPre,ownerPost,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 insideSize = NA_real_,
@@ -191,10 +193,11 @@ ces <- function(prices,shares,margins,
 ){
 
 
-
+  if(missing(diversions)){diversions <- matrix(NA,nrow=length(shares),ncol=length(shares))}
 
   ## Create CES  container to store relevant data
-  result <- new("CES",prices=prices, shares=shares, margins=margins,
+  result <- new("CES",prices=prices, shares=shares, margins=margins, 
+                diversion=diversions,
                 normIndex=normIndex,
                 mcDelta=mcDelta,
                 insideSize = insideSize,

@@ -8,9 +8,6 @@
 \alias{upp,Bertrand-method}
 \alias{upp,AIDS-method}
 \alias{upp,Auction2ndLogit-method}
-\alias{upp,Bertrand-method}
-\alias{upp,AIDS-method}
-\alias{upp,Auction2ndLogit-method}
 \title{Methods For Calculating Upwards Pricing Pressure Index (Bertrand)}
 \usage{
 \S4method{upp}{Bertrand}(object)

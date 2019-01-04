@@ -15,15 +15,6 @@
 \alias{CV,LogitNests-method}
 \alias{CV,Auction2ndLogit-method}
 \alias{CV,Cournot-method}
-\alias{CV,Cournot-method}
-\alias{CV,Linear-method}
-\alias{CV,Logit-method}
-\alias{CV,LogLin-method}
-\alias{CV,AIDS-method}
-\alias{CV,LogitNests-method}
-\alias{CV,Auction2ndLogit-method}
-\alias{CV,CES-method}
-\alias{CV,CESNests-method}
 \title{Methods For Calculating Compensating Variation (CV)}
 \usage{
 \S4method{CV}{Cournot}(object)

@@ -15,10 +15,10 @@ vertical.barg(supplyDown = c("bertrand", "2nd"), sharesDown, pricesDown,
   normIndex = ifelse(isTRUE(all.equal(sum(sharesDown), 1, check.names =
   FALSE)), 1, NA), subsetDown = rep(TRUE, length(pricesDown)),
   subsetUp = rep(TRUE, length(pricesUp)), insideSize = NA_real_,
-  priceOutside = 0, priceStartDown = pricesDown, priceStartUp = pricesUp,
-  isMax = FALSE, constrain = c("global", "pair", "wholesaler", "retailer"),
-  control.slopes, control.equ, labels = paste0("Prod", 1:length(pricesUp)),
-  ...)
+  priceOutside = 0, priceStartDown = pricesDown,
+  priceStartUp = pricesUp, isMax = FALSE, constrain = c("global",
+  "pair", "wholesaler", "retailer"), control.slopes, control.equ,
+  labels = paste0("Prod", 1:length(pricesUp)), ...)
 }
 \arguments{
 \item{sharesDown}{A length k vector of product (quantity) shares. Values must be

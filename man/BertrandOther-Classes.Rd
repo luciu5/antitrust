@@ -51,7 +51,7 @@ post-merger simulation and FALSE if it should be excluded.}
 
 \item{\code{margins}}{A length k vector of product margins. All margins must be between 0 and 1. (Linear only)}
 
-\item{\code{diversion}}{A k x k matrix of diversion ratios with diagonal elements equal to 1. (Linear only)}
+\item{\code{diversion}}{A k x k matrix of diversion ratios with diagonal elements equal to -1.}
 
 \item{\code{priceStart}}{A length k vector of prices used as the initial guess in the nonlinear equation solver. (Linear and AIDS only)}
 

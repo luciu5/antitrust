@@ -6,17 +6,15 @@
 \alias{upp.bertrand}
 \alias{upp}
 \alias{cmcr}
-\alias{cmcr.bertrand}
-\alias{upp.bertrand}
 \title{Compensating Marginal Cost Reductions and Upwards Pricing Pressure (Bertrand)}
 \usage{
-cmcr.bertrand(prices, margins, diversions, ownerPre, ownerPost = matrix(1,
-  ncol = length(prices), nrow = length(prices)), labels = paste("Prod",
-  1:length(prices), sep = ""))
-
-upp.bertrand(prices, margins, diversions, ownerPre, ownerPost = matrix(1, ncol
-  = length(prices), nrow = length(prices)), mcDelta = rep(0, length(prices)),
+cmcr.bertrand(prices, margins, diversions, ownerPre,
+  ownerPost = matrix(1, ncol = length(prices), nrow = length(prices)),
   labels = paste("Prod", 1:length(prices), sep = ""))
+
+upp.bertrand(prices, margins, diversions, ownerPre, ownerPost = matrix(1,
+  ncol = length(prices), nrow = length(prices)), mcDelta = rep(0,
+  length(prices)), labels = paste("Prod", 1:length(prices), sep = ""))
 }
 \arguments{
 \item{prices}{A length-k vector of product prices.}

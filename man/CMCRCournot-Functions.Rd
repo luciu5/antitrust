@@ -4,15 +4,13 @@
 \alias{CMCRCournot-Functions}
 \alias{cmcr.cournot}
 \alias{upp.cournot}
-\alias{cmcr.cournot}
-\alias{upp.cournot}
 \title{Compensating Marginal Cost Reductions and Upwards Pricing Pressure (Cournot)}
 \usage{
 cmcr.cournot(shares, mktElast)
 
 upp.cournot(prices, margins, ownerPre, ownerPost = matrix(1, ncol =
-  length(prices), nrow = length(prices)), mcDelta = rep(0, length(prices)),
-  labels = paste("Prod", 1:length(prices), sep = ""))
+  length(prices), nrow = length(prices)), mcDelta = rep(0,
+  length(prices)), labels = paste("Prod", 1:length(prices), sep = ""))
 }
 \arguments{
 \item{shares}{A length-2 vector containing merging party quantity shares.}

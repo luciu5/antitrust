@@ -11,13 +11,7 @@
 \alias{calcMargins,LogitCap-method}
 \alias{calcMargins,Auction2ndLogit-method}
 \alias{calcMargins,Cournot-method}
-\alias{calcMargins,Bertrand-method}
-\alias{calcMargins,VertBargBertLogit-method}
 \alias{calcMargins,Auction2ndCap-method}
-\alias{calcMargins,Cournot-method}
-\alias{calcMargins,AIDS-method}
-\alias{calcMargins,LogitCap-method}
-\alias{calcMargins,Auction2ndLogit-method}
 \title{Methods for Calculating Diagnostics}
 \usage{
 \S4method{calcMargins}{Bertrand}(object, preMerger = TRUE)

@@ -18,6 +18,8 @@
 #'   between 0 and 1.
 #' @param margins A length k vector of product margins, some of which may
 #'   equal NA.
+#' @param diversions A k x k matrix of diversion ratios with diagonal
+#' elements equal to -1. Default is missing.
 #' @param nests A length k vector identifying the nest that each
 #'   product belongs to.
 #' @param capacitiesPre A length k vector of pre-merger product capacities. Capacities
@@ -234,7 +236,7 @@ NULL
 
 #'@rdname Logit-Functions
 #'@export
-logit <- function(prices,shares,margins,
+logit <- function(prices,shares,margins, diversions,
                   ownerPre,ownerPost,
                   normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
                   mcDelta=rep(0,length(prices)),
@@ -249,10 +251,11 @@ logit <- function(prices,shares,margins,
                   ...
 ){
 
+  if(missing(diversions)){diversions <- matrix(NA,nrow=length(shares),ncol=length(shares))}
 
   ## Create Logit  container to store relevant data
   result <- new("Logit",prices=prices, shares=shares,
-                margins=margins,
+                margins=margins, diversion = diversions,
                 normIndex=normIndex,
                 ownerPre=ownerPre,
                 ownerPost=ownerPost,
@@ -292,7 +295,7 @@ logit <- function(prices,shares,margins,
 
 #'@rdname Logit-Functions
 #'@export
-logit.nests <- function(prices,shares,margins,
+logit.nests <- function(prices,shares,margins, diversions,
                         ownerPre,ownerPost,
                         nests=rep(1,length(shares)),
                         normIndex=ifelse(sum(shares) < 1,NA,1),
@@ -309,6 +312,9 @@ logit.nests <- function(prices,shares,margins,
                         ...
 ){
 
+  
+  if(missing(diversions)){diversions <- matrix(NA,nrow=length(shares),ncol=length(shares))}
+  
 
   nests <- factor(nests,levels = unique(nests)) # factor nests, keeping levels in the order in which they appear
   nNestParm <- sum(tapply(nests,nests,length)>1) # count the number of  non-singleton nests
@@ -340,7 +346,7 @@ logit.nests <- function(prices,shares,margins,
 
 
   ## Create LogitNests  container to store relevant data
-  result <- new("LogitNests",prices=prices, margins=margins,
+  result <- new("LogitNests",prices=prices, margins=margins, diversion = diversions,
                 shares=shares,mcDelta=mcDelta,
                 subset=subset,
                 priceOutside=priceOutside,
@@ -639,7 +645,7 @@ logit.cap.alm <- function(prices,shares,margins,
 
   ## Create LogitCap  container to store relevant data
   result <- new("LogitCapALM",prices=prices, shares=shares,
-                margins=margins,
+                margins=margins, 
                 capacitiesPre=capacitiesPre,
                 capacitiesPost=capacitiesPost,
                 mktElast=mktElast,

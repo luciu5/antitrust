@@ -5,8 +5,6 @@
 \alias{Cournot-classes}
 \alias{Cournot-class}
 \alias{Stackelberg-class}
-\alias{Cournot-class}
-\alias{Stackelberg-class}
 \title{\dQuote{Cournot} Classes}
 \description{
 The \dQuote{Cournot} and \dQuote{Stackelberg} classes are building blocks used to create other classes

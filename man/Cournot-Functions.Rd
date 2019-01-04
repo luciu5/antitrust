@@ -6,7 +6,6 @@
 \alias{Cournot}
 \alias{stackelberg}
 \alias{Stackelberg}
-\alias{stackelberg}
 \title{Multi-product Cournot/Stackelberg Calibration and Merger Simulation With Linear or Log-Linear Demand}
 \usage{
 cournot(prices, quantities, margins = matrix(NA_real_, nrow(quantities),
@@ -15,22 +14,22 @@ cournot(prices, quantities, margins = matrix(NA_real_, nrow(quantities),
   mcfunPost = mcfunPre, vcfunPre = list(), vcfunPost = vcfunPre,
   capacitiesPre = rep(Inf, nrow(quantities)),
   capacitiesPost = capacitiesPre, productsPre = !is.na(quantities),
-  productsPost = productsPre, ownerPre, ownerPost, mktElast = rep(NA_real_,
-  length(prices)), mcDelta = rep(0, nrow(quantities)),
-  quantityStart = as.vector(quantities), control.slopes, control.equ, labels,
-  ...)
+  productsPost = productsPre, ownerPre, ownerPost,
+  mktElast = rep(NA_real_, length(prices)), mcDelta = rep(0,
+  nrow(quantities)), quantityStart = as.vector(quantities),
+  control.slopes, control.equ, labels, ...)
 
 stackelberg(prices, quantities, margins, demand = rep("linear",
   length(prices)), cost = rep("linear", nrow(quantities)),
   isLeaderPre = matrix(FALSE, ncol = ncol(quantities), nrow =
   nrow(quantities)), isLeaderPost = isLeaderPre, mcfunPre = list(),
   mcfunPost = mcfunPre, vcfunPre = list(), vcfunPost = vcfunPre,
-  dmcfunPre = list(), dmcfunPost = dmcfunPre, capacitiesPre = rep(Inf,
-  nrow(quantities)), capacitiesPost = capacitiesPre,
-  productsPre = !is.na(quantities), productsPost = productsPre, ownerPre,
-  ownerPost, mcDelta = rep(0, nrow(quantities)),
-  quantityStart = as.vector(quantities), control.slopes, control.equ, labels,
-  ...)
+  dmcfunPre = list(), dmcfunPost = dmcfunPre,
+  capacitiesPre = rep(Inf, nrow(quantities)),
+  capacitiesPost = capacitiesPre, productsPre = !is.na(quantities),
+  productsPost = productsPre, ownerPre, ownerPost, mcDelta = rep(0,
+  nrow(quantities)), quantityStart = as.vector(quantities),
+  control.slopes, control.equ, labels, ...)
 }
 \arguments{
 \item{prices}{A length k vector product prices.}

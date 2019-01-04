@@ -10,14 +10,10 @@
 \alias{calcPriceDelta,Auction2ndLogit-method}
 \alias{calcPriceDelta,Cournot-method}
 \alias{calcPriceDelta,VertBargBertLogit-method}
-\alias{calcPriceDelta,Antitrust-method}
-\alias{calcPriceDelta,VertBargBertLogit-method}
-\alias{calcPriceDelta,AIDS-method}
-\alias{calcPriceDelta,Auction2ndLogit-method}
 \title{Methods For Calculating Price Delta}
 \usage{
-\S4method{calcPriceDelta}{Antitrust}(object, levels = FALSE, market = FALSE,
-  ...)
+\S4method{calcPriceDelta}{Antitrust}(object, levels = FALSE,
+  market = FALSE, ...)
 
 \S4method{calcPriceDelta}{VertBargBertLogit}(object, levels = FALSE,
   market = FALSE, ...)

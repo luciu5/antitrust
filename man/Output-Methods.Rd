@@ -29,60 +29,50 @@
 \alias{calcRevenues,CES-method}
 \alias{calcRevenues,AIDS-method}
 \alias{calcRevenues,Cournot-method}
-\alias{calcQuantities,Cournot-method}
-\alias{calcQuantities,Stackelberg-method}
-\alias{calcQuantities,Linear-method}
-\alias{calcQuantities,Logit-method}
-\alias{calcQuantities,LogLin-method}
-\alias{calcQuantities,AIDS-method}
-\alias{calcQuantities,CES-method}
-\alias{calcRevenues,Bertrand-method}
-\alias{calcRevenues,Cournot-method}
-\alias{calcQuantities,AIDS-method}
-\alias{calcRevenues,CES-method}
 \alias{calcShares,Auction2ndCap-method}
-\alias{calcShares,Cournot-method}
-\alias{calcShares,Linear-method}
 \alias{calcShares,VertBargBertLogit-method}
-\alias{calcShares,Logit-method}
-\alias{calcShares,AIDS-method}
-\alias{calcShares,LogitNests-method}
-\alias{calcShares,Auction2ndLogit-method}
-\alias{calcShares,CES-method}
-\alias{calcShares,CESNests-method}
 \title{Output Methods}
 \usage{
-\S4method{calcQuantities}{Cournot}(object, preMerger = TRUE, market = FALSE,
-  ...)
+\S4method{calcQuantities}{Cournot}(object, preMerger = TRUE,
+  market = FALSE, ...)
 
 \S4method{calcQuantities}{Stackelberg}(object, preMerger = TRUE,
   market = FALSE, ...)
 
-\S4method{calcQuantities}{Linear}(object, preMerger = TRUE, market = FALSE)
+\S4method{calcQuantities}{Linear}(object, preMerger = TRUE,
+  market = FALSE)
 
-\S4method{calcQuantities}{Logit}(object, preMerger = TRUE, market = FALSE)
+\S4method{calcQuantities}{Logit}(object, preMerger = TRUE,
+  market = FALSE)
 
-\S4method{calcQuantities}{LogLin}(object, preMerger = TRUE, market = FALSE,
-  ...)
+\S4method{calcQuantities}{LogLin}(object, preMerger = TRUE,
+  market = FALSE, ...)
 
-\S4method{calcQuantities}{AIDS}(object, preMerger = TRUE, market = FALSE)
+\S4method{calcQuantities}{AIDS}(object, preMerger = TRUE,
+  market = FALSE)
 
-\S4method{calcQuantities}{CES}(object, preMerger = TRUE, market = FALSE)
+\S4method{calcQuantities}{CES}(object, preMerger = TRUE,
+  market = FALSE)
 
-\S4method{calcRevenues}{Bertrand}(object, preMerger = TRUE, market = FALSE)
+\S4method{calcRevenues}{Bertrand}(object, preMerger = TRUE,
+  market = FALSE)
 
-\S4method{calcRevenues}{Cournot}(object, preMerger = TRUE, market = FALSE)
+\S4method{calcRevenues}{Cournot}(object, preMerger = TRUE,
+  market = FALSE)
 
-\S4method{calcQuantities}{AIDS}(object, preMerger = TRUE, market = FALSE)
+\S4method{calcQuantities}{AIDS}(object, preMerger = TRUE,
+  market = FALSE)
 
 \S4method{calcRevenues}{CES}(object, preMerger = TRUE, market = FALSE)
 
 \S4method{calcShares}{Auction2ndCap}(object, preMerger = TRUE,
   exAnte = TRUE)
 
-\S4method{calcShares}{Cournot}(object, preMerger = TRUE, revenue = FALSE)
+\S4method{calcShares}{Cournot}(object, preMerger = TRUE,
+  revenue = FALSE)
 
-\S4method{calcShares}{Linear}(object, preMerger = TRUE, revenue = FALSE)
+\S4method{calcShares}{Linear}(object, preMerger = TRUE,
+  revenue = FALSE)
 
 \S4method{calcShares}{VertBargBertLogit}(object, preMerger = TRUE,
   revenue = FALSE)
@@ -91,14 +81,16 @@
 
 \S4method{calcShares}{AIDS}(object, preMerger = TRUE, revenue = TRUE)
 
-\S4method{calcShares}{LogitNests}(object, preMerger = TRUE, revenue = FALSE)
+\S4method{calcShares}{LogitNests}(object, preMerger = TRUE,
+  revenue = FALSE)
 
 \S4method{calcShares}{Auction2ndLogit}(object, preMerger = TRUE,
   revenue = FALSE, subset)
 
 \S4method{calcShares}{CES}(object, preMerger = TRUE, revenue = FALSE)
 
-\S4method{calcShares}{CESNests}(object, preMerger = TRUE, revenue = FALSE)
+\S4method{calcShares}{CESNests}(object, preMerger = TRUE,
+  revenue = FALSE)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

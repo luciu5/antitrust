@@ -9,10 +9,6 @@
 \alias{cmcr,Auction2ndLogit-method}
 \alias{cmcr,Cournot-method}
 \alias{cmcr,AIDS-method}
-\alias{cmcr,Bertrand-method}
-\alias{cmcr,Cournot-method}
-\alias{cmcr,AIDS-method}
-\alias{cmcr,Auction2ndLogit-method}
 \title{Methods For Calculating Compensating Marginal Cost Reductions}
 \usage{
 \S4method{cmcr}{Bertrand}(object, market = FALSE)

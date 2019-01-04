@@ -16,24 +16,19 @@
 \alias{calcVC}
 \alias{calcVC,ANY-method}
 \alias{calcVC,Cournot-method}
-\alias{calcMC,Bertrand-method}
-\alias{calcMC,VertBargBertLogit-method}
-\alias{calcMC,Auction2ndCap-method}
-\alias{calcMC,Cournot-method}
-\alias{calcMC,Auction2ndLogit-method}
-\alias{calcdMC,Stackelberg-method}
-\alias{calcVC,Cournot-method}
 \title{Methods for Calculating marginal and Variable Costs}
 \usage{
 \S4method{calcMC}{Bertrand}(object, preMerger = TRUE)
 
 \S4method{calcMC}{VertBargBertLogit}(object, preMerger = TRUE)
 
-\S4method{calcMC}{Auction2ndCap}(object, t, preMerger = TRUE, exAnte = TRUE)
+\S4method{calcMC}{Auction2ndCap}(object, t, preMerger = TRUE,
+  exAnte = TRUE)
 
 \S4method{calcMC}{Cournot}(object, preMerger = TRUE)
 
-\S4method{calcMC}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE)
+\S4method{calcMC}{Auction2ndLogit}(object, preMerger = TRUE,
+  exAnte = FALSE)
 
 \S4method{calcdMC}{Stackelberg}(object, preMerger = TRUE)
 

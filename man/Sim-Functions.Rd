@@ -3,14 +3,13 @@
 \name{Sim-Functions}
 \alias{Sim-Functions}
 \alias{sim}
-\alias{sim}
 \title{Merger Simulation With User-Supplied Demand Parameters}
 \usage{
 sim(prices, demand = c("Linear", "AIDS", "LogLin", "Logit", "CES",
   "LogitNests", "CESNests", "LogitCap"), demand.param, ownerPre, ownerPost,
-  nests, capacities, mcDelta = rep(0, length(prices)), subset = rep(TRUE,
-  length(prices)), priceOutside, priceStart, labels = paste("Prod",
-  1:length(prices), sep = ""), ...)
+  nests, capacities, mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)), priceOutside, priceStart,
+  labels = paste("Prod", 1:length(prices), sep = ""), ...)
 }
 \arguments{
 \item{prices}{A length k vector of product prices.}

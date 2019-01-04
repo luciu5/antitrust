@@ -7,8 +7,6 @@
 \alias{calcDiagnostics,ANY-method}
 \alias{calcDiagnostics,Bertrand-method}
 \alias{calcDiagnostics,Cournot-method}
-\alias{calcDiagnostics,Bertrand-method}
-\alias{calcDiagnostics,Cournot-method}
 \title{Methods for Calculating Diagnostics}
 \usage{
 \S4method{calcDiagnostics}{Bertrand}(object, labels = object@labels)

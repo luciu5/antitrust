@@ -5,9 +5,6 @@
 \alias{aids}
 \alias{pcaids}
 \alias{pcaids.nests}
-\alias{aids}
-\alias{pcaids}
-\alias{pcaids.nests}
 \title{(Nested) AIDS Calibration and Merger Simulation}
 \usage{
 aids(shares, margins, prices, diversions, ownerPre, ownerPost,
@@ -18,17 +15,18 @@ aids(shares, margins, prices, diversions, ownerPre, ownerPost,
   1:length(shares), sep = ""), ...)
 
 pcaids(shares, knownElast, mktElast = -1, prices, diversions, ownerPre,
-  ownerPost, knownElastIndex = 1, insideSize = NA_real_, mcDelta = rep(0,
-  length(shares)), subset = rep(TRUE, length(shares)),
+  ownerPost, knownElastIndex = 1, insideSize = NA_real_,
+  mcDelta = rep(0, length(shares)), subset = rep(TRUE, length(shares)),
   priceStart = runif(length(shares)), isMax = FALSE, control.slopes,
   control.equ, labels = paste("Prod", 1:length(shares), sep = ""), ...)
 
-pcaids.nests(shares, margins, knownElast, mktElast = -1, prices, ownerPre,
-  ownerPost, nests = rep(1, length(shares)), knownElastIndex = 1,
-  insideSize = NA_real_, mcDelta = rep(0, length(shares)),
-  subset = rep(TRUE, length(shares)), priceStart = runif(length(shares)),
-  isMax = FALSE, nestsParmStart, control.slopes, control.equ,
-  labels = paste("Prod", 1:length(shares), sep = ""), ...)
+pcaids.nests(shares, margins, knownElast, mktElast = -1, prices,
+  ownerPre, ownerPost, nests = rep(1, length(shares)),
+  knownElastIndex = 1, insideSize = NA_real_, mcDelta = rep(0,
+  length(shares)), subset = rep(TRUE, length(shares)),
+  priceStart = runif(length(shares)), isMax = FALSE, nestsParmStart,
+  control.slopes, control.equ, labels = paste("Prod", 1:length(shares),
+  sep = ""), ...)
 }
 \arguments{
 \item{shares}{A length k vector of product revenue shares. All shares must

@@ -14,14 +14,6 @@
 \alias{elast,Logit-method}
 \alias{elast,LogitNests-method}
 \alias{elast,Cournot-method}
-\alias{elast,Cournot-method}
-\alias{elast,Linear-method}
-\alias{elast,Logit-method}
-\alias{elast,LogLin-method}
-\alias{elast,AIDS-method}
-\alias{elast,LogitNests-method}
-\alias{elast,CES-method}
-\alias{elast,CESNests-method}
 \title{Methods For Calculating Own and Cross-Price Elasticities}
 \usage{
 \S4method{elast}{Cournot}(object, preMerger = TRUE, market = FALSE)

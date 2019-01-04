@@ -8,9 +8,7 @@
 \alias{calcProducerSurplus,Bertrand-method}
 \alias{calcProducerSurplus,Cournot-method}
 \alias{calcProducerSurplusGrimTrigger}
-\alias{calcProducerSurplus,Bertrand-method}
 \alias{calcProducerSurplus,Auction2ndCap-method}
-\alias{calcProducerSurplus,Cournot-method}
 \alias{calcProducerSurplusGrimTrigger,Bertrand-method}
 \title{Producer Surplus Methods}
 \usage{
@@ -21,8 +19,8 @@
 
 \S4method{calcProducerSurplus}{Cournot}(object, preMerger = TRUE)
 
-\S4method{calcProducerSurplusGrimTrigger}{Bertrand}(object, coalition, discount,
-  preMerger = TRUE, isCollusion = FALSE, ...)
+\S4method{calcProducerSurplusGrimTrigger}{Bertrand}(object, coalition,
+  discount, preMerger = TRUE, isCollusion = FALSE, ...)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

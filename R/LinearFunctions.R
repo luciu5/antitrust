@@ -190,9 +190,11 @@ linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
   result@ownerPre  <- ownerToMatrix(result,TRUE)
   result@ownerPost <- ownerToMatrix(result,FALSE)
 
+  
   ## Calculate Demand Slope Coefficients and Intercepts
   result <- calcSlopes(result)
 
+  return(result)
 
   ## Calculate marginal cost
   result@mcPre <-  calcMC(result,TRUE)
@@ -228,6 +230,11 @@ loglinear <- function(prices,quantities,margins,diversions,
     diversions <-  tcrossprod(1/(1-shares),shares)
     diag(diversions) <- -1.000000001 #correct potential floating point issue
   }
+  
+  ##temporary fix for calcSlopes, which hangs when diagonal of diversion matrix
+  ## equals -1.
+  
+  if(isTRUE(all.equal(diag(diversion),rep(-1,length(quantities))))) diag(diversions) <- -1.000000001
 
 
   result <- new("LogLin",prices=prices, quantities=quantities,margins=margins,

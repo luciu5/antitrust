@@ -6,9 +6,6 @@
 \alias{Auction2ndCap-class}
 \alias{Auction2ndLogit-class}
 \alias{Auction2ndLogitALM-class}
-\alias{Auction2ndCap-class}
-\alias{Auction2ndLogit-class}
-\alias{Auction2ndLogitALM-class}
 \title{Class \dQuote{Auction}}
 \description{
 The \dQuote{Auction2ndCap} class contains all the information needed to

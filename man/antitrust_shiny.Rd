@@ -2,7 +2,6 @@
 % Please edit documentation in R/Antitrust_Shiny.R
 \name{antitrust_shiny}
 \alias{antitrust_shiny}
-\alias{antitrust_shiny}
 \title{A Shiny Interface to the Antitrust Package}
 \usage{
 antitrust_shiny()

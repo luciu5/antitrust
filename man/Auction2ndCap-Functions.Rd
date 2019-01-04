@@ -4,14 +4,13 @@
 \alias{Auction2ndCap-Functions}
 \alias{Auction2ndCap}
 \alias{auction2nd.cap}
-\alias{auction2nd.cap}
 \title{(Capacity Constrained) 2nd Price Auction Model}
 \usage{
-auction2nd.cap(capacities, margins, prices, reserve = NA, shareInside = NA,
-  sellerCostCDF = c("punif", "pexp", "pweibull", "pgumbel", "pfrechet"),
-  ownerPre, ownerPost, mcDelta = rep(0, length(capacities)),
-  constrain.reserve = TRUE, parmsStart, control.slopes,
-  labels = as.character(ownerPre), ...)
+auction2nd.cap(capacities, margins, prices, reserve = NA,
+  shareInside = NA, sellerCostCDF = c("punif", "pexp", "pweibull",
+  "pgumbel", "pfrechet"), ownerPre, ownerPost, mcDelta = rep(0,
+  length(capacities)), constrain.reserve = TRUE, parmsStart,
+  control.slopes, labels = as.character(ownerPre), ...)
 }
 \arguments{
 \item{capacities}{A length k vector of firm capacities OR capacity shares.}

@@ -4,19 +4,18 @@
 \alias{Linear-Functions}
 \alias{linear}
 \alias{loglinear}
-\alias{linear}
-\alias{loglinear}
 \title{Linear and Log-Linear Demand Calibration and Merger Simulation}
 \usage{
-linear(prices, quantities, margins, diversions, symmetry = TRUE, ownerPre,
-  ownerPost, mcDelta = rep(0, length(prices)), subset = rep(TRUE,
-  length(prices)), priceStart = prices, control.slopes,
-  labels = paste("Prod", 1:length(prices), sep = ""), ...)
+linear(prices, quantities, margins, diversions, symmetry = TRUE,
+  ownerPre, ownerPost, mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)), priceStart = prices,
+  control.slopes, labels = paste("Prod", 1:length(prices), sep = ""),
+  ...)
 
 loglinear(prices, quantities, margins, diversions, ownerPre, ownerPost,
   mcDelta = rep(0, length(prices)), subset = rep(TRUE, length(prices)),
-  priceStart = prices, control.equ, labels = paste("Prod", 1:length(prices),
-  sep = ""), ...)
+  priceStart = prices, control.equ, labels = paste("Prod",
+  1:length(prices), sep = ""), ...)
 }
 \arguments{
 \item{prices}{A length k vector product prices.}

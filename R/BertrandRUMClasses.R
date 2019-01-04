@@ -139,7 +139,10 @@ setClass(
     priceStart  = numeric(),
     normIndex   = 1,
     shareInside = numeric(),
-    priceOutside = 0
+    priceOutside = 0,
+    control.slopes = list(
+      factr = 1e7
+    )
   ),
   validity=function(object){
 

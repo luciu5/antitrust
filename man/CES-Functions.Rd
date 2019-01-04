@@ -5,30 +5,29 @@
 \alias{ces}
 \alias{ces.alm}
 \alias{ces.nests}
-\alias{ces}
-\alias{ces.alm}
-\alias{ces.nests}
 \title{(Nested) Constant Elasticity of Substitution Demand Calibration and Merger Simulation}
 \usage{
-ces(prices, shares, margins, ownerPre, ownerPost,
+ces(prices, shares, margins, diversions, ownerPre, ownerPost,
   normIndex = ifelse(sum(shares) < 1, NA, 1), insideSize = NA_real_,
   mcDelta = rep(0, length(prices)), subset = rep(TRUE, length(prices)),
-  priceOutside = 1, priceStart = prices, isMax = FALSE, control.slopes,
-  control.equ, labels = paste("Prod", 1:length(prices), sep = ""), ...)
+  priceOutside = 1, priceStart = prices, isMax = FALSE,
+  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
+  sep = ""), ...)
 
-ces.alm(prices, shares, margins, ownerPre, ownerPost, mktElast = NA_real_,
-  insideSize = NA_real_, mcDelta = rep(0, length(prices)),
-  subset = rep(TRUE, length(prices)), priceOutside = 1,
-  priceStart = prices, isMax = FALSE, parmsStart, control.slopes,
-  control.equ, labels = paste("Prod", 1:length(prices), sep = ""), ...)
+ces.alm(prices, shares, margins, ownerPre, ownerPost,
+  mktElast = NA_real_, insideSize = NA_real_, mcDelta = rep(0,
+  length(prices)), subset = rep(TRUE, length(prices)),
+  priceOutside = 1, priceStart = prices, isMax = FALSE, parmsStart,
+  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
+  sep = ""), ...)
 
 ces.nests(prices, shares, margins, ownerPre, ownerPost, nests = rep(1,
   length(shares)), normIndex = ifelse(sum(shares) < 1, NA, 1),
   insideSize = NA_real_, mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)), priceOutside = 1,
   priceStart = prices, isMax = FALSE, constraint = TRUE, parmsStart,
-  control.slopes, control.equ, labels = paste("Prod", 1:length(prices), sep =
-  ""), ...)
+  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
+  sep = ""), ...)
 }
 \arguments{
 \item{prices}{A length k vector of product prices.}
@@ -37,6 +36,9 @@ ces.nests(prices, shares, margins, ownerPre, ownerPost, nests = rep(1,
 
 \item{margins}{A length k vector of product margins, some of which may
 equal NA.}
+
+\item{diversions}{A k x k matrix of diversion ratios with diagonal
+elements equal to -1. Default is missing.}
 
 \item{ownerPre}{EITHER a vector of length k whose values
 indicate which firm produced a product pre-merger OR

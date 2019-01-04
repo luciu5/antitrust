@@ -7,8 +7,6 @@
 \alias{hhi,ANY-method}
 \alias{hhi,Bertrand-method}
 \alias{hhi,Cournot-method}
-\alias{hhi,Bertrand-method}
-\alias{hhi,Cournot-method}
 \title{Methods For Calculating the Herfindahl-Hirschman Index}
 \usage{
 \S4method{hhi}{Bertrand}(object, preMerger = TRUE, revenue = FALSE,

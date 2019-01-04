@@ -13,14 +13,6 @@
 \alias{calcPrices,LogitCap-method}
 \alias{calcPrices,Auction2ndLogit-method}
 \alias{calcPrices}
-\alias{calcPrices,Cournot-method}
-\alias{calcPrices,Auction2ndCap-method}
-\alias{calcPrices,Logit-method}
-\alias{calcPrices,Auction2ndLogit-method}
-\alias{calcPrices,LogitCap-method}
-\alias{calcPrices,Linear-method}
-\alias{calcPrices,LogLin-method}
-\alias{calcPrices,AIDS-method}
 \alias{calcPrices,VertBargBertLogit-method}
 \title{\dQuote{Calculating Prices} Methods}
 \usage{
@@ -35,8 +27,8 @@
 \S4method{calcPrices}{Auction2ndLogit}(object, preMerger = TRUE,
   exAnte = FALSE)
 
-\S4method{calcPrices}{LogitCap}(object, preMerger = TRUE, isMax = FALSE,
-  subset, ...)
+\S4method{calcPrices}{LogitCap}(object, preMerger = TRUE,
+  isMax = FALSE, subset, ...)
 
 \S4method{calcPrices}{Linear}(object, preMerger = TRUE, subset, ...)
 

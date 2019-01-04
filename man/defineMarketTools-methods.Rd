@@ -24,26 +24,13 @@
 \alias{diversionHypoMon,ANY-method}
 \alias{diversionHypoMon,AIDS-method}
 \alias{diversionHypoMon,Bertrand-method}
-\alias{HypoMonTest,Bertrand-method}
 \alias{HypoMonTest,Cournot-method}
-\alias{calcPricesHypoMon,Cournot-method}
-\alias{calcPricesHypoMon,Linear-method}
-\alias{calcPricesHypoMon,Logit-method}
-\alias{calcPricesHypoMon,LogLin-method}
-\alias{calcPricesHypoMon,AIDS-method}
-\alias{calcPricesHypoMon,LogitCap-method}
-\alias{calcPricesHypoMon,Auction2ndLogit-method}
-\alias{diversionHypoMon,Bertrand-method}
-\alias{diversionHypoMon,AIDS-method}
-\alias{calcPriceDeltaHypoMon,Bertrand-method}
-\alias{calcPriceDeltaHypoMon,Cournot-method}
-\alias{calcPriceDeltaHypoMon,AIDS-method}
 \title{Methods For Implementing The Hypothetical Monopolist Test}
 \usage{
 \S4method{HypoMonTest}{Bertrand}(object, prodIndex, ssnip = 0.05, ...)
 
-\S4method{HypoMonTest}{Cournot}(object, plantIndex, prodIndex, ssnip = 0.05,
-  ...)
+\S4method{HypoMonTest}{Cournot}(object, plantIndex, prodIndex,
+  ssnip = 0.05, ...)
 
 \S4method{calcPricesHypoMon}{Cournot}(object, plantIndex, prodIndex)
 
@@ -65,7 +52,8 @@
 
 \S4method{calcPriceDeltaHypoMon}{Bertrand}(object, prodIndex, ...)
 
-\S4method{calcPriceDeltaHypoMon}{Cournot}(object, prodIndex, plantIndex, ...)
+\S4method{calcPriceDeltaHypoMon}{Cournot}(object, prodIndex, plantIndex,
+  ...)
 
 \S4method{calcPriceDeltaHypoMon}{AIDS}(object, prodIndex, ...)
 }

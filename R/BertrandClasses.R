@@ -37,7 +37,7 @@
 #'@slot prices A length k vector product prices. (Linear only)
 #'@slot quantities A length k vector of product quantities. (Linear only)
 #'@slot margins A length k vector of product margins. All margins must be between 0 and 1. (Linear only)
-#'@slot diversion A k x k matrix of diversion ratios with diagonal elements equal to -1. (Linear only)
+#'@slot diversion A k x k matrix of diversion ratios with diagonal elements equal to -1.
 #'@slot priceStart A length k vector of prices used as the initial guess in the nonlinear equation solver. (Linear and AIDS only)
 #'@slot symmetry If TRUE, requires the matrix of demand slope coefficients to be consistent with utility maximization theory.
 #'Default is false. (Linear and LogLin only)
@@ -93,13 +93,15 @@ setClass(
     shares       = "numeric",
     mcDelta      = "numeric",
     slopes       = "matrixOrList",
-    subset       = "logical"
+    subset       = "logical",
+    diversion        = "matrix"
   ),
   prototype=prototype(
 
     slopes          = matrix(),
     mcDelta         = numeric(),
-    subset         =  logical()
+    subset          =  logical(),
+    diversion       = matrix()
 
   ),
   validity=function(object){
@@ -127,7 +129,30 @@ setClass(
 
     if(any(object@mcDelta>0,na.rm=TRUE)){
       warning("positive values of 'mcDelta' imply an INCREASE in marginal costs")}
+    
+    diversion <- object@diversion
+    
+    if(!all(is.na(diversion))){
+      
+    if(!isTRUE(all.equal(diag(diversion),rep(-1,nprods), check.names=FALSE))){ stop("'diversions' diagonal elements must all equal -1")}
+    
+    allhavezeros <- all(apply(diversion,1,function(x){any(x==0)}))
+    if(allhavezeros){stop("every row of 'diversions' contains zeros. Cannot calibrate demand parameters!")}
+    
+    diag(diversion)=1
+    if(any(diversion > 1 | diversion<0)){
+      stop("'diversions' off-diagonal elements must be between 0 and 1")}
+    
+    if (!isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods),check.names=FALSE,tolerance=1e-3)) &&
+        any(rowSums(object@diversion,na.rm=TRUE)>0,na.rm=TRUE)){ stop("'diversions' rows cannot sum to greater than 0")}
+    
+    if(nprods != nrow(object@diversion) ||
+       nprods != ncol(object@diversion)){
+      stop("'diversions' must be a square matrix")
+    }
+    }
 
+    
     return(TRUE)
 
   }
@@ -146,7 +171,6 @@ setClass(
     quantities       = "numeric",
     margins          = "numeric",
     priceStart       = "numeric",
-    diversion        = "matrix",
     symmetry         = "logical"
   ),
   prototype=prototype(
@@ -158,7 +182,7 @@ setClass(
 
 
     nprods <- length(object@shares) # count the number of products
-    diversion <- object@diversion
+   
 
     if(nprods != length(object@quantities) ||
        nprods != length(object@margins) ||
@@ -170,24 +194,8 @@ setClass(
     if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
 
 
-    if(!isTRUE(all.equal(diag(diversion),rep(-1,nprods), check.names=FALSE))){ stop("'diversions' diagonal elements must all equal -1")}
-
-    allhavezeros <- all(apply(diversion,1,function(x){any(x==0)}))
-    if(allhavezeros){stop("every row of 'diversions' contains zeros. Cannot calibrate demand parameters!")}
-
-    diag(diversion)=1
-    if(any(diversion > 1 | diversion<0)){
-      stop("'diversions' off-diagonal elements must be between 0 and 1")}
-
-    if (!isTRUE(all.equal(rowSums(object@diversion,na.rm=TRUE),rep(0,nprods),check.names=FALSE,tolerance=1e-3)) &&
-        any(rowSums(object@diversion,na.rm=TRUE)>0,na.rm=TRUE)){ stop("'diversions' rows cannot sum to greater than 0")}
-
-    if(nprods != nrow(object@diversion) ||
-       nprods != ncol(object@diversion)){
-      stop("'diversions' must be a square matrix")
-    }
-
-
+    if(any(is.na(object@diversion))){stop("'diversions' matrix cannot contain NA")}
+    
     if(nprods != length(object@priceStart)){
       stop("'priceStart' must have the same length as 'shares'")}
 

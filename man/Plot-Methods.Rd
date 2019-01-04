@@ -4,7 +4,6 @@
 \name{Plot-Methods}
 \alias{Plot-Methods}
 \alias{plot,Bertrand-method}
-\alias{plot,Bertrand-method}
 \title{Methods For Calculating Upwards Pricing Pressure Index (Bertrand)}
 \usage{
 \S4method{plot}{Bertrand}(x, scale = 0.1)

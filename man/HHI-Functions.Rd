@@ -3,7 +3,6 @@
 \name{HHI-Functions}
 \alias{HHI-Functions}
 \alias{HHI}
-\alias{HHI}
 \title{Herfindahl-Hirschman Index}
 \usage{
 HHI(shares, owner = diag(length(shares)), control)
