@@ -142,6 +142,7 @@ setClass(
     priceOutside = 0,
     control.slopes = list(
       factr = 1e7
+      #reltol= .Machine$double.eps^0.25
     )
   ),
   validity=function(object){
