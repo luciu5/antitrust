@@ -60,7 +60,7 @@
 #'Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Logit}}, distance 3.
 #'Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 4.
 
-#'@author Charles Taragin \email{charles.taragin@usdoj.gov}
+#'@author Charles Taragin \email{ctaragin@ftc.gov}
 #'@examples
 #'showClass("Auction2ndCap")           # get a detailed description of the class
 #'showClass("Auction2ndLogit")           # get a detailed description of the class

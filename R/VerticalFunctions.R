@@ -88,7 +88,7 @@
 #'
 #' @return \code{vertical.barg.bert} returns an instance of class
 #' \code{\linkS4class{VertBargBertLogit}}.
-#' @author Charles Taragin \email{charles.taragin@usdoj.gov}
+#' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @references 
 #'
 #' @examples 

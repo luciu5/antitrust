@@ -77,7 +77,7 @@
 #' @return \code{auction2nd.cap} returns an instance of class
 #' \code{\linkS4class{Auction2ndCap}}.
 #'
-#' @author Charles Taragin \email{charles.taragin@usdoj.gov}, with code
+#' @author Charles Taragin \email{ctaragin@ftc.gov}, with code
 #' contributed by Michael Sandfort and Nathan Miller
 #'
 #' @references Keith Waehrer and  Perry, Martin (2003).

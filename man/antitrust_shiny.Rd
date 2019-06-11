@@ -22,5 +22,5 @@ many of the supply and demand models included in the antitrust package.
 }
 }
 \author{
-Charles Taragin \email{charles.taragin@usdoj.gov}
+Charles Taragin \email{ctaragin@ftc.gov}
 }

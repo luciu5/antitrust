@@ -131,7 +131,7 @@
 #' child class of \code{\linkS4class{Logit}.}
 #'
 #' @seealso \code{\link{ces}}
-#' @author Charles Taragin \email{charles.taragin@usdoj.gov}
+#' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @references Anderson, Simon, Palma, Andre, and Francois Thisse (1992).
 #' \emph{Discrete Choice Theory of Product Differentiation}.
 #' The MIT Press, Cambridge, Mass.

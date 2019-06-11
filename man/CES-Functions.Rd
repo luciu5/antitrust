@@ -227,5 +227,5 @@ U.S Department of Justice.
 \code{\link{logit}}
 }
 \author{
-Charles Taragin \email{charles.taragin@usdoj.gov}
+Charles Taragin \email{ctaragin@ftc.gov}
 }

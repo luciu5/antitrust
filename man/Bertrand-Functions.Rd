@@ -116,5 +116,5 @@ simultaneous price setting game.
 account for partial ownership.
 }
 \author{
-Charles Taragin \email{charles.taragin@usdoj.gov}
+Charles Taragin \email{ctaragin@ftc.gov}
 }

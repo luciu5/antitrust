@@ -142,6 +142,6 @@ Keith Waehrer and  Perry, Martin (2003).
 \emph{Rand Journal of Economics}, \bold{34(2)}, pp. 287-304.
 }
 \author{
-Charles Taragin \email{charles.taragin@usdoj.gov}, with code
+Charles Taragin \email{ctaragin@ftc.gov}, with code
 contributed by Michael Sandfort and Nathan Miller
 }

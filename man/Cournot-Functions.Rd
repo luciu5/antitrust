@@ -305,5 +305,5 @@ summary(result.s)         # summarize merger simulation
 
 }
 \author{
-Charles Taragin \email{charles.taragin@usdoj.gov}
+Charles Taragin \email{ctaragin@ftc.gov}
 }

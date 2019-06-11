@@ -121,6 +121,6 @@ showClass("PCAIDS")           # get a detailed description of the class
 showClass("PCAIDSNests")           # get a detailed description of the class
 }
 \author{
-Charles Taragin \email{charles.taragin@usdoj.gov}
+Charles Taragin \email{ctaragin@ftc.gov}
 }
 \keyword{classes}

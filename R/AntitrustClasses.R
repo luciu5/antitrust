@@ -29,7 +29,7 @@
 #'virtual classes used for validity checking in the \sQuote{ownerPre} and
 #'\sQuote{ownerPost} slots of \dQuote{Antitrust} and the \sQuote{slopes} slot in
 #'\dQuote{Bertrand}.
-#'@author Charles Taragin \email{charles.taragin@usdoj.gov}
+#'@author Charles Taragin \email{ctaragin@ftc.gov}
 #'@examples showClass("Antitrust")           # get a detailed description of the class
 #'@keywords classes
 NULL

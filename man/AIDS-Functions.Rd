@@ -300,5 +300,5 @@ Epstein, Roy and Rubinfeld, Daniel (2004).
 rather than revenue shares.
 }
 \author{
-Charles Taragin \email{charles.taragin@usdoj.gov}
+Charles Taragin \email{ctaragin@ftc.gov}
 }

@@ -62,7 +62,7 @@
 #' a child class of \code{\linkS4class{Logit}}.
 #'
 #' @seealso \code{\link{logit}}
-#' @author Charles Taragin \email{charles.taragin@usdoj.gov}
+#' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @references Miller, Nathan (2014). \dQuote{Modeling the effects of mergers in procurement}
 #' \emph{International Journal of Industrial Organization} , \bold{37}, pp. 201-208.
 #'

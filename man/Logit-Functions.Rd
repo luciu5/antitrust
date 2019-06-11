@@ -312,5 +312,5 @@ Springer-Verlag, New York.
 \code{\link{ces}}
 }
 \author{
-Charles Taragin \email{charles.taragin@usdoj.gov}
+Charles Taragin \email{ctaragin@ftc.gov}
 }

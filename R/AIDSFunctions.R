@@ -119,7 +119,7 @@
 #'
 #' @seealso \code{\link{linear}} for a demand system based on quantities
 #' rather than revenue shares.
-#' @author Charles Taragin \email{charles.taragin@usdoj.gov}
+#' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @references Epstein, Roy and  Rubinfeld, Daniel (2004).
 #' \dQuote{Merger Simulation with Brand-Level Margin Data: Extending PCAIDS
 #' with Nests.}

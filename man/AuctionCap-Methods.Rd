@@ -75,6 +75,6 @@ showMethods(classes="Auction2ndCap") # show all methods defined for the class
 
 }
 \author{
-Charles Taragin \email{charles.taragin@usdoj.gov}
+Charles Taragin \email{ctaragin@ftc.gov}
 }
 \keyword{methods}

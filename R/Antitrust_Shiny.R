@@ -6,7 +6,7 @@
 #' the antitrust package. The shiny interface provides users with
 #' the ability to calibrate and simulate horizontal mergers using
 #' many of the supply and demand models included in the antitrust package.
-#' @author Charles Taragin \email{charles.taragin@usdoj.gov}
+#' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @examples ## launch shiny interface to antitrust package
 #' \dontrun{
 #'   antitrust_shiny()
