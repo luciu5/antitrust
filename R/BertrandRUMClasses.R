@@ -229,7 +229,11 @@ representation=representation(
   capacitiesPost          = "numeric"
 
 ),
-
+prototype=prototype(
+control.slopes = list(
+  reltol= .Machine$double.eps^0.25
+)
+),
 
 validity=function(object){
 
@@ -294,7 +298,7 @@ setClass(
 
     if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
-    if(object@shareInside != 1){
+    if(!identical(object@shareInside,1)){
       stop(" sum of 'shares' must equal 1")
     }
 
@@ -410,7 +414,7 @@ setClass(
 
     if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
-    if(object@shareInside != 1){
+    if(!identical(object@shareInside,1)){
       stop(" sum of 'shares' must equal 1")
     }
 
@@ -429,6 +433,7 @@ setClass(
   contains="Logit",
   prototype=prototype(
     priceOutside=0
+    
   )
 )
 
@@ -456,7 +461,7 @@ setClass(
 
     if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
-    if(object@shareInside != 1){
+    if(!identical(object@shareInside,1)){
       stop(" sum of 'shares' must equal 1")
     }
 

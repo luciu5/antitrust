@@ -9,9 +9,14 @@
 \alias{summary,Auction2ndLogit-method}
 \alias{summary,Cournot-method}
 \alias{summary,Auction2ndCap-method}
+\alias{summary,VertBargBertLogit-method}
 \title{Summary Methods}
 \usage{
 \S4method{summary}{Bertrand}(object, revenue = TRUE, shares = TRUE,
+  levels = FALSE, parameters = FALSE, market = FALSE,
+  insideOnly = TRUE, digits = 2, ...)
+
+\S4method{summary}{VertBargBertLogit}(object, revenue = TRUE,
   levels = FALSE, parameters = FALSE, market = FALSE,
   insideOnly = TRUE, digits = 2, ...)
 

@@ -68,8 +68,7 @@
 
 \S4method{calcSlopes}{CESNests}(object)
 
-\S4method{calcSlopes}{VertBargBertLogit}(object, constrain = c("global",
-  "pair", "wholesaler", "retailer"))
+\S4method{calcSlopes}{VertBargBertLogit}(object)
 
 \S4method{getParms}{Bertrand}(object, digits = 10)
 

@@ -40,7 +40,6 @@
 #' @param ssnip A number between 0 and 1 that equals the threshold for a \dQuote{Small but Significant and
 #' Non-transitory Increase in Price} (SSNIP). Default is .05, or 5\%.
 #' @param ... Pass options to the optimizer used to solve for equilibrium prices.
-#' @param plantIndex A vector of plant indices that are to be placed under the control of the Hypothetical Monopolist.
 #'
 #' @details
 #' Let k denote the number of products produced by all firms playing the Bertrand pricing game above.

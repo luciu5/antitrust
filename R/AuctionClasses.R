@@ -209,10 +209,15 @@ setClass(
 setClass(
   Class   = "Auction2ndLogit",
   contains="Logit",
+  
   prototype=prototype(
-    priceStart  = numeric()
+    priceStart  = numeric(),
+    control.slopes = list(
+      reltol= .Machine$double.eps^0.25
+    )
   )
-)
+  
+  )
 
 #'@rdname Auction-Classes
 #'@export

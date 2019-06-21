@@ -10,6 +10,7 @@
 #' summary,Auction2ndLogit-method
 #' summary,Cournot-method
 #' summary,Auction2ndCap-method
+#' summary,VertBargBertLogit-method
 #'
 #' @param object an instance of class  \code{Bertrand}, \code{Auction2ndCap}, \code{Cournot}, or \code{Auction2ndLogit}
 #' @param revenue When TRUE, returns revenues, when FALSE returns quantitities. Default is TRUE.
@@ -192,13 +193,17 @@ setMethod(
 
   })
 
+#'@rdname summary-methods
+#'@export
 
 setMethod(
   f= "summary",
   signature= "VertBargBertLogit",
   definition=function(object,revenue=TRUE,
                       #shares=TRUE,
-                      levels=FALSE,parameters=FALSE,market=FALSE,insideOnly = TRUE,digits=2,...){
+                      levels=FALSE,parameters=FALSE,
+                      market=FALSE,insideOnly = TRUE,
+                      digits=2,...){
     
     curWidth <-  getOption("width")
     
@@ -279,8 +284,8 @@ setMethod(
       isparty <- isParty == "*"
       
       
-      hhiUp <- as.integer(HHI(outputPre/sum(outputPre),owner=up@ownerPost) - HHI(outputPre/sum(outputPre),owner=up@ownerPre))
-      hhiDown <- as.integer(HHI(outputPre/sum(outputPre),owner=down@ownerPost) - HHI(outputPre/sum(outputPre),owner=down@ownerPre))
+      hhiUp <- as.integer(HHI(outPre/sum(outPre),owner=up@ownerPost) - HHI(outPre/sum(outPre),owner=up@ownerPre))
+      hhiDown <- as.integer(HHI(outPre/sum(outPre),owner=down@ownerPost) - HHI(outPre/sum(outPre),owner=down@ownerPre))
       
       results <- with(results,
                       data.frame(

@@ -1,6 +1,6 @@
 #' @title Supply Chain Merger Simulation
 #' @name SupplyChain-Functions
-#' @include BargainingClasses.R VerticalClasses.R
+#' @include VerticalClasses.R
 #' @aliases vertical
 #' vertical.barg.bert
 #' vertical.varg.2nd
@@ -11,6 +11,9 @@
 #' @description Let k denote the number of products produced by all
 #' firms playing the Bertrand pricing game below.
 #'
+#' @param supplyDown A length 1 character vector that specifies whether the downstream
+#' game that firms are playing is a Nash-Bertrand Pricing game ("bertrand'') or a 2nd score 
+#' auction ("2nd"). Default is "bertrand".
 #' @param sharesDown A length k vector of product (quantity) shares. Values must be
 #'   between 0 and 1.
 #' @param pricesDown A length k vector of downstream product prices.
@@ -27,7 +30,7 @@
 #'     the merger. Default is 0, which assumes that the merger does not
 #'     affect any products' marginal cost.
 #' @param pricesUp A length k vector of upstream product prices.
-#' @param marginsup A length k vector of upstream product margins, some of which may
+#' @param marginsUp A length k vector of upstream product margins, some of which may
 #'   equal NA.
 #' @param ownerPreUp EITHER a vector of length k whose values
 #'   indicate which upstream firm produced a product pre-merger OR
@@ -57,19 +60,12 @@
 #' upstream equilibrium price. Default is the \sQuote{pricesUp} vector.
 #' @param isMax If TRUE, checks to see whether computed price equilibrium
 #' locally maximizes firm profits and returns a warning if not. Default is FALSE.
-#' @param parmsStart For \code{logit.cap.alm}, a length-2 vector of starting values
-#' used to solve for the price coefficient and outside share (in that order). For
-#' \code{logit.nets}, rhe first element should
-#' always be the price coefficient and the remaining elements should be
-#' the nesting parameters. Theory requires the nesting parameters to be
-#' greater than the price coefficient. If missing then the random
-#' draws with the appropriate restrictions are employed.
 #' @param control.slopes A list of  \code{\link{optim}}
 #' control parameters passed to the calibration routine
 #' optimizer (typically the \code{calcSlopes} method).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters
 #' passed to the non-linear equation solver (typically the \code{calcPrices} method).
-#' @param constrain. Specify calibration strategy for estimating bargaining power parameter. 
+#' @param constrain Specify calibration strategy for estimating bargaining power parameter. 
 #' "global" (default) assumes bargaining parameter is the same across all participants,"pair" assumes 
 #' that all wholesaler/retailer pairs have a distinct parameter,"wholesaler" assumes that each wholesaler's
 #' parameter is identical across negotiations, "retailer" assumes that each 
@@ -90,9 +86,10 @@
 #' \code{\linkS4class{VertBargBertLogit}}.
 #' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @references 
-#'
+#' Sheu, Gloria,  Taragin, Charles (2018). 
+#' "Simulating Mergers in a Vertical Supply Chain with Bargaining," EAG Discussions Papers 201804, Department of Justice, Antitrust Division.
 #' @examples 
-#' 
+#' \donttest{
 #' ## Verical supply with 2 upstream firms,
 #' ## 2 downstream firms, each offering 
 #' ## a single product.
@@ -111,7 +108,7 @@
 #' ownerPostUp <- rep("U1",length(ownerPreUp))
 #'
 #'
-#' simres_up <- vertical.barg.bert(sharesDown =shareDown,
+#' simres_up <- vertical.barg(sharesDown =shareDown,
 #' pricesDown = priceDown,
 #' marginsDown = marginDown,
 #' ownerPreDown = ownerPreDown,
@@ -124,11 +121,12 @@
 #' 
 #' 
 #' ## simulate a horizontal 
+#' }
 #' @include VerticalClasses.R
 NULL
 
 #'@rdname SupplyChain-Functions
-#'@export
+#@export
 
 
 vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
@@ -139,8 +137,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
                   ownerPreUp,ownerPostUp,
                   mcDeltaUp=rep(0,length(pricesUp)),
                   normIndex=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE)),1, NA),
-                  subsetDown=rep(TRUE,length(pricesDown)),
-                  subsetUp=rep(TRUE,length(pricesUp)),
+                  subset=rep(TRUE,length(pricesDown)),
                   insideSize = NA_real_,
                   priceOutside = 0,
                   priceStartDown = pricesDown,
@@ -153,35 +150,44 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
                   ...
 ){
 
-
+  stop("Work in progress")
+  
+  
   constrain <-  match.arg(constrain)
   
+  if(supplyDown =="bertrand"){downClass = "Logit"}
+  else{downClass == "Auction2ndLogit"}
+  
   ## Create  containers to store relevant data
+  
+ 
   
   up <- new("Bargaining",
               prices=pricesUp,
               shares = sharesDown,
-              subset=subsetUp,
+              subset=subset,
               margins=marginsUp,
               ownerPre=ownerPreUp,
               ownerPost=ownerPostUp,
               mcDelta=mcDeltaUp,
               priceStart = priceStartUp,
-              labels=labels)
+              labels=labels,
+              constrain =constrain)
   
   ## Convert downstream ownership vectors to ownership matrices
   up@ownerPre  <- ownerToMatrix(up,TRUE)
   up@ownerPost <- ownerToMatrix(up,FALSE)
   
+  
  
-  down <- new("Logit",prices=pricesDown, shares=sharesDown,
+  down <- new(downClass,prices=pricesDown, shares=sharesDown,
                 margins=marginsDown,
                 normIndex=normIndex,
                 ownerPre=ownerPreDown,
                 ownerPost=ownerPostDown,
                 insideSize=insideSize,
                 mcDelta=mcDeltaDown,
-                subset=subsetDown,
+                subset=subset,
                 priceOutside=priceOutside,
                 priceStart=priceStartDown,
                 shareInside=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE,tolerance=1e-3)),1,sum(sharesDown)),

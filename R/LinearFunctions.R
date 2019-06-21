@@ -194,7 +194,7 @@ linear <- function(prices,quantities,margins, diversions, symmetry=TRUE,
   ## Calculate Demand Slope Coefficients and Intercepts
   result <- calcSlopes(result)
 
-  return(result)
+ 
 
   ## Calculate marginal cost
   result@mcPre <-  calcMC(result,TRUE)

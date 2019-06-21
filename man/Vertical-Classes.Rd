@@ -3,11 +3,19 @@
 \docType{class}
 \name{Vertical-Classes}
 \alias{Vertical-Classes}
+\alias{VertBargBertLogit}
+\alias{VertBarg2ndLogit}
+\alias{VertBargBertLogit-class}
+\alias{VertBarg2ndLogit-class}
 \title{\dQuote{Vertical} Classes}
 \description{
-The \dQuote{Vertical} class is a building block used to create other classes
+The \dQuote{Vertical} classes arebuilding blocks used to create other classes
 in this package. As such, it is most likely to be useful for developers
 who wish to code their own calibration/simulation routines.
+
+The \dQuote{VertBargBertLogit} class has the information for a Vertical Supply Chain with Logit demand and a downstream Nash-Bertrand Pricing game.
+
+The \dQuote{VertBarg2ndLogit} class has the information fora Vertical Supply Chain with Logit demand and a downstream 2nd Score Auction.
 
 Let k denote the number of products produced by all firms below.
 }
@@ -21,8 +29,7 @@ Let k denote the number of products produced by all firms below.
 \item{\code{margins}}{A length k vector of of observes margins.}
 }}
 
-\section{Objects from the Class}{
-
-Objects can be created by calls of the form \code{new("Vertical", ...)}.
+\author{
+Charles Taragin \email{ctaragin@ftc.gov}
 }
-
+\keyword{classes}

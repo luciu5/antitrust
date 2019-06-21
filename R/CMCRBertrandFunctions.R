@@ -133,7 +133,7 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
     stop("'prices'and 'margins' vectors must be the same length")}
 
   if(any(prices < 0,na.rm=TRUE)){ stop("'prices'  must be non-negative")}
-  if(any(margins < 0 || margins > 1,na.rm=TRUE) ){ stop("'margins' vector elements  must be between 0 and 1")}
+  if(any(margins < 0 | margins > 1,na.rm=TRUE) ){ stop("'margins' vector elements  must be between 0 and 1")}
 
   if(!is.matrix(diversions)){ stop("'diversions'  must be a matrix")}
   if(!all(diag(diversions) == -1,na.rm=TRUE)){ stop("'diversions' diagonal elements must all equal -1")}
@@ -144,7 +144,7 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
   }
 
   if(!is.matrix(ownerPost)){ stop("'ownerPost'  must be a matrix")}
-  if(any(ownerPost < 0 || ownerPost > 1,na.rm=TRUE)){ stop("'ownerPost' elements must be between 0 and 1")}
+  if(any(ownerPost < 0 | ownerPost > 1,na.rm=TRUE)){ stop("'ownerPost' elements must be between 0 and 1")}
   if(
     !isTRUE(all.equal(colSums(unique(ownerPost)),rep(1,nprod),check.names=FALSE))){
     stop("The columns of the matrix formed from the unique rows of 'ownerPost' must sum to 1")
@@ -172,7 +172,7 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
 
   else if(!is.matrix(ownerPre) ||
           ncol(ownerPre) != nrow(ownerPre) ||
-          any(ownerPre < 0 || ownerPre > 1,na.rm=TRUE) ||
+          any(ownerPre < 0 | ownerPre > 1,na.rm=TRUE) ||
           ncol(ownerPre) != nprod ||
           !isTRUE(all.equal(colSums(unique(ownerPre)),rep(1,nprod),check.names=FALSE))
   ){
@@ -220,7 +220,7 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
     stop("'prices'and 'margins' vectors must be the same length")}
 
   if(any(prices < 0,na.rm=TRUE)){ stop("'prices' must be non-negative")}
-  if(any(margins < 0 || margins > 1,na.rm=TRUE) ){ stop("'margins' vector elements  must be between 0 and 1")}
+  if(any(margins < 0 | margins > 1,na.rm=TRUE) ){ stop("'margins' vector elements  must be between 0 and 1")}
 
   if(!is.matrix(diversions)){ stop("'diversions' must be a matrix")}
   if(!all(diag(diversions) == -1,na.rm=TRUE)){ stop("'diversions' diagonal elements must all equal -1")}
@@ -232,7 +232,7 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
 
 
   if(!is.matrix(ownerPost)){ stop("'ownerPost' must be a matrix")}
-  if(any(ownerPost < 0 || ownerPost > 1,na.rm=TRUE)){ stop("'ownerPost' elements must be between 0 and 1")}
+  if(any(ownerPost < 0 | ownerPost > 1,na.rm=TRUE)){ stop("'ownerPost' elements must be between 0 and 1")}
   if(
     !isTRUE(all.equal(colSums(unique(ownerPost)),rep(1,nprod),check.names=FALSE))){
     stop("The columns of the matrix formed from the unique rows of 'ownerPost' must sum to 1")
@@ -261,7 +261,7 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
 
   else if(!is.matrix(ownerPre) ||
           ncol(ownerPre) != nrow(ownerPre) ||
-          any(ownerPre < 0 || ownerPre > 1,na.rm=TRUE) ||
+          any(ownerPre < 0 | ownerPre > 1,na.rm=TRUE) ||
           ncol(ownerPre) != nprod ||
           !isTRUE(all.equal(colSums(unique(ownerPre)),rep(1,nprod),check.names=FALSE))
   ){

@@ -21,10 +21,6 @@
 #' @param exAnte If \sQuote{exAnte} equals TRUE then the
 #' \emph{ex ante} expected result for each firm is produced, while FALSE produces the
 #' expected result conditional on each firm winning the auction. Default is FALSE.
-#' @param subset A vector of length k where each element equals TRUE if
-#' the product indexed by that element should be included in the
-#' post-merger simulation and FALSE if it should be excluded.Default is a
-#' length k vector of TRUE.
 #'
 #' @include CostMethods.R
 #' @keywords methods

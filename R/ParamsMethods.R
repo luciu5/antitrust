@@ -2056,13 +2056,13 @@ setMethod(
 setMethod(
   f= "calcSlopes",
   signature= "VertBargBertLogit",
-  definition=function(object, constrain=c("global","pair","wholesaler","retailer")){
+  definition=function(object){
     
     constrain <- match.arg(constrain)
     
     up <- object@up
     down <- object@down
-    
+    constrain <- object@constrain
     
     ownerPre.up <- up@ownerPre
     ownerPre.down <- down@ownerPre

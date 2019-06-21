@@ -1,7 +1,6 @@
 #' @title 2nd Score Procurement Auction Model
 #' @name Auction2ndLogit-Functions
-#' @aliases auction2nd.logit
-#' auction2nd.logit.alm
+#' @aliases auction2nd.logit auction2nd.logit.alm
 #'
 #' @description Calibrates consumer demand using Logit and then
 #' simulates the price effect of a merger between two firms

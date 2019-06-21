@@ -68,8 +68,6 @@ Non-transitory Increase in Price} (SSNIP). Default is .05, or 5\%.}
 \item{...}{Pass options to the optimizer used to solve for equilibrium prices.}
 
 \item{plantIndex}{A vector of plant indices that are to be placed under the control of the Hypothetical Monopolist (Cournot).}
-
-\item{plantIndex}{A vector of plant indices that are to be placed under the control of the Hypothetical Monopolist.}
 }
 \value{
 \code{HypoMonTest} returns TRUE if a profit-maximizing Hypothetical Monopolist who controls the products indexed by

@@ -564,7 +564,11 @@ setMethod(
     }
     
    
-      minResult   <- nleqslv(priceStart,FOC)$x
+
+      minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+      
+      if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+      minResult <- minResult$par
       
       minResultUp <- rep(NA, length(priceStartUp))
       minResultDown <- rep(NA, length(priceStartDown))
