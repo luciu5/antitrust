@@ -39,6 +39,8 @@ Collate:
     'CVMethods.R'
     'DiagnosticsMethods.R'
     'AIDSFunctions.R'
+    'Antitrust_Shiny.R'
+    'AntitrustPackage.R'
     'Auction2ndCapFunctions.R'
     'Auction2ndLogitFunctions.R'
     'BertrandFunctions.R'
@@ -50,7 +52,6 @@ Collate:
     'LinearFunctions.R'
     'LogitFunctions.R'
     'SimFunctions.R'
-    'Antitrust_Shiny.R'
-    'AntitrustPackage.R'
     'VerticalFunctions.R'
+    'antitrust-deprecated.R'
 RoxygenNote: 6.1.1

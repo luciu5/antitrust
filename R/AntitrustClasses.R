@@ -2,7 +2,6 @@
 #' @import methods
 #' @import BB
 #' @import numDeriv
-#' @import rhandsontable
 #'@title \dQuote{Antitrust} Classes
 #'@name Antitrust-Class
 #'@aliases Antitrust-class
