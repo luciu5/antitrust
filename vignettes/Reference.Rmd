@@ -10,7 +10,7 @@ output:
     toc: true
     toc_depth: 3
     toc_float:
-      collapsed: false
+      collapsed: true
       smooth_scroll: false
 header-includes:
    - \usepackage{amsmath}
