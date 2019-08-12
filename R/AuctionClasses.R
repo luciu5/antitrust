@@ -244,7 +244,7 @@ setClass(
 
     if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
-    if(object@shareInside != 1){
+    if(!identical(object@shareInside,1)){
       stop(" sum of 'shares' must equal 1")
     }
 

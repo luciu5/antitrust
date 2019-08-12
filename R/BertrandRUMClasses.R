@@ -259,7 +259,7 @@ validity=function(object){
          #!is.finite(object@capacitiesPost) |
          object@capacitiesPost<0 ,na.rm=TRUE)){stop("'capacitiesPost' values must be positive numbers")}
 
-  if(is.na(object@insideSize)){stop("'insideSize' must eqal the total pre-merger units sold in the market")}
+  if(is.na(object@insideSize)){stop("'insideSize' must equal the total pre-merger units sold in the market")}
 
   if(any(object@insideSize*object@shares > object@capacitiesPre)){warning("utilization is greater than capacity")}
 
@@ -298,8 +298,8 @@ setClass(
 
     if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
-    if(!identical(object@shareInside,1)){
-      stop(" sum of 'shares' must equal 1")
+    if(!isTRUE(all.equal(unname(as.vector(object@shareInside)),1))){
+      stop("sum of 'shares' must equal 1")
     }
 
 
@@ -381,8 +381,8 @@ setClass(
   validity=function(object){
 
 
-    if(!identical(object@shareInside,1)){
-      stop(" sum of 'shares' must equal 1")
+    if(!isTRUE(all.equal(unname(as.vector(object@shareInside)),1))){
+      stop("sum of 'shares' must equal 1")
     }
 
 
@@ -414,8 +414,8 @@ setClass(
 
     if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
-    if(!identical(object@shareInside,1)){
-      stop(" sum of 'shares' must equal 1")
+    if(!isTRUE(all.equal(unname(as.vector(object@shareInside)),1))){
+      stop("sum of 'shares' must equal 1")
     }
 
 
@@ -461,8 +461,8 @@ setClass(
 
     if(nMargins<2 && is.na(object@mktElast)){stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")}
 
-    if(!identical(object@shareInside,1)){
-      stop(" sum of 'shares' must equal 1")
+    if(!isTRUE(all.equal(unname(as.vector(object@shareInside)),1))){
+      stop("sum of 'shares' must equal 1")
     }
 
     if(length(object@parmsStart)!=2){
