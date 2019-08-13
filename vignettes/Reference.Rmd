@@ -10,14 +10,19 @@ output:
     toc: true
     toc_depth: 3
     toc_float:
-      collapsed: true
+      collapsed: false
       smooth_scroll: false
+vignette: >
+  %\VignetteIndexEntry{antitrust Reference Manual}
+  %\VignetteEngine{knitr::rmarkdown}
+  \usepackage[utf8]{inputenc}
 header-includes:
    - \usepackage{amsmath}
 bibliography: ["antitrustbib.bib"]
 biblio-style: "apalike"
 link-citations: true
 ---
+
 *Disclaimer:* The views expressed herein are entirely those of the authors and should not be purported to reflect those of the U.S. Department of Justice and the Federal Trade Commission.  The `antitrust` package has been released into the
 public domain without warranty of any kind, expressed or implied. We
 thank Ronald Drennan, Robert Majure, Russell Pittman, Gloria Sheu,
