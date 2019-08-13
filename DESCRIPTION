@@ -8,6 +8,7 @@ Maintainer: Charles Taragin <ctaragin@ftc.gov>
 Imports: methods, MASS, evd, BB, numDeriv
 Suggests: ggplot2, bookdown, knitr
 VignetteBuilder: knitr
+Encoding: UTF-8
 Description: A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects of mergers under different competitive regimes.
 License: Unlimited
 LazyLoad: yes
