@@ -73,7 +73,7 @@ setMethod(
 
       if(insideOnly){
         outPre <- outPre/sum(outPre)* 100
-        outPost <- outPost/sum(outPost)* 100
+        outPost <- outPost/sum(outPost,na.rm=TRUE)* 100
       }
 
       sumlabels=paste("shares",c("Pre","Post"),sep="")
@@ -238,7 +238,7 @@ setMethod(
       
       if(insideOnly){
         outPre <- outPre/sum(outPre)* 100
-        outPost <- outPost/sum(outPost)* 100
+        outPost <- outPost/sum(outPost,na.rm=TRUE)* 100
       }
       
       sumlabels=paste("shares",c("Pre","Post"),sep="")
