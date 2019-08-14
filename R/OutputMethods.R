@@ -52,10 +52,6 @@
 #' @param exAnte If \sQuote{exAnte} equals TRUE then the
 #' \emph{ex ante} expected result for each firm is produced, while FALSE produces the
 #' expected result conditional on each firm winning the auction. Default is FALSE.
-#' @param subset A vector of length k where each element equals TRUE if
-#' the product indexed by that element should be included in the
-#' post-merger simulation and FALSE if it should be excluded. Default is a
-#' length k vector of TRUE.
 #' @param ... Additional arguments to pass to \code{calcQuantities}.
 #'
 #' @include PSMethods.R
@@ -669,15 +665,12 @@ setMethod(
 setMethod(
   f= "calcShares",
   signature= "Auction2ndLogit",
-  definition=function(object,preMerger=TRUE,revenue=FALSE,subset){
+  definition=function(object,preMerger=TRUE,revenue=FALSE){
 
     nprods <- length(object@shares)
 
-    if(missing(subset)){
-      subset <- rep(TRUE,nprods)
-    }
-
-    if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
+    if(preMerger){ subset <- rep(TRUE,nprods) }
+    else{subset <- object@subset}
 
 
     idx <- object@normIndex
@@ -709,7 +702,9 @@ setMethod(
 
 
     shares <- exp(meanval)
+    shares[!subset] <- NA
     shares <- shares/(outVal + sum(shares,na.rm=TRUE))
+    
 
     if(revenue){
       res <- rep(NA,nprods)

@@ -85,7 +85,7 @@
   revenue = FALSE)
 
 \S4method{calcShares}{Auction2ndLogit}(object, preMerger = TRUE,
-  revenue = FALSE, subset)
+  revenue = FALSE)
 
 \S4method{calcShares}{CES}(object, preMerger = TRUE, revenue = FALSE)
 
@@ -109,11 +109,6 @@ expected result conditional on each firm winning the auction. Default is FALSE.}
 
 \item{revenue}{If TRUE, returns revenues. If FALSE,
 returns quantities. Default is TRUE.}
-
-\item{subset}{A vector of length k where each element equals TRUE if
-the product indexed by that element should be included in the
-post-merger simulation and FALSE if it should be excluded. Default is a
-length k vector of TRUE.}
 }
 \description{
 This section contains three types of methods: calcShares, calcQuantities, and calcRevenues.
