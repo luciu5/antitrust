@@ -70,7 +70,7 @@
 #' assumption that that all firms in the market are playing a
 #' differentiated products Bertrand pricing game.
 #'
-#' \code{ces.alm} is identical to logit except that it assumes that an outside product exists and uses additional margin information to estimate the share of the outside good.
+#' \code{ces.alm} is identical to \code{ces} except that it assumes that an outside product exists and uses additional margin information to estimate the share of the outside good.
 #'
 #' \code{ces.nests} is identical to \code{ces} except that it includes the \sQuote{nests}
 #' argument which may be used to assign products to different

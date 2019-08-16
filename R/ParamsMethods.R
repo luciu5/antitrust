@@ -636,7 +636,9 @@ setMethod(
     names(minAlpha)    <- "Alpha"
     
     meanval <-  minTheta$par[-1]
-  
+    
+    if(!is.na(idx)) meanval <- meanval - meanval[idx]
+    
     names(meanval)   <- object@labels
 
 
@@ -1717,7 +1719,7 @@ setMethod(
     notMissing <- which(!is.na(margins))[1]
     
     parmStart <- (shares[notMissing] - 1/margins[notMissing])/(shares[notMissing] - 1 ) 
-    parmStart <- c(parmStart, log(shares) - log(idxShare) + (parmStart - 1) * (log(prices) - log(idxPrice)))
+    parmStart <- c(parmStart, exp(log(shares) - log(idxShare) - (parmStart - 1) * (log(prices) - log(idxPrice))))
     
 
     
@@ -1734,7 +1736,7 @@ setMethod(
       gamma <- theta[1]
       meanval <- theta[-1]
 
-      predshares <- meanval * prices^(1-gamma)
+      predshares <- meanval * (prices/idxPrice)^(1-gamma)
       predshares <- predshares/(is.na(idx) + sum(predshares) )
          
       preddiversion <-tcrossprod( 1/(1-predshares),predshares)
@@ -1781,13 +1783,11 @@ setMethod(
 
     meanval <-  minTheta$par[-1]
 
+    if(!is.na(idx)) meanval <- meanval/meanval[idx]
+    
     names(meanval)   <- object@labels
 
     
-    meanval <- exp(meanval)
-
-    names(meanval)   <- object@labels
-
     object@slopes    <- list(alpha=alpha,gamma=minGamma,meanval=meanval)
     object@priceOutside <- idxPrice
     object@mktSize <- insideSize*(1+alpha)
