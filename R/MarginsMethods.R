@@ -268,7 +268,7 @@ setMethod(
     firmShares <- drop(owner %*% shares)
     margins[subset] <-  log(1-firmShares)/(alpha * firmShares)
 
-    if(exAnte){ margins <-  margins * shares}
+    if(exAnte){ margins[subset] <-  margins[subset] * shares}
 
     names(margins) <- object@labels
 

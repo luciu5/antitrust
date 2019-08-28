@@ -204,7 +204,7 @@ setMethod(
     marginPre <- calcMargins(object, preMerger = TRUE, exAnte= TRUE)
     marginPost <- calcMargins(object, preMerger = FALSE, exAnte= TRUE)
 
-    result <- sum(marginPost) - sum(marginPre)
+    result <- sum(marginPost,na.rm=TRUE) - sum(marginPre, na.rm =TRUE)
 
     if(!is.na(mktSize)){result <- mktSize * result}
 

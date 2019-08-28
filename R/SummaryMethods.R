@@ -122,9 +122,9 @@ setMethod(
       results <- with(results,
                       data.frame(
                         'HHI Change' = as.integer(HHI(outputPre/sum(outputPre),owner=object@ownerPost) - HHI(outputPre/sum(outputPre),owner=object@ownerPre)),
-                        'Industry Price Change (%)' = sum(priceDelta * outputPost/sum(outputPost),na.rm=TRUE),
-                        'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty]),
-                        'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty]),
+                        'Industry Price Change (%)' = sum(priceDelta * outputPost/sum(outputPost, na.rm = TRUE),na.rm=TRUE),
+                        'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty], na.rm=TRUE),
+                        'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty], na.rm=TRUE),
                         'Consumer Harm ($)' = thiscv,
                         'Producer Benefit ($)' = thispsdelta,
                         'Difference ($)'= thiscv - thispsdelta,
