@@ -531,8 +531,8 @@ setMethod(
     idx          <-  object@normIndex
     mktElast     <-  object@mktElast
     shareInside  <-  object@shareInside
-    diversion    <-  object@diversion 
-
+    diversion    <-  object@diversion
+   
     
     if(is.na(idx)){
       idxShare <- 1 - shareInside
@@ -543,7 +543,7 @@ setMethod(
       idxPrice <- prices[idx]
     }
 
-    ## Choose starting paramter values
+    ## Choose starting parameter values
     notMissing <- which(!is.na(margins))[1]
 
     parmStart <- -1/(margins[notMissing]*prices[notMissing]*(1 - shares[notMissing]))
@@ -572,7 +572,7 @@ setMethod(
       probs <- shares
       
       predshares <- exp(meanval + alpha*prices)
-      predshares <- predshares/(is.na(idx) + sum(predshares) )
+      predshares <- predshares/(is.na(idx)*exp(alpha*idxPrice) + sum(predshares) )
 
       preddiversion <-tcrossprod( 1/(1-predshares),predshares)
       diag(preddiversion) <- -1
