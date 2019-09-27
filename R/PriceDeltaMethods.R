@@ -59,9 +59,16 @@ setMethod(
     #names(priceDelta) <- object@labels
 
     if(market){
-      shares <- calcShares(object, ...)
-      shares <- shares/sum(shares,na.rm=TRUE)
-      priceDelta <- sum(priceDelta*shares,na.rm=TRUE)
+      
+      sharesPre <- calcShares(object, preMerger=TRUE,...)
+      sharesPre <- sharesPre/sum(sharesPre,na.rm=TRUE)
+      
+      
+      sharesPost <- calcShares(object, preMerger=FALSE,...)
+      sharesPost <- sharesPost/sum(sharesPost,na.rm=TRUE)
+      
+      
+      priceDelta <- sum(pricePost*sharesPost,na.rm=TRUE)/ sum(pricePre*sharesPre,na.rm=TRUE) - 1
     }
 
     return(priceDelta)
