@@ -19,6 +19,7 @@
 #' calcSlopes,PCAIDS-method
 #' calcSlopes,PCAIDSNests-method
 #' calcSlopes,Auction2ndLogit-method
+#' calcSlopes,Auction2ndLogitNests-method
 #' calcSlopes,Auction2ndLogitALM-method
 #' calcSlopes,Cournot-method
 #' calcSlopes,Stackelberg-method
@@ -547,7 +548,9 @@ setMethod(
     notMissing <- which(!is.na(margins))[1]
 
     parmStart <- -1/(margins[notMissing]*prices[notMissing]*(1 - shares[notMissing]))
-    parmStart <- c(parmStart, log(shares) - log(idxShare) - parmStart * (prices - idxPrice) )
+    mvalStart <-  log(shares) - log(idxShare) - parmStart * (prices - idxPrice)
+    if(!is.na(idx)) mvalStart <-  mvalStart[-idx]
+    parmStart <- c(parmStart, mvalStart)
 
     ## Uncover price coefficient and mean valuation from margins and revenue shares
 
@@ -567,7 +570,12 @@ setMethod(
     minD <- function(theta){
       
       alpha <- theta[1]
-      meanval <- theta[-1]
+      
+      if(!is.na(idx)){
+        meanval <- rep(0,nprods)
+        meanval[-idx] <- theta[-1]
+      }
+      else{meanval <- theta[-1]}
 
       probs <- shares
       
@@ -595,7 +603,7 @@ setMethod(
       m1 <- margins - marginsCand
       m2 <- predshares - probs
       m3 <- drop(diversion - preddiversion)
-      measure <- sum((c(m1, m2, m3)*100)^2,na.rm=TRUE)
+      measure <- sum((c(m1, m2, m3))^2,na.rm=TRUE)
 
       return(measure)
     }
@@ -635,9 +643,11 @@ setMethod(
     minAlpha           <- minTheta$par[1]
     names(minAlpha)    <- "Alpha"
     
-    meanval <-  minTheta$par[-1]
-    
-    if(!is.na(idx)) meanval <- meanval - meanval[idx]
+    if(is.na(idx)) meanval <-  minTheta$par[-1]
+    else{
+      meanval <- rep(0,nprods)
+      meanval[-idx] <- minTheta$par[-1]
+    }
     
     names(meanval)   <- object@labels
 
@@ -1199,6 +1209,166 @@ setMethod(
     return(object)
   }
 )
+
+
+
+#'@rdname Params-Methods
+#'@export
+setMethod(
+  f= "calcSlopes",
+  signature= "Auction2ndLogitNests",
+  definition=function(object){
+    
+    ## Uncover Demand Coefficents
+    
+    
+    ownerPre     <-  object@ownerPre
+    shares       <-  object@shares
+    nprods      <-   length(shares)
+    
+    diversion <- object@diversion
+    margins      <-  object@margins
+    
+    prices <- object@prices
+    
+    idx          <-  object@normIndex
+    
+    parmsStart   <- object@parmsStart
+    nests        <- object@nests
+    nestCnt      <- tapply(shares,nests,length)
+    constraint   <- object@constraint
+    
+    nestMat <- tcrossprod(model.matrix(~-1+nests)) 
+    
+    
+    dupCnt <- rowSums(ownerPre*nestMat) #only include the values in a given nest once
+    
+    isSingletonNest <- nestCnt==1
+    
+    
+    sharesBetween <- sharesNests <- as.vector(tapply(shares,nests,sum)[nests])
+    sharesNests <- shares / sharesNests
+    
+    ownerShares <- drop(ownerPre %*% shares)
+    
+    if(any(isSingletonNest)){
+      warning("Some nests contain only one product; their nesting parameters are not identified.
+              Normalizing these parameters to 1.")
+      
+    }
+    
+    
+    ## create index variables, contingent on whether an outside good is defined
+    isnotIdx <- rep(TRUE,nprods)
+    
+    if(is.na(idx)){
+      idxShare <- 1 - object@shareInside
+      idxShareIn <- 1
+      idxPrice   <- object@priceOutside
+      idxSigma   <- 1
+      
+      
+      
+    }
+    
+    else{
+      
+      
+      idxShare   <- shares[idx]
+      idxShareIn <- sharesNests[idx]
+      idxPrice   <- prices[idx]
+      
+      isnotIdx[idx] <- FALSE
+      
+      
+    }
+    
+    
+    if(!constraint){
+      parmsStart   <- parmsStart[c(TRUE,!isSingletonNest)] #always retain first element; this is
+      # the initial value for price coefficient
+    }
+    
+    
+    
+    
+    ## Minimize the distance between observed and predicted margins,
+    ## diversions, shares
+    minD <- function(theta){
+      
+      alpha <- theta[1]
+      theta <- theta[-1]
+      sigma <- as.numeric(isSingletonNest)
+      sigma[!isSingletonNest] <- theta
+      
+      
+      ownerValue <-   1 - (1 - ((ownerPre*nestMat)%*%sharesNests))^sigma[nests]
+      ownerValue <-  drop(1 - ownerPre %*%(ownerValue * sharesBetween/dupCnt))
+      
+      marginsCand <-  log(ownerValue)/(alpha*ownerShares) 
+   
+      ## The following returns the transpose of the elasticity matrix
+      elasticity <- diag((1/sigma-1)*alpha)
+      elasticity <- elasticity[nests,nests]
+      elasticity <- elasticity * matrix( shares*prices,ncol=nprods,nrow=nprods)
+      elasticity <- -1*(elasticity + alpha * matrix(shares*prices,ncol=nprods,nrow=nprods))
+      diag(elasticity) <- diag(elasticity) + (1/sigma[nests])*alpha*prices
+      
+      preddiversion <- -elasticity/diag(elasticity)*tcrossprod(1/shares,shares)
+      diag(preddiversion) <- -1
+      
+      
+      m1 <- marginsCand/margins-1
+      m3 <- drop(diversion - preddiversion)
+      measure <- sum((c(m1,  m3)*100)^2,na.rm=TRUE)
+      
+      
+      return(measure)
+    }
+    
+    ##  Constrained optimizer to look for solutions where alpha<0,  1 > sigma > 0.
+    ##  sigma > 1 or sigma < 0 imply complements
+    lowerB <- c(-Inf,0)
+    upperB <- c(0,1)
+    
+    minTheta <- optim(parmsStart,minD,method="L-BFGS-B",
+                      lower= lowerB,upper=upperB,
+                      control=object@control.slopes)
+    
+    
+    if(minTheta$convergence != 0){
+      warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
+    }
+    
+    
+    
+    minAlpha           <- minTheta$par[1]
+    names(minAlpha)    <- "Alpha"
+    
+    meanval <- log(shares) - log(idxShare)
+    
+    minSigma <-  as.numeric(isSingletonNest)
+    
+    minSigma[!isSingletonNest] <- minTheta$par[-1]
+    
+    
+    names(minSigma) <- levels(nests)
+    
+    if(is.na(idx)) minSigmaOut <- 0
+    else {minSigmaOut        <- minSigma[idx]}
+    
+  
+    meanvalDown=minSigma*(log(shares)-log(idxShare))
+    
+    names(meanval)   <- object@labels
+    
+    object@slopes    <- list(alpha=minAlpha,sigma=minSigma,meanval=meanval)
+    
+    return(object)
+  }
+)
+
+
 
 #'@rdname Params-Methods
 #'@export
@@ -2058,7 +2228,7 @@ setMethod(
   signature= "VertBargBertLogit",
   definition=function(object){
     
-    constrain <- match.arg(constrain)
+    constrain <- object@constrain
     
     up <- object@up
     down <- object@down
@@ -2118,10 +2288,6 @@ setMethod(
     
     up@bargpower <- bargparm
     object@up <- up
-    
-    down@pricePre <- numeric()
-    object@down <- down
-    
     
     return(object)
     

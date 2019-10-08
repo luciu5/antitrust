@@ -3,11 +3,17 @@
 
 #'@aliases Auction2ndCap-class
 #'Auction2ndLogit-class
+#'Auction2ndLogitNests-class
 #'Auction2ndLogitALM-class
+#Auction2ndLogitNestsALM-class
 #'@description The \dQuote{Auction2ndCap} class contains all the information needed to
 #'calibrate a 2nd price auction with capacity constraints
 #'@description The \dQuote{Auction2ndLogit} class contains all the information needed to
 #'calibrate a Logit
+#'demand system and perform a merger simulation analysis under the assumption that
+#'firms are setting offers in a 2nd-score auction.
+#'@description The \dQuote{Auction2ndLogitNests} class contains all the information needed to
+#'calibrate a Nested Logit
 #'demand system and perform a merger simulation analysis under the assumption that
 #'firms are setting offers in a 2nd-score auction.
 #'@description The \dQuote{Auction2ndLogitALM} class contains all the information needed to
@@ -20,6 +26,8 @@
 #'Auction2ndCap: Objects can be created by using the constructor function \code{\link{auction2nd.cap}}.
 #'
 #'Auction2ndLogit: Objects can be created by using the constructor function \code{\link{auction2nd.logit}}.
+#'
+#'Auction2ndLogitNests: Objects can be created by using the constructor function \code{\link{auction2nd.logit.nests}}.
 #'
 #'Auction2ndLogitALM: Objects can be created by using the constructor function \code{\link{auction2nd.logit.alm}}.
 
@@ -253,3 +261,70 @@ setClass(
     }
   }
 )
+
+#'@rdname Auction-Classes
+#'@export
+setClass(
+  Class   = "Auction2ndLogitNests",
+  contains="Auction2ndLogit",
+  
+  representation=representation(
+    nests="factor",
+    parmsStart="numeric",
+    constraint="logical"
+  ),
+  prototype=prototype(
+    parmsStart      =  numeric(),
+    control.slopes = list(
+      factr = 1e7
+    )
+  ),
+  
+  validity=function(object){
+    
+    
+    
+    
+    nprods    <- length(object@shares)
+    nNestParm <- nlevels(object@nests) #calculate the number of nesting parameters
+    
+    ## Identify Singleton Nests
+    nestCnt   <- tapply(object@shares,object@nests,length)
+    nestCnt   <- nestCnt[object@nests]
+    isSingleton <- nestCnt==1
+    
+    nNestParm <- nNestParm - sum(isSingleton) #singleton nests are not identified
+    
+    if(identical(nNestParm,1)) stop("'logit.nests', 'logit.nests.alm' may not be used for non-nested problems or problems with only singleton nests. Use 'logit', 'logit.alm' instead")
+    
+    if(nprods != length(object@nests)){
+      stop("'nests' length must equal the number of products")}
+    
+    
+    
+    if(!object@constraint &&
+       any(tapply(object@margins[!isSingleton],object@nests[!isSingleton],
+                  function(x){if(all(is.na(x))){return(TRUE)} else{return(FALSE)}}
+       )
+       ,na.rm=TRUE)
+    ){
+      stop("when 'constraint' is FALSE, at least one product margin must be supplied for each non-singleton nest")
+    }
+    
+    
+    
+    return(TRUE)
+  }
+  
+  
+)
+
+#' 
+#' #'@rdname Auction-Classes
+#' #'@export
+#' setClass(
+#'   Class   = "Auction2ndLogitNestsALM",
+#'   contains="Auction2ndLogitNests"
+#'   
+#'   
+#' )

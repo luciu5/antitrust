@@ -1,8 +1,8 @@
-#' @title 2nd Score Procurement Auction Model
+#' @title 2nd Score Procurement Auction Model with (Nested) Logit Demand
 #' @name Auction2ndLogit-Functions
-#' @aliases auction2nd.logit auction2nd.logit.alm
+#' @aliases auction2nd.logit auction2nd.logit.nests auction2nd.logit.alm
 #'
-#' @description Calibrates consumer demand using Logit and then
+#' @description Calibrates consumer demand using (Nested) Logit and then
 #' simulates the price effect of a merger between two firms
 #' under the assumption that all firms in the market are playing a
 #' differentiated products 2nd score auction game.
@@ -13,6 +13,7 @@
 #' between 0 and 1.
 #' @param margins A length k vector of product margins (in levels, not percents), some of which may
 #' equal NA.
+#' @param nests A length k factor of product nests.
 #' @param normIndex An integer equalling the index (position) of the
 #' inside product whose mean valuation will be normalized to 1. Default
 #' is 1, unless \sQuote{shares} sum to less than 1, in which case the default is
@@ -36,10 +37,13 @@
 #' length k vector of TRUE.
 #' @param mcDeltaOutside A length 1 vector indicating the change in the marginal cost of the
 #' outside good. Default is 0.
-#' @param parmsStart A length 2 vector of starting values used to solve for
+#' @param parmsStart For \code{auction2nd.logit.alm}, a length 2 vector of starting values used to solve for
 #' price coefficient and the share of the outside good. The first element should
 #' always be the price coefficient and the second should be
-#' the outside good.
+#' the outside good. For \code{auction2nd.logit.nests}, a length n+1 vector of starting values used to solve for
+#' price coefficient and the nesting parameters. The first element should
+#' always be the price coefficient and the remaining elements should be
+#' the nesting parameters.
 #' @param control.slopes A list of  \code{\link{optim}}  control parameters passed
 #' to the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed
@@ -53,14 +57,20 @@
 #' Logit demand model. \code{auction2nd.logit} then uses these
 #' calibrated parameters to simulate a merger between two firms, under the assumption that firms are particpating in a 2nd score procurement auction.
 #'
+#'
+#' \code{auction2nd.logit.nests} is identical to \code{auction2nd.logit} except that it assumes
+#' that products can be grouped into nests. Additional margin information is needed to 
+#' identify th nesting parameters. 
+#' 
 #' \code{auction2nd.logit.alm} is identical to \code{auction2nd.logit} except that it assumes
 #' that an outside product exists and uses additional margin
 #' information to estimate the share of the outside good.
 #'
 #' @return \code{auction2nd.logit} returns an instance of \code{\linkS4class{Auction2ndLogit}},
-#' a child class of \code{\linkS4class{Logit}}.
+#' a child class of \code{\linkS4class{Logit}}. \code{auction2nd.logit.nests} returns an instance of \code{\linkS4class{Auction2ndLogitNests}}.
+#' \code{auction2nd.logit} returns an instance of \code{\linkS4class{Auction2ndLogitALM}}.
 #'
-#' @seealso \code{\link{logit}}
+#' @seealso \code{\link{logit}},\code{\link{logit.nests}} for simulating mergers under a Nash-Bertrand pricing game with Logit demand 
 #' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @references Miller, Nathan (2014). \dQuote{Modeling the effects of mergers in procurement}
 #' \emph{International Journal of Industrial Organization} , \bold{37}, pp. 201-208.
@@ -158,6 +168,101 @@ auction2nd.logit <- function(prices,shares,margins,
 
   return(result)
 
+}
+
+
+
+#'@rdname Auction2ndLogit-Functions
+#'@export
+auction2nd.logit.nests <- function(prices,shares,margins, 
+                                   nests, diversions,
+                             ownerPre,ownerPost,
+                             normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
+                             mcDelta=rep(0,length(prices)),
+                             subset=rep(TRUE,length(prices)),
+                             insideSize = NA_real_,
+                             mcDeltaOutside=0,
+                             parmsStart,
+                             constraint=TRUE,
+                             control.slopes,
+                             labels=paste("Prod",1:length(prices),sep="")
+){
+  
+  if(missing(prices)){prices <- rep(NA_integer_, length(shares))}
+  
+  
+  if(missing(diversions)){diversions <- matrix(NA,nrow=length(shares),ncol=length(shares))}
+  
+  
+  nests <- factor(nests,levels = unique(nests)) # factor nests, keeping levels in the order in which they appear
+  nNestParm <- sum(tapply(nests,nests,length)>1) # count the number of  non-singleton nests
+  nMargins  <- length(margins[!is.na(margins)])
+  maxNests  <- nMargins - 1
+  
+  
+  if(nNestParm > maxNests){
+    stop("Additional margins must be supplied in order to calibrate nesting parameters")
+  }
+  
+  if(missing(parmsStart)){
+    
+    nNests <- nlevels(nests)
+    parmsStart <- runif(nNests+1) # nesting parameter values are assumed to be between 0 and 1
+    parmsStart[1] <- -1* parmsStart[1] # price coefficient is assumed to be negative
+    
+    if(constraint){parmsStart <- parmsStart[1:2]}
+  }
+  
+  
+  if(constraint && length(parmsStart)!=2){
+    stop("when 'constraint' is TRUE, 'parmsStart' must be a vector of length 2")
+  }
+  else if(!constraint && nNestParm + 1 != length(parmsStart)){
+    stop("when 'constraint' is FALSE, 'parmsStart' must be a vector of length ",nNestParm + 1)
+    
+  }
+ 
+  ## Create Auction2ndLogitNests  container to store relevant data
+  result <- new("Auction2ndLogitNests",prices=prices, shares=shares,
+                margins=margins,
+                normIndex=normIndex,
+                nests=nests,
+                diversion=diversions,
+                ownerPre=ownerPre,
+                ownerPost=ownerPost,
+                insideSize = insideSize,
+                mcDelta=mcDelta,
+                subset=subset,
+                priceOutside=mcDeltaOutside,
+                shareInside=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1,sum(shares)),
+                priceStart=rep(0,length(shares)),
+                parmsStart=parmsStart,
+                constraint=constraint,
+                labels=labels,
+                cls = "Auction2ndLogit")
+  
+  if(!missing(control.slopes)){
+    result@control.slopes <- control.slopes
+  }
+  
+  ## Convert ownership vectors to ownership matrices
+  result@ownerPre  <- ownerToMatrix(result,TRUE)
+  result@ownerPost <- ownerToMatrix(result,FALSE)
+  
+  
+  ## Calculate Demand Slope Coefficients
+  result <- calcSlopes(result)
+  
+  ## Calculate marginal cost
+  result@mcPre <-  calcMC(result,TRUE)
+  result@mcPost <- calcMC(result,FALSE)
+  
+  ## Solve Non-Linear System for Price Changes
+  result@pricePre  <- calcPrices(result,preMerger=TRUE)
+  result@pricePost <- calcPrices(result,preMerger=FALSE)
+  
+  return(result)
+  
 }
 
 

@@ -9,10 +9,11 @@
 #' calcMargins,VertBargBertLogit-method
 #' calcMargins,LogitCap-method
 #' calcMargins,Auction2ndLogit-method
+#' calcMargins,Auction2ndLogitNests-method
 #' calcMargins,Cournot-method
 #'
 #' @description Computes equilibrium product margins assuming that firms are playing a
-#' Nash-Bertrand or Cournot game. For "LogitCap", assumes firms are
+#' Nash-Bertrand, Cournot, or 2nd Score Auction game. For "LogitCap", assumes firms are
 #' playing a Nash-Bertrand or Cournot game with capacity constraints.
 #'
 #' @param object An instance of one of the classes listed above.
@@ -96,7 +97,7 @@ setMethod(
       }
       else{priceDown <- down@prices}
       
-      down@mcPre <- down@mcPre + priceUp
+      #down@mcPre <- down@mcPre + priceUp
       marginsDown <- calcMargins(down, preMerger=preMerger )
       
       
@@ -131,6 +132,7 @@ setMethod(
   }
   
 )
+
 
 
 #'@rdname Margins-Methods
@@ -277,3 +279,58 @@ setMethod(
 
 )
 
+
+#'@rdname Margins-Methods
+#'@export
+setMethod(
+  f= "calcMargins",
+  signature= "Auction2ndLogitNests",
+  definition=function(object,preMerger=TRUE,exAnte=FALSE){
+    
+    
+    nprods <- length(object@shares)
+    subset <- object@subset
+    
+    nests <- object@nests
+    nests <- droplevels(nests[subset])
+    nestMat <- tcrossprod(model.matrix(~-1+nests))
+    
+    margins <- rep(NA,nprods)
+    
+    if( preMerger) {
+      owner  <- object@ownerPre}
+    else{
+      owner  <- object@ownerPost}
+    
+    
+    owner <- owner[subset,subset]
+    
+    
+    alpha <- object@slopes$alpha
+    sigma <- object@slopes$sigma
+    
+    shares <- calcShares(object,preMerger=preMerger,revenue=FALSE)
+    
+    shares <- shares[subset]
+    
+    sharesAcross <- as.vector(tapply(shares,nests,sum))[nests]
+    sharesIn <- shares/sharesAcross
+    
+    firmShares <- drop(owner %*% shares)
+    
+    dupCnt <- rowSums(owner*nestMat) #only include the values in a given nest once
+    
+    ownerValue <-   1 - (1 - ((owner*nestMat)%*%sharesIn))^sigma[nests]
+    ownerValue <-  drop(1 - owner %*%(ownerValue * sharesAcross/dupCnt))
+    
+    margins[subset] <-  log(ownerValue)/(alpha*firmShares) 
+    
+    
+    if(exAnte){ margins[subset] <-  margins[subset] * shares}
+    
+    names(margins) <- object@labels
+    
+    return(as.vector(margins))
+  }
+  
+)
