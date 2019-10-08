@@ -20,7 +20,7 @@ Collate:
     'AuctionClasses.R'
     'VerticalClasses.R'
     'CournotClasses.R'
-    'AntitrustMethods.R'
+    'OwnershipMethods.R'
     'SummaryMethods.R'
     'ShowMethods.R'
     'AuctionCapMethods.R'

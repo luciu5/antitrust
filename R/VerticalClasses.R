@@ -1,19 +1,17 @@
 #'@title \dQuote{Vertical} Classes
 #'@name Vertical-Classes
-#'@aliases VertBargBertLogit VertBarg2ndLogit 
+#'@aliases VertBargBertLogit VertBarg2ndLogit VertBargBertLogitNests VertBarg2ndLogitNests
 
-#'@description The \dQuote{Vertical} classes arebuilding blocks used to create other classes
+#'@description The \dQuote{Vertical} classes are building blocks used to create other classes
 #'in this package. As such, it is most likely to be useful for developers
 #'who wish to code their own calibration/simulation routines.
 
 #'@description The \dQuote{VertBargBertLogit} class has the information for a Vertical Supply Chain with Logit demand and a downstream Nash-Bertrand Pricing game.
 
 #'@description The \dQuote{VertBarg2ndLogit} class has the information fora Vertical Supply Chain with Logit demand and a downstream 2nd Score Auction.
-
-#'@description Let k denote the number of products produced by all firms below.
-#'@slot bargpower A length k vector of calibrated Vertical power parameters.
-#'@slot prices A length k vector of of observes prices.
-#'@slot margins  A length k vector of of observes margins.
+#'@slot up an instance of \dQuote{Bargaining} class.
+#'@slot down For  \dQuote{VertBargBertLogit}, an instance of  \dQuote{Logit} class.For  \dQuote{VertBarg2ndLogit}, an instance of  \dQuote{Auction2ndLogit} class.
+#'@slot constrain  A length 1 character vector equal to "global", "pair", "wholesaler", or "retailer.
 
 #'@author Charles Taragin \email{ctaragin@ftc.gov}
 #'@include BertrandRUMClasses.R AuctionClasses.R BargainingClasses.R
@@ -29,8 +27,27 @@ setClass(
   representation=representation(
      up = "Bargaining",
      down = "Logit",
-     constrain="character"
-  )
+     supplyDown="character",
+     isHorizontal="logical",
+     isUpstream="logical",
+     ownerDownPre="matrix",
+     ownerDownPost="matrix",
+     ownerDownLambdaPre="matrix",
+     ownerDownLambdaPost="matrix",
+     constrain        = "character"
+  ),
+  validity = function(object){
+    
+    if( length(object@constrain) != 1 ||
+        !object@constrain %in% c("global","pair","wholesaler","retailer")){
+      stop("'constrain' must equal 'global','pair','wholesaler','retailer'")
+    }
+    if(length(object@supplyDown) != 1 ||
+       !object@supplyDown %in% c("bertrand","2nd") ){
+      stop("'supplyDown' must equal 'bertrand' or '2nd'")
+    }
+    
+  }
  
 )
 
@@ -44,6 +61,21 @@ setClass(
   representation=representation(
     up = "Bargaining",
     down = "Auction2ndLogit"
+  )
+  
+)
+
+
+#'@rdname Vertical-Classes
+#@export
+setClass(
+  
+  Class = "VertBarg2ndLogitNests",
+  contains = "VertBarg2ndLogit"
+  ,
+  representation=representation(
+    up = "Bargaining",
+    down = "Auction2ndLogitNests"
   )
   
 )

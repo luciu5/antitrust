@@ -20,6 +20,7 @@
 \alias{calcSlopes,PCAIDS-method}
 \alias{calcSlopes,PCAIDSNests-method}
 \alias{calcSlopes,Auction2ndLogit-method}
+\alias{calcSlopes,Auction2ndLogitNests-method}
 \alias{calcSlopes,Auction2ndLogitALM-method}
 \alias{calcSlopes,Cournot-method}
 \alias{calcSlopes,Stackelberg-method}
@@ -51,6 +52,8 @@
 \S4method{calcSlopes}{LogitCap}(object)
 
 \S4method{calcSlopes}{LogitNests}(object)
+
+\S4method{calcSlopes}{Auction2ndLogitNests}(object)
 
 \S4method{calcSlopes}{LogitCapALM}(object)
 

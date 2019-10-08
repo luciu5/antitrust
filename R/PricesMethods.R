@@ -469,6 +469,130 @@ setMethod(
     
     up <- object@up
     down <- object@down
+    isHorizontal <- object@isHorizontal
+    
+    
+    subsetDown <- down@subset
+    subsetUp <- up@subset
+    alpha <- down@slopes$alpha
+    meanval <- down@slopes$meanval[subsetDown]
+    bargparm <- up@bargpower[subsetDown]
+    
+    priceStartUp <- up@priceStart
+    priceStartDown <- down@priceStart
+    priceStart <- c(priceStartUp[subsetDown],priceStartDown[subsetDown])
+    
+    
+    nprods <- length(meanval)
+    
+    if(preMerger){
+      ownerUp <- up@ownerPre[subsetDown,subsetDown]
+      ownerDown <- down@ownerPre[subsetDown,subsetDown]
+      
+      down@pricePre <- priceCandDown
+      mcUp <- up@mcPre[subsetDown]
+      mcDown <- down@mcPre[subsetDown]
+      ownerVDown <- object@ownerDownPre
+      ownerDownLambda <- object@ownerDownLambdaPre
+    }
+    
+    else{
+      
+      ownerUp <- up@ownerPost[subsetDown,subsetDown]
+      ownerDown <- down@ownerPost[subsetDown,subsetDown]
+      
+      down@pricePost <- priceCandDown
+      mcUp <- up@mcPost[subsetDown]
+      mcDown <- down@mcPost[subsetDown]
+      ownerVDown <- object@ownerDownPost
+      ownerDownLambda <- object@ownerDownLambdaPost
+    }
+    
+    
+    
+    
+    
+    
+    
+    FOC <-function(priceCand){
+      
+       
+        
+      
+      priceCandUp= rep(NA, 1,nprods)[subsetDown] 
+      priceCandUp <- priceCand[1:length(priceCandUp)]
+      priceCandDown <- priceCand[-(1:length(priceCandUp))]
+      
+      
+     
+      
+      shareCandDown  <- calcShares(down, preMerger=preMerger,revenue=FALSE)
+      
+     
+      elast <-  -alpha*tcrossprod(shareCandDown)
+      diag(elast) <- alpha*shareCandDown + diag(elast)
+      elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
+      if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
+      marginsDownCand <- -as.vector(elast.inv %*% shareCandDown)
+      
+      
+      
+      div <- tcrossprod(1/(1-shareCandDown),shareCandDown)
+      diag(div) <- -1
+      
+      
+      if(!isHorizontal){
+        marginsDownCand <-  marginsDownCand - elast.inv %*% ( (ownerVDown * elast) %*% (priceCandUp-mcUp) )
+        #upFOC <- (ownerUp * div) %*% (priceCandUp-mcUp) - (v$ownerPostLambda.down * div) %*% marginsDownCand
+        marginsUpCand <- as.vector(solve(ownerUp * div) %*% (ownerDownLambda * div) %*% marginsDownCand) 
+      }
+      else{
+        
+        marginsUpCand <-  (1-bargparm)/bargparm * as.vector(MASS::ginv(ownerUp * div) %*% (ownerDown * div) %*% marginsDownCand)
+        #upFOC<- as.vector(bargparm *((ownerUp * div) %*% (priceCandUp-mcUp))  -  (1-bargparm) * ((ownerDown * div) %*% marginsDownCand))
+        
+        
+      }
+      
+      upFOC <-  priceCandUp-mcUp - marginsUpCand
+      downFOC <- priceCandDown - priceCandUp - mcDown - marginsDownCand
+      
+      
+      thisFOC= c(downFOC,upFOC)
+      
+      return(thisFOC)
+    }
+    
+   
+
+      minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=down@control.equ,...)
+      
+      if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+      minResult <- minResult$par
+      
+      minResultUp <- rep(NA, length(priceStartUp))
+      minResultDown <- rep(NA, length(priceStartDown))
+      
+        
+        
+      minResultUp[subsetDown] <- minResult[1:length(priceStartUp[subsetDown])] 
+      minResultDown[subsetDown] <- minResult[-(1:length(priceStartUp[subsetDown]))]
+    
+   
+      return(list(up=minResultUp,down=minResultDown)) 
+  }
+)
+
+
+#'@rdname Prices-Methods
+#'@export
+setMethod(
+  f= "calcPrices",
+  signature= "VertBarg2ndLogit",
+  definition=function(object,preMerger=TRUE,...){
+    
+    up <- object@up
+    down <- object@down
     
     
     subsetDown <- down@subset
@@ -485,13 +609,13 @@ setMethod(
     nprods <- length(meanval)
     
     FOC <-function(priceCand
-                      #, preMerger=TRUE  
-                      #subset=rep(TRUE,length(mkt$down$meanval))
-                      #,useEst = FALSE, level = "all"
-                      ){
+                   #, preMerger=TRUE  
+                   #subset=rep(TRUE,length(mkt$down$meanval))
+                   #,useEst = FALSE, level = "all"
+    ){
       
-       
-        
+      
+      
       
       priceCandUp= rep(NA, 1,nprods)[subsetDown] 
       priceCandUp <- priceCand[1:length(priceCandUp)]
@@ -517,24 +641,20 @@ setMethod(
         down@pricePost <- priceCandDown
         mcUp <- up@mcPost[subsetDown]
         mcDown <- down@mcPost[subsetDown]
-      
-        }
-      
-       
         
+      }
+      
+      
+      
       
       
       
       shareCandDown  <- calcShares(down, preMerger=preMerger,revenue=FALSE)
       #marginsDownCand <- calcMargins(down, preMerger=preMerger)*priceCandDown
       
-     
-      elast <-  -alpha*tcrossprod(shareCandDown)
-      diag(elast) <- alpha*shareCandDown + diag(elast)
-      elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
-      if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
-      marginsDownCand <- -as.vector(elast.inv %*% shareCandDown)
       
+     
+      marginsDownCand <- -log(1 - ownerDown)/(alpha*shareCandDown)
       
       
       div <- tcrossprod(1/(1-shareCandDown),shareCandDown)
@@ -547,11 +667,11 @@ setMethod(
       #  marginsUpCand <- as.vector(solve(ownerUp * div) %*% (v$ownerPostLambda.down * div) %*% marginsDownCand) 
       #}
       #else{
-        
-        marginsUpCand <-  (1-bargparm)/bargparm * as.vector(MASS::ginv(ownerUp * div) %*% (ownerDown * div) %*% marginsDownCand)
-        #upFOC<- as.vector(bargparm *((ownerUp * div) %*% (priceCandUp-mcUp))  -  (1-bargparm) * ((ownerDown * div) %*% marginsDownCand))
-        
-        
+      
+      marginsUpCand <-  (1-bargparm)/bargparm * as.vector(MASS::ginv(ownerUp * div) %*% (ownerDown * div) %*% marginsDownCand)
+      #upFOC<- as.vector(bargparm *((ownerUp * div) %*% (priceCandUp-mcUp))  -  (1-bargparm) * ((ownerDown * div) %*% marginsDownCand))
+      
+      
       #}
       
       upFOC <-  priceCandUp-mcUp - marginsUpCand
@@ -563,22 +683,24 @@ setMethod(
       return(thisFOC)
     }
     
-   
-
-      minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
-      
-      if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
-      minResult <- minResult$par
-      
-      minResultUp <- rep(NA, length(priceStartUp))
-      minResultDown <- rep(NA, length(priceStartDown))
-      
-        
-        
-      minResultUp[subsetDown] <- minResult[1:length(priceStartUp[subsetDown])] 
-      minResultDown[subsetDown] <- minResult[-(1:length(priceStartUp[subsetDown]))]
     
-   
-      return(list(up=minResultUp,down=minResultDown)) 
+    
+    minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=down@control.equ,...)
+    
+    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+    minResult <- minResult$par
+    
+    minResultUp <- rep(NA, length(priceStartUp))
+    minResultDown <- rep(NA, length(priceStartDown))
+    
+    
+    
+    minResultUp[subsetDown] <- minResult[1:length(priceStartUp[subsetDown])] 
+    minResultDown[subsetDown] <- minResult[-(1:length(priceStartUp[subsetDown]))]
+    
+    
+    return(list(up=minResultUp,down=minResultDown)) 
   }
 )
+
+

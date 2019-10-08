@@ -14,7 +14,9 @@ Let k denote the number of products produced by all firms below.
 \section{Slots}{
 
 \describe{
-\item{\code{bargpower}}{A length k vector of calibrated bargaining power parameters.}
+\item{\code{bargpowerPre}}{A length k vector of pre-merger bargaining power parameters.}
+
+\item{\code{bargpowerPre}}{A length k vector of post-merger bargaining power parameters.}
 
 \item{\code{prices}}{A length k vector of of observes prices.}
 

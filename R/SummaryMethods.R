@@ -29,7 +29,7 @@
 #' @param ... Allows other objects to be passed to a \code{CV} method.
 #'
 #' @keywords methods
-#' @include AntitrustMethods.R
+#' @include OwnershipMethods.R
 NULL
 
 #'@rdname summary-methods
@@ -199,7 +199,6 @@ setMethod(
   f= "summary",
   signature= "VertBargBertLogit",
   definition=function(object,revenue=TRUE,
-                      #shares=TRUE,
                       levels=FALSE,parameters=FALSE,
                       market=FALSE,insideOnly = TRUE,
                       digits=2,...){
@@ -214,7 +213,7 @@ setMethod(
     priceDownPre   <-  down@pricePre
     priceDownPost  <-  down@pricePost
     
-     priceDelta <- calcPriceDelta(object,levels=levels)
+    priceDelta <- calcPriceDelta(object,levels=levels)
     
     if(!levels) priceDelta <- lapply(priceDelta, function(x){x*100})
     
@@ -277,8 +276,10 @@ setMethod(
       #try(thiscmcr <- cmcr(object), silent=TRUE)
       try(thiscv <- CV(object),silent = TRUE)
       
-      #thispsdelta  <- NA_real_
-      #try(thispsdelta  <- sum(calcProducerSurplus(object,preMerger=FALSE) - calcProducerSurplus(object,preMerger=TRUE),na.rm=TRUE),silent=TRUE)
+      try(thispsPre <- calcProducerSurplus(object,TRUE),silent=TRUE)
+      try(thispsPost <- calcProducerSurplus(object,FALSE),silent=TRUE)
+      thispsdeltaUp  <- sum(thispsPost$up - thispsPre$up,na.rm=TRUE)
+      thispsdeltaDown  <- sum(thispsPost$down - thispsPre$down,na.rm=TRUE)
       
       isparty <- isParty == "*"
       
@@ -291,11 +292,12 @@ setMethod(
                         'HHI Change' =  max(hhiUp,hhiDown),
                         'Up Price Change (%)' = sum(priceDelta$up * outputPost/sum(outputPost),na.rm=TRUE),
                         'Down Price Change (%)' = sum(priceDelta$down * outputPost/sum(outputPost),na.rm=TRUE),
-                        'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty]),
+                        #'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty]),
                         #'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty]),
                         'Consumer Harm ($)' = thiscv,
-                        #'Producer Benefit ($)' = thispsdelta,
-                        #'Difference ($)'= thiscv - thispsdelta,
+                        'Up Producer Benefit ($)' = thispsdeltaUp,
+                        'Down Producer Benefit ($)' = thispsdeltaDown,
+                        'Difference ($)'= thiscv - thispsdeltaUp - thispsdeltaDown,
                         check.names=FALSE
                       ))
       

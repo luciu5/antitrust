@@ -5,6 +5,7 @@
 \alias{Auction-Classes}
 \alias{Auction2ndCap-class}
 \alias{Auction2ndLogit-class}
+\alias{Auction2ndLogitNests-class}
 \alias{Auction2ndLogitALM-class}
 \title{Class \dQuote{Auction}}
 \description{
@@ -13,6 +14,11 @@ calibrate a 2nd price auction with capacity constraints
 
 The \dQuote{Auction2ndLogit} class contains all the information needed to
 calibrate a Logit
+demand system and perform a merger simulation analysis under the assumption that
+firms are setting offers in a 2nd-score auction.
+
+The \dQuote{Auction2ndLogitNests} class contains all the information needed to
+calibrate a Nested Logit
 demand system and perform a merger simulation analysis under the assumption that
 firms are setting offers in a 2nd-score auction.
 
@@ -71,6 +77,8 @@ change in a firm's capacity following the merger.}
 Auction2ndCap: Objects can be created by using the constructor function \code{\link{auction2nd.cap}}.
 
 Auction2ndLogit: Objects can be created by using the constructor function \code{\link{auction2nd.logit}}.
+
+Auction2ndLogitNests: Objects can be created by using the constructor function \code{\link{auction2nd.logit.nests}}.
 
 Auction2ndLogitALM: Objects can be created by using the constructor function \code{\link{auction2nd.logit.alm}}.
 }

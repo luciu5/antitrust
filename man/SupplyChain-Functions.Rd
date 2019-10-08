@@ -3,13 +3,12 @@
 \name{SupplyChain-Functions}
 \alias{SupplyChain-Functions}
 \alias{vertical}
-\alias{vertical.barg.bert}
-\alias{vertical.varg.2nd}
 \alias{vertical.barg}
 \title{Supply Chain Merger Simulation}
 \usage{
 vertical.barg(supplyDown = c("bertrand", "2nd"), sharesDown, pricesDown,
-  marginsDown, ownerPreDown, ownerPostDown, mcDeltaDown = rep(0,
+  marginsDown, ownerPreDown, ownerPostDown, nests = rep(NA,
+  length(priceDown)), diversions = diversions, mcDeltaDown = rep(0,
   length(pricesDown)), pricesUp, marginsUp, ownerPreUp, ownerPostUp,
   mcDeltaUp = rep(0, length(pricesUp)),
   normIndex = ifelse(isTRUE(all.equal(sum(sharesDown), 1, check.names =
@@ -109,8 +108,9 @@ passed to the non-linear equation solver (typically the \code{calcPrices} method
 optimizer used to solve for equilibrium prices.}
 }
 \value{
-\code{vertical.barg.bert} returns an instance of class
-\code{\linkS4class{VertBargBertLogit}}.
+When 'supplyDown' equals "bertand", \code{vertical.barg} returns an instance of class
+\code{\linkS4class{VertBargBertLogit}}. When 'supplyDown' equals "2nd", \code{vertical.barg} returns an instance of class
+\code{\linkS4class{VertBarg2ndLogit}}
 }
 \description{
 Calibrates consumer demand using (Nested) Logit
@@ -160,7 +160,26 @@ ownerPostUp = ownerPostUp,
 priceOutside = priceOutSide)
 
 
-## simulate a horizontal 
+print(simres_up)
+summary(simres_up)
+
+## Simulate a downstream horizontal merger
+ownerPostDown <- rep("D1",length(ownerPreDown))
+
+simres_down <- vertical.barg(sharesDown =shareDown,
+pricesDown = priceDown,
+marginsDown = marginDown,
+ownerPreDown = ownerPreDown,
+ownerPostDown = ownerPostDown,
+pricesUp = priceUp,
+marginsUp = marginUp,
+ownerPreUp = ownerPreUp,
+ownerPostUp = ownerPreUp,
+priceOutside = priceOutSide)
+
+
+print(simres_down)
+summary(simres_down)
 }
 }
 \references{

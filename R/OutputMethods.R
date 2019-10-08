@@ -22,6 +22,7 @@
 #' calcShares,Logit-method
 #' calcShares,LogitNests-method
 #' calcShares,Auction2ndLogit-method
+#' calcShares,Auction2ndLogitNests-method
 #' calcShares,Cournot-method
 #' calcRevenues
 #' calcRevenues,ANY-method
@@ -718,6 +719,80 @@ setMethod(
 
 
 
+  }
+)
+
+
+
+#'@rdname Output-Methods
+#'@export
+setMethod(
+  f= "calcShares",
+  signature= "Auction2ndLogitNests",
+  definition=function(object,preMerger=TRUE,revenue=FALSE){
+    
+    nprods <- length(object@shares)
+    
+    if(preMerger){ subset <- rep(TRUE,nprods) }
+    else{subset <- object@subset}
+    
+    
+    idx <- object@normIndex
+    alpha    <- object@slopes$alpha
+    meanval  <- object@slopes$meanval
+    sigma    <- object@slopes$sigma
+    
+    nests <- object@nests
+    
+    
+    
+    if(is.na(idx)){
+      outVal <- 1
+      mcDeltaOut <- object@priceOutside
+    }
+    
+    else{
+      outVal <- 0
+      mcDeltaOut <- object@mcDelta[idx]
+    }
+    
+    
+    if( preMerger) {
+      prices <- object@pricePre
+      
+    }
+    else{
+      prices <- object@pricePost
+      meanval <- meanval + alpha * (object@mcDelta - mcDeltaOut)
+    }
+    
+    
+    
+    
+    sharesBetween <- sharesWithin <- ifelse(subset,exp(meanval/sigma[nests]),NA)
+    sharesBetween <-  as.vector(tapply(sharesBetween,nests,sum,na.rm=TRUE))
+    sharesWithin <- sharesWithin/sharesBetween[nests]
+    
+    
+    sharesBetween <- sharesBetween^sigma
+    sharesBetween <- sharesBetween/(exp(alpha*mcDeltaOut) + sum(sharesBetween,na.rm=TRUE))
+    sharesBetween <- sharesBetween[nests]
+    
+    shares <- sharesWithin*sharesBetween
+    
+    
+    if(revenue){
+      res <- rep(NA,nprods)
+      res[subset] <- prices[subset]*shares[subset]/sum(prices[subset]*shares[subset],mcDeltaOut*(1-sum(shares[subset])))
+      shares <- res
+    }
+    
+    names(shares) <- object@labels
+    
+    return(shares)
+    
+    
+    
   }
 )
 

@@ -2,8 +2,7 @@
 #' @name SupplyChain-Functions
 #' @include VerticalClasses.R
 #' @aliases vertical
-#' vertical.barg.bert
-#' vertical.varg.2nd
+#' vertical.barg
 #' @description Calibrates consumer demand using (Nested) Logit
 #' and then simulates the price effect of a merger between two firms
 #' under the assumption that all firms in the market are playing a
@@ -82,8 +81,9 @@
 #' calibrated parameters to simulate a merger between two firms.
 #'
 #'
-#' @return \code{vertical.barg.bert} returns an instance of class
-#' \code{\linkS4class{VertBargBertLogit}}.
+#' @return When 'supplyDown' equals "bertand", \code{vertical.barg} returns an instance of class
+#' \code{\linkS4class{VertBargBertLogit}}. When 'supplyDown' equals "2nd", \code{vertical.barg} returns an instance of class
+#' \code{\linkS4class{VertBarg2ndLogit}} 
 #' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @references 
 #' Sheu, Gloria,  Taragin, Charles (2018). 
@@ -120,18 +120,37 @@
 #' priceOutside = priceOutSide)
 #' 
 #' 
-#' ## simulate a horizontal 
+#' print(simres_up)
+#' summary(simres_up)
+#' 
+#' ## Simulate a downstream horizontal merger
+#' ownerPostDown <- rep("D1",length(ownerPreDown))
+#' 
+#' simres_down <- vertical.barg(sharesDown =shareDown,
+#' pricesDown = priceDown,
+#' marginsDown = marginDown,
+#' ownerPreDown = ownerPreDown,
+#' ownerPostDown = ownerPostDown,
+#' pricesUp = priceUp,
+#' marginsUp = marginUp,
+#' ownerPreUp = ownerPreUp,
+#' ownerPostUp = ownerPreUp,
+#' priceOutside = priceOutSide)
+#' 
+#' 
+#' print(simres_down)
+#' summary(simres_down)
 #' }
 #' @include VerticalClasses.R
 NULL
 
 #'@rdname SupplyChain-Functions
 #@export
-
-
 vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
                   pricesDown,marginsDown,
                   ownerPreDown,ownerPostDown,
+                  nests=rep(NA,length(priceDown)),
+                  diversions=diversions,
                   mcDeltaDown=rep(0,length(pricesDown)),
                   pricesUp,marginsUp,
                   ownerPreUp,ownerPostUp,
@@ -150,17 +169,32 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
                   ...
 ){
 
-  stop("Work in progress")
+  #stop("Work in progress")
   
-  
+  supplyDown <- match.arg(supplyDown)
   constrain <-  match.arg(constrain)
   
-  if(supplyDown =="bertrand"){downClass = "Logit"}
-  else{downClass == "Auction2ndLogit"}
-  
+  if(any(is.na(nests))){
+    if(supplyDown =="bertrand"){
+      downClass = "Logit"
+      resclass = "VertBargBertLogit"}
+    else{downClass == "Auction2ndLogit"
+      resclass = "VertBarg2ndLogit"}
+  }
+  else{
+    nests <- factor(nests, levels= unique(nests))
+    if(supplyDown =="bertrand"){downClass = "LogitNests"}
+    else{downClass == "Auction2ndLogitNests"}
+  }
   ## Create  containers to store relevant data
   
  
+  if(missing(diversions)){
+    diversions <- tcrossprod(1/(1-sharesDown),sharesDown)
+    diag(diversions) <- -1
+    
+    
+  }
   
   up <- new("Bargaining",
               prices=pricesUp,
@@ -171,15 +205,14 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
               ownerPost=ownerPostUp,
               mcDelta=mcDeltaUp,
               priceStart = priceStartUp,
-              labels=labels,
-              constrain =constrain)
+              labels=labels)
   
   ## Convert downstream ownership vectors to ownership matrices
   up@ownerPre  <- ownerToMatrix(up,TRUE)
   up@ownerPost <- ownerToMatrix(up,FALSE)
+
   
-  
- 
+  if(any(is.na(nests))){
   down <- new(downClass,prices=pricesDown, shares=sharesDown,
                 margins=marginsDown,
                 normIndex=normIndex,
@@ -188,15 +221,44 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
                 insideSize=insideSize,
                 mcDelta=mcDeltaDown,
                 subset=subset,
+                diversion=diversions,
                 priceOutside=priceOutside,
                 priceStart=priceStartDown,
                 shareInside=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE,tolerance=1e-3)),1,sum(sharesDown)),
                 labels=labels)
-  
+  }
+  else{
+    down <- new(downClass,prices=pricesDown, shares=sharesDown,
+                margins=marginsDown,
+                normIndex=normIndex,
+                ownerPre=ownerPreDown,
+                ownerPost=ownerPostDown,
+                insideSize=insideSize,
+                mcDelta=mcDeltaDown,
+                nests=nests,
+                subset=subset,
+                priceOutside=priceOutside,
+                priceStart=priceStartDown,
+                shareInside=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE,tolerance=1e-3)),1,sum(sharesDown)),
+                labels=labels)
+  }
+    
+  if(!missing(control.slopes)){
+    down@control.slopes <- control.slopes
+  }
+  if(!missing(control.equ)){
+    down@control.equ <- control.equ
+  } 
   
   ## Convert downstream ownership vectors to ownership matrices
   down@ownerPre  <- ownerToMatrix(down,TRUE)
   down@ownerPost <- ownerToMatrix(down,FALSE)
+  
+  isUpHorz <- ifelse(!isTRUE(all.equal(up@ownerPre,up@ownerPost,check.attributes=FALSE)),TRUE,FALSE)
+  isDownHorz <- ifelse(!isTRUE(all.equal(down@ownerPre,down@ownerPost,check.attributes=FALSE)),TRUE,FALSE)
+  
+  isHorizontal <- (isUpHorz & !isDownHorz) | (!isUpHorz & isDownHorz)
+  isUpstream <- isUpHorz & !isDownHorz
   
   ## Calculate downstream demand slope coefficients
   down <- calcSlopes(down)
@@ -204,21 +266,20 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
 
 
   ##save upstream and downstream data
-  result <- new("VertBargBertLogit",
+  result <- new(resclass,
                 up = up,
-                down = down
+                down = down,
+                constrain =constrain,
+                supplyDown=supplyDown,
+                isHorizontal=isHorizontal,
+                isUpstream=isUpstream
                 )
  
-  if(!missing(control.slopes)){
-    result@control.slopes <- control.slopes
-  }
-  if(!missing(control.equ)){
-    result@control.equ <- control.equ
-  }
+ 
 
 
-  ## compute bargaining paramters
-  result <- calcSlopes(result, constrain = constrain)
+  ## compute bargaining parameters
+  result <- calcSlopes(result)
 
  
   ## Calculate marginal costs
@@ -231,12 +292,10 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
   result@up@mcPre <-  mcPre$up
   result@up@mcPost <- mcPost$up
   
-  
-   
   ## Solve Non-Linear System for Price Changes
 
   resultsPre  <- calcPrices(result,preMerger=TRUE)
-  resultsPost <- calcPrices(result,preMerger=FALSE,subset=subset)
+  resultsPost <- calcPrices(result,preMerger=FALSE)
 
   result@down@pricePre <- resultsPre$down
   result@down@pricePost <- resultsPost$down

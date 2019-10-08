@@ -4,9 +4,12 @@
 \name{Show-Methods}
 \alias{Show-Methods}
 \alias{show,Antitrust-method}
+\alias{show,VertBargBertLogit-method}
 \title{Show Method}
 \usage{
 \S4method{show}{Antitrust}(object)
+
+\S4method{show}{VertBargBertLogit}(object)
 }
 \arguments{
 \item{object}{An instance of the Antitrust class.}

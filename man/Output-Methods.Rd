@@ -22,6 +22,7 @@
 \alias{calcShares,Logit-method}
 \alias{calcShares,LogitNests-method}
 \alias{calcShares,Auction2ndLogit-method}
+\alias{calcShares,Auction2ndLogitNests-method}
 \alias{calcShares,Cournot-method}
 \alias{calcRevenues}
 \alias{calcRevenues,ANY-method}
@@ -85,6 +86,9 @@
   revenue = FALSE)
 
 \S4method{calcShares}{Auction2ndLogit}(object, preMerger = TRUE,
+  revenue = FALSE)
+
+\S4method{calcShares}{Auction2ndLogitNests}(object, preMerger = TRUE,
   revenue = FALSE)
 
 \S4method{calcShares}{CES}(object, preMerger = TRUE, revenue = FALSE)

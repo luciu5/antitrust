@@ -18,8 +18,20 @@ setMethod(
   signature= "Antitrust",
   definition=function(object){
 
-    try(res <- summary(object,market=TRUE), silent = TRUE)
+    res <- summary(object,market=TRUE)
 
+    return(NULL)
+  }
+)
+#'@rdname Show-Methods
+#'@export
+setMethod(
+  f= "show",
+  signature= "VertBargBertLogit",
+  definition=function(object){
+    
+    res <- summary(object,market=TRUE)
+    
     return(NULL)
   }
 )

@@ -8,7 +8,8 @@
 
 #'@section Objects from the Class:
 #'Objects can be created by calls of the form \code{new("Bargaining", ...)}.
-#'@slot bargpower A length k vector of calibrated bargaining power parameters.
+#'@slot bargpowerPre A length k vector of pre-merger bargaining power parameters.
+#'@slot bargpowerPre A length k vector of post-merger bargaining power parameters.
 #'@slot prices A length k vector of of observes prices.
 #'@slot margins  A length k vector of of observes margins.
 
@@ -18,14 +19,15 @@ setClass(
   Class = "Bargaining",
   contains="Bertrand",
   representation=representation(
-    bargpower       = "numeric",
+    bargpowerPre       = "numeric",
+    bargpowerPost       = "numeric",
     prices           = "numeric",
     margins          = "numeric",
     priceStart       = "numeric"
   ),
   prototype=prototype(
     
-    bargpower          = numeric(),
+    bargpowerPre          = numeric(),
     priceStart         = numeric()
     
   ),
@@ -43,12 +45,19 @@ setClass(
     }
     
     if(
-      !(all(object@bargpower >=0) &&
-        all(object@bargpower <=1))
+      !(all(object@bargpowerPre >=0) &&
+        all(object@bargpowerPre <=1))
     ){
-      stop("elements of vector 'bargpower' must be between 0 and 1")
+      stop("elements of vector 'bargpowerPre' must be between 0 and 1")
     }
    
+    if(
+      !(all(object@bargpowerPost >=0) &&
+        all(object@bargpowerPost <=1))
+    ){
+      stop("elements of vector 'bargpowerPost' must be between 0 and 1")
+    }
+    
     if(nprods != length(object@priceStart)){
       stop("'priceStart' must have the same length as 'prices'")}
     

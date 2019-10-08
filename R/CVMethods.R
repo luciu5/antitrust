@@ -13,6 +13,7 @@
 #' CV,Logit-method
 #' CV,LogitNests-method
 #' CV,Auction2ndLogit-method
+#' CV,VertBargBertLogit-method
 #' CV,Cournot-method
 #'
 #' @description Calculate the amount of money a consumer would need to
@@ -112,7 +113,7 @@ setMethod(
 
     if(!is.na(mktSize)){ result <- result * mktSize}
 
-    return(result)
+    return(unname(result))
 
   })
 
@@ -210,6 +211,21 @@ setMethod(
 
     return(result)
   })
+
+
+#'@rdname CV-Methods
+#'@export
+setMethod(
+  f= "CV",
+  signature= "VertBargBertLogit",
+  definition=function(object){
+    
+    down <- object@down
+    logitCV <- selectMethod("CV","Logit")
+    
+    return(logitCV(down))
+  }
+  )
 
 #'@rdname CV-Methods
 #'@export

@@ -5,28 +5,29 @@
 \alias{Vertical-Classes}
 \alias{VertBargBertLogit}
 \alias{VertBarg2ndLogit}
+\alias{VertBargBertLogitNests}
+\alias{VertBarg2ndLogitNests}
 \alias{VertBargBertLogit-class}
 \alias{VertBarg2ndLogit-class}
+\alias{VertBarg2ndLogitNests-class}
 \title{\dQuote{Vertical} Classes}
 \description{
-The \dQuote{Vertical} classes arebuilding blocks used to create other classes
+The \dQuote{Vertical} classes are building blocks used to create other classes
 in this package. As such, it is most likely to be useful for developers
 who wish to code their own calibration/simulation routines.
 
 The \dQuote{VertBargBertLogit} class has the information for a Vertical Supply Chain with Logit demand and a downstream Nash-Bertrand Pricing game.
 
 The \dQuote{VertBarg2ndLogit} class has the information fora Vertical Supply Chain with Logit demand and a downstream 2nd Score Auction.
-
-Let k denote the number of products produced by all firms below.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{bargpower}}{A length k vector of calibrated Vertical power parameters.}
+\item{\code{up}}{an instance of \dQuote{Bargaining} class.}
 
-\item{\code{prices}}{A length k vector of of observes prices.}
+\item{\code{down}}{For  \dQuote{VertBargBertLogit}, an instance of  \dQuote{Logit} class.For  \dQuote{VertBarg2ndLogit}, an instance of  \dQuote{Auction2ndLogit} class.}
 
-\item{\code{margins}}{A length k vector of of observes margins.}
+\item{\code{constrain}}{A length 1 character vector equal to "global", "pair", "wholesaler", or "retailer.}
 }}
 
 \author{
