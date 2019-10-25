@@ -201,12 +201,35 @@ setMethod(
   definition=function(object){
 
     mktSize = object@mktSize
-
+    alpha   = object@slopes$alpha
+    meanvalPre = object@slopes$meanval
+    idx <- object@normIndex
+    subset <- object@subset
+    
+    if (is.na(idx)) {
+      outVal <- 1
+      mcDeltaOut <- object@priceOutside
+    }
+    else {
+      outVal <- 0  
+      mcDeltaOut <- object@mcDelta[idx]
+    }
+    
+    meanvalPost =  meanvalPre + alpha * (object@mcDelta - mcDeltaOut)
+    
+    
     marginPre <- calcMargins(object, preMerger = TRUE, exAnte= TRUE)
     marginPost <- calcMargins(object, preMerger = FALSE, exAnte= TRUE)
 
     result <- sum(marginPost,na.rm=TRUE) - sum(marginPre, na.rm =TRUE)
 
+    ## Add the elimination of first best option
+    VAll  <- sum(exp(meanvalPost),na.rm=TRUE)  + outVal
+    VElim <- sum(exp(meanvalPost[subset]),na.rm=TRUE ) + outVal
+    
+    result <- result + log(VElim/VAll)/alpha
+    
+    
     if(!is.na(mktSize)){result <- mktSize * result}
 
     return(result)
