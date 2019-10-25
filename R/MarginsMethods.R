@@ -251,19 +251,20 @@ setMethod(
 
 
     nprods <- length(object@shares)
-    subset <- object@subset
+   
    
     margins <- rep(NA,nprods)
 
     if( preMerger) {
-      owner  <- object@ownerPre}
+      owner  <- object@ownerPre
+      subset <- rep(TRUE,nprods)
+    }
     else{
-      owner  <- object@ownerPost}
-
+    subset <- object@subset  
+    owner  <- object@ownerPost
+    }
 
     owner <- owner[subset,subset]
-
-
     alpha <- object@slopes$alpha
     shares <- calcShares(object,preMerger=preMerger,revenue=FALSE)
     shares <- shares[subset]
@@ -289,18 +290,21 @@ setMethod(
     
     
     nprods <- length(object@shares)
-    subset <- object@subset
+    
+    
+    if( preMerger) {
+      owner  <- object@ownerPre
+      subset <- rep(TRUE, nprods)}
+    else{
+      owner  <- object@ownerPost
+      subset <- object@subset}
+    
     
     nests <- object@nests
     nests <- droplevels(nests[subset])
     nestMat <- tcrossprod(model.matrix(~-1+nests))
     
     margins <- rep(NA,nprods)
-    
-    if( preMerger) {
-      owner  <- object@ownerPre}
-    else{
-      owner  <- object@ownerPost}
     
     
     owner <- owner[subset,subset]
