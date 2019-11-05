@@ -59,11 +59,11 @@
 #' differentiated Bertrand pricing game.
 #'
 #'
-#' \sQuote{diversion} must be a square matrix whose off-diagonal elements [i,j] estimate the diversion ratio from product i to product j
+#' \sQuote{diversions} must be a square matrix whose off-diagonal elements [i,j] estimate the diversion ratio from product i to product j
 #' (i.e. the estimated fraction of i's sales that go to j due to a small
 #'   increase in i's price). Off-diagonal elements are restricted to be
 #' non-negative (products are assumed to be substitutes), diagonal elements
-#' must equal -1, and rows must sum to 0 (negative if you wish to include an outside good) . If \sQuote{diversion} is missing, then diversion according to quantity share is assumed.
+#' must equal -1, and rows must sum to 0 (negative if you wish to include an outside good) . If \sQuote{diversions} is missing, then diversion according to quantity share is assumed.
 #'
 #'
 #'
@@ -234,7 +234,7 @@ loglinear <- function(prices,quantities,margins,diversions,
   ##temporary fix for calcSlopes, which hangs when diagonal of diversion matrix
   ## equals -1.
   
-  if(isTRUE(all.equal(diag(diversion),rep(-1,length(quantities))))) diag(diversions) <- -1.000000001
+  if(isTRUE(all.equal(diag(diversions),rep(-1,length(quantities))))) diag(diversions) <- -1.000000001
 
 
   result <- new("LogLin",prices=prices, quantities=quantities,margins=margins,
