@@ -2232,6 +2232,8 @@ setMethod(
     
     constrain <- object@constrain
     
+    is2nd <- grepl("2nd",class(object))
+    
     up <- object@up
     down <- object@down
     constrain <- object@constrain
@@ -2303,13 +2305,15 @@ setMethod(
     
     vertFirms <- intersect(owner.up,owner.down)
     
-    OwnerDownMatVertical <- ownerToMatrix(down, preMerger=TRUE)
+    ownerDownMat <-  ownerToMatrix(down, preMerger=TRUE)
     ownerBargUpVert<- ownerToMatrix(up, preMerger=TRUE)
+    
+    ownerDownMatVertical <- matrix(0,nrow=nprods,ncol=nprods)
     
     minD <- function(theta){
       
       alpha <- theta[1]
-      theta <- theta[-1]
+      b <- theta[-1]
       b <- b[as.numeric(id)]
       
   
@@ -2322,13 +2326,14 @@ setMethod(
       }
       
       
-      ownerBargDownVert  <-  owner.down  * (1-b)/b
+      ownerBargDownVert  <-  ownerDownMat  * (1-b)/b
       
       for( v in vertFirms){
         
         vertrows <-  owner.up == v  & owner.down != v
         
-        ownerDownMatVertical[owner.down == v, vertrows] <- 1
+        ## only change downstream matrix when firms are playing Bertrand
+        if(!is2nd){ownerDownMatVertical[owner.down == v, vertrows] <- 1}
         #ownerDownMatVertical[owner.down == v, !vertrows] <- 0
         
         
@@ -2338,10 +2343,24 @@ setMethod(
       
       #ownerDownMatVertical[!owner.down %in% vertFirms, ] <- 0
       
-      down@ownerPre <- ownerDownMatVertical
-      down@slopes$alpha <- alpha
-      down@slopes$meanval <- log(sharesDown) - log(idxShare) - alpha*(pricesDown - idxPrice)
+      down@ownerPre <- ownerDownMat
+      
+      if(is2nd) mval <- log(sharesDown) - log(idxShare)
+      else{mval <- log(sharesDown) - log(idxShare) - alpha*(pricesDown - idxPrice)}
+      down@slopes <- list(alpha = alpha,
+                          meanval = mval
+                          )
       marginsCandDown <- calcMargins(down, preMerger= TRUE,level=TRUE)
+      
+      if(!is2nd){
+        elast <-  -alpha*tcrossprod(sharesDown)
+        diag(elast) <- alpha*sharesDown + diag(elast)
+        elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
+        if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
+        
+        
+        marginsCandDown <- marginsCandDown - elast.inv %*% ( (ownerVDown * elast) %*% (marginsUp) )
+      }
       
       depVar <- as.vector((ownerBargUpVert  * div) %*% marginsUp)
       regressor <- as.vector(( ownerBargDownVert  * div) %*% marginsCandDown)
@@ -2363,7 +2382,10 @@ setMethod(
     
     ## Pre-merger bargaining parameter
     alphaOpt <- thetaOpt$par[1]
-    mvalOpt <- log(sharesDown) - log(idxShare) - alpha*(pricesDown - idxPrice)
+    
+    if(!is2nd) {mvalOpt <- log(sharesDown) - log(idxShare) - alphaOpt*(pricesDown - idxPrice)}
+    else{mvalOpt <- log(sharesDown) - log(idxShare)}
+    
     bOpt     <- thetaOpt$par[-1]
     bargparmPre <- bargparmPost <-  bOpt[as.numeric(id)]
     bargparmPre[owner.up  == owner.down ] <- 1 

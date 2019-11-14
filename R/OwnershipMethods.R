@@ -100,6 +100,8 @@ setMethod(
     thisUpOwnerMat   <- ownerToMatrix(up,preMerger=preMerger)
     thisDownOwnerMat <- ownerToMatrix(down,preMerger=preMerger)
     
+    nprods <- nrow(thisDownOwnerMat)
+    
     if(!is.matrix(thisUpOwner) & !is.matrix(thisDownOwner)){
     
       
@@ -108,7 +110,7 @@ setMethod(
         
     ## transform ownerPre/ownerPost vector into matrix, when applicable
     
-    thisDownOwnerMatVertical <- thisDownOwnerMat
+    thisDownOwnerMatVertical <- matrix(0,nrow=nprods,ncol=nprods)
       
     for( v in vertFirms){
     
@@ -116,29 +118,35 @@ setMethod(
     
     vertrows <- thisUpOwner != v  & thisDownOwner == v
     thisUpOwnerMat[vertrows, thisUpOwner == v] <- -(1-bargParm[vertrows])/bargParm[vertrows]
+    }
     
     
-    vertrows <-  thisUpOwner == v  & thisDownOwner != v
+    ownerDownLambda <- thisDownOwnerMat * (1-bargParm)/bargParm
+    
+    for( v in vertFirms){
+    
+      
+      vertrows <-  thisUpOwner == v  & thisDownOwner != v
     
     
     thisDownOwnerMatVertical[thisDownOwner == v, vertrows] <- 1
-    thisDownOwnerMatVertical[thisDownOwner == v, !vertrows] <- 0
-    thisDownOwnerMatVertical[thisDownOwner != v, ] <- 0
+    #thisDownOwnerMatVertical[thisDownOwner == v, !vertrows] <- 0
+    #thisDownOwnerMatVertical[thisDownOwner != v, ] <- 0
     
-    ownerDownLambda <- thisDownOwnerMat * (1-bargParm)/bargParm
+    
     ownerDownLambda[vertrows, thisDownOwner == v] <- -1
     
     }
     
     if(preMerger){
-    object@ownerDownPre <- ownerDownVertical
+    object@ownerDownPre <- thisDownOwnerMatVertical
     object@ownerDownLambdaPre <-  ownerDownLambda
     object@ownerUpLambdaPre <- thisUpOwnerMat 
     #object@up@bargpowerPre <- bargParm
     }
     
     else{
-      object@ownerDownPost <- ownerDownVertical
+      object@ownerDownPost <- thisDownOwnerMatVertical
       object@ownerDownLambdaPost <-  ownerDownLambda
       object@ownerUpLambdaPost <- thisUpOwnerMat
       #object@up@bargpowerPost <- bargParm

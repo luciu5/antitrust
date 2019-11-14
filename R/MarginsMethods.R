@@ -82,59 +82,74 @@ setMethod(
     
     up <- object@up
     down <- object@down
-    alpha <- down@slopes$alpha
   
+  
+    ownerUp <- ownerToMatrix(up,preMerger =preMerger)
+    ownerDown <- ownerToMatrix(down,preMerger =preMerger)
     
     if( preMerger) {
       bargparm <- up@bargpowerPre
-      ownerUp  <- up@ownerPre
+       
       if(length(up@pricePre) == 0 ){
       priceUp <- up@prices
       }
-      else{priceUp <- up@prices}
       
-      ownerDownPre  <- object@ownerDownPre
-      ownerDownLambdaPre <- object@ownerDownLambdaPre
-      ownerUpLambdaPre <- object@ownerUpLambdaPre
-      
+      else{priceUp <- up@pricePre}
       if(length(down@pricePre) == 0 ){
-        isIntegrated <- object@isIntegratedPost
         priceDown <- down@prices
         down@pricePre <- priceDown
       }
-      else{priceDown <- down@prices}
+      else{priceDown <- down@pricePre}
+     
+      ownerDownLambda <- object@ownerDownLambdaPre
+      ownerUpLambda <- object@ownerUpLambdaPre
+      
+      
       
       #down@mcPre <- down@mcPre + priceUp
-      down@ownerPre <- ownerDownPre 
-      marginsDown <- calcMargins(down, preMerger=preMerger, level=level )
-      
-      
-      div <- diversion(down,  preMerger=preMerger)
-      
-      
-      marginsUp <-  as.vector(solve(ownerUpLambdaPre * div) %*% (((ownerDownLambdaPre * div) %*% (marginsDown*priceDown)))) #margins in levels
-      
-      if(!level) {marginsUp <- marginsUp/priceUp}
-     
-      
+      down@ownerPre <- ownerDown 
       
     }
     
     else{
       bargparm <- up@bargpowerPost
+      
+      
       priceUp <- up@pricePost
-      mcUp     <- up@mcPost
       priceDown <- down@pricePost
-      mcDown     <- down@mcPost + priceUp
       
-      marginsUp <- priceUp - mcUp
-      marginsDown <- priceDown - mcDown
+      ownerDownLambda <- object@ownerDownLambdaPost
+      ownerUpLambda <- object@ownerUpLambdaPost
       
-      if(!level){
-        marginsUp <- marginsUp/priceUp
-        marginsDown <- marginsDown/priceDown
-      }
+      down@ownerPost <- ownerDown 
+      
     }
+      marginsDown <- calcMargins(down, preMerger=preMerger, level=level )
+      
+      
+      #div <- diversion(down,  preMerger=preMerger)
+      
+      sharesDown  <- calcShares(down, preMerger=preMerger,revenue=FALSE)
+      
+      
+      
+      div <- tcrossprod(1/(1-sharesDown),sharesDown)*sharesDown
+      diag(div) <- -sharesDown
+      div <- as.vector(div)
+      
+      
+      marginsUp <-  as.vector(solve(ownerUpLambda * div) %*% (((ownerDownLambda * div) %*% (marginsDown)))) 
+      
+      if(!level) {
+        marginsUp <- marginsUp/priceUp
+      marginsDown <- marginsDown/priceDown
+      }
+     
+      
+      
+    
+    
+   
     
     
     

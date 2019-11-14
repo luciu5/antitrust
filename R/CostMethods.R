@@ -115,14 +115,28 @@ setMethod(
     up <- object@up
     down <- object@down
     
-    down@ownerPre <- object@ownerDownPre
-    mcDown <- calcMC(down, preMerger = TRUE)
-    mcDown <- mcDown - up@prices #isolate the portion of costs that exclude wholesaer 
+  
+      if(length(up@pricePre) == 0 ){
+        priceUpPre <- up@prices
+      }
+      else{priceUpPre <- up@pricePre}
+    
+      if(length(down@pricePre) == 0 ){
+        priceDownPre <- down@prices
+        down@pricePre <- priceDownPre
+      }
+      else{priceDownPre <- down@pricePre}
     
     
-    marginUpPre <- calcMargins(object,preMerger = TRUE)$up
     
-    mcUp <- (1 - marginUpPre) * up@prices
+    marginsPre <- calcMargins(object,preMerger = FALSE, level=TRUE)
+    
+   
+    mcDown <- marginsPre$down - priceDownPre - priceUpPre  
+    mcUp <- marginsPre$up  - priceUpPre  
+    
+    
+    
     
     if(!preMerger){
       mcUp <- mcUp*(1+up@mcDelta)
