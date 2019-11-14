@@ -180,6 +180,26 @@ priceOutside = priceOutSide)
 
 print(simres_down)
 summary(simres_down)
+
+
+## Simulate a vertical merger
+ownerPostDown <- ownerPreDown
+ownPostDown[ownerPostDown == "D1"] <- "U1"
+
+simres_vert <- vertical.barg(sharesDown =shareDown,
+pricesDown = priceDown,
+marginsDown = marginDown,
+ownerPreDown = ownerPreDown,
+ownerPostDown = ownerPostDown,
+pricesUp = priceUp,
+marginsUp = marginUp,
+ownerPreUp = ownerPreUp,
+ownerPostUp = ownerPreUp,
+priceOutside = priceOutSide)
+
+
+print(simres_down)
+summary(simres_down)
 }
 }
 \references{

@@ -89,19 +89,18 @@ setMethod(
     if(preMerger) {thisUpOwner <- up@ownerPre
                    thisDownOwner <- down@ownerPre
                    bargParm <- up@bargpowerPre
-                   thisUpOwnerMat   <- ownerToMatrix(up,preMerger=TRUE)
-                   thisDownOwnerMat <- ownerToMatrix(down,preMerger=TRUE)
+                   
     }
     
     else{         thisUpOwner <- up@ownerPost
                   thisDownOwner <- down@ownerPost
                   bargParm <- up@bargpowerPost
-                  thisUpOwnerMat   <- ownerToMatrix(up,preMerger=FALSE)
-                  thisDownOwnerMat <- ownerToMatrix(down,preMerger=FALSE)
                   }
     
+    thisUpOwnerMat   <- ownerToMatrix(up,preMerger=preMerger)
+    thisDownOwnerMat <- ownerToMatrix(down,preMerger=preMerger)
     
-    if(!is.matrix(up@owner) & !is.matrix(down@owner)){
+    if(!is.matrix(thisUpOwner) & !is.matrix(thisDownOwner)){
     
       
       
@@ -113,10 +112,10 @@ setMethod(
       
     for( v in vertFirms){
     
-    bargParm[thisUpOwner == v  & thisDownOwner == v] <- 1 
+    #bargParm[thisUpOwner == v  & thisDownOwner == v] <- 1 
     
     vertrows <- thisUpOwner != v  & thisDownOwner == v
-    thisUpOwnerMat[vertrows, thisUpOwner == v] <- -bargParm[vertrows]/(1-bargParm[vertrows])
+    thisUpOwnerMat[vertrows, thisUpOwner == v] <- -(1-bargParm[vertrows])/bargParm[vertrows]
     
     
     vertrows <-  thisUpOwner == v  & thisDownOwner != v
@@ -134,12 +133,15 @@ setMethod(
     if(preMerger){
     object@ownerDownPre <- ownerDownVertical
     object@ownerDownLambdaPre <-  ownerDownLambda
-    object@up@bargpowerPre <- bargParm
+    object@ownerUpLambdaPre <- thisUpOwnerMat 
+    #object@up@bargpowerPre <- bargParm
     }
+    
     else{
       object@ownerDownPost <- ownerDownVertical
       object@ownerDownLambdaPost <-  ownerDownLambda
-      object@up@bargpowerPost <- bargParm
+      object@ownerUpLambdaPost <- thisUpOwnerMat
+      #object@up@bargpowerPost <- bargParm
       
     }
     #vertical$ownerPostNoSupply.up <-  ids$up.firm == 1  & ids$down.firm != 1

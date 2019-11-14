@@ -180,7 +180,7 @@ setMethod(
 setMethod(
   f= "calcPriceDelta",
   signature= "Auction2ndLogit",
-  definition=function(object,exAnte=FALSE,levels=TRUE){
+  definition=function(object,exAnte=FALSE,levels=TRUE, market=FALSE){
 
     subset <- object@subset
 
@@ -190,9 +190,7 @@ setMethod(
       sharesPost <- calcShares(object, preMerger=FALSE)
       mcDelta <- mcDelta*sharesPost
     }
-    else{sharesPost <- rep(1,length(subset))}
-
-
+   
     result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte) + mcDelta -
       calcMargins(object, preMerger=TRUE,exAnte=exAnte)
 

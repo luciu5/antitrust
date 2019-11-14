@@ -2227,6 +2227,8 @@ setMethod(
   f= "calcSlopes",
   signature= "VertBargBertLogit",
   definition=function(object){
+   
+    
     
     constrain <- object@constrain
     
@@ -2234,22 +2236,39 @@ setMethod(
     down <- object@down
     constrain <- object@constrain
     
-    ownerPre.up <- up@ownerPre
-    ownerPre.down <- down@ownerPre
-    pricesUp <- up@prices
-    marginsUp <- up@margins
+
+    owner.up <- up@ownerPre
+    owner.down <- down@ownerPre
     
-    id <- data.frame(up.firm=ownerToVec(up),
-                     down.firm=ownerToVec(down)
+    
+  
+    
+    pricesUp    <- up@prices
+    marginsUp   <- up@margins
+    
+    marginsDown <- down@margins
+    idx         <- down@normIndex
+    sharesDown  <- down@shares
+    
+    
+    if(is.na(idx)){
+      idxShare <- 1 - down@shareInside
+      idxPrice <- down@priceOutside
+    }
+    else{
+      idxShare <- shares[idx]
+      idxPrice <- prices[idx]
+    }
+    
+    
+    id <- data.frame(up.firm=owner.up,
+                     down.firm=owner.down
                      )
     
     
    
     
     pricesDown <- down@prices
-    down@pricePre <- pricesDown
-    marginsDown <- calcMargins(down, preMerger= TRUE)
-    
     nprods <- nrow(id)
     
     if(constrain == "pair"){
@@ -2263,31 +2282,113 @@ setMethod(
     }
     else{ id <- rep(1,nprods)}
     
+    #set starting value for bargaining parameter equal to 0.5
+    bStart <- rep(0.5,nlevels(factor(id)))
+    # set starting value for alpha equal to single product 
+    # unintegrated firm
+    firstAvail <- which(!is.na(marginsDown))[1]
+    alphaStart <- -1/(marginsDown[firstAvail]*(1 - sharesDown[firstAvail]))
     
-
-    marginsDown <- marginsDown*pricesDown
+    parmStart <- c(alphaStart,bStart)
+    
     marginsUp <- marginsUp*pricesUp
     
     
     
-    div <- diversion(down, preMerger=TRUE) 
    
-    
-    regressor <- solve(ownerPre.up * div) %*% (ownerPre.down * div) %*% marginsDown
-    regressor <- as.vector(regressor)
-    
-    normbarg <- coef(lm(marginsUp~0+id:regressor))
-    names(normbarg) <- gsub(":.*","",names(normbarg))
-    
-    bargparm <- 1/(1+normbarg) 
-    
-    bargparm <- bargparm[id]
-    names(bargparm) <- down@labels
+    div <- tcrossprod(1/(1-sharesDown),sharesDown)*sharesDown
+    diag(div) <- -sharesDown
+    div <- as.vector(div)
     
     
+    vertFirms <- intersect(owner.up,owner.down)
     
-    up@bargpower <- bargparm
+    OwnerDownMatVertical <- ownerToMatrix(down, preMerger=TRUE)
+    ownerBargUpVert<- ownerToMatrix(up, preMerger=TRUE)
+    
+    minD <- function(theta){
+      
+      alpha <- theta[1]
+      theta <- theta[-1]
+      b <- b[as.numeric(id)]
+      
+  
+      b[owner.up == owner.down] <- 1 
+      
+      for( v in vertFirms){
+        
+        vertrows <- owner.up != v  & owner.down == v
+        ownerBargUpVert[vertrows, owner.up == v] <- -(1-b[vertrows])/b[vertrows]
+      }
+      
+      
+      ownerBargDownVert  <-  owner.down  * (1-b)/b
+      
+      for( v in vertFirms){
+        
+        vertrows <-  owner.up == v  & owner.down != v
+        
+        ownerDownMatVertical[owner.down == v, vertrows] <- 1
+        #ownerDownMatVertical[owner.down == v, !vertrows] <- 0
+        
+        
+        ownerBargDownVert [vertrows, owner.down == v] <- -1
+        
+      }
+      
+      #ownerDownMatVertical[!owner.down %in% vertFirms, ] <- 0
+      
+      down@ownerPre <- ownerDownMatVertical
+      down@slopes$alpha <- alpha
+      down@slopes$meanval <- log(sharesDown) - log(idxShare) - alpha*(pricesDown - idxPrice)
+      marginsCandDown <- calcMargins(down, preMerger= TRUE,level=TRUE)
+      
+      depVar <- as.vector((ownerBargUpVert  * div) %*% marginsUp)
+      regressor <- as.vector(( ownerBargDownVert  * div) %*% marginsCandDown)
+      
+      err <- c(depVar - regressor, marginsDown - marginsCandDown)
+      return(sum(err^2,na.rm = TRUE))
+    }
+    
+    optmethod <- "L-BFGS-B"
+    #if(length(bStart) ==1) optmethod <- "Brent"
+    lowerB <- rep(0,length(parmStart))
+    lowerB[1] <- -Inf
+    upperB <- rep(1, length(parmStart))
+    upperB[1] <- -1e-6
+    thetaOpt <- optim(parmStart,minD,method=optmethod,lower = lowerB,upper = upperB)
+    
+    if(thetaOpt$convergence !=0){
+      warning("Calibration routine may not have converged. Optimizer Reports:\n\t",bOpt$message)}
+    
+    ## Pre-merger bargaining parameter
+    alphaOpt <- thetaOpt$par[1]
+    mvalOpt <- log(sharesDown) - log(idxShare) - alpha*(pricesDown - idxPrice)
+    bOpt     <- thetaOpt$par[-1]
+    bargparmPre <- bargparmPost <-  bOpt[as.numeric(id)]
+    bargparmPre[owner.up  == owner.down ] <- 1 
+    names(bargparmPre) <- down@labels
+    
+    ## Post-merger bargaining parameter
+    
+    owner.up <- up@ownerPost
+    owner.down <- down@ownerPost
+    bargparmPost[owner.up  == owner.down ] <- 1 
+    names(bargparmPost) <- down@labels
+      
+      
+    down@slopes <- list(alpha=alphaOpt,meanval=mvalOpt)  
+    object@down <- down
+    
+    up@bargpowerPre <- bargparmPre
+    up@bargpowerPost <- bargparmPost
     object@up <- up
+  
+    
+    
+    
+    object <- ownerToMatrix(object, preMerger=TRUE) #create ownership matrices
+    object <- ownerToMatrix(object, preMerger=FALSE) #create ownership matrices
     
     return(object)
     
@@ -2342,7 +2443,7 @@ setMethod(
     mcPre <- calcMC(object, preMerger=TRUE)
     result$mcUpPre <- round(mcPre$up,digits)
     result$mcDownPre <- round(mcPre$down,digits)
-    result$bargpower <- round(up@bargpower,digits)
+    result$bargpower <- round(up@bargpowerPre,digits)
     
     return(result)
     

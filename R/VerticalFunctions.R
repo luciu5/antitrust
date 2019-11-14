@@ -1,8 +1,7 @@
 #' @title Supply Chain Merger Simulation
 #' @name SupplyChain-Functions
 #' @include VerticalClasses.R
-#' @aliases vertical
-#' vertical.barg
+#' @aliases vertical vertical.barg
 #' @description Calibrates consumer demand using (Nested) Logit
 #' and then simulates the price effect of a merger between two firms
 #' under the assumption that all firms in the market are playing a
@@ -18,12 +17,10 @@
 #' @param pricesDown A length k vector of downstream product prices.
 #' @param marginsDown A length k vector of downstream product margins, some of which may
 #'   equal NA.
-#' @param ownerPreDown EITHER a vector of length k whose values
-#'   indicate which downstream firm produced a product pre-merger OR
-#'   a k x k matrix of pre-merger ownership shares.
-#' @param ownerPostDown EITHER a vector of length k whose values
-#'   indicate which downstream firm produced a product after the merger OR
-#'   a k x k matrix of post-merger ownership shares.
+#' @param ownerPreDown A vector of length k whose values
+#'   indicate which downstream firm produced a product pre-merger.
+#' @param ownerPostDown A vector of length k whose values
+#'   indicate which downstream firm produced a product post-merger.
 #' @param mcDeltaDown A vector of length k where each element equals the
 #'   proportional change in a downstream firm's product-level marginal costs due to
 #'     the merger. Default is 0, which assumes that the merger does not
@@ -86,7 +83,7 @@
 #' \code{\linkS4class{VertBarg2ndLogit}} 
 #' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @references 
-#' Sheu, Gloria,  Taragin, Charles (2018). 
+#' Sheu, Gloria,  Taragin, Charles (2019). 
 #' "Simulating Mergers in a Vertical Supply Chain with Bargaining," EAG Discussions Papers 201804, Department of Justice, Antitrust Division.
 #' @examples 
 #' \donttest{
@@ -140,6 +137,26 @@
 #' 
 #' print(simres_down)
 #' summary(simres_down)
+#' 
+#' 
+#' ## Simulate a vertical merger
+#' ownerPostDown <- ownerPreDown
+#' ownPostDown[ownerPostDown == "D1"] <- "U1"
+#' 
+#' simres_vert <- vertical.barg(sharesDown =shareDown,
+#' pricesDown = priceDown,
+#' marginsDown = marginDown,
+#' ownerPreDown = ownerPreDown,
+#' ownerPostDown = ownerPostDown,
+#' pricesUp = priceUp,
+#' marginsUp = marginUp,
+#' ownerPreUp = ownerPreUp,
+#' ownerPostUp = ownerPreUp,
+#' priceOutside = priceOutSide)
+#' 
+#' 
+#' print(simres_down)
+#' summary(simres_down)
 #' }
 #' @include VerticalClasses.R
 NULL
@@ -149,7 +166,7 @@ NULL
 vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
                   pricesDown,marginsDown,
                   ownerPreDown,ownerPostDown,
-                  nests=rep(NA,length(priceDown)),
+                  nests=rep(NA,length(pricesDown)),
                   diversions=diversions,
                   mcDeltaDown=rep(0,length(pricesDown)),
                   pricesUp,marginsUp,
@@ -174,18 +191,30 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
   supplyDown <- match.arg(supplyDown)
   constrain <-  match.arg(constrain)
   
-  if(any(is.na(nests))){
+  ## A merger is horizontal if there is no vertical merger
+  ## Note: need to exclude pre-merger vertical arrangements
+  ## Note: this code doesn't seem to allow for horizontal mergers
+  ##       with an existing vertical relationship FIX
+ 
+  preVert <- ownerPreUp == ownerPreDown
+  postVert <- ownerPostUp == ownerPostDown
+  
+  isVerticalMerger <- any(!preVert & postVert)
+  isHorizontal <- !isVerticalMerger
+  
+  if(missing(nests) || any(is.na(nests))){
     if(supplyDown =="bertrand"){
       downClass = "Logit"
       resclass = "VertBargBertLogit"}
-    else{downClass == "Auction2ndLogit"
+    else{downClass = "Auction2ndLogit"
       resclass = "VertBarg2ndLogit"}
   }
   else{
     nests <- factor(nests, levels= unique(nests))
     if(supplyDown =="bertrand"){downClass = "LogitNests"}
-    else{downClass == "Auction2ndLogitNests"}
+    else{downClass = "Auction2ndLogitNests"}
   }
+  
   ## Create  containers to store relevant data
   
  
@@ -208,8 +237,8 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
               labels=labels)
   
   ## Convert downstream ownership vectors to ownership matrices
-  up@ownerPre  <- ownerToMatrix(up,TRUE)
-  up@ownerPost <- ownerToMatrix(up,FALSE)
+  #up@ownerPre  <- ownerToMatrix(up,TRUE)
+  #up@ownerPost <- ownerToMatrix(up,FALSE)
 
   
   if(any(is.na(nests))){
@@ -251,20 +280,16 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
   } 
   
   ## Convert downstream ownership vectors to ownership matrices
-  down@ownerPre  <- ownerToMatrix(down,TRUE)
-  down@ownerPost <- ownerToMatrix(down,FALSE)
+  #down@ownerPre  <- ownerToMatrix(down,TRUE)
+  #down@ownerPost <- ownerToMatrix(down,FALSE)
+  
   
   isUpHorz <- ifelse(!isTRUE(all.equal(up@ownerPre,up@ownerPost,check.attributes=FALSE)),TRUE,FALSE)
-  isDownHorz <- ifelse(!isTRUE(all.equal(down@ownerPre,down@ownerPost,check.attributes=FALSE)),TRUE,FALSE)
-  
-  isHorizontal <- (isUpHorz & !isDownHorz) | (!isUpHorz & isDownHorz)
-  isUpstream <- isUpHorz & !isDownHorz
+  isUpstream <- isHorizontal & isUpHorz 
   
   ## Calculate downstream demand slope coefficients
-  down <- calcSlopes(down)
+  #down <- calcSlopes(down)
   
-
-
   ##save upstream and downstream data
   result <- new(resclass,
                 up = up,
@@ -275,13 +300,12 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
                 isUpstream=isUpstream
                 )
  
- 
 
 
   ## compute bargaining parameters
   result <- calcSlopes(result)
 
- 
+  
   ## Calculate marginal costs
   mcPre <- calcMC(result,TRUE)
   mcPost <- calcMC(result,FALSE)
@@ -292,7 +316,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
   result@up@mcPre <-  mcPre$up
   result@up@mcPost <- mcPost$up
   
-  ## Solve Non-Linear System for Price Changes
+  ## Solve System for Price Changes
 
   resultsPre  <- calcPrices(result,preMerger=TRUE)
   resultsPost <- calcPrices(result,preMerger=FALSE)

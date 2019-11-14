@@ -19,6 +19,8 @@
 #' @param object An instance of one of the classes listed above.
 #' @param preMerger If TRUE, returns pre-merger outcome. If
 #' FALSE, returns post-merger outcome.  Default is TRUE.
+#' @param level IF TRUE, return margins in dollars. If FALSE, returns 
+#' margins in proportions. Default for most classes is FALSE.
 #' @param exAnte If \sQuote{exAnte} equals TRUE then the
 #' \emph{ex ante} expected result for each firm is produced, while FALSE produces the
 #' expected result conditional on each firm winning the auction. Default is FALSE.
@@ -38,12 +40,13 @@ setGeneric (
 setMethod(
   f= "calcMargins",
   signature= "Bertrand",
-  definition=function(object,preMerger=TRUE){
+  definition=function(object,preMerger=TRUE, level=FALSE){
 
 
 
     if( preMerger) {
 
+      prices <- object@pricePre
       owner  <- object@ownerPre
       revenue<- calcShares(object,preMerger,revenue=TRUE)
 
@@ -61,6 +64,8 @@ setMethod(
     }
 
 
+    if(level) {margins <- margins * prices }
+    
     names(margins) <- object@labels
 
     return(as.vector(margins))
@@ -73,53 +78,62 @@ setMethod(
 setMethod(
   f= "calcMargins",
   signature= "VertBargBertLogit",
-  definition=function(object,preMerger=TRUE){
+  definition=function(object,preMerger=TRUE, level=FALSE){
     
     up <- object@up
     down <- object@down
     alpha <- down@slopes$alpha
-    
-   
-    bargparm <- up@bargpower
+  
     
     if( preMerger) {
-      
+      bargparm <- up@bargpowerPre
       ownerUp  <- up@ownerPre
       if(length(up@pricePre) == 0 ){
       priceUp <- up@prices
       }
       else{priceUp <- up@prices}
       
-      ownerDown  <- down@ownerPre
+      ownerDownPre  <- object@ownerDownPre
+      ownerDownLambdaPre <- object@ownerDownLambdaPre
+      ownerUpLambdaPre <- object@ownerUpLambdaPre
+      
       if(length(down@pricePre) == 0 ){
+        isIntegrated <- object@isIntegratedPost
         priceDown <- down@prices
         down@pricePre <- priceDown
       }
       else{priceDown <- down@prices}
       
       #down@mcPre <- down@mcPre + priceUp
-      marginsDown <- calcMargins(down, preMerger=preMerger )
+      down@ownerPre <- ownerDownPre 
+      marginsDown <- calcMargins(down, preMerger=preMerger, level=level )
       
       
       div <- diversion(down,  preMerger=preMerger)
       
       
+      marginsUp <-  as.vector(solve(ownerUpLambdaPre * div) %*% (((ownerDownLambdaPre * div) %*% (marginsDown*priceDown)))) #margins in levels
       
-      marginsUp <- (1-bargparm)/bargparm * as.vector(solve(ownerUp * div) %*% (ownerDown * div) %*% (marginsDown*priceDown)) #margins in levels
-      marginsUp <- marginsUp/priceUp
+      if(!level) {marginsUp <- marginsUp/priceUp}
      
       
       
     }
     
     else{
+      bargparm <- up@bargpowerPost
       priceUp <- up@pricePost
       mcUp     <- up@mcPost
       priceDown <- down@pricePost
       mcDown     <- down@mcPost + priceUp
       
-      marginsUp <- 1 - mcUp/priceUp
-      marginsDown <- 1 - mcDown/priceDown
+      marginsUp <- priceUp - mcUp
+      marginsDown <- priceDown - mcDown
+      
+      if(!level){
+        marginsUp <- marginsUp/priceUp
+        marginsDown <- marginsDown/priceDown
+      }
     }
     
     
@@ -140,9 +154,12 @@ setMethod(
 setMethod(
   f= "calcMargins",
   signature= "Auction2ndCap",
-  definition=function(object,preMerger=TRUE,exAnte=TRUE){
+  definition=function(object,preMerger=TRUE,exAnte=TRUE,level=FALSE){
 
-    result <- calcProducerSurplus(object,preMerger=preMerger,exAnte=exAnte)/calcPrices(object,preMerger=preMerger,exAnte=exAnte)
+    result <- calcProducerSurplus(object,preMerger=preMerger,exAnte=exAnte)
+    
+    if(!level) result <- result / calcPrices(object,preMerger=preMerger,exAnte=exAnte)
+    
     return(result)
   })
 
@@ -152,7 +169,7 @@ setMethod(
 setMethod(
   f= "calcMargins",
   signature= "Cournot",
-  definition=function(object,preMerger=TRUE){
+  definition=function(object,preMerger=TRUE, level=FALSE){
 
 
     if(preMerger){
@@ -165,8 +182,8 @@ setMethod(
 
 
 
-    margin <- 1 - mc/prices
-
+    margin <- prices - mc
+    if(!level){margin <- margin/prices}
 
     dimnames(margin) <- object@labels
     return(margin)
@@ -180,7 +197,7 @@ setMethod(
 setMethod(
   f= "calcMargins",
   signature= "AIDS",
-  definition=function(object,preMerger=TRUE){
+  definition=function(object,preMerger=TRUE,level=FALSE){
 
     priceDelta <- object@priceDelta
     ownerPre   <- object@ownerPre
@@ -191,12 +208,15 @@ setMethod(
 
     if(preMerger){
       names(marginPre) <- object@labels
+      
+      if(level) {marginPre <- marginPre * object@pricePre}
       return(marginPre)}
 
     else{
 
       marginPost <- 1 - ((1 + object@mcDelta) * (1 - marginPre) / (priceDelta + 1) )
       names(marginPost) <- object@labels
+      if(level) {marginPost <- marginPost * object@pricePost}
       return(marginPost)
     }
 
@@ -209,17 +229,19 @@ setMethod(
 setMethod(
   f= "calcMargins",
   signature= "LogitCap",
-  definition=function(object,preMerger=TRUE){
+  definition=function(object,preMerger=TRUE,level=FALSE){
 
     margins <- object@margins #capacity-constrained margins not identified -- use supplied margins
 
     if( preMerger) {
       capacities <- object@capacitiesPre
+      prices <- object@pricePre
 
     }
     else{
 
       capacities <- object@capacitiesPost
+      prices <- object@pricePost
     }
 
 
@@ -236,6 +258,7 @@ setMethod(
 
     names(margins) <- object@labels
 
+    if(level) {margins <- margins * prices} 
     return(as.vector(margins))
   }
 
@@ -247,7 +270,7 @@ setMethod(
 setMethod(
   f= "calcMargins",
   signature= "Auction2ndLogit",
-  definition=function(object,preMerger=TRUE,exAnte=FALSE){
+  definition=function(object,preMerger=TRUE,exAnte=FALSE,level=TRUE){
 
 
     nprods <- length(object@shares)
@@ -258,10 +281,12 @@ setMethod(
     if( preMerger) {
       owner  <- object@ownerPre
       subset <- rep(TRUE,nprods)
+      prices <- object@pricePre
     }
     else{
     subset <- object@subset  
     owner  <- object@ownerPost
+    prices <- object@pricePost
     }
 
     owner <- owner[subset,subset]
@@ -272,7 +297,7 @@ setMethod(
     margins[subset] <-  log(1-firmShares)/(alpha * firmShares)
 
     if(exAnte){ margins[subset] <-  margins[subset] * shares}
-
+    if(!level){margins <- margins/prices}
     names(margins) <- object@labels
 
     return(as.vector(margins))
@@ -286,7 +311,7 @@ setMethod(
 setMethod(
   f= "calcMargins",
   signature= "Auction2ndLogitNests",
-  definition=function(object,preMerger=TRUE,exAnte=FALSE){
+  definition=function(object,preMerger=TRUE,exAnte=FALSE,level=FALSE){
     
     
     nprods <- length(object@shares)
@@ -294,10 +319,12 @@ setMethod(
     
     if( preMerger) {
       owner  <- object@ownerPre
-      subset <- rep(TRUE, nprods)}
+      subset <- rep(TRUE, nprods)
+      prices <- onject@pricePre}
     else{
       owner  <- object@ownerPost
-      subset <- object@subset}
+      subset <- object@subset
+      prices <- object@pricePost}
     
     
     nests <- object@nests
@@ -331,7 +358,7 @@ setMethod(
     
     
     if(exAnte){ margins[subset] <-  margins[subset] * shares}
-    
+    if(!level){margins <- margins/prices}
     names(margins) <- object@labels
     
     return(as.vector(margins))

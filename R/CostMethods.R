@@ -115,6 +115,7 @@ setMethod(
     up <- object@up
     down <- object@down
     
+    down@ownerPre <- object@ownerDownPre
     mcDown <- calcMC(down, preMerger = TRUE)
     mcDown <- mcDown - up@prices #isolate the portion of costs that exclude wholesaer 
     

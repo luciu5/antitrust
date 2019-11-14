@@ -34,6 +34,8 @@ setClass(
      ownerDownPost="matrix",
      ownerDownLambdaPre="matrix",
      ownerDownLambdaPost="matrix",
+     ownerUpLambdaPre="matrix",
+     ownerUpLambdaPost="matrix",
      constrain        = "character"
   ),
   validity = function(object){
