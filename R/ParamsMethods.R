@@ -2347,6 +2347,7 @@ setMethod(
       
       if(is2nd) mval <- log(sharesDown) - log(idxShare)
       else{mval <- log(sharesDown) - log(idxShare) - alpha*(pricesDown - idxPrice)}
+      
       down@slopes <- list(alpha = alpha,
                           meanval = mval
                           )
@@ -2359,7 +2360,7 @@ setMethod(
         if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
         
         
-        marginsCandDown <- marginsCandDown - elast.inv %*% ( (ownerVDown * elast) %*% (marginsUp) )
+        marginsCandDown <- marginsCandDown - elast.inv %*% ( (ownerDownMatVertical * elast) %*% (marginsUp) )
       }
       
       depVar <- as.vector((ownerBargUpVert  * div) %*% marginsUp)

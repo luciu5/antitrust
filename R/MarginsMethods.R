@@ -82,10 +82,14 @@ setMethod(
     
     up <- object@up
     down <- object@down
+    alpha <- down@slopes$alpha
   
+    #is2nd <- grepl("2nd",class(object))
   
     ownerUp <- ownerToMatrix(up,preMerger =preMerger)
     ownerDown <- ownerToMatrix(down,preMerger =preMerger)
+    
+    nprods <- nrow(ownerDown)
     
     if( preMerger) {
       bargparm <- up@bargpowerPre
@@ -103,11 +107,11 @@ setMethod(
      
       ownerDownLambda <- object@ownerDownLambdaPre
       ownerUpLambda <- object@ownerUpLambdaPre
-      
+      ownerVDown <- object@ownerDownPre
       
       
       #down@mcPre <- down@mcPre + priceUp
-      down@ownerPre <- ownerDown 
+      down@ownerPre <- object@ownerDownPre
       
     }
     
@@ -120,38 +124,43 @@ setMethod(
       
       ownerDownLambda <- object@ownerDownLambdaPost
       ownerUpLambda <- object@ownerUpLambdaPost
+      ownerVDown <- object@ownerDownPost
       
-      down@ownerPost <- ownerDown 
+      down@ownerPost <- object@ownerDownPost
       
     }
-      marginsDown <- calcMargins(down, preMerger=preMerger, level=level )
-      
-      
-      #div <- diversion(down,  preMerger=preMerger)
-      
-      sharesDown  <- calcShares(down, preMerger=preMerger,revenue=FALSE)
-      
-      
-      
-      div <- tcrossprod(1/(1-sharesDown),sharesDown)*sharesDown
-      diag(div) <- -sharesDown
-      div <- as.vector(div)
-      
-      
-      marginsUp <-  as.vector(solve(ownerUpLambda * div) %*% (((ownerDownLambda * div) %*% (marginsDown)))) 
-      
-      if(!level) {
-        marginsUp <- marginsUp/priceUp
+    
+    shareDown <- calcShares(down,preMerger=preMerger, revenue=FALSE)
+    elast <-  -alpha*tcrossprod(shareDown)
+    diag(elast) <- alpha*shareDown + diag(elast)
+    elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
+    if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
+    marginsDown <- -as.vector(elast.inv %*% shareDown)
+    
+    
+    div <- tcrossprod(1/(1-shareDown),shareDown)*shareDown
+    diag(div) <- -shareDown
+    div <- as.vector(div)
+    
+    
+    #marginsDown <-  marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% (priceCandUp-mcUp) )
+    
+    #marginsUp <-  as.vector(solve(ownerUpLambda * div) %*% (((ownerDownLambda * div) %*% (marginsDown)))) 
+    
+    marginsUpPart <-  solve(ownerUpLambda * div) %*% (ownerDownLambda * div) 
+    
+    marginsUp <- solve(diag(nprods) + (marginsUpPart %*% elast.inv %*%  (ownerVDown * elast)))
+    marginsUp <- marginsUp %*% marginsUpPart %*% marginsDown
+    
+    marginsDown <-  marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp )
+    
+    if(!level) {
+      marginsUp <- marginsUp/priceUp
       marginsDown <- marginsDown/priceDown
-      }
+    }
      
       
       
-    
-    
-   
-    
-    
     
     names(marginsUp) <- up@labels
     names(marginsDown) <- down@labels

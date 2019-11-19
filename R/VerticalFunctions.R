@@ -161,8 +161,8 @@
 #' @include VerticalClasses.R
 NULL
 
-#'@rdname SupplyChain-Functions
-#@export
+#' @rdname SupplyChain-Functions
+#' @export
 vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
                   pricesDown,marginsDown,
                   ownerPreDown,ownerPostDown,
@@ -317,6 +317,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
   result@up@mcPost <- mcPost$up
   
   ## Solve System for Price Changes
+
 
   resultsPre  <- calcPrices(result,preMerger=TRUE)
   resultsPost <- calcPrices(result,preMerger=FALSE)

@@ -86,7 +86,10 @@ setMethod(
     up <- object@up
     down <- object@down
     
-    downDelta <- calcPriceDelta(down,levels = levels, market = market, ...)
+    down@ownerPre <- ownerToMatrix(down,preMerger=TRUE)
+    down@ownerPost <- ownerToMatrix(down,preMerger=FALSE)
+    
+    downDelta <-  calcPriceDelta(down,levels = levels, market = FALSE, ...)
     upDelta   <-  calcPriceDelta(up,levels = levels, market = FALSE, ...)
     
     if(market){
