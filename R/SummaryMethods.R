@@ -250,14 +250,28 @@ setMethod(
     else{outDelta <- (outPost/outPre - 1) * 100}
     
     
-    isPartyDown <- rowSums( abs(down@ownerPost - down@ownerPre))>0
-    isPartyUp <- rowSums( abs(up@ownerPost - up@ownerPre))>0
-    isParty <- factor(isPartyDown | isPartyUp,levels=c(FALSE,TRUE),labels=c(" ","*"))
+    isPartyHorzDown <- down@ownerPost %in% down@ownerPre &
+                       down@ownerPost != down@ownerPre
+    if(any(isPartyHorzDown)){
+    isPartyHorzDown <- down@ownerPost==down@ownerPost[isPartyHorzDown]
+}
+isPartyHorzUp <- up@ownerPost %in% up@ownerPre &
+                 up@ownerPost !=   up@ownerPre
+if(any(isPartyHorzUp)){
+  isPartyHorzUp <- up@ownerPost==up@ownerPost[isPartyHorzUp]
+}
+    isPartyVert <- down@ownerPost == up@ownerPost &
+                       down@ownerPre != up@ownerPre
+  
+    isParty <- factor(isPartyHorzDown | isPartyHorzUp |isPartyVert,levels=c(FALSE,TRUE),labels=c(" ","*"))
     
-    results <- data.frame(priceUpPre=priceUpPre,priceUpPost=priceUpPost,
+    results <- data.frame(priceUpPre=priceUpPre,
+                          priceUpPost=priceUpPost,
                           priceUpDelta=priceDelta$up,
-                          priceDownPre=priceDownPre,priceDownPost=priceDownPost,
-                          priceDownDelta=priceDelta$down,outputPre=outPre,
+                          priceDownPre=priceDownPre,
+                          priceDownPost=priceDownPost,
+                          priceDownDelta=priceDelta$down,
+                          outputPre=outPre,
                           outputPost=outPost,outputDelta=outDelta)
     
     

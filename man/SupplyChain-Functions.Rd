@@ -8,7 +8,7 @@
 \usage{
 vertical.barg(supplyDown = c("bertrand", "2nd"), sharesDown, pricesDown,
   marginsDown, ownerPreDown, ownerPostDown, nests = rep(NA,
-  length(priceDown)), diversions = diversions, mcDeltaDown = rep(0,
+  length(pricesDown)), diversions = diversions, mcDeltaDown = rep(0,
   length(pricesDown)), pricesUp, marginsUp, ownerPreUp, ownerPostUp,
   mcDeltaUp = rep(0, length(pricesUp)),
   normIndex = ifelse(isTRUE(all.equal(sum(sharesDown), 1, check.names =
@@ -29,16 +29,14 @@ between 0 and 1.}
 
 \item{pricesDown}{A length k vector of downstream product prices.}
 
-\item{marginsDown}{A length k vector of downstream product margins, some of which may
+\item{marginsDown}{A length k vector of downstream product margins in levels (e.g. dollars), some of which may
 equal NA.}
 
-\item{ownerPreDown}{EITHER a vector of length k whose values
-indicate which downstream firm produced a product pre-merger OR
-a k x k matrix of pre-merger ownership shares.}
+\item{ownerPreDown}{A vector of length k whose values
+indicate which downstream firm produced a product pre-merger.}
 
-\item{ownerPostDown}{EITHER a vector of length k whose values
-indicate which downstream firm produced a product after the merger OR
-a k x k matrix of post-merger ownership shares.}
+\item{ownerPostDown}{A vector of length k whose values
+indicate which downstream firm produced a product post-merger.}
 
 \item{mcDeltaDown}{A vector of length k where each element equals the
 proportional change in a downstream firm's product-level marginal costs due to
@@ -47,16 +45,14 @@ proportional change in a downstream firm's product-level marginal costs due to
 
 \item{pricesUp}{A length k vector of upstream product prices.}
 
-\item{marginsUp}{A length k vector of upstream product margins, some of which may
+\item{marginsUp}{A length k vector of upstream product margins in levels (e.g. dollars), some of which may
 equal NA.}
 
-\item{ownerPreUp}{EITHER a vector of length k whose values
-indicate which upstream firm produced a product pre-merger OR
-a k x k matrix of pre-merger ownership shares.}
+\item{ownerPreUp}{A vector of length k whose values
+indicate which upstream firm produced a product pre-merger.}
 
-\item{ownerPostUp}{EITHER a vector of length k whose values
-indicate which upstream firm produced a product after the merger OR
-a k x k matrix of post-merger ownership shares.}
+\item{ownerPostUp}{A vector of length k whose values
+indicate which upstream firm produced a product after the merger.}
 
 \item{mcDeltaUp}{A vector of length k where each element equals the
 proportional change in a upstream firm's product-level marginal costs due to
@@ -203,7 +199,7 @@ summary(simres_down)
 }
 }
 \references{
-Sheu, Gloria,  Taragin, Charles (2018). 
+Sheu, Gloria,  Taragin, Charles (2019). 
 "Simulating Mergers in a Vertical Supply Chain with Bargaining," EAG Discussions Papers 201804, Department of Justice, Antitrust Division.
 }
 \author{

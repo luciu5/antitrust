@@ -474,7 +474,6 @@ setMethod(
     
     
     subsetDown <- down@subset
-    subsetUp <- up@subset
     alpha <- down@slopes$alpha
     meanval <- down@slopes$meanval[subsetDown]
     
@@ -496,7 +495,7 @@ setMethod(
       mcDown <- down@mcPre[subsetDown]
       #ownerVDown <- object@ownerDownPre[subsetDown,subsetDown]
       #ownerDownLambda <- object@ownerDownLambdaPre[subsetDown,subsetDown]
-      #ownerUpLambda <- object@ownerUpLambdaPre[subsetUp,subsetUp]
+      #ownerUpLambda <- object@ownerUpLambdaPre[subsetDown,subsetDown]
     }
     
     else{
@@ -508,7 +507,7 @@ setMethod(
       mcDown <- down@mcPost[subsetDown]
       #ownerVDown <- object@ownerDownPost[subsetDown,subsetDown]
       #ownerDownLambda <- object@ownerDownLambdaPost[subsetDown,subsetDown]
-      #ownerUpLambda <- object@ownerUpLambdaPost[subsetUp,subsetUp]
+      #ownerUpLambda <- object@ownerUpLambdaPost[subsetDown,subsetDown]
       }
     
     
@@ -596,16 +595,17 @@ setMethod(
     
     alpha <- down@slopes$alpha
     meanval <- down@slopes$meanval
-    pricePre.up <- up@prices
+    
+    
     
     
     subsetDown <- down@subset
-    subsetUp <- up@subset
+  
     
     
     priceStartUp <- up@priceStart
     priceStartDown <- down@priceStart
-    priceStart <- c(priceStartUp[subsetUp]
+    priceStart <- c(priceStartUp[subsetDown]
                     #,priceStartUp[subsetDown]
                     )
     
@@ -615,6 +615,7 @@ setMethod(
     
     ownerDown <- ownerToMatrix(down, preMerger=preMerger)[subsetDown,subsetDown]
     
+    priceOutside <- down@priceOutside
     
     if(preMerger){
       
@@ -623,7 +624,8 @@ setMethod(
       mcUp <- up@mcPre[subsetDown]
       mcDown <- down@mcPre[subsetDown]
       ownerDownLambda <- object@ownerDownLambdaPre[subsetDown,subsetDown]
-      ownerUpLambda <- object@ownerUpLambdaPre[subsetUp,subsetUp]
+      ownerUpLambda <- object@ownerUpLambdaPre[subsetDown,subsetDown]
+      
     }
     
     else{
@@ -634,7 +636,8 @@ setMethod(
       mcUp <- up@mcPost[subsetDown]
       mcDown <- down@mcPost[subsetDown]
       ownerDownLambda <- object@ownerDownLambdaPost[subsetDown,subsetDown]
-      ownerUpLambda <- object@ownerUpLambdaPost[subsetUp,subsetUp]
+      ownerUpLambda <- object@ownerUpLambdaPost[subsetDown,subsetDown]
+      
       }
     
     
@@ -654,7 +657,7 @@ setMethod(
       #priceCandDown <- priceCand[-(1:length(priceCandUp))]
       
       
-      down@slopes$meanval <- meanval  + alpha *(priceCandUp - pricePre.up)
+      down@slopes$meanval <- meanval  + alpha *(priceCandUp - priceOutside)
       
       shareCandDown  <- calcShares(down, preMerger=preMerger,revenue=FALSE)
       marginsDownCand <- calcMargins(down, preMerger=preMerger,level=TRUE)
@@ -694,7 +697,7 @@ setMethod(
     minResultUp[subsetDown] <- minResult[1:length(priceStartUp[subsetDown])] 
     #minResultDown[subsetDown] <- minResult[-(1:length(priceStartUp[subsetDown]))]
     
-    down@slopes$meanval <- meanval  + alpha *(minResultUp - pricePre.up)
+    down@slopes$meanval <- meanval  + alpha *(minResultUp - priceOutside)
     
   
     marginsDown <- calcMargins(down, preMerger=preMerger,level=TRUE)

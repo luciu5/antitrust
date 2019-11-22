@@ -94,16 +94,21 @@ setMethod(
     if( preMerger) {
       bargparm <- up@bargpowerPre
        
-      if(length(up@pricePre) == 0 ){
-      priceUp <- up@prices
-      }
+      #if(length(up@pricePre) == 0 ){
+      #priceUp <- up@prices
+      #}
       
-      else{priceUp <- up@pricePre}
-      if(length(down@pricePre) == 0 ){
-        priceDown <- down@prices
-        down@pricePre <- priceDown
-      }
-      else{priceDown <- down@pricePre}
+      #else{
+        priceUp <- up@pricePre
+       # }
+      #if(length(down@pricePre) == 0 ){
+       # priceDown <- down@prices
+      #  down@pricePre <- priceDown
+      #}
+      #else{
+        priceDown <- down@pricePre
+        
+       # }
      
       ownerDownLambda <- object@ownerDownLambdaPre
       ownerUpLambda <- object@ownerUpLambdaPre
@@ -111,7 +116,7 @@ setMethod(
       
       
       #down@mcPre <- down@mcPre + priceUp
-      down@ownerPre <- object@ownerDownPre
+      down@ownerPre <- ownerDown
       
     }
     
@@ -126,11 +131,11 @@ setMethod(
       ownerUpLambda <- object@ownerUpLambdaPost
       ownerVDown <- object@ownerDownPost
       
-      down@ownerPost <- object@ownerDownPost
+      down@ownerPost <- ownerDown
       
     }
     
-    shareDown <- calcShares(down,preMerger=preMerger, revenue=FALSE)
+    shareDown <- calcShares(object,preMerger=preMerger, revenue=FALSE)
     elast <-  -alpha*tcrossprod(shareDown)
     diag(elast) <- alpha*shareDown + diag(elast)
     elast.inv <- try(solve(ownerDown * elast),silent=TRUE)

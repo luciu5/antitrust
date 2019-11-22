@@ -565,6 +565,36 @@ setMethod(
     }
 )
 
+
+
+#'@rdname Output-Methods
+#'@export
+setMethod(
+  f= "calcShares",
+  signature= "VertBarg2ndLogit",
+  definition=function(object,preMerger=TRUE,revenue=FALSE){
+  
+    
+    down <- object@down 
+    up <- object@up
+    
+    priceOutside <- down@priceOutside
+    
+    if(preMerger){ upPrice <- up@pricePre}
+    else{ upPrice <- up@pricePost}
+    
+   
+    meanval <- down@slopes$meanval
+    alpha <- down@slopes$alpha
+    
+    down@slopes$meanval <- meanval + alpha *(upPrice - priceOutside) 
+    result <- calcShares(down, preMerger=preMerger,revenue=revenue)
+    return(result)
+    
+    
+  }
+)
+
 #'@rdname Output-Methods
 #'@export
 setMethod(

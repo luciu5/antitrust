@@ -22,7 +22,7 @@
   subset, market = FALSE, ...)
 
 \S4method{calcPriceDelta}{Auction2ndLogit}(object, exAnte = FALSE,
-  levels = TRUE)
+  levels = TRUE, market = FALSE)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

@@ -12,9 +12,9 @@
 \alias{calcPrices,AIDS-method}
 \alias{calcPrices,LogitCap-method}
 \alias{calcPrices,Auction2ndLogit-method}
-\alias{calcPrices}
 \alias{calcPrices,VertBargBertLogit-method}
 \alias{calcPrices,VertBarg2ndLogit-method}
+\alias{calcPrices}
 \title{\dQuote{Calculating Prices} Methods}
 \usage{
 \S4method{calcPrices}{Cournot}(object, preMerger = TRUE)

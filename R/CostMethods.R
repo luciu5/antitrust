@@ -118,22 +118,23 @@ setMethod(
   
       if(length(up@pricePre) == 0 ){
         priceUpPre <- up@prices
+        object@up@pricePre <- up@prices
       }
       else{priceUpPre <- up@pricePre}
     
       if(length(down@pricePre) == 0 ){
         priceDownPre <- down@prices
-        down@pricePre <- priceDownPre
+        object@down@pricePre <- priceDownPre
       }
-      else{priceDownPre <- down@pricePre}
+      else{priceDownPre <- object@down@pricePre}
     
     
     
-    marginsPre <- calcMargins(object,preMerger = FALSE, level=TRUE)
+    marginsPre <- calcMargins(object,preMerger = TRUE, level=TRUE)
     
    
-    mcDown <- marginsPre$down - priceDownPre - priceUpPre  
-    mcUp <- marginsPre$up  - priceUpPre  
+    mcDown <- -(marginsPre$down - priceDownPre + priceUpPre)  
+    mcUp <- -(marginsPre$up  - priceUpPre)  
     
     
     
@@ -156,11 +157,11 @@ setMethod(
     
     if( preMerger && any(isNegUpMC, na.rm = TRUE)){
       
-      warning(paste("Negative upstream marginal costs were calibrated for the following firms:", paste(up@labels[isNegUpMC], collapse=",")))
+      warning(paste("Negative upstream marginal costs were calibrated for the following firms:", paste(up@labels[isNegUpMC & !is.na(isNegUpMC)], collapse=",")))
     }
     if( preMerger && any(isNegDownMC, na.rm = TRUE)){
       
-      warning(paste("Negative downstream marginal costs were calibrated for the following firms:", paste(down@labels[isNegDownMC], collapse=",")))
+      warning(paste("Negative downstream marginal costs were calibrated for the following firms:", paste(down@labels[isNegDownMC& !is.na(isNegDownMC)], collapse=",")))
     }
     
     return(list(up=mcUp,down=mcDown))

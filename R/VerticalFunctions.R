@@ -1,6 +1,5 @@
 #' @title Supply Chain Merger Simulation
 #' @name SupplyChain-Functions
-#' @include VerticalClasses.R
 #' @aliases vertical vertical.barg
 #' @description Calibrates consumer demand using (Nested) Logit
 #' and then simulates the price effect of a merger between two firms
@@ -8,14 +7,13 @@
 #' differentiated products Bertrand pricing game.
 #' @description Let k denote the number of products produced by all
 #' firms playing the Bertrand pricing game below.
-#'
 #' @param supplyDown A length 1 character vector that specifies whether the downstream
 #' game that firms are playing is a Nash-Bertrand Pricing game ("bertrand'') or a 2nd score 
 #' auction ("2nd"). Default is "bertrand".
 #' @param sharesDown A length k vector of product (quantity) shares. Values must be
 #'   between 0 and 1.
 #' @param pricesDown A length k vector of downstream product prices.
-#' @param marginsDown A length k vector of downstream product margins, some of which may
+#' @param marginsDown A length k vector of downstream product margins in levels (e.g. dollars), some of which may
 #'   equal NA.
 #' @param ownerPreDown A vector of length k whose values
 #'   indicate which downstream firm produced a product pre-merger.
@@ -26,14 +24,12 @@
 #'     the merger. Default is 0, which assumes that the merger does not
 #'     affect any products' marginal cost.
 #' @param pricesUp A length k vector of upstream product prices.
-#' @param marginsUp A length k vector of upstream product margins, some of which may
+#' @param marginsUp A length k vector of upstream product margins in levels (e.g. dollars), some of which may
 #'   equal NA.
-#' @param ownerPreUp EITHER a vector of length k whose values
-#'   indicate which upstream firm produced a product pre-merger OR
-#'   a k x k matrix of pre-merger ownership shares.
-#' @param ownerPostUp EITHER a vector of length k whose values
-#'   indicate which upstream firm produced a product after the merger OR
-#'   a k x k matrix of post-merger ownership shares.
+#' @param ownerPreUp A vector of length k whose values
+#'   indicate which upstream firm produced a product pre-merger.
+#' @param ownerPostUp A vector of length k whose values
+#'   indicate which upstream firm produced a product after the merger.
 #' @param mcDeltaUp A vector of length k where each element equals the
 #'   proportional change in a upstream firm's product-level marginal costs due to
 #'     the merger. Default is 0, which assumes that the merger does not
@@ -163,7 +159,10 @@ NULL
 
 #' @rdname SupplyChain-Functions
 #' @export
-vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
+#' 
+
+vertical.barg <- function(supplyDown = c("bertrand","2nd"),
+                          sharesDown,
                   pricesDown,marginsDown,
                   ownerPreDown,ownerPostDown,
                   nests=rep(NA,length(pricesDown)),
@@ -190,11 +189,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
   
   supplyDown <- match.arg(supplyDown)
   constrain <-  match.arg(constrain)
-  
-  ## A merger is horizontal if there is no vertical merger
-  ## Note: need to exclude pre-merger vertical arrangements
-  ## Note: this code doesn't seem to allow for horizontal mergers
-  ##       with an existing vertical relationship FIX
+
  
   preVert <- ownerPreUp == ownerPreDown
   postVert <- ownerPostUp == ownerPostDown
@@ -229,7 +224,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
               prices=pricesUp,
               shares = sharesDown,
               subset=subset,
-              margins=marginsUp,
+              margins=marginsUp/pricesUp,
               ownerPre=ownerPreUp,
               ownerPost=ownerPostUp,
               mcDelta=mcDeltaUp,
@@ -302,13 +297,14 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
  
 
 
-  ## compute bargaining parameters
+  ## compute demand parameters
   result <- calcSlopes(result)
 
   
   ## Calculate marginal costs
   mcPre <- calcMC(result,TRUE)
   mcPost <- calcMC(result,FALSE)
+  
   
   result@down@mcPre <-  mcPre$down
   result@down@mcPost <- mcPost$down
@@ -318,14 +314,16 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"), sharesDown,
   
   ## Solve System for Price Changes
 
-
   resultsPre  <- calcPrices(result,preMerger=TRUE)
+  result@down@pricePre <- resultsPre$down
+  result@up@pricePre <- resultsPre$up
+  
   resultsPost <- calcPrices(result,preMerger=FALSE)
 
-  result@down@pricePre <- resultsPre$down
+  
   result@down@pricePost <- resultsPost$down
   
-  result@up@pricePre <- resultsPre$up
+  
   result@up@pricePost <- resultsPost$up
   
   return(result)

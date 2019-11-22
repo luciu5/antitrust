@@ -14,6 +14,7 @@
 #' CV,LogitNests-method
 #' CV,Auction2ndLogit-method
 #' CV,VertBargBertLogit-method
+#' CV,VertBarg2ndLogit-method
 #' CV,Cournot-method
 #'
 #' @description Calculate the amount of money a consumer would need to
@@ -249,6 +250,53 @@ setMethod(
     return(logitCV(down))
   }
   )
+
+
+#'@rdname CV-Methods
+#'@export
+setMethod(
+  f= "CV",
+  signature= "VertBarg2ndLogit",
+  definition=function(object){
+    
+    down <- object@down
+    mktSize = down@mktSize
+
+alpha = down@slopes$alpha
+meanvalPre = down@slopes$meanval
+
+priceDelta <- calcPriceDelta(object,levels=TRUE)
+
+
+idx <- down@normIndex
+subset <- down@subset
+if (is.na(idx)) {
+  outVal <- 1
+  mcDeltaOut <- down@priceOutside
+}
+
+else {
+  outVal <- 0
+  mcDeltaOut <- down@mcDelta[idx]
+}
+
+
+meanvalPost = meanvalPre + priceDelta$up + alpha * (down@mcDelta - 
+                                      mcDeltaOut)
+
+
+VAll <- sum(exp(meanvalPost), na.rm = TRUE) + outVal
+VElim <- sum(exp(meanvalPost[subset]), na.rm = TRUE) + 
+  outVal
+result <- sum(priceDelta$down) + log(VElim/VAll)/alpha
+
+if (!is.na(mktSize)) {
+  result <- mktSize * result
+}
+return(result)
+}
+)
+
 
 #'@rdname CV-Methods
 #'@export

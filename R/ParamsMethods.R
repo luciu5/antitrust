@@ -2252,7 +2252,6 @@ setMethod(
     idx         <- down@normIndex
     sharesDown  <- down@shares
     
-    
     if(is.na(idx)){
       idxShare <- 1 - down@shareInside
       idxPrice <- down@priceOutside
@@ -2271,6 +2270,8 @@ setMethod(
    
     
     pricesDown <- down@prices
+    down@pricePre <- pricesDown
+    
     nprods <- nrow(id)
     
     if(constrain == "pair"){
@@ -2345,13 +2346,14 @@ setMethod(
       
       down@ownerPre <- ownerDownMat
       
-      if(is2nd) mval <- log(sharesDown) - log(idxShare)
+      if(is2nd) mval <- log(sharesDown) - log(idxShare) - alpha*(pricesUp - idxPrice)
       else{mval <- log(sharesDown) - log(idxShare) - alpha*(pricesDown - idxPrice)}
       
       down@slopes <- list(alpha = alpha,
                           meanval = mval
                           )
       marginsCandDown <- calcMargins(down, preMerger= TRUE,level=TRUE)
+      shareCandDown   <- calcShares(down,preMerger=TRUE,revenue=FALSE)
       
       if(!is2nd){
         elast <-  -alpha*tcrossprod(sharesDown)
@@ -2364,28 +2366,30 @@ setMethod(
       }
       
       depVar <- as.vector((ownerBargUpVert  * div) %*% marginsUp)
-      regressor <- as.vector(( ownerBargDownVert  * div) %*% marginsCandDown)
+      regressor <- as.vector( ( ownerBargDownVert  * div) %*% marginsCandDown)
       
-      err <- c(depVar - regressor, marginsDown - marginsCandDown)
-      return(sum(err^2,na.rm = TRUE))
+      err <- c(depVar - regressor, marginsDown - marginsCandDown 
+               , (sharesDown - shareCandDown)
+               )
+      return(sum((err)^2,na.rm = TRUE))
     }
     
     optmethod <- "L-BFGS-B"
     #if(length(bStart) ==1) optmethod <- "Brent"
-    lowerB <- rep(0,length(parmStart))
-    lowerB[1] <- -Inf
-    upperB <- rep(1, length(parmStart))
-    upperB[1] <- -1e-6
+    lowerB <- rep(.01,length(parmStart))
+    lowerB[1] <- -1e6
+    upperB <- rep(.99, length(parmStart))
+    upperB[1] <- -Inf
     thetaOpt <- optim(parmStart,minD,method=optmethod,lower = lowerB,upper = upperB)
     
     if(thetaOpt$convergence !=0){
-      warning("Calibration routine may not have converged. Optimizer Reports:\n\t",bOpt$message)}
+      warning("Calibration routine may not have converged. Optimizer Reports:\n\t",thetaOpt$message)}
     
     ## Pre-merger bargaining parameter
     alphaOpt <- thetaOpt$par[1]
     
     if(!is2nd) {mvalOpt <- log(sharesDown) - log(idxShare) - alphaOpt*(pricesDown - idxPrice)}
-    else{mvalOpt <- log(sharesDown) - log(idxShare)}
+    else{mvalOpt <- log(sharesDown) - log(idxShare)- alphaOpt*(pricesUp - idxPrice)}
     
     bOpt     <- thetaOpt$par[-1]
     bargparmPre <- bargparmPost <-  bOpt[as.numeric(id)]

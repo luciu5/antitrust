@@ -32,6 +32,7 @@
 \alias{calcRevenues,Cournot-method}
 \alias{calcShares,Auction2ndCap-method}
 \alias{calcShares,VertBargBertLogit-method}
+\alias{calcShares,VertBarg2ndLogit-method}
 \title{Output Methods}
 \usage{
 \S4method{calcQuantities}{Cournot}(object, preMerger = TRUE,
@@ -76,6 +77,9 @@
   revenue = FALSE)
 
 \S4method{calcShares}{VertBargBertLogit}(object, preMerger = TRUE,
+  revenue = FALSE)
+
+\S4method{calcShares}{VertBarg2ndLogit}(object, preMerger = TRUE,
   revenue = FALSE)
 
 \S4method{calcShares}{Logit}(object, preMerger = TRUE, revenue = FALSE)
