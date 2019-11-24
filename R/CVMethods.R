@@ -207,6 +207,8 @@ setMethod(
     idx <- object@normIndex
     subset <- object@subset
     
+    mcDelta <- object@mcDelta
+    
     if (is.na(idx)) {
       outVal <- 1
       mcDeltaOut <- object@priceOutside
@@ -222,7 +224,11 @@ setMethod(
     marginPre <- calcMargins(object, preMerger = TRUE, exAnte= TRUE)
     marginPost <- calcMargins(object, preMerger = FALSE, exAnte= TRUE)
 
-    result <- sum(marginPost,na.rm=TRUE) - sum(marginPre, na.rm =TRUE)
+    sharePost <- calcShares(object,preMerger=FALSE,revenue=FALSE)
+    
+    result <- sum(marginPost,na.rm=TRUE) - 
+              sum(marginPre, na.rm =TRUE) +
+              sum(mcDelta*sharePost, na.rm=TRUE)
 
     ## Add the elimination of first best option
     VAll  <- sum(exp(meanvalPost),na.rm=TRUE)  + outVal
