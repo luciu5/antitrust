@@ -2405,6 +2405,7 @@ setMethod(
       
       
     down@slopes <- list(alpha=alphaOpt,meanval=mvalOpt)  
+    down@mktSize <- down@insideSize/down@shareInside
     object@down <- down
     
     up@bargpowerPre <- bargparmPre

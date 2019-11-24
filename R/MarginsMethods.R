@@ -80,6 +80,9 @@ setMethod(
   signature= "VertBargBertLogit",
   definition=function(object,preMerger=TRUE, level=FALSE){
     
+    #check if class is 2nd score Logit
+    is2nd <- grepl("2nd",class(object))
+    
     up <- object@up
     down <- object@down
     alpha <- down@slopes$alpha
@@ -140,7 +143,13 @@ setMethod(
     diag(elast) <- alpha*shareDown + diag(elast)
     elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
     if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
-    marginsDown <- -as.vector(elast.inv %*% shareDown)
+    
+    if(!is2nd) {marginsDown <- -as.vector(elast.inv %*% shareDown)}
+    else{
+      alpha <- down@slopes$alpha
+      down@slopes$meanval <- down@slopes$meanval + alpha *(priceUp - down@priceOutside) 
+      marginsDown <- calcMargins(down, preMerger=preMerger)
+    }
     
     
     div <- tcrossprod(1/(1-shareDown),shareDown)*shareDown

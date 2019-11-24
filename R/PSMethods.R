@@ -82,13 +82,7 @@ setMethod(
   definition=function(object,preMerger=TRUE){
 
 
-    if( preMerger) {
-      prices <- object@pricePre
-      mc     <- object@mcPre
-    }
-    else{prices <- object@pricePost
-    mc     <- object@mcPost
-    }
+    margins <- calcMargins(object,preMerger,level=TRUE)
 
 
     output <- calcQuantities(object,preMerger)
@@ -98,7 +92,7 @@ setMethod(
       output <- calcShares(object,preMerger,revenue=FALSE)
     }
 
-    ps <- (prices - mc) * output
+    ps <- margins * output
     names(ps) <- object@labels
 
     return(ps)
@@ -112,35 +106,20 @@ setMethod(
   signature= "VertBargBertLogit",
   definition=function(object,preMerger=TRUE){
     
-    up <- object@up
-    down <- object@down
+    mktSize <- object@down@mktSize
     
+    margins <- calcMargins(object,preMerger=preMerger,level=TRUE)
     
-    if( preMerger) {
-      pricesUp <- up@pricePre
-      mcUp     <- up@mcPre
-      pricesDown <- down@pricePre
-      mcDown     <- down@mcPre
-    }
-    else{pricesUp <- up@pricePost
-    mcUp     <- up@mcPost
-    pricesDown <- down@pricePost
-    mcDown     <- down@mcPost
-    }
+    output <- calcShares(object,preMerger)
     
-    psup <- (pricesUp - mcUp)
-    psdown <- (pricesDown - pricesUp - mcDown)
-    
-    output <- calcQuantities(down,preMerger)
-    
-    if (all(is.na(output))){
+    if (is.na(mktSize)){
       warning("'calcQuantities' yielded all NAs. Using 'calcShares' instead")
-      output <- calcShares(object,preMerger,revenue=FALSE)
+      mktSize <- 1
     }
     
-    psup <- psup * output
-    psdown <- psdown * output
-    names(psup) <- names(psdown) <-  down@labels
+    psup <- margins$up * output * mktSize
+    psdown <- margins$down * output * mktSize
+    names(psup) <- names(psdown) <-  object@down@labels
     
     return(list(up=psup,down=psdown))
   }
