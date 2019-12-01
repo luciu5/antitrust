@@ -16,6 +16,8 @@
 #'
 #' @param object An instance of one of the classes listed above.
 #' @param market If TRUE, calculates (post-merger) share-weighted average of metric. Default is FALSE.
+#' @param levels If TRUE calculates CMCR in levels rather than as a percentage of pre-merger costs. Default is FALSE.
+
 #' @param ... Additional arguments to pass to \code{cmcr}.
 #'
 #' @details \code{cmcr} uses the results from the merger simulation and calibration
@@ -45,7 +47,7 @@ setGeneric (
 setMethod(
   f= "cmcr",
   signature= "Bertrand",
-  definition=function(object, market=FALSE){
+  definition=function(object, market=FALSE,levels=FALSE){
 
     isParty <- rowSums( abs(object@ownerPost - object@ownerPre) ) > 0
 
@@ -62,16 +64,21 @@ setMethod(
 
     cmcr <- cmcr[isParty]
 
+    if(levels){
+      cmcr <- cmcr*object@mcPre
+      cmcr[!isParty & is.na(cmcr)] <- 0}
+    else{cmcr <- cmcr * 100}
+    
     if(market){
       sharePost <- calcShares(object, preMerger=FALSE, revenue =FALSE)
       if(all(is.na(sharePost))) sharePost <- calcShares(object, preMerger=FALSE, revenue = TRUE)
       sharePost <- sharePost[isParty]
       sharePost <- sharePost/sum(sharePost)
 
-      cmcr <- sum( cmcr * sharePost )
+      cmcr <- sum( cmcr * sharePost, na.rm = TRUE )
     }
 
-    return(cmcr * 100)
+    return(cmcr)
   }
 )
 
@@ -152,8 +159,51 @@ setMethod(
 setMethod(
   f= "cmcr",
   signature= "Auction2ndLogit",
-  definition=function(object,...){
+  definition=function(object,market=FALSE,levels=FALSE,...){
 
-    stop("'cmcr' is currently not available")
+    isParty <- rowSums(abs(object@ownerPost-object@ownerPre)) > 0
+    
+    partyStart <- object@mcDelta[isParty]
+    
+    sharesPost <- calcShares(object,
+                             preMerger=FALSE,
+                             revenue=FALSE)
+    
+    result <- object@mcDelta <- rep(0, length(isParty))  
+    
+    
+    
+    minD <- function(mc){
+      
+    
+      object@mcDelta[isParty] <- mc  
+      thispricedelta <- calcPriceDelta(object)
+      
+      return(thispricedelta[isParty])
+    } 
+    
+
+    thisCMCR <- BB::BBsolve(partyStart,minD,quiet=TRUE,...) 
+  
+    if(thisCMCR$convergence != 0 ){stop("CMCR may not have successfully converged. Minimization Routine Reports:\n",thisCMCR$message)}
+     
+    result[isParty] <- -thisCMCR$par
+    
+    names(result) <- object@labels
+    
+    if(!levels){
+      result <- result/object@mcPre
+      result[!isParty & is.na(result)] <- 0
+      result <- result*100
+    }
+    
+    if(market){
+      sharesPost <- sharesPost[isParty]
+      result <- sum(result*sharesPost/sum(sharesPost),na.rm=TRUE)  
+      
+    }
+    
+    return(result)
+    
   }
 )
