@@ -93,7 +93,7 @@ setClass(
   validity=function(object){
 
     nplants <- nrow(object@quantities) # count the number of plants
-    nprods  <- length(object@prices)     # count the number of products
+    nprods  <- ncol(object@quantities)     # count the number of products
 
 
     if(nplants != length(object@capacitiesPre)){

@@ -166,7 +166,7 @@ setMethod(
     marginsUp <- solve(diag(nprods) + (marginsUpPart %*% elast.inv %*%  (ownerVDown * elast)))
     marginsUp <- marginsUp %*% marginsUpPart %*% marginsDown
     
-    marginsDown <-  marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp )
+    if(!is2nd){marginsDown <-  marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp )}
     
     if(!level) {
       marginsUp <- marginsUp/priceUp
