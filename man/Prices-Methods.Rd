@@ -19,17 +19,13 @@
 \usage{
 \S4method{calcPrices}{Cournot}(object, preMerger = TRUE)
 
-\S4method{calcPrices}{Auction2ndCap}(object, preMerger = TRUE,
-  exAnte = TRUE)
+\S4method{calcPrices}{Auction2ndCap}(object, preMerger = TRUE, exAnte = TRUE)
 
-\S4method{calcPrices}{Logit}(object, preMerger = TRUE, isMax = FALSE,
-  subset, ...)
+\S4method{calcPrices}{Logit}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
 
-\S4method{calcPrices}{Auction2ndLogit}(object, preMerger = TRUE,
-  exAnte = FALSE)
+\S4method{calcPrices}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE)
 
-\S4method{calcPrices}{LogitCap}(object, preMerger = TRUE,
-  isMax = FALSE, subset, ...)
+\S4method{calcPrices}{LogitCap}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
 
 \S4method{calcPrices}{Linear}(object, preMerger = TRUE, subset, ...)
 

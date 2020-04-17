@@ -10,8 +10,7 @@
 \alias{diversion,Bertrand-method}
 \title{Methods For Calculating Diversion}
 \usage{
-\S4method{diversion}{Bertrand}(object, preMerger = TRUE,
-  revenue = FALSE)
+\S4method{diversion}{Bertrand}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{diversion}{AIDS}(object, preMerger = TRUE, revenue = TRUE)
 }

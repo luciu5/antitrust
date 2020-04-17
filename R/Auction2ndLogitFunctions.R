@@ -14,6 +14,9 @@
 #' @param margins A length k vector of product margins (in levels, not percents), some of which may
 #' equal NA.
 #' @param nests A length k factor of product nests.
+#' @param diversions A k x k matrix of diversion ratios with diagonal
+#' elements equal to -1. Default is missing, in which case diversion
+#' according to share is assumed.
 #' @param normIndex An integer equalling the index (position) of the
 #' inside product whose mean valuation will be normalized to 1. Default
 #' is 1, unless \sQuote{shares} sum to less than 1, in which case the default is
@@ -44,6 +47,10 @@
 #' price coefficient and the nesting parameters. The first element should
 #' always be the price coefficient and the remaining elements should be
 #' the nesting parameters.
+#' @param constraint if TRUE, then the nesting parameters for all
+#' non-singleton nests are assumed equal. If FALSE, then each
+#' non-singleton nest is permitted to have its own value. Default is
+#' TRUE.
 #' @param control.slopes A list of  \code{\link{optim}}  control parameters passed
 #' to the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed

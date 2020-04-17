@@ -8,9 +8,14 @@
 \usage{
 cmcr.cournot(shares, mktElast)
 
-upp.cournot(prices, margins, ownerPre, ownerPost = matrix(1, ncol =
-  length(prices), nrow = length(prices)), mcDelta = rep(0,
-  length(prices)), labels = paste("Prod", 1:length(prices), sep = ""))
+upp.cournot(
+  prices,
+  margins,
+  ownerPre,
+  ownerPost = matrix(1, ncol = length(prices), nrow = length(prices)),
+  mcDelta = rep(0, length(prices)),
+  labels = paste("Prod", 1:length(prices), sep = "")
+)
 }
 \arguments{
 \item{shares}{A length-2 vector containing merging party quantity shares.}

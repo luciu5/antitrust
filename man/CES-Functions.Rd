@@ -7,27 +7,67 @@
 \alias{ces.nests}
 \title{(Nested) Constant Elasticity of Substitution Demand Calibration and Merger Simulation}
 \usage{
-ces(prices, shares, margins, diversions, ownerPre, ownerPost,
-  normIndex = ifelse(sum(shares) < 1, NA, 1), insideSize = NA_real_,
-  mcDelta = rep(0, length(prices)), subset = rep(TRUE, length(prices)),
-  priceOutside = 1, priceStart = prices, isMax = FALSE,
-  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
-  sep = ""), ...)
+ces(
+  prices,
+  shares,
+  margins,
+  diversions,
+  ownerPre,
+  ownerPost,
+  normIndex = ifelse(sum(shares) < 1, NA, 1),
+  insideSize = NA_real_,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 1,
+  priceStart = prices,
+  isMax = FALSE,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 
-ces.alm(prices, shares, margins, ownerPre, ownerPost,
-  mktElast = NA_real_, insideSize = NA_real_, mcDelta = rep(0,
-  length(prices)), subset = rep(TRUE, length(prices)),
-  priceOutside = 1, priceStart = prices, isMax = FALSE, parmsStart,
-  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
-  sep = ""), ...)
+ces.alm(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
+  mktElast = NA_real_,
+  insideSize = NA_real_,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 1,
+  priceStart = prices,
+  isMax = FALSE,
+  parmsStart,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 
-ces.nests(prices, shares, margins, ownerPre, ownerPost, nests = rep(1,
-  length(shares)), normIndex = ifelse(sum(shares) < 1, NA, 1),
-  insideSize = NA_real_, mcDelta = rep(0, length(prices)),
-  subset = rep(TRUE, length(prices)), priceOutside = 1,
-  priceStart = prices, isMax = FALSE, constraint = TRUE, parmsStart,
-  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
-  sep = ""), ...)
+ces.nests(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
+  nests = rep(1, length(shares)),
+  normIndex = ifelse(sum(shares) < 1, NA, 1),
+  insideSize = NA_real_,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 1,
+  priceStart = prices,
+  isMax = FALSE,
+  constraint = TRUE,
+  parmsStart,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 }
 \arguments{
 \item{prices}{A length k vector of product prices.}
@@ -191,7 +231,7 @@ CV(result.ces)              #calculate compensating variation as a percent of
 #representative consumer income
 
 ## Implement the Hypothetical Monopolist Test
-## for BUD and OLD STYLE using a 5\\\% SSNIP
+## for BUD and OLD STYLE using a 5\\% SSNIP
 
 HypoMonTest(result.ces,prodIndex=1:2)
 

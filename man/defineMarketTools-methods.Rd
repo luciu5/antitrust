@@ -29,8 +29,7 @@
 \usage{
 \S4method{HypoMonTest}{Bertrand}(object, prodIndex, ssnip = 0.05, ...)
 
-\S4method{HypoMonTest}{Cournot}(object, plantIndex, prodIndex,
-  ssnip = 0.05, ...)
+\S4method{HypoMonTest}{Cournot}(object, plantIndex, prodIndex, ssnip = 0.05, ...)
 
 \S4method{calcPricesHypoMon}{Cournot}(object, plantIndex, prodIndex)
 
@@ -52,8 +51,7 @@
 
 \S4method{calcPriceDeltaHypoMon}{Bertrand}(object, prodIndex, ...)
 
-\S4method{calcPriceDeltaHypoMon}{Cournot}(object, prodIndex, plantIndex,
-  ...)
+\S4method{calcPriceDeltaHypoMon}{Cournot}(object, prodIndex, plantIndex, ...)
 
 \S4method{calcPriceDeltaHypoMon}{AIDS}(object, prodIndex, ...)
 }

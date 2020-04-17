@@ -7,14 +7,28 @@
 \alias{bertrand.alm}
 \title{Bertrand Calibration and Merger Simulation With Logit, CES and AIDS Demand}
 \usage{
-bertrand.alm(demand = c("logit", "ces", "aids"), prices, quantities,
-  margins, ownerPre, ownerPost, mktElast = NA_real_,
-  insideSize = ifelse(demand == "logit", sum(quantities, na.rm = TRUE),
-  sum(prices * quantities, na.rm = TRUE)), diversions, mcDelta = rep(0,
-  length(prices)), subset = rep(TRUE, length(prices)),
-  priceOutside = ifelse(demand == "logit", 0, 1), priceStart = prices,
-  isMax = FALSE, parmStart, control.slopes, control.equ,
-  labels = paste("Prod", 1:length(prices), sep = ""), ...)
+bertrand.alm(
+  demand = c("logit", "ces", "aids"),
+  prices,
+  quantities,
+  margins,
+  ownerPre,
+  ownerPost,
+  mktElast = NA_real_,
+  insideSize = ifelse(demand == "logit", sum(quantities, na.rm = TRUE), sum(prices *
+    quantities, na.rm = TRUE)),
+  diversions,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = ifelse(demand == "logit", 0, 1),
+  priceStart = prices,
+  isMax = FALSE,
+  parmStart,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 }
 \arguments{
 \item{demand}{A character vector indicating which demand system to use.

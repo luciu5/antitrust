@@ -12,17 +12,20 @@
 \alias{calcPriceDelta,VertBargBertLogit-method}
 \title{Methods For Calculating Price Delta}
 \usage{
-\S4method{calcPriceDelta}{Antitrust}(object, levels = FALSE,
-  market = FALSE, ...)
+\S4method{calcPriceDelta}{Antitrust}(object, levels = FALSE, market = FALSE, ...)
 
-\S4method{calcPriceDelta}{VertBargBertLogit}(object, levels = FALSE,
-  market = FALSE, ...)
+\S4method{calcPriceDelta}{VertBargBertLogit}(object, levels = FALSE, market = FALSE, ...)
 
-\S4method{calcPriceDelta}{AIDS}(object, isMax = FALSE, levels = FALSE,
-  subset, market = FALSE, ...)
+\S4method{calcPriceDelta}{AIDS}(
+  object,
+  isMax = FALSE,
+  levels = FALSE,
+  subset,
+  market = FALSE,
+  ...
+)
 
-\S4method{calcPriceDelta}{Auction2ndLogit}(object, exAnte = FALSE,
-  levels = TRUE, market = FALSE)
+\S4method{calcPriceDelta}{Auction2ndLogit}(object, exAnte = FALSE, levels = TRUE, market = FALSE)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

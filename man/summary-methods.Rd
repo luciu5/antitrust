@@ -12,23 +12,43 @@
 \alias{summary,VertBargBertLogit-method}
 \title{Summary Methods}
 \usage{
-\S4method{summary}{Bertrand}(object, revenue = TRUE, shares = TRUE,
-  levels = FALSE, parameters = FALSE, market = FALSE,
-  insideOnly = TRUE, digits = 2, ...)
+\S4method{summary}{Bertrand}(
+  object,
+  revenue = TRUE,
+  shares = TRUE,
+  levels = FALSE,
+  parameters = FALSE,
+  market = FALSE,
+  insideOnly = TRUE,
+  digits = 2,
+  ...
+)
 
-\S4method{summary}{VertBargBertLogit}(object, revenue = TRUE,
-  levels = FALSE, parameters = FALSE, market = FALSE,
-  insideOnly = TRUE, digits = 2, ...)
+\S4method{summary}{VertBargBertLogit}(
+  object,
+  revenue = TRUE,
+  levels = FALSE,
+  parameters = FALSE,
+  market = FALSE,
+  insideOnly = TRUE,
+  digits = 2,
+  ...
+)
 
-\S4method{summary}{Auction2ndCap}(object, exAnte = FALSE,
-  parameters = FALSE, digits = 2)
+\S4method{summary}{Auction2ndCap}(object, exAnte = FALSE, parameters = FALSE, market = TRUE, digits = 2)
 
-\S4method{summary}{Cournot}(object, market = FALSE, revenue = FALSE,
-  shares = FALSE, levels = FALSE, parameters = FALSE, digits = 2,
-  ...)
+\S4method{summary}{Cournot}(
+  object,
+  market = FALSE,
+  revenue = FALSE,
+  shares = FALSE,
+  levels = FALSE,
+  parameters = FALSE,
+  digits = 2,
+  ...
+)
 
-\S4method{summary}{Auction2ndLogit}(object, levels = TRUE,
-  revenue = FALSE, ...)
+\S4method{summary}{Auction2ndLogit}(object, levels = TRUE, revenue = FALSE, ...)
 }
 \arguments{
 \item{object}{an instance of class  \code{Bertrand}, \code{Auction2ndCap}, \code{Cournot}, or \code{Auction2ndLogit}}

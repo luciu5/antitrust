@@ -7,26 +7,67 @@
 \alias{pcaids.nests}
 \title{(Nested) AIDS Calibration and Merger Simulation}
 \usage{
-aids(shares, margins, prices, diversions, ownerPre, ownerPost,
-  mktElast = NA_real_, insideSize = NA_real_, mcDelta = rep(0,
-  length(shares)), subset = rep(TRUE, length(shares)),
-  parmStart = rep(NA_real_, 2), priceStart = runif(length(shares)),
-  isMax = FALSE, control.slopes, control.equ, labels = paste("Prod",
-  1:length(shares), sep = ""), ...)
+aids(
+  shares,
+  margins,
+  prices,
+  diversions,
+  ownerPre,
+  ownerPost,
+  mktElast = NA_real_,
+  insideSize = NA_real_,
+  mcDelta = rep(0, length(shares)),
+  subset = rep(TRUE, length(shares)),
+  parmStart = rep(NA_real_, 2),
+  priceStart = runif(length(shares)),
+  isMax = FALSE,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(shares), sep = ""),
+  ...
+)
 
-pcaids(shares, knownElast, mktElast = -1, prices, diversions, ownerPre,
-  ownerPost, knownElastIndex = 1, insideSize = NA_real_,
-  mcDelta = rep(0, length(shares)), subset = rep(TRUE, length(shares)),
-  priceStart = runif(length(shares)), isMax = FALSE, control.slopes,
-  control.equ, labels = paste("Prod", 1:length(shares), sep = ""), ...)
+pcaids(
+  shares,
+  knownElast,
+  mktElast = -1,
+  prices,
+  diversions,
+  ownerPre,
+  ownerPost,
+  knownElastIndex = 1,
+  insideSize = NA_real_,
+  mcDelta = rep(0, length(shares)),
+  subset = rep(TRUE, length(shares)),
+  priceStart = runif(length(shares)),
+  isMax = FALSE,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(shares), sep = ""),
+  ...
+)
 
-pcaids.nests(shares, margins, knownElast, mktElast = -1, prices,
-  ownerPre, ownerPost, nests = rep(1, length(shares)),
-  knownElastIndex = 1, insideSize = NA_real_, mcDelta = rep(0,
-  length(shares)), subset = rep(TRUE, length(shares)),
-  priceStart = runif(length(shares)), isMax = FALSE, nestsParmStart,
-  control.slopes, control.equ, labels = paste("Prod", 1:length(shares),
-  sep = ""), ...)
+pcaids.nests(
+  shares,
+  margins,
+  knownElast,
+  mktElast = -1,
+  prices,
+  ownerPre,
+  ownerPost,
+  nests = rep(1, length(shares)),
+  knownElastIndex = 1,
+  insideSize = NA_real_,
+  mcDelta = rep(0, length(shares)),
+  subset = rep(TRUE, length(shares)),
+  priceStart = runif(length(shares)),
+  isMax = FALSE,
+  nestsParmStart,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(shares), sep = ""),
+  ...
+)
 }
 \arguments{
 \item{shares}{A length k vector of product revenue shares. All shares must
@@ -222,7 +263,7 @@ upp(result.aids)             #calculate Upwards Pricing Pressure Index
 
 
 ## Implement the Hypothetical Monopolist Test
-## for products A and B using a 5\\\% SSNIP
+## for products A and B using a 5\\% SSNIP
 
 HypoMonTest(result.aids,prodIndex=1:2)
 
@@ -269,7 +310,7 @@ cmcr(result.pcaids)            #calculate compensating marginal cost reduction
 
 
 ## Implement the Hypothetical Monopolist Test
-## for products A and B using a 5\\\% SSNIP
+## for products A and B using a 5\\% SSNIP
 
 HypoMonTest(result.pcaids,prodIndex=1:2)
 
