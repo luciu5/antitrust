@@ -173,8 +173,9 @@ setMethod(
     }
     marginsUp <- drop(marginsUp %*% marginsUpPart %*% marginsDown)
     
-    marginsDown <-  drop(marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp ))
-    
+
+    if(!is2nd){marginsDown <-  marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp )}
+  
     if(!level) {
       marginsUp <- marginsUp/priceUp
       marginsDown <- marginsDown/priceDown

@@ -94,32 +94,50 @@ setMethod(
     
       upMCPre=up@mcPre
       downMCPre=down@mcPre
-    
+      upPricePre <- up@pricePre  
    
       upMCPost=up@mcPost
       downMCPost=down@mcPost
-      
-      mcDeltaUp <- upMCPost*sharesPost - upMCPre*sharesPre
-      mcDeltaDown <- downMCPost*sharesPost - downMCPre*sharesPre
+      upPricePost <-  up@pricePost
     
+        if(!market){
+        mcDeltaUp <- upMCPost  - upMCPre
+        mcDeltaDown <- (downMCPost+upPricePost) - (downMCPre + upPricePre)
+    
+        ## assume 0 marginal cost changes if unkown
+        mcDeltaUp <- ifelse(is.na(mcDeltaUp),0,mcDeltaUp)
+        mcDeltaDown <- ifelse(is.na(mcDeltaDown),0,mcDeltaDown)
+    
+      upDelta <- marginsPost$up - marginsPre$up + mcDeltaUp
+      downDelta <- marginsPost$down - marginsPre$down + mcDeltaDown
+    
+      upPricePre <- up@pricePre
+      downPricePre <- down@pricePre
+    }
+      
+      
+    else{
+      
+      
+      mcDeltaUp <- upMCPost *sharesPost - upMCPre*sharesPre
+      mcDeltaDown <- (downMCPost+upPricePost)*sharesPost - (downMCPre + upPricePre)*sharesPre
+      
       ## assume 0 marginal cost changes if unkown
       mcDeltaUp <- ifelse(is.na(mcDeltaUp),0,mcDeltaUp)
       mcDeltaDown <- ifelse(is.na(mcDeltaDown),0,mcDeltaDown)
-    
-    upDelta <- marginsPost$up*sharesPost - marginsPre$up*sharesPre + mcDeltaUp
-    downDelta <- marginsPost$down*sharesPost - marginsPre$down*sharesPre + mcDeltaDown
-    
-    upPricePre <- up@pricePre*sharesPre
-    downPricePre <- down@pricePre*sharesPre
-    
-    if(market){
-      shares <- calcShares(object, ...)
-      shares <- shares/sum(shares,na.rm=TRUE)
-      upDelta <- sum(upDelta*shares,na.rm=TRUE)
-      downDelta <- sum(downDelta*shares,na.rm=TRUE)
       
-      upPricePre <- sum(shares*upPricePre,na.rm=TRUE)
-      downPricePre <- sum(shares*downPricePre,na.rm=TRUE)
+      upDelta <- marginsPost$up*sharesPost - marginsPre$up*sharesPre + mcDeltaUp
+      downDelta <- marginsPost$down*sharesPost - marginsPre$down*sharesPre + mcDeltaDown
+      
+      upPricePre <- up@pricePre*sharesPre
+      downPricePre <- down@pricePre*sharesPre
+      
+      
+      upDelta <- sum(upDelta,na.rm=TRUE)
+      downDelta <- sum(downDelta,na.rm=TRUE)
+      
+      upPricePre <- sum(upPricePre,na.rm=TRUE)
+      downPricePre <- sum(downPricePre,na.rm=TRUE)
     }
    
     if(!levels){

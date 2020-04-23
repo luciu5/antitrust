@@ -193,8 +193,8 @@ setMethod(
     
     if(!levels){
       result <- result/object@mcPre
-      result[!isParty & is.na(result)] <- 0
-      result <- result*100
+      result
+      result <- result[isParty]*100
     }
     
     if(market){

@@ -77,11 +77,10 @@ setClass(
     if(is.list(object@labels)){ nprods <- length(object@labels[[1]])}
     else{nprods <- length(object@labels)}
 
-
     if(is.matrix(object@ownerPre)){
 
       if(nprods != ncol(object@ownerPre)){
-        stop("The number of rows and columns in 'ownerPre' must equal the number of products (plants in Cournot)")}
+        stop("The number of rows and columns in 'ownerPre' must equal the number of products (plants in Cournot) specified in 'labels'")}
       if(nrow(object@ownerPre) != ncol(object@ownerPre)){
         stop("'ownerPre' must be a square matrix ")}
 

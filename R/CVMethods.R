@@ -224,17 +224,19 @@ setMethod(
     marginPre <- calcMargins(object, preMerger = TRUE, exAnte= TRUE)
     marginPost <- calcMargins(object, preMerger = FALSE, exAnte= TRUE)
 
-    sharePost <- calcShares(object,preMerger=FALSE,revenue=FALSE)
+    #sharePost <- calcShares(object,preMerger=FALSE,revenue=FALSE)
     
     result <- sum(marginPost,na.rm=TRUE) - 
-              sum(marginPre, na.rm =TRUE) +
-              sum(mcDelta*sharePost, na.rm=TRUE)
+              sum(marginPre, na.rm =TRUE)
+    #+sum(mcDelta*sharePost, na.rm=TRUE)
 
     ## Add the elimination of first best option
-    VAll  <- sum(exp(meanvalPost),na.rm=TRUE)  + outVal
-    VElim <- sum(exp(meanvalPost[subset]),na.rm=TRUE ) + outVal
+    VPre  <- sum(exp(meanvalPre),na.rm=TRUE)  + outVal
+    VPost <- sum(exp(meanvalPost[subset]),na.rm=TRUE ) + outVal
     
-    result <- result + log(VElim/VAll)/alpha
+    
+    
+    result <-   result  + log(VPost/VPre)/alpha  
     
     
     if(!is.na(mktSize)){result <- mktSize * result}
@@ -273,6 +275,13 @@ meanvalPre = down@slopes$meanval
 
 priceDelta <- calcPriceDelta(object,levels=TRUE)
 
+marginsPre <- calcMargins(object,preMerger=TRUE,level=TRUE)
+marginsPost <- calcMargins(object,preMerger=FALSE,level=TRUE)
+
+sharesPre <- calcShares(object, preMerger=TRUE, revenue=FALSE)
+sharesPost <- calcShares(object, preMerger=FALSE, revenue=FALSE)
+
+result <- sum(marginsPost$down*sharesPost,na.rm=TRUE) - sum(marginsPre$down*sharesPre,na.rm=TRUE)
 
 idx <- down@normIndex
 subset <- down@subset
@@ -287,14 +296,13 @@ else {
 }
 
 
-meanvalPost = meanvalPre + priceDelta$up + alpha * (down@mcDelta - 
+meanvalPost = meanvalPre +  alpha * (priceDelta$up + down@mcDelta - 
                                       mcDeltaOut)
 
 
-VAll <- sum(exp(meanvalPost), na.rm = TRUE) + outVal
-VElim <- sum(exp(meanvalPost[subset]), na.rm = TRUE) + 
-  outVal
-result <- sum(priceDelta$down) + log(VElim/VAll)/alpha
+VPre <- sum(exp(meanvalPre), na.rm = TRUE) + outVal
+VPost <- sum(exp(meanvalPost[subset]), na.rm = TRUE) + outVal
+result <- result + log(VPost/VPre)/alpha
 
 if (!is.na(mktSize)) {
   result <- mktSize * result

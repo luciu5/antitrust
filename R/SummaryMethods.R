@@ -110,7 +110,9 @@ setMethod(
     if(market){
 
       thiscmcr <- thiscv <- NA_real_
-      try(thiscmcr <- cmcr(object), silent=TRUE)
+
+      try(thiscmcr <- cmcr(object,levels=levels), silent=TRUE)
+
       try(thiscv <- CV(object),silent = TRUE)
 
       thispsdelta  <- NA_real_
@@ -213,7 +215,7 @@ setMethod(
     priceDownPre   <-  down@pricePre
     priceDownPost  <-  down@pricePost
     
-    priceDelta <- calcPriceDelta(object,levels=levels)
+    priceDelta <- calcPriceDelta(object,levels=levels,market=market)
     
     if(!levels) priceDelta <- lapply(priceDelta, function(x){x*100})
     
@@ -305,8 +307,8 @@ if(any(isPartyHorzUp)){
       results <- with(results,
                       data.frame(
                         'HHI Change' =  max(hhiUp,hhiDown),
-                        'Up Price Change (%)' = sum(priceDelta$up * outputPost/sum(outputPost),na.rm=TRUE),
-                        'Down Price Change (%)' = sum(priceDelta$down * outputPost/sum(outputPost),na.rm=TRUE),
+                        'Up Price Change (%)' = priceDelta$up,
+                        'Down Price Change (%)' = priceDelta$down,
                         #'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty]),
                         #'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty]),
                         'Consumer Harm ($)' = thiscv,
