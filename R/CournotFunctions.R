@@ -13,7 +13,7 @@
 #'
 #' @param prices A length k vector product prices.
 #' @param quantities An n x k matrix of product quantities.
-#' All quantities musteither be positive, or if the product is not produced by a plant, NA.
+#' All quantities must either be positive, or if the product is not produced by a plant, NA.
 #' @param margins An n x k  matrix of product margins. All margins must
 #' be either be between 0 and 1, or NA.
 #' @param demand A length k character vector equal to "linear" if a product's
@@ -78,7 +78,8 @@
 #' in each market, as well as margin information for at least
 #' one products in each market, \code{cournot} is able to
 #' recover the slopes and intercepts of either a Linear or Log-linear demand
-#' system. These parameters are then used to simulate the price
+#' system as well as the cost parameters (see below for further details). 
+#' These parameters are then used to simulate the price
 #' effects of a merger between
 #' two firms under the assumption that the firms are playing a
 #' homogeneous products simultaneous quantity setting game.
@@ -90,7 +91,11 @@
 #' some products but the follower in others.
 #'
 #'
-#' \sQuote{mcfunPre} and \sQuote{mcfunPost} are length n lists whose elements are \sQuote{R} functions that return a firm's marginal cost. The first argument of each function should be total firm quantities. By default, each firm is assumed to have quadratic costs with a firm-specific parameter calibrated from a firm's margin.  \sQuote{vcfunPre} and \sQuote{vcfunPost} are similarly defined. sQuote{dmcfunPre} and \sQuote{dmcfunPost} are the changes in marginal cost and are only required for \code{stackelberg}.
+#' \sQuote{mcfunPre} and \sQuote{mcfunPost} are length n lists whose elements are \sQuote{R} functions 
+#' that return a firm's marginal cost. The first argument of each function should be total firm quantities.
+#'  By default, each firm is assumed to have quadratic costs with a firm-specific parameter calibrated from a firm's margin.
+#'    \sQuote{vcfunPre} and \sQuote{vcfunPost} are similarly defined. 
+#'    \sQuote{dmcfunPre} and \sQuote{dmcfunPost} are the changes in marginal cost and are only required for \code{stackelberg}.
 #'
 #'   \sQuote{ownerPre} and \sQuote{ownerPost} values will typically be equal to either 0
 #'   (element [i,j] is not commonly owned) or 1 (element [i,j] is commonly

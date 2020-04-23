@@ -109,7 +109,7 @@ setMethod(
 
     if(market){
 
-      thiscmcr <- thiscv <- NA
+      thiscmcr <- thiscv <- NA_real_
       try(thiscmcr <- cmcr(object,levels=levels), silent=TRUE)
       try(thiscv <- CV(object),silent = TRUE)
 
@@ -286,7 +286,7 @@ if(any(isPartyHorzUp)){
     
     if(market){
       
-      thiscmcr <- thiscv <- NA
+      thiscmcr <- thiscv <- NA_real_
       #try(thiscmcr <- cmcr(object), silent=TRUE)
       try(thiscv <- CV(object),silent = TRUE)
       
