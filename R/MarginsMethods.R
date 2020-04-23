@@ -89,8 +89,8 @@ setMethod(
   
     #is2nd <- grepl("2nd",class(object))
   
-    ownerUp <- ownerToMatrix(up,preMerger =preMerger)
-    ownerDown <- ownerToMatrix(down,preMerger =preMerger)
+    ownerUp <- ownerToMatrix(up,preMerger = preMerger)
+    ownerDown <- ownerToMatrix(down,preMerger= preMerger)
     
     nprods <- nrow(ownerDown)
     
@@ -161,12 +161,19 @@ setMethod(
     
     #marginsUp <-  as.vector(solve(ownerUpLambda * div) %*% (((ownerDownLambda * div) %*% (marginsDown)))) 
     
-    marginsUpPart <-  solve(ownerUpLambda * div) %*% (ownerDownLambda * div) 
+    marginsUpPart <-  try(solve(ownerUpLambda * div) %*% (ownerDownLambda * div) ,silent=TRUE)
+    if(class(marginsUpPart) == "try-error"){
+      marginsUpPart <-  MASS::ginv(ownerUpLambda * div) %*% (ownerDownLambda * div) 
+    }
     
-    marginsUp <- solve(diag(nprods) + (marginsUpPart %*% elast.inv %*%  (ownerVDown * elast)))
-    marginsUp <- marginsUp %*% marginsUpPart %*% marginsDown
+    marginsUp <- try(solve(diag(nprods) + (marginsUpPart %*% elast.inv %*%  (ownerVDown * elast))),silent=TRUE)
     
-    marginsDown <-  marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp )
+    if(class(marginsUp) == "try-error"){
+    marginsUp <- MASS::ginv(diag(nprods) + (marginsUpPart %*% elast.inv %*%  (ownerVDown * elast)))
+    }
+    marginsUp <- drop(marginsUp %*% marginsUpPart %*% marginsDown)
+    
+    marginsDown <-  drop(marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp ))
     
     if(!level) {
       marginsUp <- marginsUp/priceUp

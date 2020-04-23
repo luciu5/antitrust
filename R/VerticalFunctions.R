@@ -83,8 +83,8 @@
 #' \code{\linkS4class{VertBarg2ndLogit}} 
 #' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @references 
-#' Sheu, Gloria,  Taragin, Charles (2019). 
-#' "Simulating Mergers in a Vertical Supply Chain with Bargaining," EAG Discussions Papers 201804, Department of Justice, Antitrust Division.
+#' Sheu, Gloria,  Taragin, Charles (2020). 
+#' \href{https://www.researchgate.net/publication/330564874_Simulating_Mergers_in_a_Vertical_Supply_Chain_with_Bargaining}{Simulating mergers in a vertical supply chain with bargaining}
 #' @examples 
 #' ## Verical supply with 2 upstream firms,
 #' ## 2 downstream firms, each offering 
@@ -120,6 +120,8 @@
 #' summary(simres_up)
 #' 
 #' ## Simulate a downstream horizontal merger
+#' ownerPostUp <- ownerPreUp
+#' ownerPostDown <- ownerPreDown
 #' ownerPostDown <- rep("D1",length(ownerPreDown))
 #' 
 #' simres_down <- vertical.barg(sharesDown =shareDown,
@@ -139,8 +141,9 @@
 #' 
 #' 
 #' ## Simulate a vertical merger
+#' ownerPostUp <- ownerPreUp
 #' ownerPostDown <- ownerPreDown
-#' ownPostDown[ownerPostDown == "D1"] <- "U1"
+#' ownerPostDown[ownerPostDown == "D1"] <- "U1"
 #' 
 #' simres_vert <- vertical.barg(sharesDown =shareDown,
 #' pricesDown = priceDown,

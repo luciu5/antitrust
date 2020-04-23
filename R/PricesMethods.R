@@ -485,11 +485,14 @@ setMethod(
     
     nprods <- length(meanval)
     
+    ownerUp <- ownerToMatrix(up, preMerger=preMerger)[subsetDown,subsetDown]
     ownerDown <- ownerToMatrix(down, preMerger=preMerger)[subsetDown,subsetDown]
     
     if(preMerger){
       #ownerUp <- up@ownerPre[subsetDown,subsetDown]
       #ownerDown <- down@ownerPre[subsetDown,subsetDown]
+      up@ownerPre <- ownerUp
+      down@ownerPre <- ownerDown
       bargparm <- up@bargpowerPre[subsetDown]
       mcUp <- up@mcPre[subsetDown]
       mcDown <- down@mcPre[subsetDown]
@@ -502,6 +505,8 @@ setMethod(
       
       #ownerUp <- up@ownerPost[subsetDown,subsetDown]
       #ownerDown <- down@ownerPost[subsetDown,subsetDown]
+      up@ownerPost <- ownerUp
+      down@ownerPost <- ownerDown
       bargparm <- up@bargpowerPost[subsetDown]
       mcUp <- up@mcPost[subsetDown]
       mcDown <- down@mcPost[subsetDown]
@@ -520,15 +525,20 @@ setMethod(
       
        
         
-      
+      thisobj <- object
       priceCandUp= rep(NA, 1,nprods)[subsetDown] 
       priceCandUp <- priceCand[1:length(priceCandUp)]
       priceCandDown <- priceCand[-(1:length(priceCandUp))]
       
-      if(preMerger){ down@pricePre <- priceCandDown}
-      else{ down@pricePost <- priceCandDown}
+      if(preMerger){ 
+        up@pricePre <- priceCandUp
+        down@pricePre <- priceCandDown}
+      else{ 
+        up@pricePost <- priceCandUp
+        down@pricePost <- priceCandDown}
      
-      
+      thisobj@up <- up
+      thisobj@down <- down
       # shareCandDown  <- calcShares(down, preMerger=preMerger,revenue=FALSE)
       # 
       # 
@@ -550,13 +560,13 @@ setMethod(
       # marginsUpCand <- as.vector(solve(ownerUpLambda * div) %*% (ownerDownLambda * div) %*% marginsDownCand) 
       # 
       
-      theseMargins <- calcMargins(object)
+      theseMargins <- calcMargins(thisobj,preMerger=preMerger, level=TRUE)
       
       upFOC <-  priceCandUp- mcUp - theseMargins$up
       downFOC <- priceCandDown - priceCandUp - mcDown - theseMargins$down
       
       
-      thisFOC= c(downFOC,upFOC)
+      thisFOC= c(upFOC,downFOC)
       
       return(thisFOC)
     }
@@ -605,9 +615,7 @@ setMethod(
     
     priceStartUp <- up@priceStart
     priceStartDown <- down@priceStart
-    priceStart <- c(priceStartUp[subsetDown]
-                    #,priceStartUp[subsetDown]
-                    )
+    priceStart <- c(priceStartUp[subsetDown])
     
     
     nprods <- length(priceStartDown)
@@ -643,11 +651,7 @@ setMethod(
     
     
     
-    FOC <-function(priceCand
-                   #, preMerger=TRUE  
-                   #subset=rep(TRUE,length(mkt$down$meanval))
-                   #,useEst = FALSE, level = "all"
-    ){
+    FOC <-function(priceCand){
       
       
       

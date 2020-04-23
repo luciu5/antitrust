@@ -199,9 +199,11 @@ setMethod(
     
     if(market){
       sharesPost <- sharesPost[isParty]
-      result <- sum(result*sharesPost/sum(sharesPost),na.rm=TRUE)  
+      result <- sum(result[isParty]*sharesPost/sum(sharesPost),na.rm=TRUE)  
       
     }
+    
+    else{result <- result[isParty]}
     
     return(result)
     

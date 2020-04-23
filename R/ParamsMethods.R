@@ -1705,6 +1705,7 @@ setMethod(
 
       m1 <- 1 - (log((1-firmShares))/( alpha * firmShares))/margins
       m2 <-  mktElast / (alpha * avgPrice) - sOut
+      
       measure <- sum(c(m1 , m2)^2,na.rm=TRUE)
 
       return(measure)
@@ -1719,8 +1720,13 @@ setMethod(
     minTheta <- optim(object@parmsStart,minD,
                       method="L-BFGS-B",
                       lower= lowerB,upper=upperB,
-                      control=object@control.slopes)$par
+                      control=object@control.slopes)
 
+    if(minTheta$convergence != 0){
+      warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
+    }
+      minTheta <- minTheta$par
+    
     if(isTRUE(all.equal(minTheta[2],lowerB[2],check.names=FALSE))){warning("Estimated outside share is close to 0. Normalizing relative to largest good.")
       idx <- which.max(shares)
       meanval <- log(shares) - log(shares[idx])
@@ -2307,8 +2313,8 @@ setMethod(
     
     vertFirms <- intersect(owner.up,owner.down)
     
-    ownerDownMat <-  ownerToMatrix(owner.down, preMerger=TRUE)
-    ownerBargUpVert<- ownerToMatrix(owner.up, preMerger=TRUE)
+    ownerDownMat <-  ownerToMatrix(down, preMerger=TRUE)
+    ownerBargUpVert<- ownerToMatrix(up, preMerger=TRUE)
     
     ownerDownMatVertical <- matrix(0,nrow=nprods,ncol=nprods)
     
@@ -2353,15 +2359,16 @@ setMethod(
       down@slopes <- list(alpha = alpha,
                           meanval = mval
                           )
-      marginsCandDown <- calcMargins(down, preMerger= TRUE,level=TRUE)
-      shareCandDown   <- calcShares(down,preMerger=TRUE,revenue=FALSE)
       
-      if(!is2nd){
+      marginsCandDown <- calcMargins(down, preMerger= TRUE,level=TRUE)
+       
+      shareCandDown   <- calcShares(down,preMerger=TRUE,revenue=FALSE)
+
+        if(!is2nd){
         elast <-  -alpha*tcrossprod(sharesDown)
         diag(elast) <- alpha*sharesDown + diag(elast)
-        elast.inv <- try(solve(owner.down * elast),silent=TRUE)
-        if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(owner.down * elast)}
-        
+        elast.inv <- try(solve(ownerDownMat * elast),silent=TRUE)
+        if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDownMat * elast)}
         
         marginsCandDown <- marginsCandDown - elast.inv %*% ( (ownerDownMatVertical * elast) %*% (marginsUp) )
       }
@@ -2380,7 +2387,7 @@ setMethod(
     lowerB <- rep(.01,length(parmStart))
     lowerB[1] <- -1e6
     upperB <- rep(.99, length(parmStart))
-    upperB[1] <- -Inf
+    upperB[1] <- -1e-6
     thetaOpt <- optim(parmStart,minD,method=optmethod,lower = lowerB,upper = upperB)
     
     if(thetaOpt$convergence !=0){
@@ -2399,8 +2406,8 @@ setMethod(
     
     ## Post-merger bargaining parameter
     
-    owner.up <- up@ownerPost
-    owner.down <- down@ownerPost
+    #owner.up <- up@ownerPost
+    #owner.down <- down@ownerPost
     bargparmPost[owner.up  == owner.down ] <- 1 
     names(bargparmPost) <- down@labels
       
