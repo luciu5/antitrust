@@ -15,28 +15,21 @@
 \alias{calcMargins,Auction2ndCap-method}
 \title{Methods for Calculating Diagnostics}
 \usage{
-\S4method{calcMargins}{Bertrand}(object, preMerger = TRUE,
-  level = FALSE)
+\S4method{calcMargins}{Bertrand}(object, preMerger = TRUE, level = FALSE)
 
-\S4method{calcMargins}{VertBargBertLogit}(object, preMerger = TRUE,
-  level = FALSE)
+\S4method{calcMargins}{VertBargBertLogit}(object, preMerger = TRUE, level = FALSE)
 
-\S4method{calcMargins}{Auction2ndCap}(object, preMerger = TRUE,
-  exAnte = TRUE, level = FALSE)
+\S4method{calcMargins}{Auction2ndCap}(object, preMerger = TRUE, exAnte = TRUE, level = FALSE)
 
-\S4method{calcMargins}{Cournot}(object, preMerger = TRUE,
-  level = FALSE)
+\S4method{calcMargins}{Cournot}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{AIDS}(object, preMerger = TRUE, level = FALSE)
 
-\S4method{calcMargins}{LogitCap}(object, preMerger = TRUE,
-  level = FALSE)
+\S4method{calcMargins}{LogitCap}(object, preMerger = TRUE, level = FALSE)
 
-\S4method{calcMargins}{Auction2ndLogit}(object, preMerger = TRUE,
-  exAnte = FALSE, level = TRUE)
+\S4method{calcMargins}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE, level = TRUE)
 
-\S4method{calcMargins}{Auction2ndLogitNests}(object, preMerger = TRUE,
-  exAnte = FALSE, level = FALSE)
+\S4method{calcMargins}{Auction2ndLogitNests}(object, preMerger = TRUE, exAnte = FALSE, level = FALSE)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

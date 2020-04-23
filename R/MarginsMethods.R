@@ -358,7 +358,7 @@ setMethod(
     if( preMerger) {
       owner  <- object@ownerPre
       subset <- rep(TRUE, nprods)
-      prices <- onject@pricePre}
+      prices <- object@pricePre}
     else{
       owner  <- object@ownerPost
       subset <- object@subset

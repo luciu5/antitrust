@@ -2252,13 +2252,17 @@ setMethod(
     idx         <- down@normIndex
     sharesDown  <- down@shares
     
+    
+    pricesDown <- down@prices
+    down@pricePre <- pricesDown
+    
     if(is.na(idx)){
       idxShare <- 1 - down@shareInside
       idxPrice <- down@priceOutside
     }
     else{
-      idxShare <- shares[idx]
-      idxPrice <- prices[idx]
+      idxShare <- sharesDown[idx]
+      idxPrice <- pricesDown[idx]
     }
     
     
@@ -2268,9 +2272,6 @@ setMethod(
     
     
    
-    
-    pricesDown <- down@prices
-    down@pricePre <- pricesDown
     
     nprods <- nrow(id)
     
@@ -2306,8 +2307,8 @@ setMethod(
     
     vertFirms <- intersect(owner.up,owner.down)
     
-    ownerDownMat <-  ownerToMatrix(down, preMerger=TRUE)
-    ownerBargUpVert<- ownerToMatrix(up, preMerger=TRUE)
+    ownerDownMat <-  ownerToMatrix(owner.down, preMerger=TRUE)
+    ownerBargUpVert<- ownerToMatrix(owner.up, preMerger=TRUE)
     
     ownerDownMatVertical <- matrix(0,nrow=nprods,ncol=nprods)
     
@@ -2358,8 +2359,8 @@ setMethod(
       if(!is2nd){
         elast <-  -alpha*tcrossprod(sharesDown)
         diag(elast) <- alpha*sharesDown + diag(elast)
-        elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
-        if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
+        elast.inv <- try(solve(owner.down * elast),silent=TRUE)
+        if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(owner.down * elast)}
         
         
         marginsCandDown <- marginsCandDown - elast.inv %*% ( (ownerDownMatVertical * elast) %*% (marginsUp) )

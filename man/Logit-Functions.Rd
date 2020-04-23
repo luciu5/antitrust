@@ -10,50 +10,130 @@
 \alias{logit.cap.alm}
 \title{(Nested) Logit Demand Calibration and Merger Simulation)}
 \usage{
-logit(prices, shares, margins, diversions, ownerPre, ownerPost,
-  normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names =
-  FALSE)), 1, NA), mcDelta = rep(0, length(prices)), subset = rep(TRUE,
-  length(prices)), insideSize = NA_real_, priceOutside = 0,
-  priceStart = prices, isMax = FALSE, control.slopes, control.equ,
-  labels = paste("Prod", 1:length(prices), sep = ""), ...)
+logit(
+  prices,
+  shares,
+  margins,
+  diversions,
+  ownerPre,
+  ownerPost,
+  normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  insideSize = NA_real_,
+  priceOutside = 0,
+  priceStart = prices,
+  isMax = FALSE,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 
-logit.nests(prices, shares, margins, diversions, ownerPre, ownerPost,
-  nests = rep(1, length(shares)), normIndex = ifelse(sum(shares) < 1,
-  NA, 1), mcDelta = rep(0, length(prices)), subset = rep(TRUE,
-  length(prices)), priceOutside = 0, priceStart = prices,
-  isMax = FALSE, constraint = TRUE, parmsStart, control.slopes,
-  control.equ, labels = paste("Prod", 1:length(prices), sep = ""), ...)
+logit.nests(
+  prices,
+  shares,
+  margins,
+  diversions,
+  ownerPre,
+  ownerPost,
+  nests = rep(1, length(shares)),
+  normIndex = ifelse(sum(shares) < 1, NA, 1),
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 0,
+  priceStart = prices,
+  isMax = FALSE,
+  constraint = TRUE,
+  parmsStart,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 
-logit.nests.alm(prices, shares, margins, ownerPre, ownerPost,
-  nests = rep(1, length(shares)), mcDelta = rep(0, length(prices)),
-  subset = rep(TRUE, length(prices)), priceOutside = 0,
-  priceStart = prices, isMax = FALSE, constraint = TRUE, parmsStart,
-  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
-  sep = ""), ...)
+logit.nests.alm(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
+  nests = rep(1, length(shares)),
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 0,
+  priceStart = prices,
+  isMax = FALSE,
+  constraint = TRUE,
+  parmsStart,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 
-logit.cap(prices, shares, margins, ownerPre, ownerPost,
+logit.cap(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
   capacitiesPre = rep(Inf, length(prices)),
-  capacitiesPost = capacitiesPre, insideSize,
-  normIndex = ifelse(sum(shares) < 1, NA, 1), mcDelta = rep(0,
-  length(prices)), subset = rep(TRUE, length(prices)),
-  priceOutside = 0, priceStart = prices, isMax = FALSE,
-  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
-  sep = ""), ...)
+  capacitiesPost = capacitiesPre,
+  insideSize,
+  normIndex = ifelse(sum(shares) < 1, NA, 1),
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 0,
+  priceStart = prices,
+  isMax = FALSE,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 
-logit.alm(prices, shares, margins, ownerPre, ownerPost,
-  mktElast = NA_real_, insideSize = NA_real_, mcDelta = rep(0,
-  length(prices)), subset = rep(TRUE, length(prices)),
-  priceOutside = 0, priceStart = prices, isMax = FALSE, parmsStart,
-  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
-  sep = ""), ...)
+logit.alm(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
+  mktElast = NA_real_,
+  insideSize = NA_real_,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 0,
+  priceStart = prices,
+  isMax = FALSE,
+  parmsStart,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 
-logit.cap.alm(prices, shares, margins, ownerPre, ownerPost,
+logit.cap.alm(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
   capacitiesPre = rep(Inf, length(prices)),
-  capacitiesPost = capacitiesPre, mktElast = NA_real_, insideSize,
-  mcDelta = rep(0, length(prices)), subset = rep(TRUE, length(prices)),
-  priceOutside = 0, priceStart = prices, isMax = FALSE, parmsStart,
-  control.slopes, control.equ, labels = paste("Prod", 1:length(prices),
-  sep = ""), ...)
+  capacitiesPost = capacitiesPre,
+  mktElast = NA_real_,
+  insideSize,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 0,
+  priceStart = prices,
+  isMax = FALSE,
+  parmsStart,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 }
 \arguments{
 \item{prices}{A length k vector of product prices.}
@@ -252,7 +332,7 @@ CV(result.logit)              #calculate representative agent compensating varia
 
 
 ## Implement the Hypothetical Monopolist Test
-## for BUD and OLD STYLE using a 5\\\% SSNIP
+## for BUD and OLD STYLE using a 5\\% SSNIP
 
 HypoMonTest(result.logit,prodIndex=1:2)
 

@@ -6,18 +6,34 @@
 \alias{vertical.barg}
 \title{Supply Chain Merger Simulation}
 \usage{
-vertical.barg(supplyDown = c("bertrand", "2nd"), sharesDown, pricesDown,
-  marginsDown, ownerPreDown, ownerPostDown, nests = rep(NA,
-  length(pricesDown)), diversions = diversions, mcDeltaDown = rep(0,
-  length(pricesDown)), pricesUp, marginsUp, ownerPreUp, ownerPostUp,
+vertical.barg(
+  supplyDown = c("bertrand", "2nd"),
+  sharesDown,
+  pricesDown,
+  marginsDown,
+  ownerPreDown,
+  ownerPostDown,
+  nests = rep(NA, length(pricesDown)),
+  diversions = diversions,
+  mcDeltaDown = rep(0, length(pricesDown)),
+  pricesUp,
+  marginsUp,
+  ownerPreUp,
+  ownerPostUp,
   mcDeltaUp = rep(0, length(pricesUp)),
-  normIndex = ifelse(isTRUE(all.equal(sum(sharesDown), 1, check.names =
-  FALSE)), 1, NA), subset = rep(TRUE, length(pricesDown)),
-  insideSize = NA_real_, priceOutside = 0,
-  priceStartDown = pricesDown, priceStartUp = pricesUp,
-  isMax = FALSE, constrain = c("global", "pair", "wholesaler",
-  "retailer"), control.slopes, control.equ, labels = paste0("Prod",
-  1:length(pricesUp)), ...)
+  normIndex = ifelse(isTRUE(all.equal(sum(sharesDown), 1, check.names = FALSE)), 1, NA),
+  subset = rep(TRUE, length(pricesDown)),
+  insideSize = NA_real_,
+  priceOutside = 0,
+  priceStartDown = pricesDown,
+  priceStartUp = pricesUp,
+  isMax = FALSE,
+  constrain = c("global", "pair", "wholesaler", "retailer"),
+  control.slopes,
+  control.equ,
+  labels = paste0("Prod", 1:length(pricesUp)),
+  ...
+)
 }
 \arguments{
 \item{supplyDown}{A length 1 character vector that specifies whether the downstream
@@ -37,6 +53,12 @@ indicate which downstream firm produced a product pre-merger.}
 
 \item{ownerPostDown}{A vector of length k whose values
 indicate which downstream firm produced a product post-merger.}
+
+\item{nests}{A length k factor of product nests.}
+
+\item{diversions}{A k x k matrix of diversion ratios with diagonal
+elements equal to -1. Default is missing, in which case diversion
+according to share is assumed.}
 
 \item{mcDeltaDown}{A vector of length k where each element equals the
 proportional change in a downstream firm's product-level marginal costs due to
@@ -125,7 +147,6 @@ Logit demand model. \code{logit} then uses these
 calibrated parameters to simulate a merger between two firms.
 }
 \examples{
-\donttest{
 ## Verical supply with 2 upstream firms,
 ## 2 downstream firms, each offering 
 ## a single product.
@@ -196,7 +217,6 @@ priceOutside = priceOutSide)
 
 print(simres_down)
 summary(simres_down)
-}
 }
 \references{
 Sheu, Gloria,  Taragin, Charles (2019). 

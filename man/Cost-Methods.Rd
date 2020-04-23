@@ -22,13 +22,11 @@
 
 \S4method{calcMC}{VertBargBertLogit}(object, preMerger = TRUE)
 
-\S4method{calcMC}{Auction2ndCap}(object, t, preMerger = TRUE,
-  exAnte = TRUE)
+\S4method{calcMC}{Auction2ndCap}(object, t, preMerger = TRUE, exAnte = TRUE)
 
 \S4method{calcMC}{Cournot}(object, preMerger = TRUE)
 
-\S4method{calcMC}{Auction2ndLogit}(object, preMerger = TRUE,
-  exAnte = FALSE)
+\S4method{calcMC}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE)
 
 \S4method{calcdMC}{Stackelberg}(object, preMerger = TRUE)
 

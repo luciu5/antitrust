@@ -15,16 +15,20 @@
 \usage{
 \S4method{calcProducerSurplus}{Bertrand}(object, preMerger = TRUE)
 
-\S4method{calcProducerSurplus}{VertBargBertLogit}(object,
-  preMerger = TRUE)
+\S4method{calcProducerSurplus}{VertBargBertLogit}(object, preMerger = TRUE)
 
-\S4method{calcProducerSurplus}{Auction2ndCap}(object, preMerger = TRUE,
-  exAnte = TRUE)
+\S4method{calcProducerSurplus}{Auction2ndCap}(object, preMerger = TRUE, exAnte = TRUE)
 
 \S4method{calcProducerSurplus}{Cournot}(object, preMerger = TRUE)
 
-\S4method{calcProducerSurplusGrimTrigger}{Bertrand}(object, coalition,
-  discount, preMerger = TRUE, isCollusion = FALSE, ...)
+\S4method{calcProducerSurplusGrimTrigger}{Bertrand}(
+  object,
+  coalition,
+  discount,
+  preMerger = TRUE,
+  isCollusion = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

@@ -50,8 +50,8 @@ nprod  = length(shares)
 
 HHI(shares,owner)
 
-## Suppose that Firm A acquires a 75\\\% ownership stake in product 3, and
-## Firm B get a 10\\\% ownership stake in product 1. Assume that neither
+## Suppose that Firm A acquires a 75\\% ownership stake in product 3, and
+## Firm B get a 10\\% ownership stake in product 1. Assume that neither
 ## firm cedes control of the product to the other.
 
 owner <- diag(nprod)
@@ -66,7 +66,7 @@ owner[3,3] <- owner[4,3] <- .25
 HHI(shares,owner,control)
 
 ## Suppose now that in addition to the ownership stakes described
-## earlier, B receives 30\\\% of the control of product 1
+## earlier, B receives 30\\% of the control of product 1
 control[1,1] <- control[2,1] <- .7
 control[3,1] <- control[4,1] <- .3
 

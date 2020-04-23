@@ -19,6 +19,10 @@
 #'   indicate which downstream firm produced a product pre-merger.
 #' @param ownerPostDown A vector of length k whose values
 #'   indicate which downstream firm produced a product post-merger.
+#' @param nests A length k factor of product nests.
+#' @param diversions A k x k matrix of diversion ratios with diagonal
+#' elements equal to -1. Default is missing, in which case diversion
+#' according to share is assumed.
 #' @param mcDeltaDown A vector of length k where each element equals the
 #'   proportional change in a downstream firm's product-level marginal costs due to
 #'     the merger. Default is 0, which assumes that the merger does not
@@ -82,7 +86,6 @@
 #' Sheu, Gloria,  Taragin, Charles (2019). 
 #' "Simulating Mergers in a Vertical Supply Chain with Bargaining," EAG Discussions Papers 201804, Department of Justice, Antitrust Division.
 #' @examples 
-#' \donttest{
 #' ## Verical supply with 2 upstream firms,
 #' ## 2 downstream firms, each offering 
 #' ## a single product.
@@ -153,7 +156,7 @@
 #' 
 #' print(simres_down)
 #' summary(simres_down)
-#' }
+
 #' @include VerticalClasses.R
 NULL
 

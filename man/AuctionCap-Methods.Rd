@@ -23,8 +23,7 @@
 
 \S4method{calcBuyerValuation}{Auction2ndCap}(object)
 
-\S4method{calcOptimalReserve}{Auction2ndCap}(object, preMerger = TRUE,
-  lower, upper)
+\S4method{calcOptimalReserve}{Auction2ndCap}(object, preMerger = TRUE, lower, upper)
 
 \S4method{calcBuyerExpectedCost}{Auction2ndCap}(object, preMerger = TRUE)
 
@@ -32,8 +31,7 @@
 
 \S4method{calcExpectedPrice}{Auction2ndCap}(object, preMerger = TRUE)
 
-\S4method{calcExpectedLowestCost}{Auction2ndCap}(object,
-  preMerger = TRUE)
+\S4method{calcExpectedLowestCost}{Auction2ndCap}(object, preMerger = TRUE)
 }
 \arguments{
 \item{object}{An instance of the respective class (see description for the classes)}

@@ -9,8 +9,7 @@
 \alias{hhi,Cournot-method}
 \title{Methods For Calculating the Herfindahl-Hirschman Index}
 \usage{
-\S4method{hhi}{Bertrand}(object, preMerger = TRUE, revenue = FALSE,
-  insideonly = TRUE)
+\S4method{hhi}{Bertrand}(object, preMerger = TRUE, revenue = FALSE, insideonly = TRUE)
 
 \S4method{hhi}{Cournot}(object, preMerger = TRUE, revenue = FALSE)
 }

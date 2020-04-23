@@ -110,7 +110,9 @@ setMethod(
     if(market){
 
       thiscmcr <- thiscv <- NA_real_
+
       try(thiscmcr <- cmcr(object,levels=levels), silent=TRUE)
+
       try(thiscv <- CV(object),silent = TRUE)
 
       thispsdelta  <- NA_real_
@@ -230,7 +232,8 @@ setMethod(
     #}
     
     #else{
-    #  if(!shares){warning("'shares' equals FALSE but 'calcQuantities' not defined. Reporting shares instead of quantities")}
+    #  if(!shares){warning("'shares' equals FALSE but 'calcQuantities' not defined.
+    #Reporting shares instead of quantities")}
       
       outPre  <-  calcShares(object,preMerger=TRUE,revenue=revenue) * 100
       outPost <-  calcShares(object,preMerger=FALSE,revenue=revenue) * 100
@@ -370,7 +373,7 @@ if(any(isPartyHorzUp)){
 setMethod(
   f= "summary",
   signature= "Auction2ndCap",
-  definition=function(object,exAnte=FALSE,parameters=FALSE,digits=2){
+  definition=function(object,exAnte=FALSE,parameters=FALSE,market=TRUE,digits=2){
 
     curWidth <-  getOption("width")
 
@@ -407,12 +410,36 @@ setMethod(
     rownames(results) <- paste(isParty,object@labels)
 
 
+    if( market){
+    
+      thiscmcr <- thiscv <- NA_real_
+      #try(thiscmcr <- cmcr(object), silent=TRUE)
+      try(thiscv <- CV(object),silent = TRUE)
+      
+      try(thispsPre <- calcProducerSurplus(object,TRUE),silent=TRUE)
+      try(thispsPost <- calcProducerSurplus(object,FALSE),silent=TRUE)
+      thispsdelta  <- sum(thispsPost - thispsPre,na.rm=TRUE)
+      
+      
+      results <- with(results,
+                    data.frame(
+                      'HHI Change' = as.integer(HHI(outPre/sum(outPre),owner=object@ownerPost) - HHI(outPre/sum(outPre),owner=object@ownerPre)),
+                      'Industry Price Change (%)' = sum(priceDelta * outPost/sum(outPost, na.rm = TRUE),na.rm=TRUE),
+                      'Merging Party Price Change (%)'= sum(priceDelta[isParty] * outPost[isParty], na.rm=TRUE) / sum(outPost[isParty], na.rm=TRUE),
+                      'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outPost[isParty]) / sum(outPost[isParty], na.rm=TRUE),
+                      'Consumer Harm ($)' = thiscv,
+                      'Producer Benefit ($)' = thispsdelta,
+                      'Difference ($)'= thiscv - thispsdelta,
+                      check.names=FALSE
+                    ))
+    }
     cat("\nMerger simulation results under '",class(object),"':\n\n",sep="")
 
     options("width"=100) # this width ensures that everything gets printed on the same line
     print(round(results,digits),digits=digits)
     options("width"=curWidth) #restore to current width
 
+    if(!market){
     cat("\n\tNotes: '*' indicates merging parties. Deltas are percent changes.\n")
 
     if(exAnte){cat("\tEx Ante shares and prices are reported.\n")}
@@ -427,7 +454,9 @@ setMethod(
     cat("% Change In Buyer's Expected Cost:",round((calcBuyerExpectedCost(object,FALSE)-calcBuyerExpectedCost(object,TRUE))/calcBuyerExpectedCost(object,TRUE)*100,digits),sep="\t")
     cat("\n\n")
 
-
+    rownames(results) <- object@labels
+    }
+    
     if(parameters){
 
       cat("\nSupplier Cost Distribution Parameters:\n\n")
@@ -441,7 +470,7 @@ setMethod(
 
     }
 
-    rownames(results) <- object@labels
+   
     return(invisible(results))
 
   })

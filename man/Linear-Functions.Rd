@@ -6,16 +6,36 @@
 \alias{loglinear}
 \title{Linear and Log-Linear Demand Calibration and Merger Simulation}
 \usage{
-linear(prices, quantities, margins, diversions, symmetry = TRUE,
-  ownerPre, ownerPost, mcDelta = rep(0, length(prices)),
-  subset = rep(TRUE, length(prices)), priceStart = prices,
-  control.slopes, labels = paste("Prod", 1:length(prices), sep = ""),
-  ...)
+linear(
+  prices,
+  quantities,
+  margins,
+  diversions,
+  symmetry = TRUE,
+  ownerPre,
+  ownerPost,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceStart = prices,
+  control.slopes,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 
-loglinear(prices, quantities, margins, diversions, ownerPre, ownerPost,
-  mcDelta = rep(0, length(prices)), subset = rep(TRUE, length(prices)),
-  priceStart = prices, control.equ, labels = paste("Prod",
-  1:length(prices), sep = ""), ...)
+loglinear(
+  prices,
+  quantities,
+  margins,
+  diversions,
+  ownerPre,
+  ownerPost,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceStart = prices,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
 }
 \arguments{
 \item{prices}{A length k vector product prices.}
@@ -161,7 +181,7 @@ CV(result.linear)              # returns representative agent compensating varia
 
 
 ## Implement the Hypothetical Monopolist Test
-## for products 1 and 2 using a 5\\\% SSNIP
+## for products 1 and 2 using a 5\\% SSNIP
 
 #HypoMonTest(result.linear,prodIndex=1:2)
 
