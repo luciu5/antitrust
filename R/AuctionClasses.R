@@ -238,7 +238,8 @@ setClass(
   prototype=prototype(
     normIndex         =  NA,
     control.slopes = list(
-      factr = 1e7
+      trace=FALSE,
+      ftol = 1e-10
     )
   ),
 

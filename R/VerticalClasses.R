@@ -36,7 +36,15 @@ setClass(
      ownerDownLambdaPost="matrix",
      ownerUpLambdaPre="matrix",
      ownerUpLambdaPost="matrix",
-     constrain        = "character"
+     constrain        = "character",
+     control.slopes =   "list",
+     control.eq =   "list"
+   ),
+  prototype=prototype(
+    control.slopes = list(
+      trace=FALSE,
+      ftol = 1e-10
+    )
   ),
   validity = function(object){
     

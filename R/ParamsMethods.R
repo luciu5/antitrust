@@ -1705,25 +1705,30 @@ setMethod(
 
       m1 <- 1 - (log((1-firmShares))/( alpha * firmShares))/margins
       m2 <-  mktElast / (alpha * avgPrice) - sOut
-      
+
       measure <- sum(c(m1 , m2)^2,na.rm=TRUE)
 
       return(measure)
     }
 
     ## Constrain optimizer to look  alpha <0,  0 < sOut < 1
-    lowerB <- c(-Inf,0)
+    lowerB <- c(-Inf,1e-9)
     upperB <- c(-1e-10,.9999999999)
 
     if(!is.na(mktElast)){upperB[1] <- mktElast/avgPrice}
 
-    minTheta <- optim(object@parmsStart,minD,
+    # minTheta <- optim(object@parmsStart,minD,
+    #                   method="L-BFGS-B",
+    #                   lower= lowerB,upper=upperB,
+    #                   control=object@control.slopes)
+    # 
+    minTheta <- BBoptim(object@parmsStart,minD,
                       method="L-BFGS-B",
-                      lower= lowerB,upper=upperB,
+                      lower= lowerB,upper=upperB,quiet=TRUE,
                       control=object@control.slopes)
 
     if(minTheta$convergence != 0){
-      warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
+      warning("'calcSlopes' nonlinear solver may not have successfully converged. Reason: '",minTheta$message,"'")
     }
       minTheta <- minTheta$par
     
@@ -2291,7 +2296,10 @@ setMethod(
       id <- with(id,down.firm)
     }
     else{ id <- rep(1,nprods)}
-    
+   
+    marginsUp <- marginsUp*pricesUp
+    marginsDown <- marginsDown*pricesDown
+     
     #set starting value for bargaining parameter equal to 0.5
     bStart <- rep(0.5,nlevels(factor(id)))
     # set starting value for alpha equal to single product 
@@ -2301,7 +2309,7 @@ setMethod(
     
     parmStart <- c(alphaStart,bStart)
     
-    marginsUp <- marginsUp*pricesUp
+   
     
     
     
@@ -2382,13 +2390,15 @@ setMethod(
       return(sum((err)^2,na.rm = TRUE))
     }
     
-    optmethod <- "L-BFGS-B"
+    #optmethod <- "L-BFGS-B"
     #if(length(bStart) ==1) optmethod <- "Brent"
     lowerB <- rep(.01,length(parmStart))
-    lowerB[1] <- -1e6
+    lowerB[1] <- -1e9
     upperB <- rep(.99, length(parmStart))
-    upperB[1] <- -1e-6
-    thetaOpt <- optim(parmStart,minD,method=optmethod,lower = lowerB,upper = upperB)
+    upperB[1] <- -1e-9
+    
+    #thetaOpt <- optim(parmStart,minD,method=optmethod,lower = lowerB,upper = upperB)
+    thetaOpt <- BBoptim(parmStart,minD,lower = lowerB,upper = upperB,control = object@control.slopes,quiet=TRUE)
     
     if(thetaOpt$convergence !=0){
       warning("Calibration routine may not have converged. Optimizer Reports:\n\t",thetaOpt$message)}

@@ -48,22 +48,24 @@ setMethod(
 
       prices <- object@pricePre
       owner  <- object@ownerPre
-      revenue<- calcShares(object,preMerger,revenue=TRUE)
-
-      elast <-  elast(object,preMerger)
-      margins <-  -1 * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
-
-
+      
     }
 
     else{
       prices <- object@pricePost
-      mc     <- object@mcPost
+      owner  <- object@ownerPost
 
-      margins <- 1 - mc/prices
     }
 
-
+    revenue<- calcShares(object,preMerger,revenue=TRUE)
+    
+    elast <-  elast(object,preMerger)
+    
+    margins <-  try(-1 * as.vector(solve(t(elast)*owner) %*% (revenue * diag(owner))) / revenue,silent=TRUE)
+    if(class(margins) == "try-error"){margins <- -1 * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue}
+    
+    
+    
     if(level) {margins <- margins * prices }
     
     names(margins) <- object@labels
@@ -144,11 +146,11 @@ setMethod(
     elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
     if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
     
-    if(!is2nd) {marginsDown <- -as.vector(elast.inv %*% shareDown)}
+    if(!is2nd) {marginsDown <- calcMargins(down, preMerger=preMerger,level=TRUE)}
     else{
       alpha <- down@slopes$alpha
       down@slopes$meanval <- down@slopes$meanval + alpha *(priceUp - down@priceOutside) 
-      marginsDown <- calcMargins(down, preMerger=preMerger)
+      marginsDown <- calcMargins(down, preMerger=preMerger,level=TRUE)
     }
     
     

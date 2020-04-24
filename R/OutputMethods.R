@@ -555,12 +555,10 @@ setMethod(
   signature= "VertBargBertLogit",
   definition=function(object,preMerger=TRUE,revenue=FALSE){
     
+    down <- object@down 
    
-    
-    down <- object@down
     result <- calcShares(down, preMerger=preMerger,revenue=revenue)
     return(result)
-    
     
     }
 )
