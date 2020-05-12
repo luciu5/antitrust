@@ -23,7 +23,7 @@ biblio-style: "apalike"
 link-citations: true
 ---
 
-*Disclaimer:* The views expressed herein are entirely those of the authors and should not be purported to reflect those of the U.S. Department of Justice and the Federal Trade Commission.  The `antitrust` package has been released into the
+*Disclaimer:* The views expressed herein are entirely those of the authors and should not be purported to reflect those of the U.S. Department of Justice or the Federal Trade Commission.  The `antitrust` package has been released into the
 public domain without warranty of any kind, expressed or implied. We
 thank Ronald Drennan, Robert Majure, Russell Pittman, Gloria Sheu,
 Nathan Miller, Randy Chugh, Marc Remer, Alexander Raskovich, William Drake, Thomas Jeitschko, Greg Werden,  Luke Froeb, Nicholas Hill, and Conor Ryan. Address: Bureau of Economics #202, Federal Trade Commission, 600 Pennsylvania Ave. NW, Washington, DC 20530. email: <ctaragin@ftc.gov> and <michael.sandfort@usdoj.gov>.
@@ -1821,9 +1821,13 @@ following the merger. CMCR may then be compared to the merger's
 efficiencies in order to determine whether or not the merger will lead
 to a price increase.
 
+All the CMCR  functions and methods in `antitrust` possess a 'levels' argument which when equal to TRUE returns the CMCR in dollars. Alternatively, setting the 'rel' argument to "cost" expresses CMCR in terms of pre-merger marginal costs, while setting the 'rel' argument  to "price" expresses CMCR in terms of pre-merger prices. 
+
 `cmcr.bertrand` may be used to compute CMCR under the assumption
 that the merging parties are playing the Bertrand pricing game
-described earlier. The formula for $CMCR_{Bertrand}$ in matrix notation is:
+described earlier. The matrix formula for $CMCR_{Bertrand}$, 
+expressed as a percentage of pre-merger costs, 
+is:
 \begin{align*}
   CMCR_{Bertrand}=&(m_{post}-m_{pre})\circ\frac{1}{1-m_{pre}},&\\
 \end{align*}
@@ -1848,9 +1852,10 @@ formula requires users only to supply price and
 margin information for all of the merging parties' products, as well
 as diversion information between all of the merging parties' products.
 
-`cmcr.cournot` may be used to compute CMCR under the assumption
+`cmcr.cournot` may be used to compute a share-weighted average CMCR under the assumption
 that the merging parties are playing a Cournot quantity-setting
-game where each party produces a single product.  The formula for $CMCR_{Cournot}$ is:
+game where each party produces a single product.  The formula for the share-weighted 
+$CMCR_{Cournot}$,expressed relative to a share-weighted average of party pre-merger costs,  is:
 \begin{align*}
   CMCR_{Cournot}=&\frac{2s_is_j}{\epsilon(s_i+s_j) - (s_i^2+s_j^2)},
 \end{align*}
@@ -1862,7 +1867,14 @@ merging parties' quantity shares as well as an estimate of the market
 elasticity. Under the assumption that each firm produces a single
 product, it can be shown that $\epsilon=\frac{s_i}{m_i}$ for all
 products $i$. Hence, only a single margin is needed to recover an
-estimate of $\epsilon$.
+estimate of $\epsilon$. 
+
+Alternatively, `cmcr.cournot2` may be used to compute Cournot CMCRs for each party. The formula
+for party-specific $CMCR_{Cournot}$ is 
+\begin{align*}
+  CMCR_{Cournot_i}=&\frac{m_j}{1-m_i}.
+\end{align*}
+
 
 The main drawback to using CMCR is that CMCR yields only the
 reduction in marginal costs needed to prevent a price increase; it does
@@ -1875,7 +1887,7 @@ while others are expected to yield
 efficiencies that are smaller than CMCR.
 
 ## Generalized Pricing Pressure
-Another measure included in `antitrust` is Generalized Pricing Pressure (GePP).^[GePP [@Jaffe2012] extends Upward Pricing Pressure (UPP) -- introduced in @Farrell2010a--  to accommodate multi-product merging firms.] GePP  measures how a merger would affect the merging parties'
+Another measure included in `antitrust` is Generalized Pricing Pressure (GePP).^[GePP [@Jaffe2012] extends Upward Pricing Pressure (UPP) -- introduced in @Farrell2010a --  to accommodate multi-product merging firms.] GePP  measures how a merger would affect the merging parties'
 incentives to change the prices of their products, after
 accounting for any merger-specific efficiencies.  The GePP for the merging parties' products may be written as
 

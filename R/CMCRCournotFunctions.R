@@ -2,9 +2,9 @@
 #' @name CMCRCournot-Functions
 #' @aliases cmcr.cournot
 #' upp.cournot
-#' @description Calculate the average marginal cost reduction necessary to restore
-#' pre-merger prices, or the net Upwards Pricing Pressure in a
-#' two-product merger involving firms playing a
+#' @description Calculate the marginal cost reductions necessary to restore
+#' premerger prices (CMCR), or the net Upwards Pricing Pressure (UPP) in a
+#' merger involving firms playing a 
 #' homogeneous product Cournot pricing game.
 #'
 #' @param shares A length-2 vector containing merging party quantity shares.
@@ -20,30 +20,43 @@
 #' proportional change in a product's marginal costs due to
 #' the merger. Default is 0, which assumes that the merger does not
 #' affect any products' marginal cost.
+#' @param rel A length 1 character vector indicating whether CMCR should be calculated
+#' relative to pre-merger cost (``cost'') or pre-merger price (``price''), 
+#' Default is ``cost''.
 #' @param labels A length-2 vector of product labels.
 #'
-#' @details The \sQuote{shares} vector must have 2 elements, and all \sQuote{shares}
+#' @details The \sQuote{shares} (or \sQuote{margins}) vector must have 2 elements, 
+#' and all \sQuote{shares} and \sQuote{margins}
 #' elements must be between 0 and 1. The \sQuote{mktElast} vector must
 #' have 1 non-negative  element.
-#' @return A vector with 1 element whose value equals the percentage change
+#' @return \code{cmcr.cournot} returns a vector with 1 element whose value equals the percentage change
 #' in the products' average marginal costs that the merged firms
-#' must achieve in order to offset a price increase.
+#' must achieve in order to offset a price increase. \code{cmcr.cournot2} returns a vector with 2 element whose value equals the percentage change
+#' in \emph{each} parties' products marginal costs necessary to offset a price increase.
 #' @references  Froeb, Luke and Werden, Gregory (1998).
 #' \dQuote{A robust test for consumer welfare enhancing mergers among sellers
 #' of a homogeneous product.}
 #' \emph{Economics Letters}, \bold{58}(3), pp. 367 - 369.
+#' Werden, Gregory and Froeb, Luke (2008). \dQuote{Unilateral Competitive Effects of Horizontal Mergers}, 
+#' in Paolo Buccirossi (ed), Handbook of Antitrust Economics (MIT Press).
 #' @author Charles Taragin
 #' @seealso \code{\link{cmcr.bertrand}} for a differentiated products Bertrand version of this measure.
 #'
 #' @examples
 #' shares=c(.05,.65)
 #' industryElast = 1.9
+#' margins=shares/industryElast
 #'
+#' ##  calculate average CMCR as a percentage of pre-merger costs
+#' cmcr.cournot(shares,industryElast, rel="cost")
+#' 
+#' ##  calculate average CMCR as a percentage of pre-merger price
+#' cmcr.cournot(shares,industryElast, rel="price")
 #'
-#' cmcr.cournot(shares,industryElast)
-#'
-#'
-#' ## Calculate the necessary percentage cost reductions for various shares and
+#' ##  calculate CMCR for each party as a percentage of pre-merger costs
+#' cmcr.cournot2(margins, rel="cost")
+#' 
+#' ##  calculate the average CMCR for various shares and
 #' ##  industry elasticities in a two-product merger where both firm
 #' ##  products have identical share (see Froeb and
 #' ##  Werden, 1998, pg. 369, Table 1)
@@ -72,18 +85,51 @@ NULL
 
 #'@rdname CMCRCournot-Functions
 #'@export
-cmcr.cournot <- function(shares,mktElast){
+cmcr.cournot <- function(shares,mktElast,rel=c("cost","price")){
 
+  rel=match.arg(rel)
+  
   if(!is.vector(shares) || length(shares)!=2) { stop("'shares'  must be a vector of length 2")}
   if(!is.vector(mktElast) || length(mktElast)!=1) { stop("'mktElast'  must be a vector of length 1")}
   if(any(shares < 0,na.rm=TRUE) ||
      any(shares >1,na.rm=TRUE) ) {
     stop("'shares'  must be between 0 and 1")}
   if(any(mktElast < 0,na.rm=TRUE)) { stop("'mktElast'  must be positive")}
+  
+  denom <- mktElast*sum(shares)
+  
+  if(rel == "cost"){ denom <- denom - sum(shares^2)}
+  
+  mcDelta <- 2*prod(shares)/denom
 
-  mcDelta <- 2*prod(shares)/(mktElast*sum(shares) - sum(shares^2))
+
+  return(mcDelta*100)
+}
 
 
+#'@rdname CMCRCournot-Functions
+#'@export
+cmcr.cournot2 <- function(margins,rel=c("cost","price"),
+                          labels=names(margins)){
+  
+  rel=match.arg(rel)
+  
+  if(is.null(labels)){labels <- paste("Prod",1:length(margins),sep="")}
+  if(!is.character(labels) || length(labels)!=length(margins)){
+    stop("labels must be a  length 2 character vector")}
+  
+  if(!is.numeric(margins) || length(margins)!=2) { stop("'margins'  must be a vector of length 2")}
+  if(any(margins < 0,na.rm=TRUE) ||
+     any(margins >1,na.rm=TRUE) ) {
+    stop("'margins'  must be between 0 and 1")}
+  
+  mcDelta <- rev(margins)
+  
+  if(rel =="cost"){ mcDelta <-  mcDelta/( 1- margins)}
+  
+  names(mcDelta) <- labels
+  
+  
   return(mcDelta*100)
 }
 
@@ -92,9 +138,11 @@ cmcr.cournot <- function(shares,mktElast){
 upp.cournot <- function(prices, margins, ownerPre,
                         ownerPost=matrix(1,ncol=length(prices), nrow=length(prices)),
                         mcDelta=rep(0,length(prices)),
-                        labels=paste("Prod",1:length(prices),sep=""))
+                        labels=names(prices))
 {
 
+  if(is.null(labels)){labels <- paste("Prod",1:length(prices),sep="")}
+  
   if(!is.vector(prices) || length(prices) !=2){ stop("'prices'  must be a vector of length 2")}
   diversions <- rep(1,ncol=2,nrow=2); diag(diversions) <- -1
 

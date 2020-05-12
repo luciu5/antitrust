@@ -23,6 +23,9 @@
 #' proportional change in a product's marginal costs due to
 #' the merger. Default is 0, which assumes that the merger does not
 #' affect any products' marginal cost.
+#' @param rel A length 1 character vector indicating whether CMCR should be calculated
+#' relative to pre-merger cost (``cost'') or pre-merger price (``price''), 
+#' Default is ``cost''.
 #' @param labels A length-k vector of product labels.
 #'
 #' @details All \sQuote{prices} elements must be positive, all \sQuote{margins}
@@ -117,12 +120,17 @@ NULL
 
 #'@rdname CMCRBertrand-Functions
 #'@export
-cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matrix(1,ncol=length(prices), nrow=length(prices)), labels=paste("Prod",1:length(prices),sep=""))
+cmcr.bertrand <- function(prices, margins, diversions, ownerPre, 
+                          ownerPost=matrix(1,ncol=length(prices), nrow=length(prices)),
+                          rel=c("cost","price"),
+                          labels=names(prices))
 {
 
 
 
-
+  rel=match.arg(rel)
+  
+  
   if(!(is.vector(prices) & is.vector(margins))){
     stop("'prices' and 'margins' must be vectors")}
 
@@ -179,7 +187,7 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
     stop("'ownerPre' must be a square matrix whose dimension equals the length of 'prices' and whose elements are between 0 and 1. Also, the columns of the matrix formed from the unique rows of 'ownerPre' must sum to 1")}
 
 
-
+  if(is.null(labels)){labels <- paste("Prod",1:length(prices),sep="")}
 
   ## weight diversion ratios by price ratios and ownership matrices ##
   priceRatio = tcrossprod(1/prices, prices)
@@ -193,8 +201,11 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre, ownerPost=matri
                             ((diag(ownerPost)/diag(ownerPre)) * as.vector(Bpre %*% margins))
   )
 
-  ## calculate proportional change in marginal cost ##
-  mcDelta= (marginPost - margins)/(1 - margins)
+  ## calculate changes in marginal cost relative to pre-merger prices
+  mcDelta= (marginPost - margins)
+  
+  ## calculate changes in marginal cost relative to pre-merger costs
+  if(rel=="cost"){mcDelta <- mcDelta/(1 - margins)}
 
   names(mcDelta) <- labels
 
@@ -287,6 +298,6 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
 
   names(result) <- labels
 
-  return(result) #net UPP
+  return(result*100) #net UPP
 
 }
