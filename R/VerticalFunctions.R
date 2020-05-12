@@ -101,6 +101,7 @@
 #'
 #'
 #' ## Simulate an upstream horizontal merger
+#' ownerPostDown <- ownerPreDown
 #' ownerPostUp <- rep("U1",length(ownerPreUp))
 #'
 #'
@@ -157,8 +158,8 @@
 #' priceOutside = priceOutSide)
 #' 
 #' 
-#' print(simres_down)
-#' summary(simres_down)
+#' print(simres_vert)
+#' summary(simres_vert)
 
 #' @include VerticalClasses.R
 NULL
@@ -191,7 +192,19 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
                   ...
 ){
 
-  #stop("Work in progress")
+  
+  ## trap warnings that do not necessarily apply
+  trapWarning <- function(expr){
+    withCallingHandlers({expr}
+                        , warning = function(w) {
+                          if (grepl( "'ownerPost' and 'ownerPre' are the same",conditionMessage(w),perl= TRUE)){
+                            invokeRestart("muffleWarning")}
+                          
+                          
+                        })
+  }
+  
+ 
   
   supplyDown <- match.arg(supplyDown)
   constrain <-  match.arg(constrain)
@@ -225,8 +238,9 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
     
     
   }
+ 
   
-  up <- new("Bargaining",
+ trapWarning( up <- new("Bargaining",
               prices=pricesUp,
               shares = sharesDown,
               subset=subset,
@@ -236,14 +250,16 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
               mcDelta=mcDeltaUp,
               priceStart = priceStartUp,
               labels=labels)
-  
+ )
+ 
   ## Convert downstream ownership vectors to ownership matrices
   #up@ownerPre  <- ownerToMatrix(up,TRUE)
   #up@ownerPost <- ownerToMatrix(up,FALSE)
 
   
   if(any(is.na(nests))){
-  down <- new(downClass,prices=pricesDown, shares=sharesDown,
+  trapWarning(
+    down <- new(downClass,prices=pricesDown, shares=sharesDown,
                 margins=marginsDown,
                 normIndex=normIndex,
                 ownerPre=ownerPreDown,
@@ -256,8 +272,10 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
                 priceStart=priceStartDown,
                 shareInside=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE,tolerance=1e-3)),1,sum(sharesDown)),
                 labels=labels)
+  )
   }
   else{
+    trapWarning(
     down <- new(downClass,prices=pricesDown, shares=sharesDown,
                 margins=marginsDown,
                 normIndex=normIndex,
@@ -271,6 +289,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
                 priceStart=priceStartDown,
                 shareInside=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE,tolerance=1e-3)),1,sum(sharesDown)),
                 labels=labels)
+    )
   }
     
   if(!missing(control.slopes)){
