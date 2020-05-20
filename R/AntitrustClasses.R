@@ -33,7 +33,7 @@
 #'@keywords classes
 NULL
 
-setClassUnion("matrixOrVector", c("matrix", "numeric","character","factor"))
+setClassUnion("matrixOrVector",c("matrix","numeric","character","factor"))
 setClassUnion("matrixOrList", c("numeric","matrix", "list"))
 setClassUnion("characterOrList", c("character", "list"))
 
