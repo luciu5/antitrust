@@ -14,7 +14,8 @@ cmcr.bertrand(
   diversions,
   ownerPre,
   ownerPost = matrix(1, ncol = length(prices), nrow = length(prices)),
-  labels = paste("Prod", 1:length(prices), sep = "")
+  rel = c("cost", "price"),
+  labels = names(prices)
 )
 
 upp.bertrand(
@@ -41,6 +42,10 @@ a k x k matrix of pre-merger ownership shares.}
 
 \item{ownerPost}{A k x k matrix of post-merger
 ownership shares. Default is a k x k matrix of 1s.}
+
+\item{rel}{A length 1 character vector indicating whether CMCR should be calculated
+relative to pre-merger cost (``cost'') or pre-merger price (``price''), 
+Default is ``cost''.}
 
 \item{labels}{A length-k vector of product labels.}
 

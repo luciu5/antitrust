@@ -12,6 +12,9 @@
 #' @param mktElast A length-1 containing the industry elasticity.
 #' @param prices A length-2 vector of product prices.
 #' @param margins A length-2 vector of product margins.
+#' @param party If TRUE calculate a length-2 vector of individial party CMCRs. 
+#' If FALSE calculate share-weighted CMCR relative to share-weighted pre-merger
+#' marginal costs. Default is FALSE
 #' @param ownerPre EITHER a vector of length 2 whose values
 #' indicate which of the merging parties produced a product pre-merger OR
 #' a 2 x 2 matrix of pre-merger ownership shares.
@@ -30,10 +33,10 @@
 #' and all \sQuote{shares} and \sQuote{margins}
 #' elements must be between 0 and 1. The \sQuote{mktElast} vector must
 #' have 1 non-negative  element.
-#' @return \code{cmcr.cournot} returns a vector with 1 element whose value equals the percentage change
+#' @return when \sQuote{party} is FALSE (default), \code{cmcr.cournot}, \code{cmcr.cournot2} return a vector with 1 element whose value equals the percentage change
 #' in the products' average marginal costs that the merged firms
-#' must achieve in order to offset a price increase. \code{cmcr.cournot2} returns a vector with 2 element whose value equals the percentage change
-#' in \emph{each} parties' products marginal costs necessary to offset a price increase.
+#' must achieve in order to offset a price increase. When \sQuote{party} is TRUE,  \code{cmcr.cournot}, \code{cmcr.cournot2} return a vector with 2 element whose value equals the percentage change
+#' in \emph{each} parties' marginal costs necessary to offset a price increase. When \sQuote{rel} equals "cost" (default) results are in terms of per-merger marginal costs. Otherwise, results are in terms of pre-merger price.
 #' @references  Froeb, Luke and Werden, Gregory (1998).
 #' \dQuote{A robust test for consumer welfare enhancing mergers among sellers
 #' of a homogeneous product.}
@@ -54,8 +57,8 @@
 #' ##  calculate average CMCR as a percentage of pre-merger price
 #' cmcr.cournot(shares,industryElast, rel="price")
 #'
-#' ##  calculate CMCR for each party as a percentage of pre-merger costs
-#' cmcr.cournot2(margins, rel="cost")
+#' ##  calculate average CMCR using margins as a percentage of pre-merger costs
+#' cmcr.cournot2(margins, party=TRUE,rel="cost")
 #' 
 #' ##  calculate the average CMCR for various shares and
 #' ##  industry elasticities in a two-product merger where both firm
@@ -86,7 +89,10 @@ NULL
 
 #'@rdname CMCRCournot-Functions
 #'@export
-cmcr.cournot <- function(shares,mktElast,rel=c("cost","price")){
+cmcr.cournot <- function(shares,mktElast,
+                         party=FALSE,
+                         rel=c("cost","price"),
+                         labels=names(margins)){
 
   rel=match.arg(rel)
   
@@ -97,12 +103,18 @@ cmcr.cournot <- function(shares,mktElast,rel=c("cost","price")){
     stop("'shares'  must be between 0 and 1")}
   if(any(mktElast < 0,na.rm=TRUE)) { stop("'mktElast'  must be positive")}
   
+  if(party){
+  mcDelta <- rev(shares)/(mktElast-shares)  
+  names(mcDelta) <- labels
+  }
+  
+  else{
   denom <- mktElast*sum(shares)
   
   if(rel == "cost"){ denom <- denom - sum(shares^2)}
   
   mcDelta <- 2*prod(shares)/denom
-
+}
 
   return(mcDelta*100)
 }
@@ -110,7 +122,9 @@ cmcr.cournot <- function(shares,mktElast,rel=c("cost","price")){
 
 #'@rdname CMCRCournot-Functions
 #'@export
-cmcr.cournot2 <- function(margins,rel=c("cost","price"),
+cmcr.cournot2 <- function(margins,
+                          rel=c("cost","price"),
+                          party=FALSE,
                           labels=names(margins)){
   
   rel=match.arg(rel)
@@ -124,11 +138,23 @@ cmcr.cournot2 <- function(margins,rel=c("cost","price"),
      any(margins >1,na.rm=TRUE) ) {
     stop("'margins'  must be between 0 and 1")}
   
+  if(party){
   mcDelta <- rev(margins)
   
   if(rel =="cost"){ mcDelta <-  mcDelta/( 1- margins)}
-  
   names(mcDelta) <- labels
+  
+  }
+  else{
+    mcDelta <- 2*prod(margins)
+    
+    denom <- sum(margins)
+    
+    if(rel =="cost"){ denom <-  denom - sum(margins^2)}
+    
+    mcDelta <- mcDelta/denom
+  }
+  
   
   
   return(mcDelta*100)

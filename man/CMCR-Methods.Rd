@@ -11,13 +11,13 @@
 \alias{cmcr,AIDS-method}
 \title{Methods For Calculating Compensating Marginal Cost Reductions}
 \usage{
-\S4method{cmcr}{Bertrand}(object, market = FALSE, levels = FALSE)
+\S4method{cmcr}{Bertrand}(object, market = FALSE, levels = FALSE, rel = c("cost", "price"))
 
-\S4method{cmcr}{Cournot}(object, ...)
+\S4method{cmcr}{Cournot}(object, market = TRUE, levels = FALSE, rel = c("cost", "price"))
 
-\S4method{cmcr}{AIDS}(object, market = FALSE)
+\S4method{cmcr}{AIDS}(object, market = FALSE, rel = c("cost", "price"))
 
-\S4method{cmcr}{Auction2ndLogit}(object, market = FALSE, levels = FALSE, ...)
+\S4method{cmcr}{Auction2ndLogit}(object, market = FALSE, levels = FALSE, rel = c("cost", "price"), ...)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}
@@ -25,6 +25,10 @@
 \item{market}{If TRUE, calculates (post-merger) share-weighted average of metric. Default is FALSE.}
 
 \item{levels}{If TRUE calculates CMCR in levels rather than as a percentage of pre-merger costs. Default is FALSE.}
+
+\item{rel}{A length 1 character vector indicating whether CMCR should be calculated
+relative to pre-merger cost (``cost'') or pre-merger price (``price''), 
+Default is ``cost''. Ignored when levels is TRUE.}
 
 \item{...}{Additional arguments to pass to \code{cmcr}.}
 }

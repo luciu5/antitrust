@@ -3,10 +3,24 @@
 \name{CMCRCournot-Functions}
 \alias{CMCRCournot-Functions}
 \alias{cmcr.cournot}
+\alias{cmcr.cournot2}
 \alias{upp.cournot}
 \title{Compensating Marginal Cost Reductions and Upwards Pricing Pressure (Cournot)}
 \usage{
-cmcr.cournot(shares, mktElast)
+cmcr.cournot(
+  shares,
+  mktElast,
+  party = FALSE,
+  rel = c("cost", "price"),
+  labels = names(margins)
+)
+
+cmcr.cournot2(
+  margins,
+  rel = c("cost", "price"),
+  party = FALSE,
+  labels = names(margins)
+)
 
 upp.cournot(
   prices,
@@ -14,7 +28,7 @@ upp.cournot(
   ownerPre,
   ownerPost = matrix(1, ncol = length(prices), nrow = length(prices)),
   mcDelta = rep(0, length(prices)),
-  labels = paste("Prod", 1:length(prices), sep = "")
+  labels = names(prices)
 )
 }
 \arguments{
@@ -22,9 +36,19 @@ upp.cournot(
 
 \item{mktElast}{A length-1 containing the industry elasticity.}
 
-\item{prices}{A length-2 vector of product prices.}
+\item{party}{If TRUE calculate a length-2 vector of individial party CMCRs. 
+If FALSE calculate share-weighted CMCR relative to share-weighted pre-merger
+marginal costs. Default is FALSE}
+
+\item{rel}{A length 1 character vector indicating whether CMCR should be calculated
+relative to pre-merger cost (``cost'') or pre-merger price (``price''), 
+Default is ``cost''.}
+
+\item{labels}{A length-2 vector of product labels.}
 
 \item{margins}{A length-2 vector of product margins.}
+
+\item{prices}{A length-2 vector of product prices.}
 
 \item{ownerPre}{EITHER a vector of length 2 whose values
 indicate which of the merging parties produced a product pre-merger OR
@@ -37,34 +61,40 @@ ownership shares. Default is a 2 x 2 matrix of 1s.}
 proportional change in a product's marginal costs due to
 the merger. Default is 0, which assumes that the merger does not
 affect any products' marginal cost.}
-
-\item{labels}{A length-2 vector of product labels.}
 }
 \value{
-A vector with 1 element whose value equals the percentage change
+when \sQuote{party} is FALSE (default), \code{cmcr.cournot}, \code{cmcr.cournot2} return a vector with 1 element whose value equals the percentage change
 in the products' average marginal costs that the merged firms
-must achieve in order to offset a price increase.
+must achieve in order to offset a price increase. When \sQuote{party} is TRUE,  \code{cmcr.cournot}, \code{cmcr.cournot2} return a vector with 2 element whose value equals the percentage change
+in \emph{each} parties' marginal costs necessary to offset a price increase. When \sQuote{rel} equals "cost" (default) results are in terms of per-merger marginal costs. Otherwise, results are in terms of pre-merger price.
 }
 \description{
-Calculate the average marginal cost reduction necessary to restore
-pre-merger prices, or the net Upwards Pricing Pressure in a
-two-product merger involving firms playing a
+Calculate the marginal cost reductions necessary to restore
+premerger prices (CMCR), or the net Upwards Pricing Pressure (UPP) in a
+merger involving firms playing a 
 homogeneous product Cournot pricing game.
 }
 \details{
-The \sQuote{shares} vector must have 2 elements, and all \sQuote{shares}
+The \sQuote{shares} (or \sQuote{margins}) vector must have 2 elements, 
+and all \sQuote{shares} and \sQuote{margins}
 elements must be between 0 and 1. The \sQuote{mktElast} vector must
 have 1 non-negative  element.
 }
 \examples{
 shares=c(.05,.65)
 industryElast = 1.9
+margins=shares/industryElast
 
+##  calculate average CMCR as a percentage of pre-merger costs
+cmcr.cournot(shares,industryElast, rel="cost")
 
-cmcr.cournot(shares,industryElast)
+##  calculate average CMCR as a percentage of pre-merger price
+cmcr.cournot(shares,industryElast, rel="price")
 
+##  calculate average CMCR using margins as a percentage of pre-merger costs
+cmcr.cournot2(margins, party=TRUE,rel="cost")
 
-## Calculate the necessary percentage cost reductions for various shares and
+##  calculate the average CMCR for various shares and
 ##  industry elasticities in a two-product merger where both firm
 ##  products have identical share (see Froeb and
 ##  Werden, 1998, pg. 369, Table 1)
@@ -94,6 +124,8 @@ Froeb, Luke and Werden, Gregory (1998).
 \dQuote{A robust test for consumer welfare enhancing mergers among sellers
 of a homogeneous product.}
 \emph{Economics Letters}, \bold{58}(3), pp. 367 - 369.
+Werden, Gregory and Froeb, Luke (2008). \dQuote{Unilateral Competitive Effects of Horizontal Mergers}, 
+in Paolo Buccirossi (ed), Handbook of Antitrust Economics (MIT Press).
 }
 \seealso{
 \code{\link{cmcr.bertrand}} for a differentiated products Bertrand version of this measure.

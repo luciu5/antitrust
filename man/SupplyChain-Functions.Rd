@@ -162,6 +162,7 @@ priceOutSide <- 10
 
 
 ## Simulate an upstream horizontal merger
+ownerPostDown <- ownerPreDown
 ownerPostUp <- rep("U1",length(ownerPreUp))
 
 
@@ -218,8 +219,8 @@ ownerPostUp = ownerPreUp,
 priceOutside = priceOutSide)
 
 
-print(simres_down)
-summary(simres_down)
+print(simres_vert)
+summary(simres_vert)
 }
 \references{
 Sheu, Gloria,  Taragin, Charles (2020). 
