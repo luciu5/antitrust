@@ -45,7 +45,7 @@ setMethod(
     pricePre   <-  object@pricePre
     pricePost  <-  object@pricePost
 
-    if(grepl("aids",class(object),ignore.case=TRUE)){
+    if(any(grepl("aids",class(object),ignore.case=TRUE))){
 
       priceDelta <-  object@priceDelta
     }
@@ -81,7 +81,7 @@ setMethod(
 
     mcDelta <- object@mcDelta
     
-    if(!grepl("auction2nd",class(object),ignore.case=TRUE)){
+    if(any(!grepl("auction2nd",class(object),ignore.case=TRUE))){
       
       mcDelta <- mcDelta * 100
     }

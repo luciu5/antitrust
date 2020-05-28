@@ -41,6 +41,7 @@
 #' \dQuote{A robust test for consumer welfare enhancing mergers among sellers
 #' of a homogeneous product.}
 #' \emph{Economics Letters}, \bold{58}(3), pp. 367 - 369.
+#' 
 #' Werden, Gregory and Froeb, Luke (2008). \dQuote{Unilateral Competitive Effects of Horizontal Mergers}, 
 #' in Paolo Buccirossi (ed), Handbook of Antitrust Economics (MIT Press).
 #' @author Charles Taragin
@@ -92,7 +93,7 @@ NULL
 cmcr.cournot <- function(shares,mktElast,
                          party=FALSE,
                          rel=c("cost","price"),
-                         labels=names(margins)){
+                         labels=names(shares)){
 
   rel=match.arg(rel)
   
@@ -165,12 +166,15 @@ cmcr.cournot2 <- function(margins,
 upp.cournot <- function(prices, margins, ownerPre,
                         ownerPost=matrix(1,ncol=length(prices), nrow=length(prices)),
                         mcDelta=rep(0,length(prices)),
-                        labels=names(prices))
+                        labels=names(margins))
 {
 
   if(is.null(labels)){labels <- paste("Prod",1:length(prices),sep="")}
   
-  if(!is.vector(prices) || length(prices) !=2){ stop("'prices'  must be a vector of length 2")}
+  if(!is.vector(prices) || length(prices) !=1){ stop("'prices'  must be a vector of length 1")}
+  
+  prices <- rep(prices,2)
+  
   diversions <- rep(1,ncol=2,nrow=2); diag(diversions) <- -1
 
   result <- upp.bertrand(prices, margins, diversions, ownerPre,

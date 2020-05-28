@@ -62,7 +62,7 @@ setMethod(
     elast <-  elast(object,preMerger)
     
     margins <-  try(-1 * as.vector(solve(t(elast)*owner) %*% (revenue * diag(owner))) / revenue,silent=TRUE)
-    if(class(margins) == "try-error"){margins <- -1 * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue}
+    if(any(class(margins) == "try-error")){margins <- -1 * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue}
     
     
     
@@ -83,7 +83,7 @@ setMethod(
   definition=function(object,preMerger=TRUE, level=FALSE){
     
     #check if class is 2nd score Logit
-    is2nd <- grepl("2nd",class(object))
+    is2nd <- any(grepl("2nd",class(object)))
     
     up <- object@up
     down <- object@down
@@ -144,7 +144,7 @@ setMethod(
     elast <-  -alpha*tcrossprod(shareDown)
     diag(elast) <- alpha*shareDown + diag(elast)
     elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
-    if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
+    if(any(class(elast.inv) == "try-error")){elast.inv <- MASS::ginv(ownerDown * elast)}
     
     if(!is2nd) {marginsDown <- calcMargins(down, preMerger=preMerger,level=TRUE)}
     else{
@@ -164,13 +164,13 @@ setMethod(
     #marginsUp <-  as.vector(solve(ownerUpLambda * div) %*% (((ownerDownLambda * div) %*% (marginsDown)))) 
     
     marginsUpPart <-  try(solve(ownerUpLambda * div) %*% (ownerDownLambda * div) ,silent=TRUE)
-    if(class(marginsUpPart) == "try-error"){
+    if(any(class(marginsUpPart) == "try-error")){
       marginsUpPart <-  MASS::ginv(ownerUpLambda * div) %*% (ownerDownLambda * div) 
     }
     
     marginsUp <- try(solve(diag(nprods) + (marginsUpPart %*% elast.inv %*%  (ownerVDown * elast))),silent=TRUE)
     
-    if(class(marginsUp) == "try-error"){
+    if(any(class(marginsUp) == "try-error")){
     marginsUp <- MASS::ginv(diag(nprods) + (marginsUpPart %*% elast.inv %*%  (ownerVDown * elast)))
     }
     marginsUp <- drop(marginsUp %*% marginsUpPart %*% marginsDown)

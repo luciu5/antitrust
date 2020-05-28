@@ -12,7 +12,7 @@ cmcr.cournot(
   mktElast,
   party = FALSE,
   rel = c("cost", "price"),
-  labels = names(margins)
+  labels = names(shares)
 )
 
 cmcr.cournot2(
@@ -28,7 +28,7 @@ upp.cournot(
   ownerPre,
   ownerPost = matrix(1, ncol = length(prices), nrow = length(prices)),
   mcDelta = rep(0, length(prices)),
-  labels = names(prices)
+  labels = names(margins)
 )
 }
 \arguments{
@@ -124,6 +124,7 @@ Froeb, Luke and Werden, Gregory (1998).
 \dQuote{A robust test for consumer welfare enhancing mergers among sellers
 of a homogeneous product.}
 \emph{Economics Letters}, \bold{58}(3), pp. 367 - 369.
+
 Werden, Gregory and Froeb, Luke (2008). \dQuote{Unilateral Competitive Effects of Horizontal Mergers}, 
 in Paolo Buccirossi (ed), Handbook of Antitrust Economics (MIT Press).
 }

@@ -2243,7 +2243,7 @@ setMethod(
     
     constrain <- object@constrain
     
-    is2nd <- grepl("2nd",class(object))
+    is2nd <- any(grepl("2nd",class(object)))
     
     up <- object@up
     down <- object@down
@@ -2376,7 +2376,7 @@ setMethod(
         elast <-  -alpha*tcrossprod(sharesDown)
         diag(elast) <- alpha*sharesDown + diag(elast)
         elast.inv <- try(solve(ownerDownMat * elast),silent=TRUE)
-        if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDownMat * elast)}
+        if(any(class(elast.inv) == "try-error")){elast.inv <- MASS::ginv(ownerDownMat * elast)}
         
         marginsCandDown <- marginsCandDown - elast.inv %*% ( (ownerDownMatVertical * elast) %*% (marginsUp) )
       }

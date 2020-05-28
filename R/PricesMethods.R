@@ -545,7 +545,7 @@ setMethod(
       # elast <-  -alpha*tcrossprod(shareCandDown)
       # diag(elast) <- alpha*shareCandDown + diag(elast)
       # elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
-      # if(class(elast.inv) == "try-error"){elast.inv <- MASS::ginv(ownerDown * elast)}
+      # if(any(class(elast.inv) == "try-error")){elast.inv <- MASS::ginv(ownerDown * elast)}
       # marginsDownCand <- -as.vector(elast.inv %*% shareCandDown)
       # 
       # 
