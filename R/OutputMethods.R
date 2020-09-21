@@ -30,6 +30,7 @@
 #' calcRevenues,CES-method
 #' calcRevenues,AIDS-method
 #' calcRevenues,Cournot-method
+#' calcRevenues,VertBargBertLogit-method
 #'
 #' @description This section contains three types of methods: calcShares, calcQuantities, and calcRevenues.
 #'  calcShares computes equilibrium product shares assuming that firms are playing a
@@ -414,6 +415,20 @@ setMethod(
 
   })
 
+
+## compute product revenues
+#'@rdname Output-Methods
+#'@export
+setMethod(
+  f= "calcRevenues",
+  signature= "VertBargBertLogit",
+  definition=function(object,preMerger=TRUE, market = FALSE){
+    
+    result <- calcRevenues(object@down, preMerger=preMerger, market=market)
+    return(result)
+    
+  })
+
 #'@rdname Output-Methods
 #'@export
 
@@ -547,6 +562,25 @@ setMethod(
     else{return(quantities/sum(quantities))}
   }
 )
+
+
+
+
+#'@rdname Output-Methods
+#'@export
+setMethod(
+  f= "calcQuantities",
+  signature= "VertBargBertLogit",
+  definition=function(object,preMerger=TRUE, market=FALSE){
+    
+    down <- object@down
+    
+    result <- calcQuantities(down, preMerger=preMerger,market=market)
+    
+    return(result)
+  })
+
+
 
 #'@rdname Output-Methods
 #'@export
@@ -895,3 +929,5 @@ setMethod(
 
   }
 )
+
+

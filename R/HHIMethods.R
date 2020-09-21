@@ -6,6 +6,7 @@
 #' hhi,ANY-method
 #' hhi,Bertrand-method
 #' hhi,Cournot-method
+#' hhi,VertBargBertLogit-method
 #'
 #' @description Computes the  Herfindahl-Hirschman Index (HHI) using simulated market
 #' shares and either pre- or post-merger ownership information.
@@ -85,3 +86,74 @@ setMethod(
     return(hhi)
 
   })
+
+
+
+
+## Method to compute HHI
+#'@rdname HHI-Methods
+#'@export
+setMethod(
+  f= "hhi",
+  signature= "VertBargBertLogit",
+  definition=function(object,preMerger=TRUE,revenue=FALSE, insideonly=TRUE){
+    
+    up <- object@up
+    down <- object@down
+    
+    ownerUp <- ownerToMatrix(up,preMerger=preMerger)
+    ownerDown <- ownerToMatrix(down,preMerger=preMerger)
+ 
+    
+    if(object@isHorizontal){
+      
+      if(object@isUpstream) owner <- ownerUp
+      else{owner <- ownerDown}
+      
+
+     
+      
+    }
+    
+    else{ 
+      
+      if(preMerger) {
+        thisDownOwner<- down@ownerPre
+        thisUpOwner <- up@ownerPre
+      }
+      else{ 
+        thisDownOwner<- down@ownerPost
+        thisUpOwner <- up@ownerPost
+        }
+      
+      vertFirms <- intersect(thisUpOwner,thisDownOwner)
+
+            
+      
+      for( v in vertFirms){
+        
+        isParty <- thisUpOwner == v | thisDownOwner== v
+        
+        ownerDown[isParty,isParty] <- 1
+      }
+      
+      owner <- ownerDown
+    }
+    
+
+    if(preMerger) down@ownerPre <- owner
+    else{down@ownerPost <- owner}
+    
+    
+    result <- hhi(down,preMerger=preMerger,revenue=revenue, insideonly=insideonly)
+    
+    
+    return(result)
+    
+
+    
+    
+    
+  }
+    
+  )

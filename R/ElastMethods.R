@@ -13,6 +13,7 @@
 #' elast,Logit-method
 #' elast,LogitNests-method
 #' elast,Cournot-method
+#' elast,VertBargBertLogit-method
 #'
 #' @description Calculate the own and cross-price elasticity between any two products in the market.
 #' @param object An instance of one of the classes listed above.
@@ -353,3 +354,16 @@ setMethod(
   }
 )
 
+
+#'@rdname Elast-Methods
+#'@export
+setMethod(
+  f= "elast",
+  signature= "VertBargBertLogit",
+  definition=function(object,preMerger=TRUE,market=FALSE){
+  
+    
+  result <- elast(object@down,preMerger=preMerger,market=market)
+  
+  return(result)
+  })
