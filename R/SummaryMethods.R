@@ -263,8 +263,9 @@ isPartyHorzUp <- up@ownerPost %in% up@ownerPre &
 if(any(isPartyHorzUp)){
   isPartyHorzUp <- up@ownerPost==up@ownerPost[isPartyHorzUp]
 }
-    isPartyVert <- down@ownerPost == up@ownerPost &
-                       down@ownerPre != up@ownerPre
+    isPartyVert <- unique(down@ownerPost[down@ownerPost == up@ownerPost &
+                       down@ownerPre != up@ownerPre])
+    isPartyVert <- (down@ownerPost %in% isPartyVert) | (up@ownerPost %in% isPartyVert)
   
     isParty <- factor(isPartyHorzDown | isPartyHorzUp |isPartyVert,levels=c(FALSE,TRUE),labels=c(" ","*"))
     
@@ -304,9 +305,16 @@ if(any(isPartyHorzUp)){
       hhiUp <- as.integer(HHI(outPre/sum(outPre),owner=up@ownerPost) - HHI(outPre/sum(outPre),owner=up@ownerPre))
       hhiDown <- as.integer(HHI(outPre/sum(outPre),owner=down@ownerPost) - HHI(outPre/sum(outPre),owner=down@ownerPre))
       
+      partylabel <- unique(down@ownerPost[isParty])
+      downOwnerPost <- down@ownerPost
+      downOwnerPost[isparty]=partylabel[1]
+      hhiVert <- as.integer(HHI(outPre/sum(outPre),owner=downOwnerPost) - HHI(outPre/sum(outPre),owner=down@ownerPre))
+      
+      hhidelta <- ifelse(any(isPartyVert),hhiVert,max(hhiUp,hhiDown))
+      
       results <- with(results,
                       data.frame(
-                        'HHI Change' =  max(hhiUp,hhiDown),
+                        'HHI Change' =  hhidelta,
                         'Up Price Change (%)' = priceDelta$up,
                         'Down Price Change (%)' = priceDelta$down,
                         #'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty]),
