@@ -1,6 +1,6 @@
 #'@title \dQuote{Bargaining} Classes
 #'@name Bargaining-Class
-#'@include BertrandClasses.R
+#'@include BertrandRUMClasses.R
 #'@description The \dQuote{Bargaining} class is a building block used to create other classes
 #'in this package. As such, it is most likely to be useful for developers
 #'who wish to code their own calibration/simulation routines.
@@ -63,4 +63,36 @@ setClass(
     
     
   }
+)
+
+setClass(
+  
+  Class = "BargainingLogit",
+  contains="Logit",
+  representation=representation(
+    bargpowerPre       = "numeric",
+    bargpowerPost       = "numeric"
+  ),
+  prototype=prototype(
+    
+    bargpowerPre          = numeric()
+  ),
+  validity=function(object){
+    
+    if(
+      !(all(object@bargpowerPre >=0) &&
+        all(object@bargpowerPre <=1))
+    ){
+      stop("elements of vector 'bargpowerPre' must be between 0 and 1")
+    }
+    
+    if(
+      !(all(object@bargpowerPost >=0) &&
+        all(object@bargpowerPost <=1))
+    ){
+      stop("elements of vector 'bargpowerPost' must be between 0 and 1")
+    }
+    
+  }
+    
 )

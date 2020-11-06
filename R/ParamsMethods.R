@@ -24,6 +24,7 @@
 #' calcSlopes,Cournot-method
 #' calcSlopes,Stackelberg-method
 #' calcSlopes,VertBargBertLogit-method
+#' calcSlopes,BargainingLogit-method
 #' getParms
 #' getParms,ANY-method
 #' getParms,Bertrand-method
@@ -641,7 +642,7 @@ setMethod(
     
     
     minAlpha           <- minTheta$par[1]
-    names(minAlpha)    <- "Alpha"
+    names(minAlpha)    <- "alpha"
     
     if(is.na(idx)) meanval <-  minTheta$par[-1]
     else{
@@ -1185,7 +1186,7 @@ setMethod(
 
 
     minAlpha           <- minTheta$par[1]
-    names(minAlpha)    <- "Alpha"
+    names(minAlpha)    <- "alpha"
 
 
     minSigma <-  as.numeric(isSingletonNest)
@@ -1343,7 +1344,7 @@ setMethod(
     
     
     minAlpha           <- minTheta$par[1]
-    names(minAlpha)    <- "Alpha"
+    names(minAlpha)    <- "alpha"
     
     meanval <- log(shares) - log(idxShare)
     
@@ -1572,7 +1573,7 @@ setMethod(
 
 
     minAlpha           <- minTheta$par[1]
-    names(minAlpha)    <- "Alpha"
+    names(minAlpha)    <- "alpha"
 
     shareOut           <- minTheta$par[2]
 
@@ -2231,6 +2232,175 @@ setMethod(
 
 
 
+#'@rdname Params-Methods
+#'@export
+setMethod(
+  f= "calcSlopes",
+  signature= "BargainingLogit",
+  definition=function(object){
+    
+    ## Uncover Demand Coefficents
+    
+    
+    ownerPre     <-  object@ownerPre
+    shares       <-  object@shares
+    margins      <-  object@margins
+    prices       <-  object@prices
+    idx          <-  object@normIndex
+    mktElast     <-  object@mktElast
+    shareInside  <-  object@shareInside
+    diversion    <-  object@diversion
+    barg         <-  object@bargpowerPre
+    
+    
+    if(is.na(idx)){
+      idxShare <- 1 - shareInside
+      idxPrice <- object@priceOutside
+    }
+    else{
+      idxShare <- shares[idx]
+      idxPrice <- prices[idx]
+    }
+    
+    ## Choose starting parameter values
+    notMissing <- which(!is.na(margins))[1]
+    
+    ##Start at Bertrand
+    parmStart <- -1/(margins[notMissing]*prices[notMissing]*(1 - shares[notMissing]))
+    mvalStart <-  log(shares) - log(idxShare) - parmStart * (prices - idxPrice)
+    if(!is.na(idx)) mvalStart <-  mvalStart[-idx]
+    parmStart <- c(parmStart, mvalStart)
+    
+    ## if any bargaining parameters are missing, set starting bargaining paramter to 0.5
+    if(any(is.na(barg))){parmStart <- c(parmStart,0.5)}
+    
+    ## Uncover price coefficient and mean valuation from margins and revenue shares
+    
+    
+    nprods <- length(shares)
+    
+    avgPrice <- sum(shares * prices, na.rm=TRUE) / sum(shares)
+    
+    ## identify which products have enough margin information
+    ##  to impute Bertrand margins
+    #isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
+    #isMargin[ownerPre==0]=0
+    #isMargin    <- !is.na(rowSums(isMargin))
+    
+    
+    ## Minimize the distance between observed and predicted margins
+    minD <- function(theta){
+      
+      alpha <- theta[1]
+      
+      if(any(is.na(barg))){
+        thisBarg <- theta[nprods]
+        theta <- theta[-nprods]
+        barg[is.na(barg)] <- thisBarg
+        }
+      
+      if(!is.na(idx)){
+        meanval <- rep(0,nprods)
+        meanval[-idx] <- theta[-1]
+      }
+      else{meanval <- theta[-1]}
+      
+      barg <- barg/(1-barg)
+      
+      probs <- shares
+      
+      predshares <- exp(meanval + alpha*prices)
+      predshares <- predshares/(is.na(idx)*exp(alpha*idxPrice) + sum(predshares) )
+      
+      preddiversion <-predshares/(1-predshares)
+      
+      
+      if(!is.na(mktElast)){
+        shareInside <-   1 - mktElast/( alpha * avgPrice )
+        probs <- probs/sum(probs,na.rm=TRUE) * shareInside
+        
+      }
+      
+      
+      marginsCand <- solve(t(-owner * predshares)) 
+      marginsCand <-marginsCand %*% (-log(1-predshares)/(alpha*(barg*preddiversion - log(1-predshares))))
+      marginsCand <- as.vector(marginsCand)
+      
+      m1 <- margins - marginsCand
+      m2 <- predshares - probs
+      measure <- sum((c(m1, m2))^2,na.rm=TRUE)
+      
+      return(measure)
+    }
+    # 
+    #     alphaBounds <- c(-1e6,0)
+    #     if(!is.na(mktElast)){ alphaBounds[2] <- mktElast/ avgPrice}
+    # 
+    #     minAlpha <- optimize(minD, alphaBounds,
+    #                          tol=object@control.slopes$reltol)$minimum
+    # 
+    #     if(!is.na(mktElast)){
+    # 
+    # 
+    #       object@shareInside <-    1 - mktElast/(minAlpha * avgPrice )
+    #       idxShare <-  1 - object@shareInside
+    # 
+    #     }
+    
+    
+    
+    ##  Constrained optimizer to look for solutions where alpha<0,  
+    lowerB <- upperB <- rep(Inf,length(parmStart))
+    lowerB <- lowerB * -1
+    upperB[1] <- 0
+    
+    if(any(is.na(barg))){
+      lowerB[nprods] <- 0
+      upperB[nprods] <- 1
+    }
+    
+    minTheta <- optim(parmStart,minD,method="L-BFGS-B",
+                      lower= lowerB,upper=upperB,
+                      control=object@control.slopes)
+    
+    
+    if(minTheta$convergence != 0){
+      warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
+    }
+    
+    
+    
+    minAlpha           <- minTheta$par[1]
+    names(minAlpha)    <- "alpha"
+    
+    if(any(is.na(barg))){
+    minBarg <- mintheta$par[nprods]
+    mintheta$par <- mintheta$par[-nprods]
+    object@bargpowerPre[is.na(barg)] <- object@bargpowerPost[is.na(barg)] <- minBarg
+    
+    }
+    
+    if(is.na(idx)) meanval <-  minTheta$par[-1]
+    else{
+      meanval <- rep(0,nprods)
+      meanval[-idx] <- minTheta$par[-1]
+    }
+    
+    names(meanval)   <- object@labels
+    
+    
+    
+    
+    object@slopes    <- list(alpha=minAlpha,meanval=meanval)
+    if(any(is.na(barg))){ object@slopes$barg <- minBarg }
+    
+    object@priceOutside <- idxPrice
+    object@mktSize <- object@insideSize / sum(shares)
+    
+    
+    return(object)
+  }
+)
 
 #'@rdname Params-Methods
 #'@export
