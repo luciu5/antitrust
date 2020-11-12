@@ -107,17 +107,20 @@ setMethod(
     
     barg <- barg/(1-barg) #relative bargaining
     
-    nprods <- length(shares)
+    nprods <- length(prices)
     
     shares <- calcShares(object,preMerger,revenue=FALSE)
     
     div <- shares/(1-shares)
     
     
+    diag(owner) <- -1*diag(owner)
     
-    margins <- solve(t(-owner * shares)) 
+    margins <- -owner * shares
+    diag(margins) <- 1 - diag(margins)
+    margins <- solve(t(margins))
     
-    margins <-  as.vector(margins %*% (-log(1-shares)/(alpha*(barg*div-log(1-shares)))))
+    margins <-  as.vector(margins %*% (log(1-shares)/(alpha*(barg*div-log(1-shares)))))
     
     
     if(!level) {margins <- margins / prices }
@@ -307,7 +310,11 @@ setMethod(
     shares     <- calcShares(object,TRUE)
 
     elastPre <-  t(elast(object,TRUE))
-    marginPre <-  -1 * as.vector(MASS::ginv(elastPre * ownerPre) %*% (shares * diag(ownerPre))) / shares
+    
+    elastInv <- try(solve(elastPre * ownerPre),silent=TRUE)
+    if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elastPre * ownerPre)}
+    
+    marginPre <-  -1 * as.vector(elastInv %*% (shares * diag(ownerPre))) / shares
 
     if(preMerger){
       names(marginPre) <- object@labels

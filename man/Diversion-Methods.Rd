@@ -8,11 +8,14 @@
 \alias{diversion,ANY-method}
 \alias{diversion,AIDS-method}
 \alias{diversion,Bertrand-method}
+\alias{diversion,VertBargBertLogit-method}
 \title{Methods For Calculating Diversion}
 \usage{
 \S4method{diversion}{Bertrand}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{diversion}{AIDS}(object, preMerger = TRUE, revenue = TRUE)
+
+\S4method{diversion}{VertBargBertLogit}(object, preMerger = TRUE, revenue = TRUE)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

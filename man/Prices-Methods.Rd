@@ -15,6 +15,7 @@
 \alias{calcPrices,VertBargBertLogit-method}
 \alias{calcPrices,VertBarg2ndLogit-method}
 \alias{calcPrices}
+\alias{calcPrices,BargainingLogit-method}
 \title{\dQuote{Calculating Prices} Methods}
 \usage{
 \S4method{calcPrices}{Cournot}(object, preMerger = TRUE)
@@ -32,6 +33,8 @@
 \S4method{calcPrices}{LogLin}(object, preMerger = TRUE, subset, ...)
 
 \S4method{calcPrices}{AIDS}(object, preMerger = TRUE, ...)
+
+\S4method{calcPrices}{BargainingLogit}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
 
 \S4method{calcPrices}{VertBargBertLogit}(object, preMerger = TRUE, ...)
 

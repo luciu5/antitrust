@@ -38,22 +38,22 @@ setClass(
     if(length(object@margins) != nprods){stop("'margins' and 'prices' must have the same length")}
     
     if(
-      !(all(object@margins >0) &&
-        all(object@margins <=1))
+      !(all(object@margins >0,na.rm=TRUE) &&
+        all(object@margins <=1,na.rm=TRUE))
     ){
       stop("elements of vector 'margins' must be between 0 and 1")
     }
     
     if(
-      !(all(object@bargpowerPre >=0) &&
-        all(object@bargpowerPre <=1))
+      !(all(object@bargpowerPre >=0,na.rm=TRUE) &&
+        all(object@bargpowerPre <=1,na.rm=TRUE))
     ){
       stop("elements of vector 'bargpowerPre' must be between 0 and 1")
     }
    
     if(
-      !(all(object@bargpowerPost >=0) &&
-        all(object@bargpowerPost <=1))
+      !(all(object@bargpowerPost >=0,na.rm=TRUE) &&
+        all(object@bargpowerPost <=1,na.rm=TRUE))
     ){
       stop("elements of vector 'bargpowerPost' must be between 0 and 1")
     }
@@ -80,15 +80,15 @@ setClass(
   validity=function(object){
     
     if(
-      !(all(object@bargpowerPre >=0) &&
-        all(object@bargpowerPre <=1))
+      !(all(object@bargpowerPre >=0,na.rm = TRUE) &&
+        all(object@bargpowerPre <=1,na.rm=TRUE))
     ){
       stop("elements of vector 'bargpowerPre' must be between 0 and 1")
     }
     
     if(
-      !(all(object@bargpowerPost >=0) &&
-        all(object@bargpowerPost <=1))
+      !(all(object@bargpowerPost >=0,na.rm=TRUE) &&
+        all(object@bargpowerPost <=1,na.rm=TRUE))
     ){
       stop("elements of vector 'bargpowerPost' must be between 0 and 1")
     }

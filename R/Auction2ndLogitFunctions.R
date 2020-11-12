@@ -101,12 +101,12 @@
 #'
 #' margin = price - cost
 #'
-#' result <- auction2nd.logit(price,share,margin,
+#' result.2nd <- auction2nd.logit(price,share,margin,
 #'                            ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
 #'
 #'
-#' print(result)
-#' summary(result,revenue=FALSE)
+#' print(result.2nd)
+#' summary(result.2nd,revenue=FALSE)
 #'
 #' ##re-run without any price information except Firm 2
 #'

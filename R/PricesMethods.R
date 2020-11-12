@@ -461,6 +461,100 @@ setMethod(
   }
 )
 
+
+
+#'@rdname Prices-Methods
+#'@export
+setMethod(
+  f= "calcPrices",
+  signature= "BargainingLogit",
+  definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
+    
+    
+    priceStart <- object@priceStart
+    
+    alpha <- object@slopes$alpha
+
+    
+    if(preMerger){
+      owner <- object@ownerPre
+      mc    <- object@mcPre
+      barg <- object@bargpowerPre
+    }
+    else{
+      owner <- object@ownerPost
+      mc    <- object@mcPost
+      barg <- object@bargpowerPost
+    }
+    
+    barg <- barg/(1-barg)
+    
+    nprods <- length(object@shares)
+    if(missing(subset)){
+      subset <- rep(TRUE,nprods)
+    }
+    
+    if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
+    
+    if(any(!subset)){
+      owner <- owner[subset,subset]
+      mc    <- mc[subset]
+      priceStart <- priceStart[subset]
+    }
+    
+    priceEst <- rep(NA,nprods)
+    
+    
+    
+    ##Define system of FOC as a function of prices
+    FOC <- function(priceCand){
+      
+      if(preMerger){ object@pricePre[subset] <- priceCand}
+      else{          object@pricePost[subset] <- priceCand}
+      
+      
+      shares <- calcShares(object,preMerger=preMerger,revenue=FALSE)[subset]
+     
+      
+      diag(owner) <- -1*diag(owner)
+      owner <- -owner*shares
+      diag(owner) <- 1-diag(owner)
+      
+      elastInv <- try(solve(t(owner)),silent=TRUE)
+      if(any(class(elastInv)=="try-error")) {elastInv <- MASS::ginv(t(owner))}
+      
+      thisFOC <- (priceCand - mc) - elastInv %*%(log(1-shares)/(alpha*(barg*shares/(1-shares)-log(1-shares))))
+      
+      return(as.vector(thisFOC))
+    }
+    
+    ## Find price changes that set FOCs equal to 0
+    minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+    
+    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+    
+    
+    if(isMax){
+      
+      hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
+      hess <- hess$D[,1:hess$p]
+      hess <- hess * (owner>0)   #0 terms not under the control of a common owner
+      
+      state <- ifelse(preMerger,"Pre-merger","Post-merger")
+      
+      if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. ",state," price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
+    }
+    
+    
+    priceEst[subset]        <- minResult$par
+    names(priceEst) <- object@labels
+    
+    return(priceEst)
+    
+  }
+)
+
+
 #'@rdname Prices-Methods
 #'@export
 setMethod(

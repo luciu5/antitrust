@@ -12,10 +12,13 @@
 \alias{calcMargins,Auction2ndLogit-method}
 \alias{calcMargins,Auction2ndLogitNests-method}
 \alias{calcMargins,Cournot-method}
+\alias{calcMargins,BargainingLogit-method}
 \alias{calcMargins,Auction2ndCap-method}
 \title{Methods for Calculating Diagnostics}
 \usage{
 \S4method{calcMargins}{Bertrand}(object, preMerger = TRUE, level = FALSE)
+
+\S4method{calcMargins}{BargainingLogit}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{VertBargBertLogit}(object, preMerger = TRUE, level = FALSE)
 

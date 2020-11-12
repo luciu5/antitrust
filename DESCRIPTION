@@ -16,8 +16,8 @@ LazyLoad: yes
 Collate: 
     'AntitrustClasses.R'
     'BertrandClasses.R'
-    'BargainingClasses.R'
     'BertrandRUMClasses.R'
+    'BargainingClasses.R'
     'AuctionClasses.R'
     'VerticalClasses.R'
     'CournotClasses.R'
@@ -46,6 +46,7 @@ Collate:
     'AntitrustPackage.R'
     'Auction2ndCapFunctions.R'
     'Auction2ndLogitFunctions.R'
+    'BargainingLogitFunctions.R'
     'BertrandFunctions.R'
     'CESFunctions.R'
     'CMCRBertrandFunctions.R'

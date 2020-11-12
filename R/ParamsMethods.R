@@ -599,12 +599,15 @@ setMethod(
       elast <- -alpha *  matrix(revenues,ncol=nprods,nrow=nprods)
       diag(elast) <- alpha*prices + diag(elast)
 
-
-      marginsCand <- -1 * as.vector(MASS::ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+      elastInv <- try(solve(elast * ownerPre),silent=TRUE)
+      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elast * ownerPre)}
+      
+      
+      marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
       m1 <- margins - marginsCand
       m2 <- predshares - probs
       m3 <- drop(diversion - preddiversion)
-      measure <- sum((c(m1, m2, m3))^2,na.rm=TRUE)
+      measure <- sum((c(m1, m2, m3)*100)^2,na.rm=TRUE)
 
       return(measure)
     }
@@ -640,6 +643,17 @@ setMethod(
     }
     
     
+    # ui=diag(length(parmStart))
+    # #ui[1,1] <- -1
+    # if(!is.na(idx)){ui[-1,1] <- prices[-idx] - idxPrice}
+    # else{ui[-1,1] <- prices - idxPrice}
+    # ci_hi=rep(log(.9999/(1-.9999)), length(mvalStart)) 
+    # ci_low=rep(log((1-.9999)/.9999), length(mvalStart)) 
+    # 
+    # ui=rbind(-ui,ui[-1,])
+    # ci=c(0,-ci_hi,ci_low)
+    # 
+    # minTheta <- constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci)
     
     minAlpha           <- minTheta$par[1]
     names(minAlpha)    <- "alpha"
@@ -1155,7 +1169,11 @@ setMethod(
       preddiversion <- -elasticity/diag(elasticity)*tcrossprod(1/predshares,predshares)
       diag(preddiversion) <- -1
 
-      marginsCand <- -1 * as.vector(MASS::ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+      elastInv <- try(solve(elast * ownerPre),silent=TRUE)
+      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elast * ownerPre)}
+      
+      
+      marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
       m1 <- margins - marginsCand
       m2 <- predshares - shares
       m3 <- drop(diversion - preddiversion)
@@ -1419,7 +1437,11 @@ setMethod(
 
 
       revenues <- probs * prices
-      marginsCand <- -1 * as.vector(MASS::ginv(elast * ownerPre * notBinds) %*% (revenues * diag(ownerPre))) / revenues
+      
+      elastInv <- try(solve(elast * ownerPre * notBinds),silent=TRUE)
+      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elast * ownerPre *notBinds)}
+      
+      marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
       m1 <- margins - marginsCand
       m1 <- m1[!singleConstrained]
@@ -1796,7 +1818,11 @@ setMethod(
       diag(elast) <- alpha*prices + diag(elast)
 
       revenues <- probs * prices
-      marginsCand <- -1 * as.vector(MASS::ginv(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+      
+      elastInv <- try(solve(elast * ownerPre),silent=TRUE)
+      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elast * ownerPre)}
+      
+      marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
       m1 <- margins - marginsCand
       m2 <- mktElast/(avgPrice * alpha ) - sOut
@@ -1928,8 +1954,11 @@ setMethod(
       elasticity <- (gamma - 1 ) * matrix(predshares,ncol=nprods,nrow=nprods)
       diag(elasticity) <- -gamma + diag(elasticity)
 
+      elastInv <- try(solve(elasticity * ownerPre),silent=TRUE)
+      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elasticity * ownerPre)}
       
-      marginsCand <- -1 * as.vector(MASS::ginv(elasticity * ownerPre) %*% (predshares * diag(ownerPre))) / predshares
+      
+      marginsCand <- -1 * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
       #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
       #FOC <- (shares * diag(ownerPre)) + (elasticity * ownerPre) %*% (shares * margins)
       
@@ -2018,7 +2047,11 @@ setMethod(
       diag(elasticity) <- -gamma + diag(elasticity)
 
 
-      marginsCand <- -1 * as.vector(MASS::ginv(elasticity * ownerPre) %*% (probs * diag(ownerPre))) / probs
+      elastInv <- try(solve(elasticity * ownerPre),silent=TRUE)
+      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elasticity * ownerPre)}
+      
+      
+      marginsCand <- -1 * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
 
       m1 <- margins - marginsCand
       m2 <- mktElast/(( 1 - gamma ) * avgPrice )  -   sOut
@@ -2253,6 +2286,7 @@ setMethod(
     barg         <-  object@bargpowerPre
     
     
+    
     if(is.na(idx)){
       idxShare <- 1 - shareInside
       idxPrice <- object@priceOutside
@@ -2265,22 +2299,25 @@ setMethod(
     ## Choose starting parameter values
     notMissing <- which(!is.na(margins))[1]
     
-    ##Start at Bertrand
-    parmStart <- -1/(margins[notMissing]*prices[notMissing]*(1 - shares[notMissing]))
+    ##Start at 50/50 Bargaining
+    parmStart <- log(1- shares[notMissing])/(margins[notMissing]*prices[notMissing]*(shares[notMissing]/(1- shares[notMissing]) - log(1- shares[notMissing])))
+   
     mvalStart <-  log(shares) - log(idxShare) - parmStart * (prices - idxPrice)
     if(!is.na(idx)) mvalStart <-  mvalStart[-idx]
     parmStart <- c(parmStart, mvalStart)
     
-    ## if any bargaining parameters are missing, set starting bargaining paramter to 0.5
+    ## if any bargaining parameters are missing, set starting bargaining parameter to 0.5
     if(any(is.na(barg))){parmStart <- c(parmStart,0.5)}
-    
-    ## Uncover price coefficient and mean valuation from margins and revenue shares
     
     
     nprods <- length(shares)
     
     avgPrice <- sum(shares * prices, na.rm=TRUE) / sum(shares)
     
+ 
+    
+    
+    nParm <- length(parmStart)
     ## identify which products have enough margin information
     ##  to impute Bertrand margins
     #isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
@@ -2294,8 +2331,8 @@ setMethod(
       alpha <- theta[1]
       
       if(any(is.na(barg))){
-        thisBarg <- theta[nprods]
-        theta <- theta[-nprods]
+        thisBarg <- theta[nParm]
+        theta <- theta[-nParm]
         barg[is.na(barg)] <- thisBarg
         }
       
@@ -2322,30 +2359,22 @@ setMethod(
       }
       
       
-      marginsCand <- solve(t(-owner * predshares)) 
-      marginsCand <-marginsCand %*% (-log(1-predshares)/(alpha*(barg*preddiversion - log(1-predshares))))
-      marginsCand <- as.vector(marginsCand)
+      diag(ownerPre) <- -1*diag(ownerPre)
+      ownerPre <- -1*ownerPre * predshares
+      diag(ownerPre) <- 1-diag(ownerPre)
       
-      m1 <- margins - marginsCand
-      m2 <- predshares - probs
-      measure <- sum((c(m1, m2))^2,na.rm=TRUE)
+      ownerPreInv <- try(solve(t(ownerPre)),silent=TRUE)
+      if(any(class(ownerPreInv)=="try-error")){ownerPreInv=MASS::ginv(t(ownerPre))}
+      
+      marginsCand <-  ownerPreInv %*% (log(1-predshares)/(alpha*(barg*predshares/(1-predshares) - log(1-predshares))))
+      marginsCand <- as.vector(marginsCand)
+      m1 <- margins*prices - marginsCand
+      m2 <- (predshares - probs)*100
+      measure <- sum((c(m1,m2))^2,na.rm=TRUE)
       
       return(measure)
     }
-    # 
-    #     alphaBounds <- c(-1e6,0)
-    #     if(!is.na(mktElast)){ alphaBounds[2] <- mktElast/ avgPrice}
-    # 
-    #     minAlpha <- optimize(minD, alphaBounds,
-    #                          tol=object@control.slopes$reltol)$minimum
-    # 
-    #     if(!is.na(mktElast)){
-    # 
-    # 
-    #       object@shareInside <-    1 - mktElast/(minAlpha * avgPrice )
-    #       idxShare <-  1 - object@shareInside
-    # 
-    #     }
+ 
     
     
     
@@ -2365,18 +2394,29 @@ setMethod(
     
     
     if(minTheta$convergence != 0){
-      warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
+      warning("'calcSlopes' nonlinear solver may not have successfully converge. Reason: '",minTheta$message,"'")
     }
     
     
-    
+    # ui=diag(length(parmStart))
+    # #ui[1,1] <- -1
+    # if(!is.na(idx)){ui[-1,1] <- prices[-idx] - idxPrice}
+    # else{ui[-1,1] <- prices - idxPrice}
+    # ci_hi=rep(log(.9999/(1-.9999)), length(mvalStart))
+    # ci_low=rep(log((1-.9999)/.9999), length(mvalStart))
+    # 
+    # ui=rbind(-ui,ui[-1,])
+    # ci=c(0,-ci_hi,ci_low)
+    # 
+    # minTheta <- constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci)
+    # 
     minAlpha           <- minTheta$par[1]
     names(minAlpha)    <- "alpha"
     
     if(any(is.na(barg))){
-    minBarg <- mintheta$par[nprods]
-    mintheta$par <- mintheta$par[-nprods]
-    object@bargpowerPre[is.na(barg)] <- object@bargpowerPost[is.na(barg)] <- minBarg
+    minBarg <- minTheta$par[nParm]
+    minTheta$par <- minTheta$par[-nParm]
+    object@bargpowerPre[is.na(barg)] <- object@bargpowerPost[is.na(object@bargpowerPost)] <- minBarg
     
     }
     

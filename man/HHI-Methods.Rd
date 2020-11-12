@@ -7,11 +7,14 @@
 \alias{hhi,ANY-method}
 \alias{hhi,Bertrand-method}
 \alias{hhi,Cournot-method}
+\alias{hhi,VertBargBertLogit-method}
 \title{Methods For Calculating the Herfindahl-Hirschman Index}
 \usage{
 \S4method{hhi}{Bertrand}(object, preMerger = TRUE, revenue = FALSE, insideonly = TRUE)
 
 \S4method{hhi}{Cournot}(object, preMerger = TRUE, revenue = FALSE)
+
+\S4method{hhi}{VertBargBertLogit}(object, preMerger = TRUE, revenue = FALSE, insideonly = TRUE)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

@@ -31,7 +31,7 @@
 #' though must be calibrated from additional margin and share data. Default is 0.5.
 #' @param bargpowerPost A length k vector of post-merger bargaining power parameters. Values
 #' must be between 0 (sellers have the power) and 1 (buyers the power). NA values are allowed,
-#' though must be calibrated from additional margin and share data. Default is \sQuote(bargpowerPost).
+#' though must be calibrated from additional margin and share data. Default is \sQuote{bargpowerPost}.
 #' @param mktElast a negative value indicating market elasticity. Default is NA.
 #' @param insideSize An integer equal to total pre-merger units sold.
 #' If shares sum to one, this also equals the size of the market.
@@ -43,6 +43,10 @@
 #' the product indexed by that element should be included in the
 #' post-merger simulation and FALSE if it should be excluded.Default is a
 #' length k vector of TRUE.
+#' @param priceOutside A postive real number equal to the price of the outside good.
+#' Default equals 1 for Logit demand.
+#' @param priceStart A vector of length k who elements equal to an
+#' initial guess of equilbrium prices. default is \sQuote{prices}.
 #' @param control.slopes A list of  \code{\link{optim}}  control parameters passed
 #' to the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed
@@ -58,10 +62,10 @@
 #'
 #'
 #' @return \code{bargaining.logit} returns an instance of \code{\linkS4class{BargainingLogit}},
-#' a child class of \code{\linkS4class{Logit}}. \code{bargaining.logit.nests} returns an instance of \code{\linkS4class{BargainingLogitNests}}.
-#' \code{bargaining.logit} returns an instance of \code{\linkS4class{BargainingLogitALM}}.
+#' a child class of \code{\linkS4class{Logit}}.
 #'
-#' @seealso \code{\link{logit}},\code{\link{logit.nests}} for simulating mergers under a Nash-Bertrand pricing game with Logit demand 
+#' @seealso \code{\link{logit}} for simulating mergers under a Nash-Bertrand pricing game with Logit demand, and ,\code{\link{auction2nd.logit}}
+#' for simulating mergers under a 2nd score auction with Logit demand. 
 #' @author Charles Taragin \email{ctaragin@ftc.gov}
 #' @include Auction2ndLogitFunctions.R
 #' @references Miller, Nathan (2014). \dQuote{Modeling the effects of mergers in procurement}
@@ -73,7 +77,7 @@
 #' ## Source: Miller 2014 backup materials http://www.nathanhmiller.org/research
 #'
 #' share = c(0.29,0.40,0.28,0.03)
-#'
+#' bargpower <- rep(0.2,4)
 #' price = c(35.53,  154, 84.08, 53.16)
 #' cost  =  c(NA, 101, NA, NA)
 #'
@@ -82,14 +86,14 @@
 #' #Suppose products 2 and 3 merge
 #' ownerPost[2,3] <- ownerPost[3,2] <- 1
 #'
-#' margin = price - cost
+#' margin = (price - cost)/price
 #'
-#' result <- bargaining.logit(price,share,margin,
+#' result.barg <- bargaining.logit(price,share,margin,bargpowerPre=bargpower,
 #'                            ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
 #'
 #'
-#' print(result)
-#' summary(result,revenue=FALSE)
+#' print(result.barg)
+#' summary(result.barg,revenue=FALSE)
 #'
 #'
 #' ## Get a detailed description of the 'BargainingLogit' class slots
@@ -108,8 +112,9 @@ bargaining.logit <- function(prices,shares,margins,
                              normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
                              mcDelta=rep(0,length(prices)),
                              subset=rep(TRUE,length(prices)),
+                             priceStart=prices,
                              insideSize = NA_real_,
-                             mcDeltaOutside=0,
+                             priceOutside=0,
                              control.slopes,
                              labels=paste("Prod",1:length(prices),sep="")
 ){
@@ -127,9 +132,9 @@ bargaining.logit <- function(prices,shares,margins,
                 insideSize = insideSize,
                 mcDelta=mcDelta,
                 subset=subset,
-                priceOutside=mcDeltaOutside,
+                priceOutside=priceOutside,
                 shareInside=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1,sum(shares)),
-                priceStart=rep(0,length(shares)),
+                priceStart=priceStart,
                 labels=labels,
                 cls = "BargainingLogit")
 
@@ -141,6 +146,7 @@ bargaining.logit <- function(prices,shares,margins,
   result@ownerPre  <- ownerToMatrix(result,TRUE)
   result@ownerPost <- ownerToMatrix(result,FALSE)
 
+
   ## Calculate Demand Slope Coefficients
   result <- calcSlopes(result)
 
@@ -148,6 +154,7 @@ bargaining.logit <- function(prices,shares,margins,
   result@mcPre <-  calcMC(result,TRUE)
   result@mcPost <- calcMC(result,FALSE)
 
+  
   ## Solve Non-Linear System for Price Changes
   result@pricePre  <- calcPrices(result,preMerger=TRUE)
   result@pricePost <- calcPrices(result,preMerger=FALSE)

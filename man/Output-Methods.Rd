@@ -30,7 +30,9 @@
 \alias{calcRevenues,CES-method}
 \alias{calcRevenues,AIDS-method}
 \alias{calcRevenues,Cournot-method}
+\alias{calcRevenues,VertBargBertLogit-method}
 \alias{calcShares,Auction2ndCap-method}
+\alias{calcQuantities,VertBargBertLogit-method}
 \alias{calcShares,VertBargBertLogit-method}
 \alias{calcShares,VertBarg2ndLogit-method}
 \title{Output Methods}
@@ -53,6 +55,8 @@
 
 \S4method{calcRevenues}{Cournot}(object, preMerger = TRUE, market = FALSE)
 
+\S4method{calcRevenues}{VertBargBertLogit}(object, preMerger = TRUE, market = FALSE)
+
 \S4method{calcQuantities}{AIDS}(object, preMerger = TRUE, market = FALSE)
 
 \S4method{calcRevenues}{CES}(object, preMerger = TRUE, market = FALSE)
@@ -62,6 +66,8 @@
 \S4method{calcShares}{Cournot}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{Linear}(object, preMerger = TRUE, revenue = FALSE)
+
+\S4method{calcQuantities}{VertBargBertLogit}(object, preMerger = TRUE, market = FALSE)
 
 \S4method{calcShares}{VertBargBertLogit}(object, preMerger = TRUE, revenue = FALSE)
 
