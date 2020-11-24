@@ -23,7 +23,7 @@ biblio-style: "apalike"
 link-citations: true
 ---
 
-*Disclaimer:* The views expressed herein are entirely those of the authors and should not be purported to reflect those of the U.S. Department of Justice or the Federal Trade Commission.  The `antitrust` package has been released into the
+*Disclaimer:* The views expressed herein are entirely those of the authors and should not be purported to reflect those of the Federal Trade Commission or the U.S. Department of Justice.  The `antitrust` package has been released into the
 public domain without warranty of any kind, expressed or implied. We
 thank Ronald Drennan, Robert Majure, Russell Pittman, Gloria Sheu,
 Nathan Miller, Randy Chugh, Marc Remer, Alexander Raskovich, William Drake, Thomas Jeitschko, Greg Werden,  Luke Froeb, Nicholas Hill, and Conor Ryan. Address: Bureau of Economics #202, Federal Trade Commission, 600 Pennsylvania Ave. NW, Washington, DC 20530. email: <ctaragin@ftc.gov> and <michael.sandfort@usdoj.gov>.
@@ -1805,6 +1805,12 @@ The `CV` method may be used to calculate compensating variation from a merger. T
 
 #### Calibrating Unobserved Outside Share {-}
 `auction2nd.logit.alm` uses the calibration strategy similar to the one discussed in the ["Nested Logit with Unobserved Outside Share"][(Nested) Logit With Unobserved Outside Share] section to calibrate the unobserved share of the outside good.
+
+
+# The Nash Bargaining Game
+Unlike 2nd-price procurement (score) auction models (chapter \@ref(auction-models)), where buyers pay the difference in surplus between their two to best options in order to entice sellers to reveal their costs (match values), Nash bargaining models assume that buyers and sellers bilaterally negotiate prices so as to maximize their joint surplus.  The Nash bargaining model described here allows buyers and sellers to vary in three important ways. First, buyers maximize utility while sellers maximize profits. Second, buyers and sellers differ in their *disagreement payoffs*: if a bargain cannot be reached, buyers select their next best option, which may be owned by the same seller.
+
+# Vertical Supply
 
 # Other Tools
 For some acquisitions, there may be insufficient information available
