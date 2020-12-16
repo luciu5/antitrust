@@ -2358,15 +2358,16 @@ setMethod(
         
       }
       
+      ownerPreInv <- ownerPre
+      diag(ownerPreInv) <- -1*diag(ownerPreInv)
+      ownerPreInv <- -1*ownerPreInv * predshares
+      diag(ownerPre) <- diag(ownerPre) - diag(ownerPreInv)
       
-      diag(ownerPre) <- -1*diag(ownerPre)
-      ownerPre <- -1*ownerPre * predshares
-      diag(ownerPre) <- 1-diag(ownerPre)
+      tmp <- try(solve(t(ownerPreInv)),silent=TRUE)
+      if(any(class(tmp)=="try-error")){ownerPreInv=MASS::ginv(t(ownerPreInv))}
+      else{ ownerPreInv <- tmp}
       
-      ownerPreInv <- try(solve(t(ownerPre)),silent=TRUE)
-      if(any(class(ownerPreInv)=="try-error")){ownerPreInv=MASS::ginv(t(ownerPre))}
-      
-      marginsCand <-  ownerPreInv %*% (log(1-predshares)/(alpha*(barg*predshares/(1-predshares) - log(1-predshares))))
+      marginsCand <-  ownerPreInv %*% (log(1-predshares)/(alpha*(barg*predshares/(1-predshares) - diag(ownerPre)*log(1-predshares))))
       marginsCand <- as.vector(marginsCand)
       m1 <- margins*prices - marginsCand
       m2 <- (predshares - probs)*100
