@@ -515,15 +515,16 @@ setMethod(
       
       shares <- calcShares(object,preMerger=preMerger,revenue=FALSE)[subset]
      
+      elastInv <- owner
+      diag(elastInv) <- -1*diag(elastInv)
+      elastInv <- -elastInv*shares
+      diag(elastInv) <- diag(owner) - diag(elastInv)
       
-      diag(owner) <- -1*diag(owner)
-      owner <- -owner*shares
-      diag(owner) <- 1-diag(owner)
+      tmp <- try(solve(t(elastInv)),silent=TRUE)
+      if(any(class(tmp)=="try-error")) {elastInv <- MASS::ginv(t(elastInv))}
+      else{elastInv <- tmp}
       
-      elastInv <- try(solve(t(owner)),silent=TRUE)
-      if(any(class(elastInv)=="try-error")) {elastInv <- MASS::ginv(t(owner))}
-      
-      thisFOC <- (priceCand - mc) - elastInv %*%(log(1-shares)/(alpha*(barg*shares/(1-shares)-log(1-shares))))
+      thisFOC <- (priceCand - mc) - elastInv %*%(log(1-shares)/(alpha*(barg*shares/(1-shares)- diag(owner)*log(1-shares))))
       
       return(as.vector(thisFOC))
     }

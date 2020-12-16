@@ -31,7 +31,7 @@
 #' though must be calibrated from additional margin and share data. Default is 0.5.
 #' @param bargpowerPost A length k vector of post-merger bargaining power parameters. Values
 #' must be between 0 (sellers have the power) and 1 (buyers the power). NA values are allowed,
-#' though must be calibrated from additional margin and share data. Default is \sQuote{bargpowerPost}.
+#' though must be calibrated from additional margin and share data. Default is \sQuote{bargpowerPre}.
 #' @param mktElast a negative value indicating market elasticity. Default is NA.
 #' @param insideSize An integer equal to total pre-merger units sold.
 #' If shares sum to one, this also equals the size of the market.
