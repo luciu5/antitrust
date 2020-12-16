@@ -299,7 +299,7 @@ setMethod(
 
     prices <- object@prices
 
-    marginPre <- calcMargins(object, preMerger = TRUE)
+    marginPre <- calcMargins(object, preMerger = TRUE, level = TRUE)
 
     mc <-  prices - marginPre
 
