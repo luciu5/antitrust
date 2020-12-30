@@ -46,7 +46,7 @@ though must be calibrated from additional margin and share data. Default is 0.5.
 
 \item{bargpowerPost}{A length k vector of post-merger bargaining power parameters. Values
 must be between 0 (sellers have the power) and 1 (buyers the power). NA values are allowed,
-though must be calibrated from additional margin and share data. Default is \sQuote{bargpowerPost}.}
+though must be calibrated from additional margin and share data. Default is \sQuote{bargpowerPre}.}
 
 \item{normIndex}{An integer equalling the index (position) of the
 inside product whose mean valuation will be normalized to 1. Default

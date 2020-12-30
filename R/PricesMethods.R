@@ -516,9 +516,9 @@ setMethod(
       shares <- calcShares(object,preMerger=preMerger,revenue=FALSE)[subset]
      
       elastInv <- owner
-      diag(elastInv) <- -1*diag(elastInv)
+      #diag(elastInv) <- -1*diag(elastInv)
       elastInv <- -elastInv*shares
-      diag(elastInv) <- diag(owner) - diag(elastInv)
+      diag(elastInv) <- diag(owner) + diag(elastInv)
       
       tmp <- try(solve(t(elastInv)),silent=TRUE)
       if(any(class(tmp)=="try-error")) {elastInv <- MASS::ginv(t(elastInv))}
