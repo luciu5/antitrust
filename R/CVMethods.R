@@ -224,24 +224,18 @@ setMethod(
     marginPre <- calcMargins(object, preMerger = TRUE, exAnte= TRUE)
     marginPost <- calcMargins(object, preMerger = FALSE, exAnte= TRUE)
 
-    #sharePost <- calcShares(object,preMerger=FALSE,revenue=FALSE)
-    
-    result <- sum(marginPost,na.rm=TRUE) - 
-              sum(marginPre, na.rm =TRUE)
-    #+sum(mcDelta*sharePost, na.rm=TRUE)
-
     ## Add the elimination of first best option
     VPre  <- sum(exp(meanvalPre),na.rm=TRUE)  + outVal
     VPost <- sum(exp(meanvalPost[subset]),na.rm=TRUE ) + outVal
     
     
     
-    result <-   result  + log(VPost/VPre)/alpha  
-    
+    result <-   - log(VPost/VPre)/alpha  
+    result <- result - (sum(marginPost,na.rm=TRUE) - sum(marginPre, na.rm =TRUE))
     
     if(!is.na(mktSize)){result <- mktSize * result}
 
-    return(result)
+    return(-result)
   })
 
 
