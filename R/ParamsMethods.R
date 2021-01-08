@@ -1926,7 +1926,7 @@ setMethod(
     ## Choose starting paramter values
     notMissing <- which(!is.na(margins))[1]
     
-    parmStart <- (shares[notMissing] - 1/margins[notMissing])/(shares[notMissing] - 1 ) 
+    parmStart <- - 1*margins[notMissing] 
     parmStart <- c(parmStart, exp(log(shares) - log(idxShare) - (parmStart - 1) * (log(prices) - log(idxPrice))))
     
 
@@ -1951,8 +1951,8 @@ setMethod(
       diag(preddiversion) <- -1
        
       
-      elasticity <- (gamma - 1 ) * matrix(predshares,ncol=nprods,nrow=nprods)
-      diag(elasticity) <- -gamma + diag(elasticity)
+      elasticity <- gamma *  matrix(predshares/(1-predshares),ncol=nprods,nrow=nprods)
+      diag(elasticity) <- -gamma 
 
       elastInv <- try(solve(elasticity * ownerPre),silent=TRUE)
       if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elasticity * ownerPre)}
@@ -2043,9 +2043,9 @@ setMethod(
 
       probs <- shares * (1 - sOut)
 
-      elasticity <- (gamma - 1 ) * matrix(probs,ncol=nprods,nrow=nprods)
-      diag(elasticity) <- -gamma + diag(elasticity)
-
+      
+      elasticity <- gamma *  matrix(probs/(1-probs),ncol=nprods,nrow=nprods)
+      diag(elasticity) <- -gamma 
 
       elastInv <- try(solve(elasticity * ownerPre),silent=TRUE)
       if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elasticity * ownerPre)}

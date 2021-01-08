@@ -870,8 +870,8 @@ where $r_i$ is product $i$'s *revenue* share  and
 
 The CES demand system yields the following own- and cross-price elasticities:
 \begin{align*}
-  \epsilon_{ii}=& -\gamma + (\gamma-1)r_i \\
-  \epsilon_{ij}=& (\gamma-1)r_j
+  \epsilon_{ii}=& -\gamma  \\
+  \epsilon_{ij}=& \frac{\gamma r_j}{1-r_j}
 \end{align*}
 
 

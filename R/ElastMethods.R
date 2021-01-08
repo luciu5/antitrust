@@ -303,8 +303,9 @@ setMethod(
     else{
 
       nprods <-  length(shares)
-      elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
-      diag(elast) <- -gamma + diag(elast)
+      elast <- gamma *  matrix(shares/(1-shares),ncol=nprods,nrow=nprods,byrow = TRUE)
+      diag(elast) <- -gamma 
+      
 
       dimnames(elast) <- list(object@labels,object@labels)
     }
