@@ -320,10 +320,9 @@ setMethod(
 
     gamma       <- object@slopes$gamma
     meanval     <- object@slopes$meanval
-    shareInside <- object@shareInside
+    
 
-
-    outVal <- ifelse(shareInside<1, 1, 0)
+    outVal <- ifelse(is.na(object@normIndex), 1, 0)
 
     VPre  <- sum(meanval * (object@pricePre / object@priceOutside)^(1-gamma),na.rm=TRUE) + outVal
     VPost <- sum(meanval * (object@pricePost/ object@priceOutside)^(1-gamma),na.rm=TRUE) + outVal
