@@ -122,9 +122,6 @@ non-singleton nest is permitted to have its own value. Default is
 TRUE.}
 
 \item{mktElast}{a negative value indicating market elasticity. Default is NA.}
-
-\item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters passed
-to the non-linear equation solver (typically the \code{calcPrices} method).}
 }
 \value{
 \code{auction2nd.logit} returns an instance of \code{\linkS4class{Auction2ndLogit}},

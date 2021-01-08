@@ -55,8 +55,6 @@
 #' TRUE.
 #' @param control.slopes A list of  \code{\link{optim}}  control parameters passed
 #' to the calibration routine optimizer (typically the \code{calcSlopes} method).
-#' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed
-#' to the non-linear equation solver (typically the \code{calcPrices} method).
 #' @param labels A k-length vector of labels. Default is "Prod#", where
 #' \sQuote{#} is a number between 1 and the length of \sQuote{prices}.
 #'
