@@ -305,7 +305,11 @@ cournot <- function(prices,quantities,
     result@control.slopes <- control.slopes
   }
 
-
+  
+  if(!missing(control.equ)){
+    result@control.equ <- control.equ
+  }
+  
   ## Convert ownership vectors to ownership matrices
   result@ownerPre  <- ownerToMatrix(result,TRUE)
   result@ownerPost <- ownerToMatrix(result,FALSE)
@@ -379,6 +383,10 @@ stackelberg <- function(prices,quantities,margins,
     result@control.slopes <- control.slopes
   }
 
+  
+  if(!missing(control.equ)){
+    result@control.equ <- control.equ
+  }
 
   ## Convert ownership vectors to ownership matrices
   result@ownerPre  <- ownerToMatrix(result,TRUE)
