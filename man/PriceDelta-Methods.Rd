@@ -12,7 +12,13 @@
 \alias{calcPriceDelta,VertBargBertLogit-method}
 \title{Methods For Calculating Price Delta}
 \usage{
-\S4method{calcPriceDelta}{Antitrust}(object, levels = FALSE, market = FALSE, ...)
+\S4method{calcPriceDelta}{Antitrust}(
+  object,
+  levels = FALSE,
+  market = FALSE,
+  index = c("paasche", "laspeyres"),
+  ...
+)
 
 \S4method{calcPriceDelta}{VertBargBertLogit}(object, levels = FALSE, market = FALSE, ...)
 
@@ -22,10 +28,16 @@
   levels = FALSE,
   subset,
   market = FALSE,
+  index = c("paasche", "laspeyres"),
   ...
 )
 
-\S4method{calcPriceDelta}{Auction2ndLogit}(object, exAnte = FALSE, levels = TRUE, market = FALSE)
+\S4method{calcPriceDelta}{Auction2ndLogit}(
+  object,
+  levels = TRUE,
+  market = FALSE,
+  exAnte = ifelse(market, TRUE, FALSE)
+)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}
@@ -33,6 +45,9 @@
 \item{levels}{If TRUE, report results in levels. If FALSE, report results in percents. Default is FALSE.}
 
 \item{market}{If TRUE, calculates (post-merger) share-weighted average of metric. Default is FALSE.}
+
+\item{index}{If "paasche",calculates market-wide price changes using post-merger predicted shares. If  "laspeyres", 
+calculates price index using pre-merger shares. Default is "paasche".}
 
 \item{...}{Additional values that may be used to change the default values of the non-linear
 equation solver.}
@@ -47,7 +62,7 @@ length k vector of TRUE.}
 
 \item{exAnte}{If \sQuote{exAnte} equals TRUE then the
 \emph{ex ante} expected result for each firm is produced, while FALSE produces the
-expected result conditional on each firm winning the auction. Default is FALSE.}
+expected result conditional on each firm winning the auction. Default is FALSE, unless \sQuote{market} is TRUE.}
 }
 \description{
 For Antitrust, the method computes equilibrium price changes

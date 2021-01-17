@@ -22,6 +22,8 @@
 #' @param object An instance of one of the classes listed above.
 #' @param levels If TRUE, report results in levels. If FALSE, report results in percents. Default is FALSE.
 #' @param market If TRUE, calculates (post-merger) share-weighted average of metric. Default is FALSE.
+#' @param index If "paasche",calculates market-wide price changes using post-merger predicted shares. If  "laspeyres", 
+#' calculates price index using pre-merger shares. Default is "paasche".
 #' @param isMax If TRUE, uses numerical derivatives to determine if
 #' equilibrium price vector is a local maximum. Default is FALSE.
 #' @param subset A vector of length k where each element equals TRUE if
@@ -30,7 +32,7 @@
 #' length k vector of TRUE.
 #' @param exAnte If \sQuote{exAnte} equals TRUE then the
 #' \emph{ex ante} expected result for each firm is produced, while FALSE produces the
-#' expected result conditional on each firm winning the auction. Default is FALSE.
+#' expected result conditional on each firm winning the auction. Default is FALSE, unless \sQuote{market} is TRUE.
 #' @param ... Additional values that may be used to change the default values of the non-linear
 #' equation solver.
 #'
@@ -49,11 +51,14 @@ setGeneric (
 setMethod(
   f= "calcPriceDelta",
   signature= "Antitrust",
-  definition=function(object, levels = FALSE, market = FALSE, ...  ){
+  definition=function(object, levels = FALSE, market = FALSE, index=c("paasche","laspeyres"), ...  ){
 
+    index <- match.arg(index)
+    
     pricePre  <- object@pricePre
     pricePost <- object@pricePost
 
+    
     if(levels){priceDelta <- pricePost - pricePre}
     else{priceDelta <- pricePost/pricePre - 1}
     #names(priceDelta) <- object@labels
@@ -63,12 +68,16 @@ setMethod(
       sharesPre <- calcShares(object, preMerger=TRUE,...)
       sharesPre <- sharesPre/sum(sharesPre,na.rm=TRUE)
       
-      
       sharesPost <- calcShares(object, preMerger=FALSE,...)
       sharesPost <- sharesPost/sum(sharesPost,na.rm=TRUE)
       
       
-      priceDelta <- sum(pricePost*sharesPost,na.rm=TRUE)/ sum(pricePre*sharesPre,na.rm=TRUE) - 1
+      if(index=="paasche")  priceDelta <- sum(sharesPost*pricePost)/sum(sharesPost*pricePre) - 1
+      else if (index=="laspeyres")  priceDelta <- sum(sharesPre*pricePost)/sum(sharesPre*pricePre) - 1
+      
+      
+      
+      
     }
 
     return(priceDelta)
@@ -158,9 +167,17 @@ setMethod(
 setMethod(
   f= "calcPriceDelta",
   signature= "AIDS",
-  definition=function(object,isMax=FALSE,levels=FALSE,subset,market=FALSE,...){
+  definition=function(object,isMax=FALSE,levels=FALSE,subset,market=FALSE, index=c("paasche","laspeyres"),...){
 
-    if(market) return(sum(object@priceDelta * calcShares(object, preMerger = FALSE),na.rm=TRUE))
+    index <- match.arg(index)
+    
+    if(market){
+      
+      if(index=="paasche") shares <-  calcShares(object, preMerger = FALSE)
+      else{shares <-  calcShares(object, preMerger = TRUE)}
+    
+      return(sum(object@priceDelta * shares,na.rm=TRUE))
+           }
 
     ownerPost <- object@ownerPost
 
@@ -229,12 +246,16 @@ setMethod(
 setMethod(
   f= "calcPriceDelta",
   signature= "Auction2ndLogit",
-  definition=function(object,exAnte=FALSE,levels=TRUE, market=FALSE){
+  definition=function(object,levels=TRUE, market=FALSE,exAnte=ifelse(market,TRUE,FALSE)){
 
+    if(!levels){callNextMethod()}
+    
     subset <- object@subset
 
     mcDelta <- object@mcDelta
 
+
+    
     if(exAnte){
       sharesPost <- calcShares(object, preMerger=FALSE)
       mcDelta <- mcDelta*sharesPost
@@ -243,9 +264,12 @@ setMethod(
     result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte) + mcDelta -
       calcMargins(object, preMerger=TRUE,exAnte=exAnte)
 
-    if(!levels){result <- result/calcPrices(object,preMerger = TRUE, exAnte = exAnte )}
+    if(market) result <- sum(result)
+    
+ 
 
-    names(result) <- object@labels
+    if(!market) names(result) <- object@labels
+    
     return(result)
   }
 )
