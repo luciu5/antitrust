@@ -5,6 +5,7 @@
 #' simulates the price effect of a merger between two firms
 #' under the assumption that firms and customers in the market are playing a
 #' differentiated products Nash Bargaining game.
+#' @include Auction2ndLogitFunctions.R
 #' @description Let k denote the number of products produced by all firms playing the
 #' Nash Bargaining game below.
 #' @param prices A length k vector of product prices.
@@ -32,7 +33,6 @@
 #' @param bargpowerPost A length k vector of post-merger bargaining power parameters. Values
 #' must be between 0 (sellers have the power) and 1 (buyers the power). NA values are allowed,
 #' though must be calibrated from additional margin and share data. Default is \sQuote{bargpowerPre}.
-#' @param mktElast a negative value indicating market elasticity. Default is NA.
 #' @param insideSize An integer equal to total pre-merger units sold.
 #' If shares sum to one, this also equals the size of the market.
 #' @param mcDelta A vector of length k where each element equals the
@@ -67,7 +67,6 @@
 #' @seealso \code{\link{logit}} for simulating mergers under a Nash-Bertrand pricing game with Logit demand, and ,\code{\link{auction2nd.logit}}
 #' for simulating mergers under a 2nd score auction with Logit demand. 
 #' @author Charles Taragin \email{ctaragin@ftc.gov}
-#' @include Auction2ndLogitFunctions.R
 #' @references Miller, Nathan (2014). \dQuote{Modeling the effects of mergers in procurement}
 #' \emph{International Journal of Industrial Organization} , \bold{37}, pp. 201-208.
 #'
@@ -77,7 +76,7 @@
 #' ## Source: Miller 2014 backup materials http://www.nathanhmiller.org/research
 #'
 #' share = c(0.29,0.40,0.28,0.03)
-#' bargpower <- rep(0.2,4)
+#' bargpower <- rep(0.6,4) # buyer has advantage
 #' price = c(35.53,  154, 84.08, 53.16)
 #' cost  =  c(NA, 101, NA, NA)
 #'

@@ -54,7 +54,6 @@ auction2nd.logit.alm(
   mcDeltaOutside = 0,
   parmsStart,
   control.slopes,
-  control.equ,
   labels = paste("Prod", 1:length(prices), sep = "")
 )
 }

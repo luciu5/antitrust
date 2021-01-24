@@ -81,8 +81,6 @@ to the non-linear equation solver (typically the \code{calcPrices} method).}
 
 \item{labels}{A k-length vector of labels. Default is "Prod#", where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
-
-\item{mktElast}{a negative value indicating market elasticity. Default is NA.}
 }
 \value{
 \code{bargaining.logit} returns an instance of \code{\linkS4class{BargainingLogit}},
@@ -110,7 +108,7 @@ calibrated parameters to simulate a merger between two firms, under the assumpti
 ## Source: Miller 2014 backup materials http://www.nathanhmiller.org/research
 
 share = c(0.29,0.40,0.28,0.03)
-bargpower <- rep(0.2,4)
+bargpower <- rep(0.6,4) # buyer has advantage
 price = c(35.53,  154, 84.08, 53.16)
 cost  =  c(NA, 101, NA, NA)
 

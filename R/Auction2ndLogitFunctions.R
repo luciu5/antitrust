@@ -284,7 +284,6 @@ auction2nd.logit.alm <- function(prices,shares,margins,
                                  mcDeltaOutside=0,
                                  parmsStart,
                                  control.slopes,
-                                 control.equ,
                                  labels=paste("Prod",1:length(prices),sep="")
 ){
 
@@ -318,9 +317,7 @@ auction2nd.logit.alm <- function(prices,shares,margins,
   if(!missing(control.slopes)){
     result@control.slopes <- control.slopes
   }
-  if(!missing(control.equ)){
-    result@control.equ <- control.equ
-  }
+
   ## Convert ownership vectors to ownership matrices
   result@ownerPre  <- ownerToMatrix(result,TRUE)
   result@ownerPost <- ownerToMatrix(result,FALSE)

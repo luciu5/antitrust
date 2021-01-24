@@ -1,11 +1,16 @@
 #'@title \dQuote{Bargaining} Classes
-#'@name Bargaining-Class
+#'@name Bargaining-Classes
+#'@aliases Bargaining-class
 #'@include BertrandRUMClasses.R
+#'
+#'@description Each class contains all the information needed to calibrate a specific type of demand system and
+#'perform a merger simulation analysis under the assumption that firms are playing a differentiated products Nash Bargaining  game.
+#'
 #'@description The \dQuote{Bargaining} class is a building block used to create other classes
 #'in this package. As such, it is most likely to be useful for developers
 #'who wish to code their own calibration/simulation routines.
+#'@description The \dQuote{BargainingLogit} class has the information for a Nash Bargaining game with Logit demand.
 #'@description Let k denote the number of products produced by all firms below.
-
 #'@section Objects from the Class:
 #'Objects can be created by calls of the form \code{new("Bargaining", ...)}.
 #'@slot bargpowerPre A length k vector of pre-merger bargaining power parameters.
@@ -14,6 +19,8 @@
 #'@slot margins  A length k vector of of observes margins.
 
 
+#'@rdname Bargaining-Classes
+#'@export
 setClass(
   
   Class = "Bargaining",
@@ -65,6 +72,9 @@ setClass(
   }
 )
 
+
+#'@rdname Bargaining-Classes
+#'@export
 setClass(
   
   Class = "BargainingLogit",
