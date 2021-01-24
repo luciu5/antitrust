@@ -20,6 +20,8 @@
   ...
 )
 
+\S4method{calcPriceDelta}{Cournot}(object, levels = FALSE, market = TRUE, ...)
+
 \S4method{calcPriceDelta}{VertBargBertLogit}(object, levels = FALSE, market = FALSE, ...)
 
 \S4method{calcPriceDelta}{AIDS}(

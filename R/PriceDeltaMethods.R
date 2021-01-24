@@ -65,11 +65,11 @@ setMethod(
 
     if(market){
       
-      sharesPre <- calcShares(object, preMerger=TRUE,...)
+      sharesPre <- calcShares(object, preMerger=TRUE,revenue=FALSE,...)
       sharesPre <- sharesPre/sum(sharesPre,na.rm=TRUE)
       
-      sharesPost <- calcShares(object, preMerger=FALSE,...)
-      sharesPost <- sharesPost/sum(sharesPost,na.rm=TRUE)
+      sharesPost <- calcShares(object, preMerger=FALSE,revenue=FALSE,...)
+      sharesPost <- sharesPost/sum(sharesPost,revenue=FALSE,na.rm=TRUE)
       
       
       if(index=="paasche")  priceDelta <- sum(sharesPost*pricePost)/sum(sharesPost*pricePre) - 1
@@ -82,6 +82,18 @@ setMethod(
 
     return(priceDelta)
 
+  }
+)
+
+#'@rdname PriceDelta-Methods
+#'@export
+setMethod(
+  f= "calcPriceDelta",
+  signature= "Cournot",
+  definition=function(object, levels = FALSE, market=TRUE, ...  ){
+    
+    callNextMethod()
+    
   }
 )
 
