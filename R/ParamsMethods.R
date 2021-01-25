@@ -1826,7 +1826,7 @@ setMethod(
 
       m1 <- margins - marginsCand
       m2 <- mktElast/(avgPrice * alpha ) - sOut
-      measure <- sum(c(m1,m2)^2,na.rm=TRUE)
+      measure <- sum((c(m1,m2)*100)^2,na.rm=TRUE)
 
       #elast      <-   elast[isMargin,isMargin]
       #revenues   <-   revenues[isMargin]

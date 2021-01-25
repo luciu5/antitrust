@@ -209,7 +209,7 @@ setClass(
     ){stop("'priceOutside' must be a non-negative number")}
 
     if(!is.na(object@mktElast) && object@mktElast >0 ) stop("'mktElast' must be negative")
-    if(!is.na(object@mktElast) && !isTRUE(all.equal(sum(object@shares, na.rm=TRUE),1)) ) stop("`shares' must sum to 1 when 'mktElast' is supplied")
+    #if(!is.na(object@mktElast) && !isTRUE(all.equal(sum(object@shares, na.rm=TRUE),1)) ) stop("`shares' must sum to 1 when 'mktElast' is supplied")
 
     if(length(object@mktSize)!=1 ||
        (!is.na(object@mktSize) && isTRUE(object@mktSize<0))){
