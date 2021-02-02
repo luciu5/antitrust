@@ -158,6 +158,7 @@ setMethod(
 
       elast <- alpha * sum(shares/sum(shares)*prices,na.rm=TRUE) * (1 - sum(shares,na.rm=TRUE))
 
+      names(elast) <- NULL
     }
 
     else{
@@ -294,10 +295,11 @@ setMethod(
       if(preMerger){ prices <- object@pricePre}
       else{          prices <- object@pricePost}
 
-      avgPrice <- sum(prices*shares)/sum(shares)
+      #avgPrice <- sum(prices*shares)/sum(shares)
 
-      elast <- ( 1 - gamma  )  * (1 - sum(shares)) * avgPrice
+      elast <- ( 1 - gamma  )  * (1 - sum(shares)) - 1
 
+      names(elast) <- NULL
     }
 
     else{

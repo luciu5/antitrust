@@ -1643,6 +1643,7 @@ setMethod(
     margins      <-  object@margins
     prices       <-  object@prices
     idx          <-  object@normIndex
+    mktElast     <-  object@mktElast
     
 
 
@@ -1655,13 +1656,27 @@ setMethod(
 
     firmShares <- drop(ownerPre %*% shares)
 
+    if(is.na(idx)){
+      idxShare <- 1 - object@shareInside
+      
+    }
+    else{
+      idxShare <- shares[idx]
+      
+    }
+    
+    shareOut <-  1 - object@shareInside
 
     ## Minimize the distance between observed and predicted  ex Ante margins
     minD <- function(alpha){
 
-      measure <- 1 - log(1-firmShares)/( alpha * firmShares)/margins
+      
 
-      measure <- sum((measure)^2,na.rm=TRUE)
+      m1 <-  mktElast / (alpha * avgPrice) - shareOut
+      
+      m2 <- 1 - log(1-firmShares)/( alpha * firmShares)/margins
+
+      measure <- sum(c(m1,m2)^2,na.rm=TRUE)
 
       return(measure)
     }
@@ -1669,17 +1684,11 @@ setMethod(
     minAlpha <- optimize(minD,c(-1e6,0),
                          tol=object@control.slopes$reltol)$minimum
 
+    
     ## calculate costs conditional on a product winning
     marginsPre <- - log(1 /(1-firmShares))/(minAlpha * firmShares)
 
-    if(is.na(idx)){
-      idxShare <- 1 - object@shareInside
-
-    }
-    else{
-      idxShare <- shares[idx]
-
-    }
+    
 
 
     meanval <- log(shares) - log(idxShare)
@@ -1908,6 +1917,9 @@ setMethod(
     shareInside  <-  object@shareInside
     insideSize   <-  object@insideSize
     diversion    <-  object@diversion
+    mktElast     <-  object@mktElast 
+    
+    shareOut <- 1 - shareInside
 
     ## uncover Numeraire Coefficients
     if(shareInside <= 1 && shareInside>0) {alpha <- 1/shareInside - 1}
@@ -1965,7 +1977,8 @@ setMethod(
       m1 <- margins - marginsCand
       m2 <- predshares - shares
       m3 <- drop(diversion - preddiversion)
-      measure <- sum((c(m1, m2, m3)*100)^2,na.rm=TRUE)
+      m4 <- (mktElast + 1)/(1-gamma) - shareOut
+      measure <- sum((c(m1, m2, m3, m4)*100)^2,na.rm=TRUE)
       
       #measure<-sum(FOC^2,na.rm=TRUE)
 
@@ -2054,7 +2067,8 @@ setMethod(
       marginsCand <- -1 * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
 
       m1 <- margins - marginsCand
-      m2 <- mktElast/(( 1 - gamma ) * avgPrice )  -   sOut
+      m2 <- (mktElast + 1)/(1-gamma) - sOut
+     
       measure <- sum(c(m1 , m2)^2,na.rm=TRUE)
 
 

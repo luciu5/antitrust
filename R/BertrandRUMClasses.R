@@ -432,9 +432,14 @@ setClass(
   Class   = "CES",
   contains="Logit",
   prototype=prototype(
-    priceOutside=0
+    priceOutside=1
     
-  )
+  ),
+  validity=function(object){
+    
+   if(!is.na(object@mktElast) && object@mktElast > -1){
+     stop("'mktElast' must be less than or equal to  -1")} 
+  }
 )
 
 

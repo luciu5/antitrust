@@ -15,6 +15,7 @@ ces(
   ownerPre,
   ownerPost,
   normIndex = ifelse(sum(shares) < 1, NA, 1),
+  mktElast = NA_real_,
   insideSize = NA_real_,
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
@@ -91,6 +92,8 @@ a k x k matrix of post-merger ownership shares.}
 \item{normIndex}{An integer specifying the product index against which
 the mean values of all other products are normalized. Default is 1.}
 
+\item{mktElast}{a negative value indicating market elasticity. Default is NA.}
+
 \item{insideSize}{total revenues included in the market.}
 
 \item{mcDelta}{A vector of length k where each element equals the
@@ -123,8 +126,6 @@ to the non-linear equation solver (typically the \code{calcPrices} method).}
 
 \item{...}{Additional options to feed to the \code{\link[BB]{BBsolve}}
 optimizer used to solve for equilibrium prices.}
-
-\item{mktElast}{a negative value indicating market elasticity. Default is NA.}
 
 \item{parmsStart}{A vector of starting values used to solve for
 price coefficient and nest parameters. The first element should
