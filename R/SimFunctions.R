@@ -3,11 +3,14 @@
 #' @aliases sim
 #' @description Simulates the price effects of a merger between two firms
 #' with user-supplied demand parameters under the
-#' assumption that all firms in the market are playing a
-#' differentiated products Bertrand pricing game.
+#' assumption that all firms in the market are playing either a
+#' differentiated products Bertrand pricing game, 2nd price (score) auction, or bargaining game.
 #' @description Let k denote the number of products produced by all firms below.
 #'
 #' @param prices A length k vector of product prices.
+#' @param supply A character string indicating how firms compete with one another. Valid
+#' values are "bertrand" (Nash Bertrand),  "auction2nd"
+#' (2nd score auction), or "bargaining".
 #' @param demand A character string indicating the type of demand system
 #'   to be used in the merger simulation. Supported demand systems are
 #'   linear (\sQuote{Linear}), log-linear(\sQuote{LogLin}), logit (\sQuote{Logit}), nested logit
@@ -33,6 +36,8 @@
 #'   the product indexed by that element should be included in the
 #'   post-merger simulation and FALSE if it should be excluded.Default is a
 #'   length k vector of TRUE.
+#' @param insideSize A length 1 vector equal to total units sold if \sQuote{demand} equals "logit", or total revenues if
+#' \sQuote{demand} equals "ces".
 #' @param priceOutside A length 1 vector indicating the price of the
 #'   outside good. This option only applies to the \sQuote{Logit} class and its child classes
 #'   Default for \sQuote{Logit},\sQuote{LogitNests}, and \sQuote{LogitCap} is 0,
@@ -40,6 +45,12 @@
 #' @param priceStart A length k vector of starting values used to solve for
 #'   equilibrium price. Default is the \sQuote{prices} vector for all values of
 #'   demand except for \sQuote{AIDS}, which is set equal to a vector of 0s.
+#' @param bargpowerPre A length k vector of pre-merger bargaining power parameters. Values
+#' must be between 0 (sellers have the power) and 1 (buyers the power). Ignored if \sQuote{supply} not equal
+#' to "bargaining".
+#' @param bargpowerPost A length k vector of post-merger bargaining power parameters. Values
+#' must be between 0 (sellers have the power) and 1 (buyers the power). Default is \sQuote{bargpowerPre}.
+#' Ignored if \sQuote{supply} not equal to "bargaining".
 #' @param labels A k-length vector of labels. Default is \dQuote{Prod#}, where
 #'   \sQuote{#} is a number between 1 and the length of \sQuote{prices}.
 #' @param ... Additional options to feed to the
@@ -109,7 +120,7 @@
 #'                   meanval=c(0,0.4149233,1.1899885,0.8252482,0.1460183,1.4865730)
 #' )
 #'
-#' sim.logit <- sim(price,demand="Logit",demand.param,ownerPre=ownerPre,ownerPost=ownerPost)
+#' sim.logit <- sim(price,supply="bertrand",demand="Logit",demand.param,ownerPre=ownerPre,ownerPost=ownerPost)
 #'
 #'
 #'
@@ -134,17 +145,27 @@ NULL
 
 #'@rdname Sim-Functions
 #'@export
-sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap"),demand.param,
+sim <- function(prices,
+                supply=c("bertrand","auction","bargaining"),
+                demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap"),demand.param,
                 ownerPre,ownerPost,nests, capacities,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE,length(prices)),
+                insideSize=1,
                 priceOutside,
                 priceStart,
+                bargpowerPre=rep(0.5,length(prices)),
+                bargpowerPost=bargpowerPre,
                 labels=paste("Prod",1:length(prices),sep=""),...){
 
   demand <- match.arg(demand)
+  supply <- match.arg(supply)
   nprods <- length(prices)
 
+  if((supply != "bertrand"  &&  demand != "Logit") #&&
+     #(supply != "cournot" && demand !="Linear")
+     ){ stop(paste(supply,"/",demand,"currently not supported."))}
+  
   if(missing(priceStart)){
     if(demand=="AIDS"){priceStart <- runif(nprods)}
     else{              priceStart <- prices}
@@ -337,22 +358,55 @@ sim <- function(prices,demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNes
   }
 
 
-  else if(demand %in% c("Logit","CES")){
+  else if( demand %in% c("Logit","CES")){
 
 
-    result <- new(demand,prices=prices, shares=shares,
+   result <- switch(supply,
+                bertrand= new(demand,prices=prices, shares=shares,
                   margins=margins,
                   normIndex=normIndex,
                   mcDelta=mcDelta,
                   subset=subset,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
-                  priceStart=priceStart,shareInside=shareInside,
-                  labels=labels)
+                  priceStart=priceStart,
+                  priceOutside=priceOutside,
+                  shareInside=shareInside,
+                  labels=labels),
+                  bargaining=new("BargainingLogit",prices=prices, shares=shares,
+                     margins=margins,
+                     normIndex=normIndex,
+                     ownerPre=ownerPre,
+                     ownerPost=ownerPost,
+                     bargpowerPre=bargpowerPre,
+                     bargpowerPost=bargpowerPost,
+                     insideSize = insideSize,
+                     mcDelta=mcDelta,
+                     subset=subset,
+                     priceOutside=priceOutside,
+                     shareInside=shareInside,
+                     priceStart=priceStart,
+                     labels=labels,
+                     cls = "BargainingLogit"),
+                auction=new("Auction2ndLogit",prices=prices, shares=shares,
+                                      margins=margins,
+                                      normIndex=normIndex,
+                                      ownerPre=ownerPre,
+                                      ownerPost=ownerPost,
+                                      insideSize = insideSize,
+                                      mcDelta=mcDelta,
+                                      subset=subset,
+                                      priceOutside=mcDeltaOutside,
+                                      shareInside=shareInside,
+                                      priceStart=priceStart,
+                                      labels=labels,
+                                      cls = "Auction2ndLogit")
+                  
+   )
 
   }
-
-
+  
+  
   else if(demand == "LogitCap"){
 
     if(!("mktSize" %in% names(demand.param))){
