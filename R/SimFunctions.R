@@ -218,6 +218,7 @@ sim <- function(prices,
       shareInside <- sum(shares)
       if(missing(priceOutside)){priceOutside <- 0}
 
+      
     }
 
 
@@ -366,6 +367,7 @@ sim <- function(prices,
                   margins=margins,
                   normIndex=normIndex,
                   mcDelta=mcDelta,
+                  insideSize = insideSize,
                   subset=subset,
                   ownerPre=ownerPre,
                   ownerPost=ownerPost,
@@ -396,7 +398,7 @@ sim <- function(prices,
                                       insideSize = insideSize,
                                       mcDelta=mcDelta,
                                       subset=subset,
-                                      priceOutside=mcDeltaOutside,
+                                      priceOutside=priceOutside,
                                       shareInside=shareInside,
                                       priceStart=priceStart,
                                       labels=labels,
@@ -499,8 +501,13 @@ sim <- function(prices,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre  <- calcPrices(result,TRUE,...)
-  result@pricePost <- calcPrices(result,FALSE,subset=subset,...)
+  
+  if(supply!="auction") result@pricePost <- calcPrices(result,FALSE,subset=subset,...)
+  else{result@pricePost <- calcPrices(result,FALSE,...)}
 
+  if(any(grepl("logit",demand,ignore.case = TRUE),na.rm=TRUE)){result@mktSize <- insideSize/sum(calcShares(result))}
+  else if(any(grepl("ces",demand,ignore.case = TRUE),na.rm=TRUE)){result@mktSize <- insideSize*(1+result@slopes$alpha)}
+  
 
-  return(result)
+return(result)
 }
