@@ -42,7 +42,7 @@ NULL
 
 setGeneric (
   name= "calcPriceDelta",
-  def=function(object,...){standardGeneric("calcPriceDelta")}
+  def=function(object,levels = FALSE, market = FALSE,...){standardGeneric("calcPriceDelta")}
 )
 
 ## Method to compute price changes
@@ -258,9 +258,12 @@ setMethod(
 setMethod(
   f= "calcPriceDelta",
   signature= "Auction2ndLogit",
-  definition=function(object,levels=TRUE, market=FALSE,exAnte=ifelse(market,TRUE,FALSE)){
+  definition=function(object,levels=TRUE, market=FALSE,exAnte=ifelse(market,TRUE,FALSE),...){
 
-    if(!levels){callNextMethod()}
+    if(!levels){
+      result <- callNextMethod()
+      return(result)
+    }
     
     subset <- object@subset
 
@@ -276,7 +279,7 @@ setMethod(
     result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte) + mcDelta -
       calcMargins(object, preMerger=TRUE,exAnte=exAnte)
 
-    if(market) result <- sum(result)
+    if(market) result <- sum(result,na.rm=TRUE)
     
  
 
