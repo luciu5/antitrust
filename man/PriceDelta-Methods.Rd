@@ -38,7 +38,8 @@
   object,
   levels = TRUE,
   market = FALSE,
-  exAnte = ifelse(market, TRUE, FALSE)
+  exAnte = ifelse(market, TRUE, FALSE),
+  ...
 )
 }
 \arguments{

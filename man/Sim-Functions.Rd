@@ -163,7 +163,8 @@ demand.param=list(alpha=-48.0457,
                   meanval=c(0,0.4149233,1.1899885,0.8252482,0.1460183,1.4865730)
 )
 
-sim.logit <- sim(price,supply="bertrand",demand="Logit",demand.param,ownerPre=ownerPre,ownerPost=ownerPost)
+sim.logit <- sim(price,supply="bertrand",demand="Logit",demand.param,
+                 ownerPre=ownerPre,ownerPost=ownerPost)
 
 
 

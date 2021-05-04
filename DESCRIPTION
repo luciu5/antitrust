@@ -1,12 +1,12 @@
 Package: antitrust
 Type: Package
 Title: Tools for Antitrust Practitioners
-Version: 0.99.14
-Date: 2020-06-25
+Version: 0.99.25
+Date: 2021-05-04
 Author: Charles Taragin and Michael Sandfort
 Maintainer: Charles Taragin <ctaragin@ftc.gov>
 Imports: methods, MASS, evd, BB, numDeriv
-Suggests: ggplot2, bookdown, knitr
+Suggests: ggplot2, knitr, bookdown, rmarkdown
 VignetteBuilder: knitr
 Encoding: UTF-8
 Description: A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects of mergers under different competitive regimes.

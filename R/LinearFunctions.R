@@ -93,7 +93,7 @@
 #' \dQuote{A Complete Characterization Of The Linear, Log-Linear, And Semi-Log
 #' Incomplete Demand System Models.}
 #' \emph{Journal of Agricultural and Resource Economics}, \bold{27}(02).
-#' \url{http://ideas.repec.org/a/ags/jlaare/31118.html}.
+#' \doi{10.22004/ag.econ.31118}.
 #'
 #' @examples
 #' ## Simulate a merger between two single-product firms in a

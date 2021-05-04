@@ -159,8 +159,8 @@ information to estimate the share of the outside good.
 
 share = c(0.29,0.40,0.28,0.03)
 
-price = c(35.53,  154, 84.08, 53.16)
-cost  =  c(NA, 101, NA, NA)
+price = c(35.53,  154, 84.08, 53.16)*1e3
+cost  =  c(NA, 101, NA, NA)*1e3
 
 ownerPre <- ownerPost <- diag(length(share))
 
@@ -185,6 +185,18 @@ result.noprice <- auction2nd.logit(price,share,margin,
 
 print(result.noprice)
 summary(result.noprice,revenue=FALSE)
+
+##changing the units of prices and margins can yield dramatically different results 
+
+price = c(35.53,  154, 84.08, 53.16)
+cost  =  c(NA, 101, NA, NA)
+margin <- price - cost
+
+result.units <- auction2nd.logit(price,share,margin,
+                                   ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
+
+print(result.units)
+summary(result.units,revenue=FALSE)
 
 ## Get a detailed description of the 'Auction2ndLogit' class slots
 showClass("Auction2ndLogit")

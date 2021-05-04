@@ -118,8 +118,8 @@
 #'
 #' ##changing the units of prices and margins can yield dramatically different results 
 #'
-#' price <- price/1e3
-#' cost <- cost/1e3
+#' price = c(35.53,  154, 84.08, 53.16)
+#' cost  =  c(NA, 101, NA, NA)
 #' margin <- price - cost
 #'
 #' result.units <- auction2nd.logit(price,share,margin,
