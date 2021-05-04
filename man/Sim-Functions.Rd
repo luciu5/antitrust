@@ -7,6 +7,7 @@
 \usage{
 sim(
   prices,
+  supply = c("bertrand", "auction", "bargaining"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
     "LogitCap"),
   demand.param,
@@ -16,14 +17,21 @@ sim(
   capacities,
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
+  insideSize = 1,
   priceOutside,
   priceStart,
+  bargpowerPre = rep(0.5, length(prices)),
+  bargpowerPost = bargpowerPre,
   labels = paste("Prod", 1:length(prices), sep = ""),
   ...
 )
 }
 \arguments{
 \item{prices}{A length k vector of product prices.}
+
+\item{supply}{A character string indicating how firms compete with one another. Valid
+values are "bertrand" (Nash Bertrand),  "auction2nd"
+(2nd score auction), or "bargaining".}
 
 \item{demand}{A character string indicating the type of demand system
 to be used in the merger simulation. Supported demand systems are
@@ -58,6 +66,9 @@ the product indexed by that element should be included in the
 post-merger simulation and FALSE if it should be excluded.Default is a
 length k vector of TRUE.}
 
+\item{insideSize}{A length 1 vector equal to total units sold if \sQuote{demand} equals "logit", or total revenues if
+\sQuote{demand} equals "ces".}
+
 \item{priceOutside}{A length 1 vector indicating the price of the
 outside good. This option only applies to the \sQuote{Logit} class and its child classes
 Default for \sQuote{Logit},\sQuote{LogitNests}, and \sQuote{LogitCap} is 0,
@@ -66,6 +77,14 @@ and for \sQuote{CES} and \sQuote{CesNests} is 1.}
 \item{priceStart}{A length k vector of starting values used to solve for
 equilibrium price. Default is the \sQuote{prices} vector for all values of
 demand except for \sQuote{AIDS}, which is set equal to a vector of 0s.}
+
+\item{bargpowerPre}{A length k vector of pre-merger bargaining power parameters. Values
+must be between 0 (sellers have the power) and 1 (buyers the power). Ignored if \sQuote{supply} not equal
+to "bargaining".}
+
+\item{bargpowerPost}{A length k vector of post-merger bargaining power parameters. Values
+must be between 0 (sellers have the power) and 1 (buyers the power). Default is \sQuote{bargpowerPre}.
+Ignored if \sQuote{supply} not equal to "bargaining".}
 
 \item{labels}{A k-length vector of labels. Default is \dQuote{Prod#}, where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
@@ -80,8 +99,8 @@ optimizer used to solve for equilibrium prices.}
 \description{
 Simulates the price effects of a merger between two firms
 with user-supplied demand parameters under the
-assumption that all firms in the market are playing a
-differentiated products Bertrand pricing game.
+assumption that all firms in the market are playing either a
+differentiated products Bertrand pricing game, 2nd price (score) auction, or bargaining game.
 
 Let k denote the number of products produced by all firms below.
 }
@@ -144,7 +163,7 @@ demand.param=list(alpha=-48.0457,
                   meanval=c(0,0.4149233,1.1899885,0.8252482,0.1460183,1.4865730)
 )
 
-sim.logit <- sim(price,demand="Logit",demand.param,ownerPre=ownerPre,ownerPost=ownerPost)
+sim.logit <- sim(price,supply="bertrand",demand="Logit",demand.param,ownerPre=ownerPre,ownerPost=ownerPost)
 
 
 

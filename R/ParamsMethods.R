@@ -1647,6 +1647,8 @@ setMethod(
     
 
 
+    avgPrice <- weighted.mean(prices,shares)
+    
     ## Uncover price coefficient and mean valuation from margins and revenue shares
 
 
