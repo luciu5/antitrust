@@ -1808,7 +1808,18 @@ The `CV` method may be used to calculate compensating variation from a merger. T
 
 
 # The Nash Bargaining Game
-Unlike 2nd-price procurement (score) auction models (chapter \@ref(auction-models)), where buyers pay the difference in surplus between their two to best options in order to entice sellers to reveal their costs (match values), Nash bargaining models assume that buyers and sellers bilaterally negotiate prices so as to maximize their joint surplus.  The Nash bargaining model described here allows buyers and sellers to vary in three important ways. First, buyers maximize utility while sellers maximize profits. Second, buyers and sellers differ in their *disagreement payoffs*: if a bargain cannot be reached, buyers select their next best option, which may be owned by the same seller.
+Unlike 2nd-price procurement (score) auction models (chapter \@ref(auction-models)), where buyers pay the difference in surplus between their two to best options in order to entice sellers to reveal their costs (match values), Nash bargaining models assume that buyers and sellers bilaterally negotiate prices so as to maximize their joint surplus.  The Nash bargaining model described here allows buyers and sellers to vary in thre important ways. First, buyers maximize utility while sellers maximize profits. Second, buyers and sellers differ in their *disagreement payoffs*: if a bargain cannot be reached, buyers select their next best option, which may be owned by the same seller. Finally, buyers and sellers negotiate a linear price over a single unit sold. 
+
+
+# The Bargaining Game
+Suppose that there are $N$ products produced $J\le N$ firms. Let $W_j$ denote the set of products produced by firm $j\in J$. Each product is produced using constant marginal cost technology $c_n$. There are $M$ buyers, and each buyer ultimately selects a single product, with buyer $i\in M$ 
+valuing each product $n \in N$ as $V_{n}^i=\delta_n +\alpha p_n +\epsilon_{in},\alpha<0$, 
+$\epsilon_{in}$, which is unknown to both the buyer and the seller, is distributed according to the Gumbel distribution with mean 0 and scale parameter equal to 1. The price for each product $p_n$ is negotiated bilaterally and simultaneously between each buyer and each seller. Mathematically, for a given firm $j\in J$, the ex-ante price $p_n$ for each $n\in W_j$ is determined by the following Nash Bargain:
+
+$$
+\max_{p_n} \left(E[\max_k V^i_{k} - \max_{h\ne n} V^i_h|\text{$n$ wins}]s_nM \right)^{\lambda_n} \left(\omega_{nj}(p_n-c_n)s_nM - \sum_{k\in \{W_j\setminus n\}}\omega_{kj}(p_k-c_k)\frac{s_ks_n}{1-s_n}M \right)^{1-\lambda_n},
+$$
+
 
 # Vertical Supply
 
