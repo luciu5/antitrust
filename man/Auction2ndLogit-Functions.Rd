@@ -141,7 +141,7 @@ Using product prices, quantity shares and all of the
 product margins from at least one firm, \code{auction2nd.logit} is able to
 recover the price coefficient and product mean valuations in a
 Logit demand model. \code{auction2nd.logit} then uses these
-calibrated parameters to simulate a merger between two firms, under the assumption that firms are particpating in a 2nd score procurement auction.
+calibrated parameters to simulate a merger between two firms, under the assumption that firms are participating in a 2nd score procurement auction.
 
 
 \code{auction2nd.logit.nests} is identical to \code{auction2nd.logit} except that it assumes

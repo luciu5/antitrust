@@ -204,7 +204,7 @@ von Haefen, Roger (2002).
 \dQuote{A Complete Characterization Of The Linear, Log-Linear, And Semi-Log
 Incomplete Demand System Models.}
 \emph{Journal of Agricultural and Resource Economics}, \bold{27}(02).
-\url{http://ideas.repec.org/a/ags/jlaare/31118.html}.
+\doi{10.22004/ag.econ.31118}.
 }
 \seealso{
 \code{\link{aids}} for a demand system based on revenue shares rather than quantities.

@@ -126,6 +126,6 @@ argument, as AIDS revenue diversions are only a function of demand parameters.
 \references{
 U.S. Department of Justice and Federal Trade Commission,
 \emph{Horizontal Merger Guidelines}. Washington DC: U.S. Department of Justice, 2010.
-\url{http://www.justice.gov/atr/public/guidelines/hmg-2010.html} (accessed July 29, 2011).
+\url{https://www.justice.gov/atr/horizontal-merger-guidelines-08192010} (accessed May 5, 2021).
 }
 \keyword{methods}

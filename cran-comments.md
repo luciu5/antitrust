@@ -1,12 +1,21 @@
+## Purpose
+Fixes missing rmarkdown dependency issue which was brought to my attention by
+Kurt Hornik in a 4/16/21 email.
+
+
 ## Test environments
-* local R installation, R 4.0.1
-* ubuntu 16.04 (on travis-ci), R 4.0.1
-* win-builder (devel)
+I tested on the default environments specified in
+rhub::check_for_cran  (Windows 2008 server, Ubuntu, Fedora)
 
 ## R CMD check results
+There were no ERRORs or WARNINGs. 
 
-0 errors | 0 warnings | 2 notes
+There was 1 NOTE:
 
-* New submission. Package was archived on CRAN
-* Unknown package 'competitiontoolbox' in Rd xrefs. 'competitiontoolbox'
-Archived on 2020-04-03 as depends on archived package 'antitrust'.
+* checking Rd cross-references ... NOTE
+  Package unavailable to check Rd xrefs: ‘competitiontoolbox’
+
+The competitiontoolbox package is available on CRAN. The link also works
+on my local install and running devtools::check(cran=TRUE) does not produce
+this note.
+
