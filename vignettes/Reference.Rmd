@@ -1599,11 +1599,11 @@ the auction's reserve price.
 It can be shown that under this model's assumptions, it must be the
 case that $F(c)=1-\exp{k(c)}$. Common distributions that satisfy this
 functional form are the
-[Uniform](http://en.wikipedia.org/wiki/Uniform\_distribution\_(continuous)),
-[Exponential](http://en.wikipedia.org/wiki/Exponential\_distribution),
-[Weibull](http://en.wikipedia.org/wiki/Weibull\_distribution),
-[Gumbel](http://en.wikipedia.org/wiki/Gumbel\_distribution), and
-[Frechet](http://en.wikipedia.org/wiki/Frechet\_distribution). Table \@ref(tab:dist) summarizes these distributions.
+[Uniform](https://en.wikipedia.org/wiki/Uniform\_distribution\_(continuous)),
+[Exponential](https://en.wikipedia.org/wiki/Exponential\_distribution),
+[Weibull](https://en.wikipedia.org/wiki/Weibull\_distribution),
+[Gumbel](https://en.wikipedia.org/wiki/Gumbel\_distribution), and
+[Frechet](https://en.wikipedia.org/wiki/Frechet\_distribution). Table \@ref(tab:dist) summarizes these distributions.
  
 |     Name    |             Bounds             | Location  Parameter | Scale  Parameter | Shape  Parameter | # Params |
 |:-----------:|:------------------------------:|:-------------------:|:----------------:|:----------------:|:--------:|
@@ -1751,7 +1751,7 @@ where $s_j$ is given by \@ref(eq:auc22)
 For this model, we will assume that users observe firm shares,
 prices, and *some* margin information. From the user's perspective, the unknowns are the buyers'  distribution of valuations ($F$), the constant marginal costs ($c_j$) and the components of a buyer's mean valuation (i.e. the $\delta_j$s and $\alpha$).
 
-In order to calibrate this model with the limited information available, we will need to assume a functional form for $F$. Currently, `antitrust` assumes that $F$ follows a [Gumbel](http://en.wikipedia.org/wiki/Gumbel\_distribution) distribution. Under this distributional assumption, 
+In order to calibrate this model with the limited information available, we will need to assume a functional form for $F$. Currently, `antitrust` assumes that $F$ follows a [Gumbel](https://en.wikipedia.org/wiki/Gumbel\_distribution) distribution. Under this distributional assumption, 
 
 - the probability that $j$ wins is
 \begin{align}
