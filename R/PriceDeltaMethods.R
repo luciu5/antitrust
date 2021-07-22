@@ -123,11 +123,15 @@ setMethod(
     
         if(!market){
         mcDeltaUp <- upMCPost  - upMCPre
-        mcDeltaDown <- (downMCPost+upPricePost) - (downMCPre + upPricePre)
-    
         ## assume 0 marginal cost changes if unkown
         mcDeltaUp <- ifelse(is.na(mcDeltaUp),0,mcDeltaUp)
+        
+        mcDeltaDown <- (downMCPost- downMCPre )
         mcDeltaDown <- ifelse(is.na(mcDeltaDown),0,mcDeltaDown)
+        mcDeltaDown <- mcDeltaDown + upPricePost - upPricePre
+        
+   
+       
     
       upDelta <- marginsPost$up - marginsPre$up + mcDeltaUp
       downDelta <- marginsPost$down - marginsPre$down + mcDeltaDown
