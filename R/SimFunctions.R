@@ -10,7 +10,7 @@
 #' @param prices A length k vector of product prices.
 #' @param supply A character string indicating how firms compete with one another. Valid
 #' values are "bertrand" (Nash Bertrand),  "auction2nd"
-#' (2nd score auction), or "bargaining".
+#' (2nd score auction), "bargaining", or "bargaining2nd".
 #' @param demand A character string indicating the type of demand system
 #'   to be used in the merger simulation. Supported demand systems are
 #'   linear (\sQuote{Linear}), log-linear(\sQuote{LogLin}), logit (\sQuote{Logit}), nested logit
@@ -47,7 +47,7 @@
 #'   demand except for \sQuote{AIDS}, which is set equal to a vector of 0s.
 #' @param bargpowerPre A length k vector of pre-merger bargaining power parameters. Values
 #' must be between 0 (sellers have the power) and 1 (buyers the power). Ignored if \sQuote{supply} not equal
-#' to "bargaining".
+#' to "bargaining" or bargaining2nd.
 #' @param bargpowerPost A length k vector of post-merger bargaining power parameters. Values
 #' must be between 0 (sellers have the power) and 1 (buyers the power). Default is \sQuote{bargpowerPre}.
 #' Ignored if \sQuote{supply} not equal to "bargaining".
@@ -147,7 +147,7 @@ NULL
 #'@rdname Sim-Functions
 #'@export
 sim <- function(prices,
-                supply=c("bertrand","auction","bargaining"),
+                supply=c("bertrand","auction","bargaining","bargaining2nd"),
                 demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap"),demand.param,
                 ownerPre,ownerPost,nests, capacities,
                 mcDelta=rep(0,length(prices)),
@@ -403,7 +403,23 @@ sim <- function(prices,
                                       shareInside=shareInside,
                                       priceStart=priceStart,
                                       labels=labels,
-                                      cls = "Auction2ndLogit")
+                                      cls = "Auction2ndLogit"),
+                bargaining2nd=new("Bargaining2ndLogit",prices=prices, shares=shares,
+                            margins=margins,
+                            normIndex=normIndex,
+                            ownerPre=ownerPre,
+                            ownerPost=ownerPost,
+                            bargpowerPre=bargpowerPre,
+                            bargpowerPost=bargpowerPost,
+                            insideSize = insideSize,
+                            mcDelta=mcDelta,
+                            subset=subset,
+                            priceOutside=priceOutside,
+                            shareInside=shareInside,
+                            priceStart=priceStart,
+                            labels=labels,
+                            cls = "Bargaining2ndLogit")
+                
                   
    )
 
