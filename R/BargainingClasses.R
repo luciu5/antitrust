@@ -106,3 +106,37 @@ setClass(
   }
     
 )
+
+#'@rdname Bargaining-Classes
+#'@export
+setClass(
+  
+  Class = "Bargaining2ndLogit",
+  contains="Auction2ndLogit",
+  representation=representation(
+    bargpowerPre       = "numeric",
+    bargpowerPost       = "numeric"
+  ),
+  prototype=prototype(
+    
+    bargpowerPre          = numeric()
+  ),
+  validity=function(object){
+    
+    if(
+      !(all(object@bargpowerPre >=0,na.rm = TRUE) &&
+        all(object@bargpowerPre <=1,na.rm=TRUE))
+    ){
+      stop("elements of vector 'bargpowerPre' must be between 0 and 1")
+    }
+    
+    if(
+      !(all(object@bargpowerPost >=0,na.rm=TRUE) &&
+        all(object@bargpowerPost <=1,na.rm=TRUE))
+    ){
+      stop("elements of vector 'bargpowerPost' must be between 0 and 1")
+    }
+    
+  }
+  
+)

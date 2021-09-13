@@ -12,9 +12,10 @@
 #' calcMargins,Auction2ndLogitNests-method
 #' calcMargins,Cournot-method
 #' calcMargins,BargainingLogit-method
+#' calcMargins,Bargaining2ndLogit-method
 #'
 #' @description Computes equilibrium product margins assuming that firms are playing a
-#' Nash-Bertrand, Cournot, or 2nd Score Auction game. For "LogitCap", assumes firms are
+#' Nash-Bertrand, Cournot, 2nd Score Auction, or Bargaining game. For "LogitCap", assumes firms are
 #' playing a Nash-Bertrand or Cournot game with capacity constraints.
 #'
 #' @param object An instance of one of the classes listed above.
@@ -76,6 +77,31 @@ setMethod(
 
 )
 
+
+## compute margins
+#'@rdname Margins-Methods
+#'@export
+setMethod(
+  f= "calcMargins",
+  signature= "Bargaining2ndLogit",
+  definition=function(object,preMerger=TRUE,exAnte=FALSE,level=TRUE){
+  
+    if( preMerger) {
+      
+      barg <- object@bargpowerPre
+      
+      
+    }
+    
+    else{
+      
+      barg <- object@bargpowerPost
+      
+    }
+      
+    (1-barg)*callNextMethod()
+    
+  })
 
 ## compute margins
 #'@rdname Margins-Methods
