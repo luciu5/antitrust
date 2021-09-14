@@ -13,10 +13,13 @@
 \alias{calcMargins,Auction2ndLogitNests-method}
 \alias{calcMargins,Cournot-method}
 \alias{calcMargins,BargainingLogit-method}
+\alias{calcMargins,Bargaining2ndLogit-method}
 \alias{calcMargins,Auction2ndCap-method}
 \title{Methods for Calculating Diagnostics}
 \usage{
 \S4method{calcMargins}{Bertrand}(object, preMerger = TRUE, level = FALSE)
+
+\S4method{calcMargins}{Bargaining2ndLogit}(object, preMerger = TRUE, exAnte = FALSE, level = TRUE)
 
 \S4method{calcMargins}{BargainingLogit}(object, preMerger = TRUE, level = FALSE)
 
@@ -49,7 +52,7 @@ expected result conditional on each firm winning the auction. Default is FALSE.}
 }
 \description{
 Computes equilibrium product margins assuming that firms are playing a
-Nash-Bertrand, Cournot, or 2nd Score Auction game. For "LogitCap", assumes firms are
+Nash-Bertrand, Cournot, 2nd Score Auction, or Bargaining game. For "LogitCap", assumes firms are
 playing a Nash-Bertrand or Cournot game with capacity constraints.
 }
 \keyword{methods}

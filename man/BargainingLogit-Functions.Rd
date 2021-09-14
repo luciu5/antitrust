@@ -3,6 +3,7 @@
 \name{BargainingLogit-Functions}
 \alias{BargainingLogit-Functions}
 \alias{bargaining.logit}
+\alias{bargaining2nd.logit}
 \title{Nash Bargaining Model with Logit Demand}
 \usage{
 bargaining.logit(
@@ -21,6 +22,23 @@ bargaining.logit(
   priceOutside = 0,
   control.slopes,
   control.equ,
+  labels = paste("Prod", 1:length(prices), sep = "")
+)
+
+bargaining2nd.logit(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
+  bargpowerPre = rep(0.5, length(prices)),
+  bargpowerPost = bargpowerPre,
+  normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  insideSize = NA_real_,
+  mcDeltaOutside = 0,
+  control.slopes,
   labels = paste("Prod", 1:length(prices), sep = "")
 )
 }
@@ -84,7 +102,9 @@ to the non-linear equation solver (typically the \code{calcPrices} method).}
 }
 \value{
 \code{bargaining.logit} returns an instance of \code{\linkS4class{BargainingLogit}},
-a child class of \code{\linkS4class{Logit}}.
+a child class of \code{\linkS4class{Logit}}. 
+\code{bargaining2nd.logit} returns an instance of \code{\linkS4class{Bargaining2ndLogit}},
+a child class of \code{\linkS4class{Auction2ndLogit}}.
 }
 \description{
 Calibrates consumer demand using  Logit and then
@@ -100,7 +120,8 @@ Using product prices, quantity shares and all of the
 product margins from at least one firm, \code{auction2nd.logit} is able to
 recover the price coefficient and product mean valuations in a
 Logit demand model. \code{auction2nd.logit} then uses these
-calibrated parameters to simulate a merger between two firms, under the assumption that firms are particpating in a 2nd score procurement auction.
+calibrated parameters to simulate a merger between two firms, under the assumption that firms are particpating in a A Nash Bargaining Game 
+(bargaining.logit) or splitting the full surplus (bargaining2nd.logit).
 }
 \examples{
 ## Calibration and simulation results from a merger between firms 2 and 3

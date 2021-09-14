@@ -7,7 +7,7 @@
 \usage{
 sim(
   prices,
-  supply = c("bertrand", "auction", "bargaining"),
+  supply = c("bertrand", "auction", "bargaining", "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
     "LogitCap"),
   demand.param,
@@ -31,7 +31,7 @@ sim(
 
 \item{supply}{A character string indicating how firms compete with one another. Valid
 values are "bertrand" (Nash Bertrand),  "auction2nd"
-(2nd score auction), or "bargaining".}
+(2nd score auction), "bargaining", or "bargaining2nd".}
 
 \item{demand}{A character string indicating the type of demand system
 to be used in the merger simulation. Supported demand systems are
@@ -80,7 +80,7 @@ demand except for \sQuote{AIDS}, which is set equal to a vector of 0s.}
 
 \item{bargpowerPre}{A length k vector of pre-merger bargaining power parameters. Values
 must be between 0 (sellers have the power) and 1 (buyers the power). Ignored if \sQuote{supply} not equal
-to "bargaining".}
+to "bargaining" or bargaining2nd.}
 
 \item{bargpowerPost}{A length k vector of post-merger bargaining power parameters. Values
 must be between 0 (sellers have the power) and 1 (buyers the power). Default is \sQuote{bargpowerPre}.

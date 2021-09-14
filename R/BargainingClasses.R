@@ -1,7 +1,7 @@
 #'@title \dQuote{Bargaining} Classes
 #'@name Bargaining-Classes
 #'@aliases Bargaining-class
-#'@include BertrandRUMClasses.R
+#'@include AuctionClasses.R
 #'
 #'@description Each class contains all the information needed to calibrate a specific type of demand system and
 #'perform a merger simulation analysis under the assumption that firms are playing a differentiated products Nash Bargaining  game.

@@ -26,6 +26,7 @@
 \alias{calcSlopes,Stackelberg-method}
 \alias{calcSlopes,VertBargBertLogit-method}
 \alias{calcSlopes,BargainingLogit-method}
+\alias{calcSlopes,Bargaining2ndLogit-method}
 \alias{getParms}
 \alias{getParms,ANY-method}
 \alias{getParms,Bertrand-method}
@@ -73,6 +74,8 @@
 \S4method{calcSlopes}{CESNests}(object)
 
 \S4method{calcSlopes}{BargainingLogit}(object)
+
+\S4method{calcSlopes}{Bargaining2ndLogit}(object)
 
 \S4method{calcSlopes}{VertBargBertLogit}(object)
 

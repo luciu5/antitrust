@@ -519,7 +519,7 @@ sim <- function(prices,
   ## Solve Non-Linear System for Price Changes
   result@pricePre  <- calcPrices(result,TRUE,...)
   
-  if(supply!="auction") result@pricePost <- calcPrices(result,FALSE,subset=subset,...)
+  if(!supply %in% c("auction","bargaining2nd")) result@pricePost <- calcPrices(result,FALSE,subset=subset,...)
   else{result@pricePost <- calcPrices(result,FALSE,...)}
 
   if(any(grepl("logit",demand,ignore.case = TRUE),na.rm=TRUE)){result@mktSize <- insideSize/sum(calcShares(result))}

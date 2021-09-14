@@ -5,6 +5,7 @@
 \alias{Bargaining-Classes}
 \alias{Bargaining-class}
 \alias{BargainingLogit-class}
+\alias{Bargaining2ndLogit-class}
 \title{\dQuote{Bargaining} Classes}
 \description{
 Each class contains all the information needed to calibrate a specific type of demand system and
