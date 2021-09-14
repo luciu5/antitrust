@@ -114,20 +114,24 @@ setMethod(
     sharesPost <- calcShares(object, preMerger=FALSE,revenue=FALSE)
     
       upMCPre=up@mcPre
+      upMCPre=ifelse(is.na(upMCPre),0,upMCPre)
       downMCPre=down@mcPre
+      downMCPre=ifelse(is.na(downMCPre),0,downMCPre)
       upPricePre <- up@pricePre  
    
       upMCPost=up@mcPost
+      upMCPost=ifelse(is.na(upMCPost),0,upMCPost)
       downMCPost=down@mcPost
+      downMCPost=ifelse(is.na(downMCPost),0,downMCPost)
       upPricePost <-  up@pricePost
     
         if(!market){
         mcDeltaUp <- upMCPost  - upMCPre
         ## assume 0 marginal cost changes if unkown
-        mcDeltaUp <- ifelse(is.na(mcDeltaUp),0,mcDeltaUp)
+        #mcDeltaUp <- ifelse(is.na(mcDeltaUp),0,mcDeltaUp)
         
         mcDeltaDown <- (downMCPost- downMCPre )
-        mcDeltaDown <- ifelse(is.na(mcDeltaDown),0,mcDeltaDown)
+        #mcDeltaDown <- ifelse(is.na(mcDeltaDown),0,mcDeltaDown)
         mcDeltaDown <- mcDeltaDown + upPricePost - upPricePre
         
    
@@ -148,8 +152,8 @@ setMethod(
       mcDeltaDown <- (downMCPost+upPricePost)*sharesPost - (downMCPre + upPricePre)*sharesPre
       
       ## assume 0 marginal cost changes if unkown
-      mcDeltaUp <- ifelse(is.na(mcDeltaUp),0,mcDeltaUp)
-      mcDeltaDown <- ifelse(is.na(mcDeltaDown),0,mcDeltaDown)
+      #mcDeltaUp <- ifelse(is.na(mcDeltaUp),0,mcDeltaUp)
+      #mcDeltaDown <- ifelse(is.na(mcDeltaDown),0,mcDeltaDown)
       
       upDelta <- marginsPost$up*sharesPost - marginsPre$up*sharesPre + mcDeltaUp
       downDelta <- marginsPost$down*sharesPost - marginsPre$down*sharesPre + mcDeltaDown
