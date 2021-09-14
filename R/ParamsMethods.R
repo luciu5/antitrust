@@ -25,6 +25,7 @@
 #' calcSlopes,Stackelberg-method
 #' calcSlopes,VertBargBertLogit-method
 #' calcSlopes,BargainingLogit-method
+#' calcSlopes,Bargaining2ndLogit-method
 #' getParms
 #' getParms,ANY-method
 #' getParms,Bertrand-method
@@ -2458,6 +2459,87 @@ setMethod(
     return(object)
   }
 )
+
+
+
+#'@rdname Params-Methods
+#'@export
+setMethod(
+  f= "calcSlopes",
+  signature= "Bargaining2ndLogit",
+  definition=function(object){
+    
+    ## Uncover Demand Coefficents
+    
+    
+    ownerPre     <-  object@ownerPre
+    shares       <-  object@shares
+    margins      <-  object@margins
+    prices       <-  object@prices
+    idx          <-  object@normIndex
+    mktElast     <-  object@mktElast
+    barg         <-  object@bargpowerPre
+    
+    
+    
+    avgPrice <- weighted.mean(prices,shares)
+    
+    ## Uncover price coefficient and mean valuation from margins and revenue shares
+    
+    
+    nprods <- length(shares)
+    
+    
+    
+    firmShares <- drop(ownerPre %*% shares)
+    
+    if(is.na(idx)){
+      idxShare <- 1 - object@shareInside
+      
+    }
+    else{
+      idxShare <- shares[idx]
+      
+    }
+    
+    shareOut <-  1 - object@shareInside
+    
+    ## Minimize the distance between observed and predicted  ex Ante margins
+    minD <- function(alpha){
+      
+      
+      
+      m1 <-  mktElast / (alpha * avgPrice) - shareOut
+      
+      m2 <- 1 - (1-barg)*log(1-firmShares)/( alpha * firmShares)/margins
+      
+      measure <- sum(c(m1,m2)^2,na.rm=TRUE)
+      
+      return(measure)
+    }
+    
+    minAlpha <- optimize(minD,c(-1e6,0),
+                         tol=object@control.slopes$reltol)$minimum
+    
+    
+    ## calculate costs conditional on a product winning
+    marginsPre <- - (1-barg)*log(1 /(1-firmShares))/(minAlpha * firmShares)
+    
+    
+    
+    
+    meanval <- log(shares) - log(idxShare)
+    
+    names(meanval)   <- object@labels
+    
+    object@slopes    <- list(alpha=minAlpha,meanval=meanval)
+    object@mktSize   <- object@insideSize/object@shareInside
+    
+    
+    return(object)
+  }
+)
+
 
 #'@rdname Params-Methods
 #'@export
