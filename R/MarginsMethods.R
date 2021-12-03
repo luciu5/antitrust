@@ -338,7 +338,7 @@ setMethod(
     elastPre <-  t(elast(object,TRUE))
     
     elastInv <- try(solve(elastPre * ownerPre),silent=TRUE)
-    if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elastPre * ownerPre)}
+    if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elastPre * ownerPre)}
     
     marginPre <-  -1 * as.vector(elastInv %*% (shares * diag(ownerPre))) / shares
 

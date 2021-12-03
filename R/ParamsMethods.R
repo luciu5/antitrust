@@ -601,8 +601,8 @@ setMethod(
       diag(elast) <- alpha*prices + diag(elast)
 
       elastInv <- try(solve(elast * ownerPre),silent=TRUE)
-      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elast * ownerPre)}
-      
+      if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elast * ownerPre)}
+     
       
       marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
       m1 <- margins - marginsCand
@@ -1171,7 +1171,7 @@ setMethod(
       diag(preddiversion) <- -1
 
       elastInv <- try(solve(elast * ownerPre),silent=TRUE)
-      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elast * ownerPre)}
+      if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elast * ownerPre)}
       
       
       marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
@@ -1440,7 +1440,7 @@ setMethod(
       revenues <- probs * prices
       
       elastInv <- try(solve(elast * ownerPre * notBinds),silent=TRUE)
-      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elast * ownerPre *notBinds)}
+      if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elast * ownerPre *notBinds)}
       
       marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
@@ -1832,7 +1832,7 @@ setMethod(
       revenues <- probs * prices
       
       elastInv <- try(solve(elast * ownerPre),silent=TRUE)
-      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elast * ownerPre)}
+      if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elast * ownerPre)}
       
       marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
@@ -1970,7 +1970,7 @@ setMethod(
       diag(elasticity) <- -gamma + diag(elasticity)
 
       elastInv <- try(solve(elasticity * ownerPre),silent=TRUE)
-      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elasticity * ownerPre)}
+      if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elasticity * ownerPre)}
       
       
       marginsCand <- -1 * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
@@ -2064,7 +2064,7 @@ setMethod(
 
 
       elastInv <- try(solve(elasticity * ownerPre),silent=TRUE)
-      if(any(class(elastInv)=="try-catch")){elastInv <- MASS::ginv(elasticity * ownerPre)}
+      if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elasticity * ownerPre)}
       
       
       marginsCand <- -1 * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
