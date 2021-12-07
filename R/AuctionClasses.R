@@ -219,10 +219,7 @@ setClass(
   contains="Logit",
   
   prototype=prototype(
-    priceStart  = numeric(),
-    control.slopes = list(
-      reltol= .Machine$double.eps^0.25
-    )
+    priceStart  = numeric()
   )
   
   )

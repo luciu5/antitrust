@@ -2511,7 +2511,7 @@ setMethod(
       
       m1 <-  mktElast / (alpha * avgPrice) - shareOut
       
-      m2 <- 1 - (1-barg)*log(1-firmShares)/( alpha * firmShares)/margins
+      m2 <- 1 - (1-barg)*(log(1-firmShares)/( alpha * firmShares))/margins
       
       measure <- sum(c(m1,m2)^2,na.rm=TRUE)
       
@@ -2521,11 +2521,7 @@ setMethod(
     minAlpha <- optimize(minD,c(-1e6,0),
                          tol=object@control.slopes$reltol)$minimum
     
-    
-    ## calculate costs conditional on a product winning
-    marginsPre <- - (1-barg)*log(1 /(1-firmShares))/(minAlpha * firmShares)
-    
-    
+  
     
     
     meanval <- log(shares) - log(idxShare)

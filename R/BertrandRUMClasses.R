@@ -142,7 +142,6 @@ setClass(
     priceOutside = 0,
     control.slopes = list(
       factr = 1e7
-      #reltol= .Machine$double.eps^0.25
     )
   ),
   validity=function(object){
@@ -231,7 +230,7 @@ representation=representation(
 ),
 prototype=prototype(
 control.slopes = list(
-  reltol= .Machine$double.eps^0.25
+  reltol= .Machine$double.eps^0.5
 )
 ),
 
