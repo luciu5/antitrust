@@ -581,8 +581,8 @@ setMethod(
 
       probs <- shares
       
-      predshares <- exp(meanval + alpha*prices)
-      predshares <- predshares/(is.na(idx)*exp(alpha*idxPrice) + sum(predshares) )
+      predshares <- exp(meanval + alpha*(prices-idxPrice))
+      predshares <- predshares/(is.na(idx) + sum(predshares) )
 
       preddiversion <-tcrossprod( 1/(1-predshares),predshares)
       diag(preddiversion) <- -1
@@ -640,7 +640,7 @@ setMethod(
     
     
     if(minTheta$convergence != 0){
-      warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
+      warning("'calcSlopes' nonlinear solver may not have successfully converge. Reason: '",minTheta$message,"'")
     }
     
     
@@ -2317,7 +2317,7 @@ setMethod(
     notMissing <- which(!is.na(margins))[1]
     
     ##Start at 50/50 Bargaining
-    parmStart <- log(1- shares[notMissing])/(margins[notMissing]*prices[notMissing]*(shares[notMissing]/(1- shares[notMissing]) - log(1- shares[notMissing])))
+    parmStart <- log(1- shares[notMissing])/(margins[notMissing]*prices[notMissing]*(1 - shares[notMissing])*(shares[notMissing]/(1- shares[notMissing]) - log(1- shares[notMissing])))
    
     mvalStart <-  log(shares) - log(idxShare) - parmStart * (prices - idxPrice)
     if(!is.na(idx)) mvalStart <-  mvalStart[-idx]
@@ -2363,8 +2363,8 @@ setMethod(
       
       probs <- shares
       
-      predshares <- exp(meanval + alpha*prices)
-      predshares <- predshares/(is.na(idx)*exp(alpha*idxPrice) + sum(predshares) )
+      predshares <- exp(meanval + alpha*(prices-idxPrice))
+      predshares <- predshares/(is.na(idx) + sum(predshares) )
       
       preddiversion <-predshares/(1-predshares)
       
@@ -2377,11 +2377,11 @@ setMethod(
       
       ownerPreInv <- ownerPre
       #diag(ownerPreInv) <- -1*diag(ownerPreInv)
-      ownerPreInv <- -1*ownerPreInv * predshares
+      ownerPreInv <- -1*t(ownerPreInv * predshares)
       diag(ownerPreInv) <- diag(ownerPre) + diag(ownerPreInv)
       
-      tmp <- try(solve(t(ownerPreInv)),silent=TRUE)
-      if(any(class(tmp)=="try-error")){ownerPreInv=MASS::ginv(t(ownerPreInv))}
+      tmp <- try(solve(ownerPreInv),silent=TRUE)
+      if(any(class(tmp)=="try-error")){ownerPreInv=MASS::ginv(ownerPreInv)}
       else{ ownerPreInv <- tmp}
       
       marginsCand <-  ownerPreInv %*% (log(1-predshares)/(alpha*(barg*predshares/(1-predshares) - diag(ownerPre)*log(1-predshares))))
