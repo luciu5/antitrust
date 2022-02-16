@@ -320,6 +320,7 @@ logit.nests <- function(prices,shares,margins, diversions,
   nNestParm <- sum(tapply(nests,nests,length)>1) # count the number of  non-singleton nests
   nMargins  <- length(margins[!is.na(margins)])
   maxNests  <- nMargins - 1
+  if(constraint) nNestParm <- 1
 
 
   if(nNestParm > maxNests){
@@ -379,6 +380,7 @@ logit.nests <- function(prices,shares,margins, diversions,
   result@mcPre <-  calcMC(result,TRUE)
   result@mcPost <- calcMC(result,FALSE)
 
+ 
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre  <- calcPrices(result,preMerger=TRUE,isMax=isMax,...)
