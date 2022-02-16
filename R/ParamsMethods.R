@@ -1170,8 +1170,8 @@ setMethod(
       preddiversion <- -elasticity/diag(elasticity)*tcrossprod(1/predshares,predshares)
       diag(preddiversion) <- -1
 
-      elastInv <- try(solve(elast * ownerPre),silent=TRUE)
-      if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elast * ownerPre)}
+      elastInv <- try(solve(elasticity * ownerPre),silent=TRUE)
+      if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elasticity * ownerPre)}
       
       
       marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
