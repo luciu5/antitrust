@@ -251,7 +251,7 @@ setMethod(
 
     if(market){
 
-      elast <- alpha * sum(shares*prices) * (1 - sum(shares))
+      elast <- alpha * weighted.mean(prices,shares) * (1 - sum(shares))
       names(elast) <- NULL
     }
 
