@@ -1191,7 +1191,7 @@ setMethod(
     upperB[1] <- 0
     
     upperB[-(1:((nprods - !is.na(idx))+1))] <- 1
-    lowerB[-(1:((nprods - !is.na(idx))+1))] <- 0
+    lowerB[-(1:((nprods - !is.na(idx))+1))] <- 1e-3
     
     minTheta <- optim(parmsStart,minD,method="L-BFGS-B",
                       lower= lowerB,upper=upperB,
@@ -1201,6 +1201,8 @@ setMethod(
     if(minTheta$convergence != 0){
       warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '",minTheta$message,"'")
     }
+    
+    
 
 
 
@@ -1219,6 +1221,7 @@ setMethod(
     minSigma           <- minSigma[nests]
     names(minSigmaOut) <- levels(nests)
 
+    if(any(minSigmaOut %in%(c(1e-3,1)))) warning("nesting parameter 'sigma' at boundary constraint.")
 
 
 
