@@ -114,6 +114,13 @@ setMethod(
       
     for( v in vertFirms){
     
+      ## set integrated margin disagreement payoff to 0
+      thisUpOwnerMat[thisUpOwner==v & thisDownOwner!=v
+                  , thisUpOwner==v & thisDownOwner==v]=0
+      ## constrain upstream integrated margin to zero
+      thisUpOwnerMat[thisUpOwner==v & thisDownOwner==v
+                  , thisUpOwner==v & thisDownOwner!=v]=0
+      
     #bargParm[thisUpOwner == v  & thisDownOwner == v] <- 1 
     
     vertrows <- thisUpOwner != v  & thisDownOwner == v
