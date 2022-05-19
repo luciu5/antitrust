@@ -1768,7 +1768,7 @@ In order to calibrate this model with the limited information available, we will
 First, note that for product $h\ne j$, equation \@ref(eq:auc24) indicates
 \begin{align}
  \log s_j - \log s_k &= \overline{V}_j(c_j) - \overline{V}_h(c_h)\\
-                     &= \delta_j-\delta_h - \alpha(c_j -c_h) 
+                     &= \delta_j-\delta_h + \alpha(c_j -c_h) 
                      (\#eq:auc26)
 \end{align}
 
