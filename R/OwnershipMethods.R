@@ -102,6 +102,7 @@ setMethod(
     
     nprods <- nrow(thisDownOwnerMat)
     
+    
     if(!is.matrix(thisUpOwner) & !is.matrix(thisDownOwner)){
     
       
@@ -112,19 +113,24 @@ setMethod(
     
     thisDownOwnerMatVertical <- matrix(0,nrow=nprods,ncol=nprods)
       
+    
     for( v in vertFirms){
     
-      ## set integrated margin disagreement payoff to 0
-      thisUpOwnerMat[thisUpOwner==v & thisDownOwner!=v
-                  , thisUpOwner==v & thisDownOwner==v]=0
-      ## constrain upstream integrated margin to zero
-      thisUpOwnerMat[thisUpOwner==v & thisDownOwner==v
-                  , thisUpOwner==v & thisDownOwner!=v]=0
+
       
     #bargParm[thisUpOwner == v  & thisDownOwner == v] <- 1 
     
     vertrows <- thisUpOwner != v  & thisDownOwner == v
     thisUpOwnerMat[vertrows, thisUpOwner == v] <- -(1-bargParm[vertrows])/bargParm[vertrows]
+    
+    
+    }
+    
+    ## set integrated margin disagreement payoff to 0,
+    ## constrain upstream integrated margin to zero
+    
+    for(n in 1:nprods){
+      if(thisUpOwner[n]==thisDownOwner[n]){thisUpOwnerMat[n,-n] <- thisUpOwnerMat[-n,n] <- 0}
     }
     
     
