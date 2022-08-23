@@ -3,7 +3,13 @@ Type: Package
 Title: Tools for Antitrust Practitioners
 Version: 0.99.26
 Date: 2022-08-22
-Author: Charles Taragin and Michael Sandfort
+Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com",
+                  role = c("aut", "cre")),
+             person("Michael", "Sandfort",
+                  role = c("aut")),
+             person("Shlok", "Goyal",
+                  role = c("ctb"))     
+                  )
 Maintainer: Charles Taragin <ctaragin+antitrustr@gmail.com>
 Imports: methods, BB, numDeriv
 Suggests: ggplot2, knitr, bookdown, rmarkdown, competitiontoolbox
@@ -58,4 +64,4 @@ Collate:
     'SimFunctions.R'
     'VerticalFunctions.R'
     'antitrust-deprecated.R'
-RoxygenNote: 7.1.1
+RoxygenNote: 7.2.0

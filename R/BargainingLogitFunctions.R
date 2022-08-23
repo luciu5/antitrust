@@ -39,14 +39,16 @@
 #' (level) change in a product's marginal costs due to
 #' the merger. Default is 0, which assumes that the merger does not
 #' affect any products' marginal cost.
+#' @param mcDeltaOutside A length 1 vector indicating the change in the marginal cost of the
+#' outside good. Default is 0.
 #' @param subset A vector of length k where each element equals TRUE if
 #' the product indexed by that element should be included in the
 #' post-merger simulation and FALSE if it should be excluded.Default is a
 #' length k vector of TRUE.
-#' @param priceOutside A postive real number equal to the price of the outside good.
-#' Default equals 1 for Logit demand.
+#' @param priceOutside A positive real number equal to the price of the outside good.
+#' Default equals 0 for Logit demand.
 #' @param priceStart A vector of length k who elements equal to an
-#' initial guess of equilbrium prices. default is \sQuote{prices}.
+#' initial guess of equilibrium prices. default is \sQuote{prices}.
 #' @param control.slopes A list of  \code{\link{optim}}  control parameters passed
 #' to the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed
@@ -58,7 +60,7 @@
 #' product margins from at least one firm, \code{auction2nd.logit} is able to
 #' recover the price coefficient and product mean valuations in a
 #' Logit demand model. \code{auction2nd.logit} then uses these
-#' calibrated parameters to simulate a merger between two firms, under the assumption that firms are particpating in a A Nash Bargaining Game 
+#' calibrated parameters to simulate a merger between two firms, under the assumption that firms are participating in a A Nash Bargaining Game 
 #' (bargaining.logit) or splitting the full surplus (bargaining2nd.logit).
 #'
 #'

@@ -147,7 +147,7 @@ Logit demand model. \code{logit} then uses these
 calibrated parameters to simulate a merger between two firms.
 }
 \examples{
-## Verical supply with 2 upstream firms,
+## Vertical supply with 2 upstream firms,
 ## 2 downstream firms, each offering 
 ## a single product.
 
@@ -223,8 +223,7 @@ print(simres_vert)
 summary(simres_vert)
 }
 \references{
-Sheu, Gloria,  Taragin, Charles (2020). 
-\href{https://www.researchgate.net/publication/330564874_Simulating_Mergers_in_a_Vertical_Supply_Chain_with_Bargaining}{Simulating mergers in a vertical supply chain with bargaining}
+Sheu, G. and Taragin, C. (2021), Simulating mergers in a vertical supply chain with bargaining. The RAND Journal of Economics, 52: 596-632.\doi{10.1111/1756-2171.12385}.
 }
 \author{
 Charles Taragin \email{ctaragin+antitrustr@gmail.com}

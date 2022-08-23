@@ -83,13 +83,13 @@ post-merger simulation and FALSE if it should be excluded.Default is a
 length k vector of TRUE.}
 
 \item{priceStart}{A vector of length k who elements equal to an
-initial guess of equilbrium prices. default is \sQuote{prices}.}
+initial guess of equilibrium prices. default is \sQuote{prices}.}
 
 \item{insideSize}{An integer equal to total pre-merger units sold.
 If shares sum to one, this also equals the size of the market.}
 
-\item{priceOutside}{A postive real number equal to the price of the outside good.
-Default equals 1 for Logit demand.}
+\item{priceOutside}{A positive real number equal to the price of the outside good.
+Default equals 0 for Logit demand.}
 
 \item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed
 to the calibration routine optimizer (typically the \code{calcSlopes} method).}
@@ -99,6 +99,9 @@ to the non-linear equation solver (typically the \code{calcPrices} method).}
 
 \item{labels}{A k-length vector of labels. Default is "Prod#", where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
+
+\item{mcDeltaOutside}{A length 1 vector indicating the change in the marginal cost of the
+outside good. Default is 0.}
 }
 \value{
 \code{bargaining.logit} returns an instance of \code{\linkS4class{BargainingLogit}},
@@ -120,7 +123,7 @@ Using product prices, quantity shares and all of the
 product margins from at least one firm, \code{auction2nd.logit} is able to
 recover the price coefficient and product mean valuations in a
 Logit demand model. \code{auction2nd.logit} then uses these
-calibrated parameters to simulate a merger between two firms, under the assumption that firms are particpating in a A Nash Bargaining Game 
+calibrated parameters to simulate a merger between two firms, under the assumption that firms are participating in a A Nash Bargaining Game 
 (bargaining.logit) or splitting the full surplus (bargaining2nd.logit).
 }
 \examples{
