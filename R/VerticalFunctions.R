@@ -81,7 +81,7 @@
 #' @return When 'supplyDown' equals "bertand", \code{vertical.barg} returns an instance of class
 #' \code{\linkS4class{VertBargBertLogit}}. When 'supplyDown' equals "2nd", \code{vertical.barg} returns an instance of class
 #' \code{\linkS4class{VertBarg2ndLogit}} 
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @references 
 #' Sheu, Gloria,  Taragin, Charles (2020). 
 #' \href{https://www.researchgate.net/publication/330564874_Simulating_Mergers_in_a_Vertical_Supply_Chain_with_Bargaining}{Simulating mergers in a vertical supply chain with bargaining}

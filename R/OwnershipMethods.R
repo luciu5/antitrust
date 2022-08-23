@@ -3,7 +3,7 @@
 #' @docType methods
 #' @aliases ownerToMatrix
 #' ownerToVec
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @examples showMethods(classes="Antitrust") # show all methods defined for the class
 #'
 #' @param object An instance of the Antitrust class.

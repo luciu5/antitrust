@@ -377,7 +377,7 @@ Werden, Gregory and Froeb, Luke (1994).
 \dQuote{The Effects of Mergers in
   Differentiated Products Industries: Structural Merger Policy and the
   Logit Model},
-\emph{Journal of Law, Economics, \& Organization}, \bold{10}, pp. 407-426.
+\emph{Journal of Law, Economics, and Organization}, \bold{10}, pp. 407-426.
 
 Froeb, Luke, Tschantz, Steven  and Phillip Crooke (2003).
 \dQuote{Bertrand Competition and Capacity Constraints: Mergers Among Parking Lots},
@@ -392,5 +392,5 @@ Springer-Verlag, New York.
 \code{\link{ces}}
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }

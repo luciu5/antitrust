@@ -27,7 +27,7 @@
 #' the buyer reserve and total capacity is used.
 #' @param ... Additional arguments to pass to \code{calcSellerCostParms}
 #'
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @examples showMethods(classes="Auction2ndCap") # show all methods defined for the class
 #'
 #' @description

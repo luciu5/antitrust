@@ -340,5 +340,5 @@ summary(result.s)         # summarize merger simulation
 
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }

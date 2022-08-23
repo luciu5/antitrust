@@ -100,7 +100,7 @@
 #' @seealso The S4 class documentation for: \code{\linkS4class{Linear}},
 #' \code{\linkS4class{AIDS}}, \code{\linkS4class{LogLin}}, \code{\linkS4class{Logit}},
 #' \code{\linkS4class{LogitNests}}, \code{\linkS4class{CES}}, \code{\linkS4class{CESNests}}
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #'
 #' @examples ## Calibration and simulation results from a merger between Budweiser and
 #' ## Old Style. Note that the in the following model there is no outside

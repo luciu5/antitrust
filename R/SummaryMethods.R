@@ -197,7 +197,6 @@ setMethod(
 
 #'@rdname summary-methods
 #'@export
-
 setMethod(
   f= "summary",
   signature= "VertBargBertLogit",

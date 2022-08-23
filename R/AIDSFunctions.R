@@ -119,11 +119,11 @@
 #'
 #' @seealso \code{\link{linear}} for a demand system based on quantities
 #' rather than revenue shares.
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @references Epstein, Roy and  Rubinfeld, Daniel (2004).
 #' \dQuote{Merger Simulation with Brand-Level Margin Data: Extending PCAIDS
 #' with Nests.}
-#' \emph{The B.E. Journal of Economic Analysis \& Policy}, \bold{advances.4}(1), pp. 2.
+#' \emph{The B.E. Journal of Economic Analysis and Policy}, \bold{advances.4}(1), pp. 2.
 #'
 #' Epstein, Roy and Rubinfeld, Daniel (2004).
 #' \dQuote{Effects of Mergers Involving Differentiated Products.}

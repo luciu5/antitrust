@@ -47,7 +47,7 @@
 #'Class \code{\linkS4class{Cournot}}, directly.
 #'Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Cournot}}, distance 2.
 #'Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 3.
-#'@author Charles Taragin \email{ctaragin@ftc.gov}
+#'@author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #'@examples
 #'showClass("Cournot")           # get a detailed description of the class
 #'showClass("Stackelberg")           # get a detailed description of the class

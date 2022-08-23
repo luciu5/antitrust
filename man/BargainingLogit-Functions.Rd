@@ -164,5 +164,5 @@ Miller, Nathan (2014). \dQuote{Modeling the effects of mergers in procurement}
 for simulating mergers under a 2nd score auction with Logit demand.
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }

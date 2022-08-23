@@ -31,6 +31,6 @@ The \dQuote{VertBarg2ndLogit} class has the information fora Vertical Supply Cha
 }}
 
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }
 \keyword{classes}

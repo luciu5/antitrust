@@ -210,5 +210,5 @@ Incomplete Demand System Models.}
 \code{\link{aids}} for a demand system based on revenue shares rather than quantities.
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }

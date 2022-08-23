@@ -70,7 +70,7 @@
 #'Class \code{\linkS4class{Linear}}, by class \code{\linkS4class{AIDS}}, distance 3. Class \code{\linkS4class{Bertrand}}, by class \code{\linkS4class{Linear}}, distance 4.
 #'Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, distance 5.
 
-#'@author Charles Taragin \email{ctaragin@ftc.gov}
+#'@author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #'@examples
 #'showClass("Bertrand")           # get a detailed description of the class
 #'showClass("Linear")           # get a detailed description of the class

@@ -112,7 +112,7 @@
 #'
 #' @return \code{cournot} returns an instance of class \code{\linkS4class{Cournot}}.
 #' \code{stackelberg} returns an instance of class \code{\linkS4class{Stackelberg}}.
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #'
 #' @examples ## Simulate a Cournot merger between two single-plant firms
 #' ## producing a single product in a

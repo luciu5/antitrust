@@ -131,7 +131,7 @@
 #' child class of \code{\linkS4class{Logit}.}
 #'
 #' @seealso \code{\link{ces}}
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @references Anderson, Simon, Palma, Andre, and Francois Thisse (1992).
 #' \emph{Discrete Choice Theory of Product Differentiation}.
 #' The MIT Press, Cambridge, Mass.
@@ -144,7 +144,7 @@
 #' \dQuote{The Effects of Mergers in
 #'   Differentiated Products Industries: Structural Merger Policy and the
 #'   Logit Model},
-#' \emph{Journal of Law, Economics, \& Organization}, \bold{10}, pp. 407-426.
+#' \emph{Journal of Law, Economics, and Organization}, \bold{10}, pp. 407-426.
 #'
 #' Froeb, Luke, Tschantz, Steven  and Phillip Crooke (2003).
 #' \dQuote{Bertrand Competition and Capacity Constraints: Mergers Among Parking Lots},

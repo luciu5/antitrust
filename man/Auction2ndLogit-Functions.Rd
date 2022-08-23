@@ -213,5 +213,5 @@ Miller, Nathan (2014). \dQuote{Modeling the effects of mergers in procurement}
 \code{\link{logit}},\code{\link{logit.nests}} for simulating mergers under a Nash-Bertrand pricing game with Logit demand
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }

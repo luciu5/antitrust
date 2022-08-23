@@ -35,6 +35,6 @@ showMethods(classes="Antitrust") # show all methods defined for the class
 
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }
 \keyword{methods}
