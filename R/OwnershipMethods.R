@@ -129,8 +129,8 @@ setMethod(
     ## set integrated margin disagreement payoff to 0,
     ## constrain upstream integrated margin to zero
     
-    for(n in 1:nprods){
-      if(thisUpOwner[n]==thisDownOwner[n]){thisUpOwnerMat[n,-n] <- thisUpOwnerMat[-n,n] <- 0}
+    for(n in which(thisUpOwner==thisDownOwner)){
+      thisUpOwnerMat[n,-n] <- thisUpOwnerMat[-n,n] <- 0
     }
     
     

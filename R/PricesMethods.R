@@ -524,7 +524,8 @@ setMethod(
       if(any(class(tmp)=="try-error")) {elastInv <- MASS::ginv(t(elastInv))}
       else{elastInv <- tmp}
       
-      thisFOC <- (priceCand - mc) - elastInv %*%(log(1-shares)/(alpha*(barg*shares/(1-shares)- diag(owner)*log(1-shares))))
+      thisFOC <- (priceCand - mc)  - elastInv %*%((log(1-shares)*diag(owner))/(alpha*(barg*shares/(1-shares)- 
+                                                                          log(1-shares))))
       
       return(as.vector(thisFOC))
     }
