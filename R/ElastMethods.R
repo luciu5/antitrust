@@ -287,25 +287,28 @@ setMethod(
 
     gamma    <- object@slopes$gamma
 
-    shares <-  calcShares(object,preMerger,revenue=TRUE)
-
+    shares_r <-  calcShares(object,preMerger,revenue=TRUE)
+    shares_q <-  calcShares(object,preMerger,revenue=FALSE)
 
     if(market){
 
       if(preMerger){ prices <- object@pricePre}
       else{          prices <- object@pricePost}
 
-      #avgPrice <- sum(prices*shares)/sum(shares)
+      #avgPrice <- sum(prices*shares_q)/sum(shares_q)
 
-      elast <- ( 1 - gamma  )  * (1 - sum(shares)) - 1
+      elast <- ( 1 - gamma  )  * (1 - sum(shares_r)) - 1
 
+      #elast <- -1 * elast
+      #elast <- -gamma * ( 1 - sum(shares_r))*avgPrice
+      
       names(elast) <- NULL
     }
 
     else{
 
-      nprods <-  length(shares)
-      elast <- (gamma - 1 ) * matrix(shares,ncol=nprods,nrow=nprods,byrow=TRUE)
+      nprods <-  length(shares_r)
+      elast <- (gamma - 1 ) * matrix(shares_r,ncol=nprods,nrow=nprods,byrow=TRUE)
       diag(elast) <- -gamma + diag(elast)
 
       dimnames(elast) <- list(object@labels,object@labels)
