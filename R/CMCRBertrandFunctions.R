@@ -73,7 +73,7 @@
 #' of Differentiated Products.}
 #' \emph{The Journal of Industrial Economics}, \bold{44}(4), pp. 409-413.
 #'
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @seealso \code{\link{cmcr.cournot}} for a homogeneous products Cournot
 #' version of CMCR, and \code{\link{cmcr-methods}} for calculating
 #' CMCR and UPP after calibrating demand system parameters and simulating a merger.

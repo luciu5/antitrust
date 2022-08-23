@@ -82,5 +82,5 @@ Salop, Steven and O'Brien, Daniel (2000)
 \code{\link{HHI-Methods}} for computing HHI following merger simulation.
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }

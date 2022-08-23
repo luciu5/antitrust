@@ -88,7 +88,7 @@
 #' \code{loglinear} returns an instance of \code{\linkS4class{LogLin}}, a
 #' child class of \code{\linkS4class{Linear}}.
 #' @seealso \code{\link{aids}} for a demand system based on revenue shares rather than quantities.
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @references von Haefen, Roger (2002).
 #' \dQuote{A Complete Characterization Of The Linear, Log-Linear, And Semi-Log
 #' Incomplete Demand System Models.}

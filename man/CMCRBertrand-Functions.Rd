@@ -153,5 +153,5 @@ version of CMCR, and \code{\link{cmcr-methods}} for calculating
 CMCR and UPP after calibrating demand system parameters and simulating a merger.
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }

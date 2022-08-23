@@ -90,6 +90,6 @@ showClass("Cournot")           # get a detailed description of the class
 showClass("Stackelberg")           # get a detailed description of the class
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }
 \keyword{classes}

@@ -2387,7 +2387,8 @@ setMethod(
       if(any(class(tmp)=="try-error")){ownerPreInv=MASS::ginv(ownerPreInv)}
       else{ ownerPreInv <- tmp}
       
-      marginsCand <-  ownerPreInv %*% (log(1-predshares)/(alpha*(barg*predshares/(1-predshares) - diag(ownerPre)*log(1-predshares))))
+      marginsCand <-  ownerPreInv %*% ((log(1-predshares)*diag(ownerPre))/(alpha*(barg*predshares/(1-predshares) - 
+                                                                   log(1-predshares))))
       marginsCand <- as.vector(marginsCand)
       m1 <- margins - marginsCand/prices
       m2 <- (predshares - probs)
@@ -2558,10 +2559,11 @@ setMethod(
     constrain <- object@constrain
     
 
-    owner.up <- up@ownerPre
-    owner.down <- down@ownerPre
+    owner.up.pre <- up@ownerPre
+    owner.down.pre <- down@ownerPre
     
-    
+    owner.up.post <- up@ownerPost
+    owner.down.post <- down@ownerPost
   
     
     pricesUp    <- up@prices
@@ -2585,8 +2587,8 @@ setMethod(
     }
     
     
-    id <- data.frame(up.firm=owner.up,
-                     down.firm=owner.down
+    id <- data.frame(up.firm=owner.up.pre,
+                     down.firm=owner.down.pre
                      )
     
     
@@ -2627,7 +2629,7 @@ setMethod(
     div <- as.vector(div)
     
     
-    vertFirms <- intersect(owner.up,owner.down)
+    vertFirms <- intersect(owner.up.pre,owner.down.pre)
     
     ownerDownMat <-  ownerToMatrix(down, preMerger=TRUE)
     ownerBargUpVert<- ownerToMatrix(up, preMerger=TRUE)
@@ -2641,31 +2643,37 @@ setMethod(
       b <- b[as.numeric(id)]
       
   
-      b[owner.up == owner.down] <- 1 
+      b[owner.up.pre == owner.down.pre] <- 1 
       
       for( v in vertFirms){
         
-        vertrows <- owner.up != v  & owner.down == v
-        ownerBargUpVert[vertrows, owner.up == v] <- -(1-b[vertrows])/b[vertrows]
+        vertrows <- owner.up.pre != v  & owner.down.pre == v
+        ownerBargUpVert[vertrows, owner.up.pre == v] <- -(1-b[vertrows])/b[vertrows]
       }
       
+      ## set integrated margin disagreement payoff to 0,
+      ## constrain upstream integrated margin to zero
+      
+      for(n in which(owner.up.pre==owner.down.pre)){
+        ownerBargUpVert[n,-n] <- ownerBargUpVert[-n,n] <- 0
+      }
       
       ownerBargDownVert  <-  ownerDownMat  * (1-b)/b
       
       for( v in vertFirms){
         
-        vertrows <-  owner.up == v  & owner.down != v
+        vertrows <-  owner.up.pre == v  & owner.down.pre != v
         
         ## only change downstream matrix when firms are playing Bertrand
-        if(!is2nd){ownerDownMatVertical[owner.down == v, vertrows] <- 1}
-        #ownerDownMatVertical[owner.down == v, !vertrows] <- 0
+        if(!is2nd){ownerDownMatVertical[owner.down.pre == v, vertrows] <- 1}
+        #ownerDownMatVertical[owner.down.pre == v, !vertrows] <- 0
         
         
-        ownerBargDownVert [vertrows, owner.down == v] <- -1
+        ownerBargDownVert [vertrows, owner.down.pre == v] <- -1
         
       }
       
-      #ownerDownMatVertical[!owner.down %in% vertFirms, ] <- 0
+      #ownerDownMatVertical[!owner.down.pre %in% vertFirms, ] <- 0
       
       down@ownerPre <- ownerDownMat
       
@@ -2719,14 +2727,14 @@ setMethod(
     
     bOpt     <- thetaOpt$par[-1]
     bargparmPre <- bargparmPost <-  bOpt[as.numeric(id)]
-    bargparmPre[owner.up  == owner.down ] <- 1 
+    bargparmPre[owner.up.pre  == owner.down.pre ] <- 1 
     names(bargparmPre) <- down@labels
     
     ## Post-merger bargaining parameter
     
-    #owner.up <- up@ownerPost
+    #owner.up.pre <- up@ownerPost
     #owner.down <- down@ownerPost
-    bargparmPost[owner.up  == owner.down ] <- 1 
+    bargparmPost[owner.up.post  == owner.down.post ] <- 1 
     names(bargparmPost) <- down@labels
       
       

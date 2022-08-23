@@ -3,7 +3,7 @@
 #' @docType methods
 #' @aliases ownerToMatrix
 #' ownerToVec
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @examples showMethods(classes="Antitrust") # show all methods defined for the class
 #'
 #' @param object An instance of the Antitrust class.
@@ -102,6 +102,7 @@ setMethod(
     
     nprods <- nrow(thisDownOwnerMat)
     
+    
     if(!is.matrix(thisUpOwner) & !is.matrix(thisDownOwner)){
     
       
@@ -112,12 +113,24 @@ setMethod(
     
     thisDownOwnerMatVertical <- matrix(0,nrow=nprods,ncol=nprods)
       
+    
     for( v in vertFirms){
     
+
+      
     #bargParm[thisUpOwner == v  & thisDownOwner == v] <- 1 
     
     vertrows <- thisUpOwner != v  & thisDownOwner == v
     thisUpOwnerMat[vertrows, thisUpOwner == v] <- -(1-bargParm[vertrows])/bargParm[vertrows]
+    
+    
+    }
+    
+    ## set integrated margin disagreement payoff to 0,
+    ## constrain upstream integrated margin to zero
+    
+    for(n in which(thisUpOwner==thisDownOwner)){
+      thisUpOwnerMat[n,-n] <- thisUpOwnerMat[-n,n] <- 0
     }
     
     

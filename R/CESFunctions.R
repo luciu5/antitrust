@@ -102,7 +102,7 @@
 #' \code{ces.nests} returns an instance of \code{\linkS4class{CESNests}}, a
 #' child class of \code{\linkS4class{CES}}.
 #' @seealso \code{\link{logit}}
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @references Anderson, Simon, Palma, Andre, and Francois Thisse (1992).
 #' \emph{Discrete Choice Theory of Product Differentiation}.
 #' The MIT Press, Cambridge, Mass.

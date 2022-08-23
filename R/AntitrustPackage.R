@@ -11,7 +11,7 @@
 #' public domain without warranty of any kind, expressed or implied.
 #' Address: Economic Analysis Group, Antitrust Division, U.S. Department of
 #' Justice, 450 5th St. NW, Washington DC 20530.
-#' E-mail: ctaragin@ftc.gov and michael.sandfort@usdoj.gov.
+#' E-mail: ctaragin+antitrustr@gmail.com and michael.sandfort@usdoj.gov.
 #'
 #' @details The DESCRIPTION file:
 #' \packageDESCRIPTION{antitrust}

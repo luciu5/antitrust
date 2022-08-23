@@ -49,6 +49,6 @@ virtual classes used for validity checking in the \sQuote{ownerPre} and
 showClass("Antitrust")           # get a detailed description of the class
 }
 \author{
-Charles Taragin \email{ctaragin@ftc.gov}
+Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 }
 \keyword{classes}

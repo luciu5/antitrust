@@ -80,7 +80,7 @@
 #' @return \code{bertrand.alm} returns an instance of class \code{\linkS4class{LogitALM}},
 #' \code{\linkS4class{CESALM}}, or \code{\linkS4class{AIDS}},
 #' depending upon the value of the ``demand'' argument.
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @include Auction2ndLogitFunctions.R
 NULL
 

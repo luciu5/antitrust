@@ -26,7 +26,7 @@
 #' @references Salop, Steven and O'Brien, Daniel (2000)
 #' \dQuote{Competitive Effects of Partial Ownership: Financial Interest and Corporate Control}
 #' 67 Antitrust L.J. 559, pp. 559-614.
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @seealso \code{\link{HHI-Methods}} for computing HHI following merger simulation.
 #'
 #' @examples ## Consider a market with 5 products labeled 1-5. 1,2 are produced

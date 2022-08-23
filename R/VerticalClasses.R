@@ -13,7 +13,7 @@
 #'@slot down For  \dQuote{VertBargBertLogit}, an instance of  \dQuote{Logit} class.For  \dQuote{VertBarg2ndLogit}, an instance of  \dQuote{Auction2ndLogit} class.
 #'@slot constrain  A length 1 character vector equal to "global", "pair", "wholesaler", or "retailer.
 
-#'@author Charles Taragin \email{ctaragin@ftc.gov}
+#'@author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #'@include BertrandRUMClasses.R AuctionClasses.R BargainingClasses.R
 #'@keywords classes
 #'

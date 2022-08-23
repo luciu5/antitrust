@@ -78,7 +78,7 @@
 #' \code{auction2nd.logit} returns an instance of \code{\linkS4class{Auction2ndLogitALM}}.
 #'
 #' @seealso \code{\link{logit}},\code{\link{logit.nests}} for simulating mergers under a Nash-Bertrand pricing game with Logit demand 
-#' @author Charles Taragin \email{ctaragin@ftc.gov}
+#' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @references Miller, Nathan (2014). \dQuote{Modeling the effects of mergers in procurement}
 #' \emph{International Journal of Industrial Organization} , \bold{37}, pp. 201-208.
 #'

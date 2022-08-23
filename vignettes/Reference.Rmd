@@ -26,7 +26,7 @@ link-citations: true
 *Disclaimer:* The views expressed herein are entirely those of the authors and should not be purported to reflect those of the Federal Trade Commission or the U.S. Department of Justice.  The `antitrust` package has been released into the
 public domain without warranty of any kind, expressed or implied. We
 thank Ronald Drennan, Robert Majure, Russell Pittman, Gloria Sheu,
-Nathan Miller, Randy Chugh, Marc Remer, Alexander Raskovich, William Drake, Thomas Jeitschko, Greg Werden,  Luke Froeb, Nicholas Hill, and Conor Ryan. Address: Bureau of Economics #202, Federal Trade Commission, 600 Pennsylvania Ave. NW, Washington, DC 20530. email: <ctaragin@ftc.gov> and <michael.sandfort@usdoj.gov>.
+Nathan Miller, Randy Chugh, Marc Remer, Alexander Raskovich, William Drake, Thomas Jeitschko, Greg Werden,  Luke Froeb, Nicholas Hill, and Conor Ryan. Address: Bureau of Economics #202, Federal Trade Commission, 600 Pennsylvania Ave. NW, Washington, DC 20530. email: <ctaragin+antitrustr@gmail.com> and <michael.sandfort@usdoj.gov>.
 
 # Introduction {-}
 `antitrust` is a suite of tools that may be used in assessing the implications of horizontal mergers.  The package contains
@@ -1768,7 +1768,7 @@ In order to calibrate this model with the limited information available, we will
 First, note that for product $h\ne j$, equation \@ref(eq:auc24) indicates
 \begin{align}
  \log s_j - \log s_k &= \overline{V}_j(c_j) - \overline{V}_h(c_h)\\
-                     &= \delta_j-\delta_h - \alpha(c_j -c_h) 
+                     &= \delta_j-\delta_h + \alpha(c_j -c_h) 
                      (\#eq:auc26)
 \end{align}
 

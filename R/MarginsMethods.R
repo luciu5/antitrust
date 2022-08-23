@@ -146,7 +146,8 @@ setMethod(
     diag(margins) <- diag(owner) +  diag(margins)
     margins <- solve(t(margins))
     
-    margins <-  as.vector(margins %*% (log(1-shares)/(alpha*(barg*div - diag(owner)*log(1-shares)))))
+    margins <-  as.vector(margins %*% ((log(1-shares)*diag(owner))/(alpha*(barg*div - 
+                                                               log(1-shares)))))
     
     
     if(!level) {margins <- margins / prices }
