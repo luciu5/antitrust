@@ -2606,12 +2606,14 @@ setMethod(
       id <- with(id,down.firm)
     }
     else{ id <- rep(1,nprods)}
+    
+    id <- factor(id)
    
     marginsUp <- marginsUp*pricesUp
     marginsDown <- marginsDown*pricesDown
      
     #set starting value for bargaining parameter equal to 0.5
-    bStart <- rep(0.5,nlevels(factor(id)))
+    bStart <- rep(0.5,nlevels(id))
     # set starting value for alpha equal to single product 
     # unintegrated firm
     firstAvail <- which(!is.na(marginsDown))[1]
