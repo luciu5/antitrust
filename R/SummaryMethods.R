@@ -256,12 +256,12 @@ setMethod(
     isPartyHorzDown <- down@ownerPost %in% down@ownerPre &
                        down@ownerPost != down@ownerPre
     if(any(isPartyHorzDown)){
-    isPartyHorzDown <- down@ownerPost==down@ownerPost[isPartyHorzDown]
+    isPartyHorzDown <- down@ownerPost %in% down@ownerPost[isPartyHorzDown]
 }
 isPartyHorzUp <- up@ownerPost %in% up@ownerPre &
                  up@ownerPost !=   up@ownerPre
 if(any(isPartyHorzUp)){
-  isPartyHorzUp <- up@ownerPost==up@ownerPost[isPartyHorzUp]
+  isPartyHorzUp <- up@ownerPost %in% up@ownerPost[isPartyHorzUp]
 }
     isPartyVert <- unique(down@ownerPost[down@ownerPost == up@ownerPost &
                        down@ownerPre != up@ownerPre])
