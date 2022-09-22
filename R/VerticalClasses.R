@@ -12,6 +12,7 @@
 #'@slot up an instance of \dQuote{Bargaining} class.
 #'@slot down For  \dQuote{VertBargBertLogit}, an instance of  \dQuote{Logit} class.For  \dQuote{VertBarg2ndLogit}, an instance of  \dQuote{Auction2ndLogit} class.
 #'@slot constrain  A length 1 character vector equal to "global", "pair", "wholesaler", or "retailer.
+#'@slot chain_level A length 1 character vector equal to "full", "wholesaler", or "retailer".
 
 #'@author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #'@include BertrandRUMClasses.R AuctionClasses.R BargainingClasses.R
@@ -37,6 +38,7 @@ setClass(
      ownerUpLambdaPre="matrix",
      ownerUpLambdaPost="matrix",
      constrain        = "character",
+     chain_level      = "character",
      control.slopes =   "list",
      control.eq =   "list"
    ),

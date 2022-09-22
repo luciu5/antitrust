@@ -66,6 +66,10 @@
 #' that all wholesaler/retailer pairs have a distinct parameter,"wholesaler" assumes that each wholesaler's
 #' parameter is identical across negotiations, "retailer" assumes that each 
 #' retailer's parameter is identical across negotiations. 
+#' @param chain_level Only simulate equilibrium price effects for a specified level of the supply chain. "full"
+#'  (default) solves for equilibrium price effects for both wholesalers and retailers. "wholesaler" solves for equilibrium
+#'  price effects holding retailer prices fixed at observed pre-merger levels. "retailer"
+#'  solves for equilibrium retailer prices holding wholesaler prices fixed at observed pre-merger levels.    
 #' @param labels A k-length vector of labels. Default is "Prod#", where
 #' \sQuote{#} is a number between 1 and the length of \sQuote{prices}.
 #' @param ... Additional options to feed to the \code{\link[BB]{BBsolve}}
@@ -185,6 +189,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
                   priceStartUp = pricesUp,
                   isMax=FALSE,
                   constrain = c("global","pair","wholesaler","retailer"),
+                  chain_level = c("full","wholesaler","retailer"),
                   control.slopes,
                   control.equ,
                   labels= paste0("Prod",1:length(pricesUp)),
@@ -207,6 +212,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
   
   supplyDown <- match.arg(supplyDown)
   constrain <-  match.arg(constrain)
+  chain_level <- match.arg(chain_level)
 
  
   preVert <- ownerPreUp == ownerPreDown
@@ -314,6 +320,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
                 up = up,
                 down = down,
                 constrain =constrain,
+                chain_level=chain_level,
                 supplyDown=supplyDown,
                 isHorizontal=isHorizontal,
                 isUpstream=isUpstream

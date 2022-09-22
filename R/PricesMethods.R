@@ -566,6 +566,12 @@ setMethod(
     
     up <- object@up
     down <- object@down
+    
+    chain_level <- object@chain_level
+    
+    upPricePre <- up@prices
+    downPricePre <- down@prices
+    
     #isHorizontal <- object@isHorizontal
     
     
@@ -573,10 +579,18 @@ setMethod(
     alpha <- down@slopes$alpha
     meanval <- down@slopes$meanval[subsetDown]
     
-    
     priceStartUp <- up@priceStart
     priceStartDown <- down@priceStart
+    
+    if(chain_level == "full"){
     priceStart <- c(priceStartUp[subsetDown],priceStartDown[subsetDown])
+    }
+    else if (chain_level =="retailer"){
+      priceStart <- priceStartDown[subsetDown]
+    }
+    else if (chain_level =="wholesaler"){
+      priceStart <- priceStartUp[subsetDown]
+    }
     
     
     nprods <- length(meanval)
@@ -622,9 +636,24 @@ setMethod(
        
         
       thisobj <- object
-      priceCandUp= rep(NA, 1,nprods)[subsetDown] 
-      priceCandUp <- priceCand[1:length(priceCandUp)]
-      priceCandDown <- priceCand[-(1:length(priceCandUp))]
+      
+      
+      if(chain_level == "full"){
+        priceCandUp= rep(NA, 1,nprods)[subsetDown] 
+        priceCandUp <- priceCand[1:length(priceCandUp)]
+        priceCandDown <- priceCand[-(1:length(priceCandUp))]
+        
+      }
+      else if (chain_level =="retailer"){
+        priceCandUp = up@prices[subsetDown]
+        priceCandDown = priceCand
+      }
+      else if (chain_level =="wholesaler"){
+        priceCandDown = down@prices[subsetDown]
+        priceCandUp = priceCand
+      }
+      
+      
       
       if(preMerger){ 
         up@pricePre <- priceCandUp
@@ -664,6 +693,10 @@ setMethod(
       
       thisFOC= c(upFOC,downFOC)
       
+      if(chain_level == "full"){thisFOC= c(upFOC,downFOC)}
+      else if (chain_level == "retailer"){thisFOC = downFOC}
+      else if (chain_level == "wholesaler"){thisFOC = upFOC}
+      
       return(thisFOC)
     }
     
@@ -679,9 +712,24 @@ setMethod(
       
         
         
-      minResultUp[subsetDown] <- minResult[1:length(priceStartUp[subsetDown])] 
-      minResultDown[subsetDown] <- minResult[-(1:length(priceStartUp[subsetDown]))]
+      
     
+      if(chain_level == "full"){
+        minResultUp[subsetDown] <- minResult[1:length(priceStartUp[subsetDown])] 
+        minResultDown[subsetDown] <- minResult[-(1:length(priceStartUp[subsetDown]))]
+        
+      }
+      else if (chain_level =="retailer"){
+        minResultUp[subsetDown] <- upPricePre[subsetDown]
+        minResultDown[subsetDown] <- minResult
+       
+      }
+      else if (chain_level =="wholesaler"){
+        minResultUp[subsetDown] <- minResult
+        minResultDown[subsetDown] <- downPricePre[subsetDown]
+        
+      }
+      
    
       return(list(up=minResultUp,down=minResultDown)) 
   }

@@ -29,6 +29,7 @@ vertical.barg(
   priceStartUp = pricesUp,
   isMax = FALSE,
   constrain = c("global", "pair", "wholesaler", "retailer"),
+  chain_level = c("full", "wholesaler", "retailer"),
   control.slopes,
   control.equ,
   labels = paste0("Prod", 1:length(pricesUp)),
@@ -111,6 +112,11 @@ locally maximizes firm profits and returns a warning if not. Default is FALSE.}
 that all wholesaler/retailer pairs have a distinct parameter,"wholesaler" assumes that each wholesaler's
 parameter is identical across negotiations, "retailer" assumes that each 
 retailer's parameter is identical across negotiations.}
+
+\item{chain_level}{Only simulate equilibrium price effects for a specified level of the supply chain. "full"
+(default) solves for equilibrium price effects for both wholesalers and retailers. "wholesaler" solves for equilibrium
+price effects holding retailer prices fixed at observed pre-merger levels. "retailer"
+solves for equilibrium retailer prices holding wholesaler prices fixed at observed pre-merger levels.}
 
 \item{control.slopes}{A list of  \code{\link{optim}}
 control parameters passed to the calibration routine
