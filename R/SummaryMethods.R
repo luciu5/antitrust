@@ -299,6 +299,8 @@ if(any(isPartyHorzUp)){
       thispsdeltaUp  <- sum(thispsPost$up - thispsPre$up,na.rm=TRUE)
       thispsdeltaDown  <- sum(thispsPost$down - thispsPre$down,na.rm=TRUE)
       
+      if(object@chain_level == "wholesaler") thispsdeltaDown <- -thispsdeltaUp
+      
       isparty <- isParty == "*"
       
       

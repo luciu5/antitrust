@@ -106,6 +106,8 @@ setMethod(
     
     up <- object@up
     down <- object@down
+    
+    chain_level <- object@chain_level
 
     marginsPre <- calcMargins(object,preMerger=TRUE,level=TRUE)
     marginsPost <- calcMargins(object,preMerger=FALSE,level=TRUE)
@@ -139,7 +141,9 @@ setMethod(
     
       upDelta <- marginsPost$up - marginsPre$up + mcDeltaUp
       downDelta <- marginsPost$down - marginsPre$down + mcDeltaDown
-    
+      
+      if(chain_level =="retailer") upDelta <-rep(0,length(upDelta)) 
+      else if(chain_level =="wholesaler") downDelta <-rep(0,length(downDelta))
       upPricePre <- up@pricePre
       downPricePre <- down@pricePre
     }
@@ -164,6 +168,9 @@ setMethod(
       
       upDelta <- sum(upDelta,na.rm=TRUE)
       downDelta <- sum(downDelta,na.rm=TRUE)
+      
+      if(chain_level =="retailer") upDelta <-0
+      else if(chain_level =="wholesaler") downDelta <- 0
       
       upPricePre <- sum(upPricePre,na.rm=TRUE)
       downPricePre <- sum(downPricePre,na.rm=TRUE)

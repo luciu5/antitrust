@@ -173,6 +173,15 @@ setMethod(
     up <- object@up
     down <- object@down
     alpha <- down@slopes$alpha
+    
+    chain_level <- object@chain_level
+    
+    ## Set downstream margin equal to pre-merger value when chain_level=="wholesaler
+    preMerger_chain <- preMerger
+    if(chain_level=="wholesaler") {
+      preMerger_chain <- TRUE
+       if(!preMerger) down@ownerPre <- ownerToMatrix(down,preMerger= TRUE)
+    }
   
     #is2nd <- grepl("2nd",class(object))
   
@@ -231,13 +240,12 @@ setMethod(
     elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
     if(any(class(elast.inv) == "try-error")){elast.inv <- MASS::ginv(ownerDown * elast)}
     
-    if(!is2nd) {marginsDown <- calcMargins(down, preMerger=preMerger,level=TRUE)}
-    else{
+    if(is2nd){
       alpha <- down@slopes$alpha
       down@slopes$meanval <- down@slopes$meanval + alpha *(priceUp - down@priceOutside) 
-      marginsDown <- calcMargins(down, preMerger=preMerger,level=TRUE)
     }
     
+    marginsDown <- calcMargins(down, preMerger=preMerger_chain,level=TRUE)
     
     div <- tcrossprod(1/(1-shareDown),shareDown)*shareDown
     diag(div) <- -shareDown
@@ -248,6 +256,8 @@ setMethod(
     
     #marginsUp <-  as.vector(solve(ownerUpLambda * div) %*% (((ownerDownLambda * div) %*% (marginsDown)))) 
     
+    if(chain_level == "retailer" && !preMerger){ marginsUp <- calcMargins(object,preMerger=TRUE,level=TRUE)$up}
+    else{
     marginsUpPart <-  try(solve(ownerUpLambda * div) %*% (ownerDownLambda * div) ,silent=TRUE)
     if(any(class(marginsUpPart) == "try-error")){
       marginsUpPart <-  MASS::ginv(ownerUpLambda * div) %*% (ownerDownLambda * div) 
@@ -260,8 +270,14 @@ setMethod(
     }
     marginsUp <- drop(marginsUp %*% marginsUpPart %*% marginsDown)
     
+    }
 
-    if(!is2nd){marginsDown <-  marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp )}
+    if(!is2nd){
+      
+      if(chain_level == "wholesaler" && !preMerger){ marginsDown <- calcMargins(object,preMerger=TRUE,level=TRUE)$down} 
+      else{ marginsDown <-  marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp )}
+      
+      }
   
     if(!level) {
       marginsUp <- marginsUp/priceUp
