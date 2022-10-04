@@ -256,7 +256,10 @@ setMethod(
     
     #marginsUp <-  as.vector(solve(ownerUpLambda * div) %*% (((ownerDownLambda * div) %*% (marginsDown)))) 
     
-    if(chain_level == "retailer" && !preMerger){ marginsUp <- calcMargins(object,preMerger=TRUE,level=TRUE)$up}
+    if(chain_level == "retailer" && !preMerger){ 
+      #marginsUp <- calcMargins(object,preMerger=TRUE,level=TRUE)$up
+      marginsUp <- up@pricePre - up@mcPost
+      }
     else{
     marginsUpPart <-  try(solve(ownerUpLambda * div) %*% (ownerDownLambda * div) ,silent=TRUE)
     if(any(class(marginsUpPart) == "try-error")){
@@ -274,7 +277,10 @@ setMethod(
 
     if(!is2nd){
       
-      if(chain_level == "wholesaler" && !preMerger){ marginsDown <- calcMargins(object,preMerger=TRUE,level=TRUE)$down} 
+      if(chain_level == "wholesaler" && !preMerger){ 
+        #marginsDown <- calcMargins(object,preMerger=TRUE,level=TRUE)$down
+        marginsDown <- down@pricePre - down@mcPost - priceUp
+        } 
       else{ marginsDown <-  marginsDown - elast.inv %*% ( (ownerVDown * elast) %*% marginsUp )}
       
       }
