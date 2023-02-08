@@ -238,7 +238,7 @@ setMethod(
     if(!levels){
       if(rel=="cost"){result <- result/object@mcPre}
       else{result <- result/object@pricePre}
-      result <- result[isParty]*100
+      result <- result*100
     }
     
     if(market){
