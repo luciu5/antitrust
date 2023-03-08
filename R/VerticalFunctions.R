@@ -13,7 +13,7 @@
 #' @param sharesDown A length k vector of product (quantity) shares. Values must be
 #'   between 0 and 1.
 #' @param pricesDown A length k vector of downstream product prices.
-#' @param marginsDown A length k vector of downstream product margins in levels (e.g. dollars), some of which may
+#' @param marginsDown A length k vector of downstream product margins in proportions (bounded between 0 and 1), some of which may
 #'   equal NA.
 #' @param ownerPreDown A vector of length k whose values
 #'   indicate which downstream firm produced a product pre-merger.
@@ -28,7 +28,7 @@
 #'     the merger. Default is 0, which assumes that the merger does not
 #'     affect any products' marginal cost.
 #' @param pricesUp A length k vector of upstream product prices.
-#' @param marginsUp A length k vector of upstream product margins in levels (e.g. dollars), some of which may
+#' @param marginsUp A length k vector of upstream product margins in proportions (bounded between 0 and 1), some of which may
 #'   equal NA.
 #' @param ownerPreUp A vector of length k whose values
 #'   indicate which upstream firm produced a product pre-merger.
@@ -94,11 +94,11 @@
 #' ## a single product.
 #' 
 #' shareDown <- c( 0.1293482, 0.1422541, 0.4631014, 0.2152962)
-#' marginDown <- c( 13.04232, 13.04233, 29.53958, 29.53958)
+#' marginDown <- c( 0.2067532, 0.2572216, 0.3082511, 0.3539681)
 #' priceDown <- c( 63.08158, 50.70465, 95.82960, 83.45267)
 #' ownerPreDown <- paste0("D",rep(c(1,2),each=2))
 #' marginUp <- c(23.31000, 14.78715, 23.31000, 14.78715)
-#' priceUp <- c( 40.11427, 27.73734, 40.11427, 27.73734)
+#' priceUp <- c( 0.5810900,0.5331135,0.5810900,0.5331135)
 #' ownerPreUp <- paste0("U",rep(c(1,2),2))
 #' priceOutSide <- 10
 #'
@@ -221,7 +221,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
   isVerticalMerger <- any(!preVert & postVert)
   isHorizontal <- !isVerticalMerger
   
-  if(supplyDown=="bertrand"){ marginsDown=marginsDown/pricesDown}
+  if(supplyDown=="2nd"){ marginsDown=marginsDown*pricesDown}
   
   if(missing(nests) || any(is.na(nests))){
     if(supplyDown =="bertrand"){
@@ -251,7 +251,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
               prices=pricesUp,
               shares = sharesDown,
               subset=subset,
-              margins=marginsUp/pricesUp,
+              margins=marginsUp,
               ownerPre=ownerPreUp,
               ownerPost=ownerPostUp,
               mcDelta=mcDeltaUp,

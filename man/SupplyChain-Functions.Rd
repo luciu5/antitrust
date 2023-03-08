@@ -46,7 +46,7 @@ between 0 and 1.}
 
 \item{pricesDown}{A length k vector of downstream product prices.}
 
-\item{marginsDown}{A length k vector of downstream product margins in levels (e.g. dollars), some of which may
+\item{marginsDown}{A length k vector of downstream product margins in proportions (bounded between 0 and 1), some of which may
 equal NA.}
 
 \item{ownerPreDown}{A vector of length k whose values
@@ -68,7 +68,7 @@ proportional change in a downstream firm's product-level marginal costs due to
 
 \item{pricesUp}{A length k vector of upstream product prices.}
 
-\item{marginsUp}{A length k vector of upstream product margins in levels (e.g. dollars), some of which may
+\item{marginsUp}{A length k vector of upstream product margins in proportions (bounded between 0 and 1), some of which may
 equal NA.}
 
 \item{ownerPreUp}{A vector of length k whose values
@@ -158,11 +158,11 @@ calibrated parameters to simulate a merger between two firms.
 ## a single product.
 
 shareDown <- c( 0.1293482, 0.1422541, 0.4631014, 0.2152962)
-marginDown <- c( 13.04232, 13.04233, 29.53958, 29.53958)
+marginDown <- c( 0.2067532, 0.2572216, 0.3082511, 0.3539681)
 priceDown <- c( 63.08158, 50.70465, 95.82960, 83.45267)
 ownerPreDown <- paste0("D",rep(c(1,2),each=2))
 marginUp <- c(23.31000, 14.78715, 23.31000, 14.78715)
-priceUp <- c( 40.11427, 27.73734, 40.11427, 27.73734)
+priceUp <- c( 0.5810900,0.5331135,0.5810900,0.5331135)
 ownerPreUp <- paste0("U",rep(c(1,2),2))
 priceOutSide <- 10
 
