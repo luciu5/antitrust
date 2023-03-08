@@ -2610,7 +2610,7 @@ setMethod(
     id <- factor(id)
    
     marginsUp <- marginsUp*pricesUp
-    marginsDown <- marginsDown*pricesDown
+    if (!is2nd) marginsDown <- marginsDown*pricesDown
      
     #set starting value for bargaining parameter equal to 0.5
     bStart <- rep(0.5,nlevels(id))
