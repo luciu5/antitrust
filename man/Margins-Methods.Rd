@@ -9,6 +9,7 @@
 \alias{calcMargins,Bertrand-method}
 \alias{calcMargins,VertBargBertLogit-method}
 \alias{calcMargins,LogitCap-method}
+\alias{calcMargins,LogitDebt-method}
 \alias{calcMargins,Auction2ndLogit-method}
 \alias{calcMargins,Auction2ndLogitNests-method}
 \alias{calcMargins,Cournot-method}
@@ -32,6 +33,8 @@
 \S4method{calcMargins}{AIDS}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{LogitCap}(object, preMerger = TRUE, level = FALSE)
+
+\S4method{calcMargins}{LogitDebt}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE, level = TRUE)
 

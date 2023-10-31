@@ -433,289 +433,342 @@ setMethod(
   signature= "LogitDebt",
   definition=function(object,preMerger=TRUE,level=FALSE){
     
-    
-    if( preMerger) {
-      firmVec <- object@ownerPre # 1:nFirms
-      debt    <- object@debtPre
-      debtDelta <- rep(0,length(debt))
+    if(preMerger){
       prices <- object@pricePre
       owner <- object@ownerPre
-      mc <- object@mcPost
-    }
-    else{
-      firmVec <- object@ownerPost #2:nFirms
-      debt    <- object@debtPost
-      prices <- object@pricePre
-      owner <- object@ownerPost
-      mc <- object@mcPost
-    }
-    
-    
-    nFirms <- object@nFirms 
-    nMarkets <- object@nMarkets
-    slopes <- object@slopes
-    mval <- object@mval
-    M <- object@mktSize
-    shareOutParm <- object@shareOutParm
-    outPrice=object@priceOutside
-    focal=object@focal 
-    z_crit=mkt$z_crit
-
-    hFocalIntegral <- object@hFocalIntegral
-    gFocalIntegral <- object@gFocalIntegral
-    tOtherIntegral <- object@tOtherIntegral
-    rOtherIntegral <- object@rOtherIntegral
-    
-    
-    lowerB <- rep(0,nMarkets-1)
-    upperB <- rep(1,nMarkets-1)
-    
-    
-    
-    bDens <- function(u,...) {dbeta(u, shape1 = shareOutParm[1],shape2 = shareOutParm[2],...)}
-    bProb <- function(u,...) {pbeta(u, shape1 = shareOutParm[1],lower.tail=TRUE,shape2 = shareOutParm[2],...)}
-    
-    integrateDerivOtherFun <- function(u,f,pre=preMerger){s0=s0Focal(u,f,pre); u*(1-u)*bProb(s0)}
-    integrateInsideOtherFun <- function(u,f,pre=preMerger){s0=s0Focal(u,f,pre); (1-u)*bProb(s0)}
-    
-    s0Focal <- function(sOut=rep(NA,nMarkets),i,pre=preMerger,n=nMarkets,l=focal){
-      ## allow firm index f to be a vector of length>1.
-      ## choose firm 2's product in market 1 to be the reference good
-      if(!pre && any(i %in% 1:2)){i=2:1}
-      if(n==1){ res <- 1- sum(debt[i])/sum(profitsCond[,i]); return(res)}
-      res <- (sum(profitsCond[,i,drop=FALSE]) - sum(debt[i]))/profitsCond[l,i[1],drop=TRUE] - 
-        sum(as.vector(sOut) * profitsCond[-l,i,drop=FALSE])/profitsCond[l,i[1],drop=TRUE]
-      
-      
-      
-      return(res)
-    }
-    
-   
-    
-    if(nMarkets>1) theseStates <-  expand.grid(lapply(1:(nMarkets-1),function(x){0:1}))
-    
-    
-    
-   
-    margin <- prices - mc
-    
-    sCond <- exp(mval + slopes * prices)
-    sOutBE <-exp(z_crit + slopes * outPrice)
-    sOutBE <- sOutBE/(sOutBE+rowSums(sOutBE))
-    sCond <- sCond/rowSums(sCond)
-    profitsCond <- M*margin*sCond
-    
-    
-    
-    if(BE){
-      sharesCand <- sCond*(1-sOutBE)
-      if(sOnly){return(as.vector(t(sharesCand)))}
-      
-      
-      if(!preMerger){
-        if(nMarkets>1){sharesCand[,1:2] <- rowSums(sharesCand[,1:2])}
-        else{sharesCand[,1:2] <- sum(sharesCand[,1:2])}
       }
-      
-      marginsCand <- -1/(slopes*(1-sharesCand))
-      res <- as.vector(t(margin - marginsCand))
-      
-      return(res)
-      
-      
-    }
-    
-    
-    
-    
-    if(nMarkets ==1){hFun <- sapply(firmVec,function(q){s0_focal=s0Focal(NA,q);hFocalIntegral(s0_focal)})  }
-    else if(nMarkets>=2 && shareOutParm[1] ==1 && shareOutParm[2] ==1){
-      hFun <- sapply(firmVec,function(q,pre=preMerger) {
-        s0_focal <- apply(theseStates,1,s0Focal,i=q)
-        betaStates <- hFocalIntegral(s0_focal)
-        st=ncol(theseStates)
-        while(st>=1){
-          lastState <- theseStates[,st]
-          betaStates <- betaStates[lastState==1]-betaStates[lastState==0]
-          theseStates <- unique(theseStates[,-st,drop=FALSE])
-          st <- st-1
-        }
-        #betaStates <- rev((-1)^(1:length(betaStates)))*betaStates
-        #betaStates <- sum(betaStates)
-        thisProfits <- rowSums(profitsCond[,q,drop=FALSE])
-        
-        res <- (-1)^(nMarkets+1)*(prod(thisProfits[-1])/(thisProfits[1]^(nMarkets-1)))*betaStates
-        return(res)
-      })
-    }
     
     else{
-      hFun <- 
-        sapply(firmVec,function(g) {cubintegrate(function(x,f=g){
-          x <- as.matrix(x)
-          matrix(apply(x, 2, function(s){
-            s0_focal=s0Focal(s,f)
-            res <- hFocalIntegral(s0_focal)*prod(bDens(s))
-            return(res)
-          }),ncol=col(x)
-          )}
-          ,lower=lowerB,upper=upperB,nVec=nVec,method= method_foc,relTol = relTol_foc, absTol = absTol_foc,maxEval = maxEval_foc)$integral
-        })
+      prices <- object@pricePost
+      owner <- object@ownerPost}
+    
+ 
+    shares <- calcShares(object,preMerger=preMerger,revenue=FALSE)
+    
+    if(object@nMarkets>1){
       
-    }
-    
-    if(nMarkets ==1){gFun <- sapply(firmVec,function(q){s0_focal=s0Focal(NA,q);gFocalIntegral(s0_focal)})  }
-    else if(nMarkets>=2 && shareOutParm[1] ==1 && shareOutParm[2] ==1){
-      gFun <- sapply(firmVec,function(q,pre=preMerger) {
-        
-        s0_focal <- apply(theseStates,1,s0Focal,i=q)
-        betaStates <- gFocalIntegral(s0_focal)
-        st=ncol(theseStates)
-        while(st>=1){
-          lastState <- theseStates[,st]
-          betaStates <- betaStates[lastState==1]-betaStates[lastState==0]
-          theseStates <- unique(theseStates[,-st,drop=FALSE])
-          st <- st-1
-        }
-        
-        if(!pre && q==2){q <- 2:1}
-        thisProfits <- rowSums(profitsCond[,q,drop=FALSE])
-        res <- (-1)^(nMarkets+1)*(prod(thisProfits[-1])/(thisProfits[1]^(nMarkets-1)))*betaStates
-        return(res)
-      })
-    }
-    
-    else{
-      gFun <- 
-        sapply(firmVec,function(g) {cubintegrate(function(x,f=g){
-          x <- as.matrix(x)
-          matrix(apply(x, 2, function(s){
-            s0_focal=s0Focal(s,f)
-            
-            gFocalIntegral(s0_focal)*prod(bDens(s))}),ncol=col(x)
-          )}
-          ,lower=lowerB,upper=upperB,nVec=nVec,method= method_foc,relTol = relTol_foc,absTol = absTol_foc, maxEval = maxEval_foc)$integral
-        })
-    }
-    
-    if(nMarkets >1){
-      if(shareOutParm[1] ==1 && shareOutParm[2] ==1){
-        tFun <- sapply(firmVec,function(q,pre=preMerger) {
-          
-          
-          theseStates <- filter(theseStates,Var1==1)
-          s0_focal <- apply(theseStates,1,s0Focal,i=q)
-          betaStates <- tOtherIntegral(s0_focal)
-          st=ncol(theseStates)
-          while(st>=2){
-            lastState <- theseStates[,st]
-            betaStates <- betaStates[lastState==1]-betaStates[lastState==0]
-            theseStates <- unique(theseStates[,-st,drop=FALSE])
-            st <- st-1
-          }
-          
-          if(!pre && q==2){q <- 2:1}
-          thisProfits <- rowSums(profitsCond[,q,drop=FALSE])
-          if(nMarkets==2){res <- betaStates}
-          else{res <- (-1)^(nMarkets+1)*(prod(thisProfits[-(1:2)])/(thisProfits[1]^(nMarkets-2)))*betaStates}
-          
-          res <- res +.5 * thisProfits[2]/thisProfits[1]
-          return(res)
-        })
-        
-        tFun <- matrix(rep(tFun,nMarkets-1),byrow = TRUE,nrow = nMarkets-1)
-        
-        rFun <- sapply(firmVec,function(q,pre=preMerger) {
-          
-          
-          theseStates <- filter(theseStates,Var1==1)
-          s0_focal <- apply(theseStates,1,s0Focal,i=q)
-          betaStates <- rOtherIntegral(s0_focal)
-          st=ncol(theseStates)
-          while(st>=2){
-            lastState <- theseStates[,st]
-            betaStates <- betaStates[lastState==1]-betaStates[lastState==0]
-            theseStates <- unique(theseStates[,-st,drop=FALSE])
-            st <- st-1
-          }
-          
-          if(!pre && q==2){q <- 2:1}
-          thisProfits <- rowSums(profitsCond[,q,drop=FALSE])
-          if(nMarkets==2){res <- betaStates}
-          else{res <- (-1)^(nMarkets+1)*(prod(thisProfits[-(1:2)])/(thisProfits[1]^(nMarkets-2)))*betaStates}
-          
-          res <- res + (2/3)*thisProfits[2]/thisProfits[1]
-          return(res)
-        })
-        rFun <- matrix(rep(rFun,nMarkets-1),byrow = TRUE,nrow = nMarkets-1)
+      shares <- t(rowsum(t(shares), group = owner, na.rm = TRUE))
+      shares <- shares[,owner]
       }
-      
-      else{
-        tFun <- 
-          sapply(firmVec,function(g) {cubintegrate(function(x,f=g){
-            x <- as.matrix(x)
-            matrix(apply(x, 2, function(s){
-              
-              integrateDerivOtherFun(s,f)*prod(bDens(s))}),ncol=col(x)
-            )}
-            ,fDim=1,lower=lowerB,upper=upperB,nVec=nVec,method= method_foc,relTol = relTol_foc, absTol = absTol_foc,maxEval = maxEval_foc)$integral
-          })
-        
-        rFun <- 
-          sapply(firmVec,function(g) {cubintegrate(function(x,f=g){
-            x <- as.matrix(x)
-            matrix(apply(x, 2, function(s){
-              
-              integrateInsideOtherFun(s,f)*prod(bDens(s))}),ncol=col(x)
-            )}
-            ,fDim=1,lower=lowerB,upper=upperB,nVec=nVec,method= method_foc,relTol = relTol_foc,absTol = absTol_foc, maxEval = maxEval_foc)$integral
-          })
-        
-      }
-      
-      #shareOutOther <- exp(log(abs(tFun))-log(abs(rFun)))
-      shareOutOther <- tFun/rFun
-      shareOutOther[shareOutOther>1] <- 1
-      shareOutOther[shareOutOther<0] <- 0
+    else{shares <- tapply(shares, owner,sum,na.rm=TRUE)
+    shares <- shares[owner]
     }
+  
     
     
-    
-    #replace hFun/gFun with log difference because of stability concerns
-    #shareOutFocal <- matrix(exp(log(abs(hFun))-log(abs(gFun))),nrow=1)
-    shareOutFocal <- matrix(hFun/gFun,nrow=1)
-    shareOutFocal[shareOutFocal > 1] <- 1
-    shareOutFocal[shareOutFocal < 0] <- 0
-    if(nMarkets==2){shareOutOther <- matrix(shareOutOther,nrow=nMarkets - 1)}
+    margins <- -1/(alpha*(1-shares))
     
     
-    if(!preMerger){
-      shareOutFocal <- c(shareOutFocal[1],shareOutFocal)
-      if(nMarkets>1) shareOutOther <- cbind(shareOutOther[,1],shareOutOther)
-    }
-    
-    SharesOutInt <- matrix(NA,nrow=nMarkets,ncol=nFirms)
-    SharesOutInt[focal,]=shareOutFocal
-    if(nMarkets>1) SharesOutInt[-focal,]=shareOutOther
-    
-    
-    if(sOnly){
-      return(as.vector(t(sCond*(1-SharesOutInt))))
-    }
-    if(!preMerger){
-      if(nMarkets>1)  sCond[,1:2] <- rowSums(sCond[,1:2])
-      else{ sCond[,1:2] <- sum(sCond[,1:2])}
-    }
-    
-    margins <- -1/(slopes*(1 - sCond*(1-SharesOutInt) ))
-    
+    if(!level) {
+      margins <- margins / prices
+    } 
     
     
     names(margins) <- object@labels
     
-    if(level) {margins <- margins * prices} 
-    return(as.vector(margins))
+    return(margins)
+    
+    # if( preMerger) {
+    #   firmVec <- 1:length(unique(object@ownerPre)) # 1:nFirms
+    #   debt    <- object@debtPre
+    #   debtDelta <- rep(0,length(debt))
+    #   prices <- object@pricePre
+    #   owner <- as.numeric(factor(object@ownerPre,levels=unique(object@ownerPre)))
+    #   mc <- object@mcPost
+    # }
+    # else{
+    #   firmVec <- 1:length(unique(object@ownerPost)) #2:nFirms
+    #   debt    <- object@debtPost
+    #   prices <- object@pricePre
+    #   owner <- as.numeric(factor(object@ownerPost,levels=unique(object@ownerPost)))
+    #   debt <- tapply(debt,owner,sum,na.rm=TRUE)
+    #   mc <- object@mcPost
+    # }
+    # 
+    # 
+    # nFirms <- object@nFirms 
+    # nMarkets <- object@nMarkets
+    # slopes <- object@slopes
+    # mval <- object@mval
+    # M <- object@mktSize
+    # shareOutParm <- object@shareOutParm
+    # outPrice=object@priceOutside
+    # focal=object@focal
+    # parties <- object@parties
+    # #z_crit=mkt$z_crit
+    # 
+    # hFocalIntegral <- object@hFocalIntegral
+    # gFocalIntegral <- object@gFocalIntegral
+    # tOtherIntegral <- object@tOtherIntegral
+    # rOtherIntegral <- object@rOtherIntegral
+    # 
+    # 
+    # lowerB <- rep(0,nMarkets-1)
+    # upperB <- rep(1,nMarkets-1)
+    # 
+    # 
+    # 
+    # bDens <- function(u,...) {dbeta(u, shape1 = shareOutParm[1],shape2 = shareOutParm[2],...)}
+    # bProb <- function(u,...) {pbeta(u, shape1 = shareOutParm[1],lower.tail=TRUE,shape2 = shareOutParm[2],...)}
+    # 
+    # integrateDerivOtherFun <- function(u,f,pre=preMerger){s0=s0Focal(u,f,pre); u*(1-u)*bProb(s0)}
+    # integrateInsideOtherFun <- function(u,f,pre=preMerger){s0=s0Focal(u,f,pre); (1-u)*bProb(s0)}
+    # 
+    # s0Focal <- function(sOut=rep(NA,nMarkets),i,pre=preMerger,n=nMarkets,l=focal){
+    #   ## allow firm index f to be a vector of length>1.
+    #   ## choose firm 2's product in market 1 to be the reference good
+    #   if(n==1){ res <- 1- debt[i]/profitsCond[,i]; return(res)}
+    #   res <- (profitsCond[,i,drop=FALSE] - debt[i])/profitsCond[l,i,drop=TRUE] - 
+    #     sum(as.vector(sOut) * profitsCond[-l,i,drop=FALSE])/profitsCond[l,i,drop=TRUE]
+    #   
+    #   
+    #   
+    #   return(res)
+    # }
+    # 
+    # 
+    # 
+    # if(nMarkets>1) theseStates <-  expand.grid(lapply(1:(nMarkets-1),function(x){0:1}))
+    # 
+    # 
+    # 
+    # 
+    # margin <- prices - mc
+    # 
+    # sCond <- exp(mval + slopes * prices)
+    # sCond <- sCond/rowSums(sCond)
+    # profitsCond <- M*margin*sCond
+    # 
+    # ## aggregate profits to the firm level
+    # profitsCond <- t(rowsum(t(profitsCond), group = owner, na.rm = TRUE))
+    # 
+    # 
+    # 
+    # if(BE){
+    #   sOutBE <-exp(z_crit + slopes * outPrice)
+    #   sOutBE <- sOutBE/(sOutBE+rowSums(sOutBE))
+    #   sharesCand <- sCond*(1-sOutBE)
+    #   if(sOnly){return(as.vector(t(sharesCand)))}
+    #   
+    #   
+    #   #if(!preMerger){
+    #     if(nMarkets>1){
+    #       #sharesCand[,1:2] <- rowSums(sharesCand[,1:2])
+    #       sharesCand <- t(rowsum(t(sharesCand), group = owner, na.rm = TRUE))
+    #     }
+    #     else{sharesCand <- tapply(sharesCand, owner,sum,na.rm=TRUE)}
+    #   #}
+    #   
+    #   marginsCand <- -1/(slopes*(1-sharesCand))
+    #   res <- as.vector(t(margin - marginsCand))
+    #   res <- res[owner]
+    #   
+    #   return(res)
+    #   
+    #   
+    # }
+    # 
+    # 
+    # 
+    # 
+    # if(nMarkets ==1){hFun <- sapply(firmVec,function(q){s0_focal=s0Focal(NA,q);hFocalIntegral(s0_focal)})  }
+    # else if(nMarkets>=2 && shareOutParm[1] ==1 && shareOutParm[2] ==1){
+    #   hFun <- sapply(firmVec,function(q,pre=preMerger) {
+    #     s0_focal <- apply(theseStates,1,s0Focal,i=q)
+    #     betaStates <- hFocalIntegral(s0_focal)
+    #     st=ncol(theseStates)
+    #     while(st>=1){
+    #       lastState <- theseStates[,st]
+    #       betaStates <- betaStates[lastState==1]-betaStates[lastState==0]
+    #       theseStates <- unique(theseStates[,-st,drop=FALSE])
+    #       st <- st-1
+    #     }
+    #     #betaStates <- rev((-1)^(1:length(betaStates)))*betaStates
+    #     #betaStates <- sum(betaStates)
+    #     thisProfits <- rowSums(profitsCond[,q,drop=FALSE])
+    #     
+    #     res <- (-1)^(nMarkets+1)*(prod(thisProfits[-1])/(thisProfits[1]^(nMarkets-1)))*betaStates
+    #     return(res)
+    #   })
+    # }
+    # 
+    # else{
+    #   hFun <- 
+    #     sapply(firmVec,function(g) {cubintegrate(function(x,f=g){
+    #       x <- as.matrix(x)
+    #       matrix(apply(x, 2, function(s){
+    #         s0_focal=s0Focal(s,f)
+    #         res <- hFocalIntegral(s0_focal)*prod(bDens(s))
+    #         return(res)
+    #       }),ncol=col(x)
+    #       )}
+    #       ,lower=lowerB,upper=upperB,nVec=nVec,method= method_foc,relTol = relTol_foc, absTol = absTol_foc,maxEval = maxEval_foc)$integral
+    #     })
+    #   
+    # }
+    # 
+    # if(nMarkets ==1){gFun <- sapply(firmVec,function(q){s0_focal=s0Focal(NA,q);gFocalIntegral(s0_focal)})  }
+    # else if(nMarkets>=2 && shareOutParm[1] ==1 && shareOutParm[2] ==1){
+    #   gFun <- sapply(firmVec,function(q,pre=preMerger) {
+    #     
+    #     s0_focal <- apply(theseStates,1,s0Focal,i=q)
+    #     betaStates <- gFocalIntegral(s0_focal)
+    #     st=ncol(theseStates)
+    #     while(st>=1){
+    #       lastState <- theseStates[,st]
+    #       betaStates <- betaStates[lastState==1]-betaStates[lastState==0]
+    #       theseStates <- unique(theseStates[,-st,drop=FALSE])
+    #       st <- st-1
+    #     }
+    #     
+    #     #if(!pre && q==2){q <- 2:1}
+    #     #thisProfits <- rowSums(profitsCond[,q,drop=FALSE])
+    #     thisProfits <- profitsCond
+    #     res <- (-1)^(nMarkets+1)*(prod(thisProfits[-1])/(thisProfits[1]^(nMarkets-1)))*betaStates
+    #     return(res)
+    #   })
+    # }
+    # 
+    # else{
+    #   gFun <- 
+    #     sapply(firmVec,function(g) {cubintegrate(function(x,f=g){
+    #       x <- as.matrix(x)
+    #       matrix(apply(x, 2, function(s){
+    #         s0_focal=s0Focal(s,f)
+    #         
+    #         gFocalIntegral(s0_focal)*prod(bDens(s))}),ncol=col(x)
+    #       )}
+    #       ,lower=lowerB,upper=upperB,nVec=nVec,method= method_foc,relTol = relTol_foc,absTol = absTol_foc, maxEval = maxEval_foc)$integral
+    #     })
+    # }
+    # 
+    # if(nMarkets >1){
+    #   if(shareOutParm[1] ==1 && shareOutParm[2] ==1){
+    #     tFun <- sapply(firmVec,function(q,pre=preMerger) {
+    #       
+    #       
+    #       theseStates <- filter(theseStates,Var1==1)
+    #       s0_focal <- apply(theseStates,1,s0Focal,i=q)
+    #       betaStates <- tOtherIntegral(s0_focal)
+    #       st=ncol(theseStates)
+    #       while(st>=2){
+    #         lastState <- theseStates[,st]
+    #         betaStates <- betaStates[lastState==1]-betaStates[lastState==0]
+    #         theseStates <- unique(theseStates[,-st,drop=FALSE])
+    #         st <- st-1
+    #       }
+    #       
+    #      # if(!pre && q==2){q <- 2:1}
+    #       #thisProfits <- rowSums(profitsCond[,q,drop=FALSE])
+    #       thisProfits <- profitsCond
+    #       if(nMarkets==2){res <- betaStates}
+    #       else{res <- (-1)^(nMarkets+1)*(prod(thisProfits[-(1:2)])/(thisProfits[1]^(nMarkets-2)))*betaStates}
+    #       
+    #       res <- res +.5 * thisProfits[2]/thisProfits[1]
+    #       return(res)
+    #     })
+    #     
+    #     tFun <- matrix(rep(tFun,nMarkets-1),byrow = TRUE,nrow = nMarkets-1)
+    #     
+    #     rFun <- sapply(firmVec,function(q,pre=preMerger) {
+    #       
+    #       
+    #       theseStates <- filter(theseStates,Var1==1)
+    #       s0_focal <- apply(theseStates,1,s0Focal,i=q)
+    #       betaStates <- rOtherIntegral(s0_focal)
+    #       st=ncol(theseStates)
+    #       while(st>=2){
+    #         lastState <- theseStates[,st]
+    #         betaStates <- betaStates[lastState==1]-betaStates[lastState==0]
+    #         theseStates <- unique(theseStates[,-st,drop=FALSE])
+    #         st <- st-1
+    #       }
+    #       
+    #       #if(!pre && q==2){q <- 2:1}
+    #       #thisProfits <- rowSums(profitsCond[,q,drop=FALSE])
+    #       thisProfits <- profitsCond
+    #       if(nMarkets==2){res <- betaStates}
+    #       else{res <- (-1)^(nMarkets+1)*(prod(thisProfits[-(1:2)])/(thisProfits[1]^(nMarkets-2)))*betaStates}
+    #       
+    #       res <- res + (2/3)*thisProfits[2]/thisProfits[1]
+    #       return(res)
+    #     })
+    #     rFun <- matrix(rep(rFun,nMarkets-1),byrow = TRUE,nrow = nMarkets-1)
+    #   }
+    #   
+    #   else{
+    #     tFun <- 
+    #       sapply(firmVec,function(g) {cubintegrate(function(x,f=g){
+    #         x <- as.matrix(x)
+    #         matrix(apply(x, 2, function(s){
+    #           
+    #           integrateDerivOtherFun(s,f)*prod(bDens(s))}),ncol=col(x)
+    #         )}
+    #         ,fDim=1,lower=lowerB,upper=upperB,nVec=nVec,method= method_foc,relTol = relTol_foc, absTol = absTol_foc,maxEval = maxEval_foc)$integral
+    #       })
+    #     
+    #     rFun <- 
+    #       sapply(firmVec,function(g) {cubintegrate(function(x,f=g){
+    #         x <- as.matrix(x)
+    #         matrix(apply(x, 2, function(s){
+    #           
+    #           integrateInsideOtherFun(s,f)*prod(bDens(s))}),ncol=col(x)
+    #         )}
+    #         ,fDim=1,lower=lowerB,upper=upperB,nVec=nVec,method= method_foc,relTol = relTol_foc,absTol = absTol_foc, maxEval = maxEval_foc)$integral
+    #       })
+    #     
+    #   }
+    #   
+    #   #shareOutOther <- exp(log(abs(tFun))-log(abs(rFun)))
+    #   shareOutOther <- tFun/rFun
+    #   shareOutOther[shareOutOther>1] <- 1
+    #   shareOutOther[shareOutOther<0] <- 0
+    # }
+    # 
+    # 
+    # 
+    # #replace hFun/gFun with log difference because of stability concerns
+    # #shareOutFocal <- matrix(exp(log(abs(hFun))-log(abs(gFun))),nrow=1)
+    # shareOutFocal <- matrix(hFun/gFun,nrow=1)
+    # shareOutFocal[shareOutFocal > 1] <- 1
+    # shareOutFocal[shareOutFocal < 0] <- 0
+    # if(nMarkets==2){shareOutOther <- matrix(shareOutOther,nrow=nMarkets - 1)}
+    # 
+    # 
+    # if(!preMerger){
+    #   #shareOutFocal <- c(shareOutFocal[1],shareOutFocal)
+    #   shareOutFocal <- shareOutFocal[owner]
+    #   if(nMarkets>1) {
+    #     #shareOutOther <- cbind(shareOutOther[,1],shareOutOther)
+    #     shareOutOther <- shareOutOther[,owner]
+    #     }
+    # }
+    # 
+    # SharesOutInt <- matrix(NA,nrow=nMarkets,ncol=nFirms)
+    # SharesOutInt[focal,]=shareOutFocal
+    # if(nMarkets>1) SharesOutInt[-focal,]=shareOutOther
+    # 
+    # 
+    # if(sOnly){
+    #   return(as.vector(t(sCond*(1-SharesOutInt))))
+    # }
+    # if(!preMerger){
+    #   if(nMarkets>1){  
+    #     #sCond[,1:2] <- rowSums(sCond[,1:2])
+    #   sCond <- t(rowsum(t(sCond), group = owner, na.rm = TRUE))
+    #   sCond <- sCond[,owner]
+    #   }
+    #   else{ #sCond[,1:2] <- sum(sCond[,1:2])
+    #   sCond <- tapply(sCond,owner,sum,na.rm=TRUE)
+    #   sCond <- sCond[owner]
+    #   }
+    # }
+    # 
+    # margins <- -1/(slopes*(1 - sCond*(1-SharesOutInt) ))
+    # 
+    # 
+    
+    
   }
   
 )

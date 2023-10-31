@@ -88,7 +88,7 @@ setMethod(
       mc <- mc*(1+object@mcDelta)
     }
 
-    mc <- as.vector(mc)
+   # mc <- as.vector(mc)
 
     names(mc) <- object@labels
 
