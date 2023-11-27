@@ -56,21 +56,19 @@
 #' ## Firms 1 and 2 merge
 #' nprods <- 3
 #' nmarkets <- 2
-#' shares <- matrix(c(0.0734, 0.6339, 0.2927, 0.5557, 0.3224, 0.1219),
-#' nmarkets,nprods,byrow=TRUE)
-#' prices <- matrix(c(107.3837, 156.9111, 131.0415, 118.6787, 108.4132, 99.1364),
-#' nmarkets,nprods,byrow=TRUE)
-#' margins <-matrix(c(23.2785, 66.7227, 21.971, 57.1583, 26.6393, 52.3467),
-#' nmarkets,nprods,byrow=TRUE)
-#' ownerPre <- as.character(c(1, 2, 3))
-#' ownerPost <- as.character(c(1, 1, 3))
+#' marketId <- rep(1:nmarkets,each=nprods)
+#' shares <- c(0.0734, 0.6339, 0.2927, 0.5557, 0.3224, 0.1219)
+#' prices <- c(107.3837, 156.9111, 131.0415, 118.6787, 108.4132, 99.1364)
+#' margins <-c(23.2785, 66.7227, 21.971, 57.1583, 26.6393, 52.3467)/prices
+#' ownerPre <- ownerPost <- as.character(rep(c(1, 2, 3),each=nmarkets))
+#' ownerPost[ownerPost=='2'] <- '1'
 #' debt <- c(14.6943, 30.3841, 16.3995)
 #' insideSize <- 1
 #'
 #'
 
 #' simres_debt <- logit.debt(prices,shares,margins,
-#'                              ownerPre,ownerPost,debtPre=debt,
+#'                              ownerPre,ownerPost,debtPre=debt,marketID=marketId,
 #'                              insideSize=insideSize)
 #' 
 #' 
@@ -87,26 +85,48 @@ NULL
 logit.debt <- function(prices,shares,margins,
                        ownerPre,ownerPost,
                        debtPre = rep(0, length(unique(ownerPre))),
-                       debtPost = debtPre,
+                       debtPost = debtPre, 
+                       marketID=as.character(rep(1,length(prices))),
+                       productID,
                        insideSize,
+                       density=c("beta","uniform"),
                        normIndex=1,
                        focal=1,
-                       mcDelta=matrix(0,nrow(prices),ncol(prices)),
-                       subset=matrix(TRUE,nrow(prices),ncol(prices)),
+                       mcDelta=rep(0, length(prices)),
+                       subset=rep(TRUE, length(prices)),
                        priceOutside=0,
                        priceStart = prices,
-                       parmsStart=c(rep(-10,nrow(prices)),c(1,1)),
+                       parmsStart=c(rep(-1, length(unique(marketID))),c(1,1)),
                        shareOutParm=c(1,1),
                        isMax=FALSE,
                        control.slopes,
                        control.equ,
-                       labels=list(paste("Prod",1:ncol(prices),sep=""),
-                                   paste("Mkt",1:nrow(prices),sep="")
-                                   ),
+                       labels,
                        ...
 ){
   
-  nMarkets= nrow(prices)
+  density=match.arg(density)
+  if(missing(productID)){
+    nFirmProds <- tapply(prices,ownerPre,length)
+    productID <- unlist(sapply(nFirmProds,function(x){return(1:x)}),use.names = FALSE)
+    productID <- paste0(ownerPre,productID)
+  }
+  
+  mktData <- data.frame(marketID,productID,prices,shares,margins,ownerPre,ownerPost,mcDelta,subset)
+  
+  ## fill in all missing market/owner/product combinations 
+  ## necessary for reshaping 
+  allPerms <- expand.grid(marketID=unique(marketID),
+                          ownerPre=unique(ownerPre),
+                          productID=unique(productID)
+  )
+  
+  mktData <- merge(allPerms,mktData)
+  
+  mktData <- mktData[with(mktData,order(marketID,ownerPre,productID)),]
+
+  if(missing(labels)){labels <- with(mktData,paste(marketID,ownerPre,productID,sep=":"))}
+  nMarkets= length(unique(marketID))
   
   hFocalIntegral <- function(u,s1=shareOutParm[1],s2=shareOutParm[2]){
     beta(s1+1,s2+1)/beta(s1,s2)*
@@ -120,7 +140,7 @@ logit.debt <- function(prices,shares,margins,
   tOtherIntegral <- function(u){NULL}
   rOtherIntegral <- function(u){NULL}
   
-  if(nMarkets >1 && shareOutParm[1]==1 && shareOutParm[1]==shareOutParm[2]){
+  if(nMarkets >1 && density=="uniform"){
     
     mktCnt=2
     hFormula <- "u^3 -u^4/2~u"
@@ -152,24 +172,23 @@ logit.debt <- function(prices,shares,margins,
   }
   
   
-  ## identify merging parties
-  parties <- which(ownerPre!=ownerPost)
-  parties <- unique(c(ownerPre[parties],ownerPost[parties]))
-  parties <- ownerPre %in% parties
   
   ## Create LogitDebt  container to store relevant data
-  result <- new("LogitDebt",prices=prices, shares=shares,
-                margins=margins,
+  result <- new("LogitDebt",prices=mktData$prices, shares=mktData$shares,
+                margins=mktData$margins,
                 debtPre=debtPre,
                 debtPost=debtPost,
                 insideSize=insideSize,
                 normIndex=normIndex,
                 focal=focal,
-                ownerPre=ownerPre,
-                ownerPost=ownerPost,
-                parties= parties ,
-                mcDelta=mcDelta,
-                subset=subset,
+                density=density,
+                shareOutParm=shareOutParm,
+                ownerPre=mktData$ownerPre,
+                ownerPost=mktData$ownerPost,
+                mcDelta=mktData$mcDelta,
+                subset=mktData$subset,
+                marketID=as.character(mktData$marketID),
+                productID=as.character(mktData$productID),
                 #priceOutside=priceOutside,
                 priceStart=priceStart,
                 parmsStart=parmsStart,
@@ -189,7 +208,7 @@ logit.debt <- function(prices,shares,margins,
   ## Convert ownership vectors to ownership matrices
   #result@ownerPre  <- ownerToMatrix(result,TRUE)
   #result@ownerPost <- ownerToMatrix(result,FALSE)
-  
+  return(result)
   ## Calculate Demand Slope Coefficients
   result <- calcSlopes(result)
   
