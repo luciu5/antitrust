@@ -17,7 +17,6 @@
 \alias{calcSlopes,LogitCapALM-method}
 \alias{calcSlopes,LogitNests-method}
 \alias{calcSlopes,LogitNestsALM-method}
-\alias{calcSlopes,LogitDebt-method}
 \alias{calcSlopes,PCAIDS-method}
 \alias{calcSlopes,PCAIDSNests-method}
 \alias{calcSlopes,Auction2ndLogit-method}
@@ -67,8 +66,6 @@
 \S4method{calcSlopes}{Auction2ndLogitALM}(object)
 
 \S4method{calcSlopes}{LogitALM}(object)
-
-\S4method{calcSlopes}{LogitDebt}(object)
 
 \S4method{calcSlopes}{CES}(object)
 

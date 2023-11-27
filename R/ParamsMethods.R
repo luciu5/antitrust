@@ -16,7 +16,6 @@
 #' calcSlopes,LogitCapALM-method
 #' calcSlopes,LogitNests-method
 #' calcSlopes,LogitNestsALM-method
-#' calcSlopes,LogitDebt-method
 #' calcSlopes,PCAIDS-method
 #' calcSlopes,PCAIDSNests-method
 #' calcSlopes,Auction2ndLogit-method
@@ -1905,72 +1904,6 @@ setMethod(
 
 )
 
-
-#'@rdname Params-Methods
-#'@export
-setMethod(
-  f= "calcSlopes",
-  signature= "LogitDebt",
-  definition=function(object){
-    
-    ## Uncover Demand Coefficents
-    
-    ownerPre     <-  object@ownerPre
-    shares       <-  object@shares
-    margins      <-  object@margins
-    prices       <-  object@prices
-    idx          <-   object@normIndex
-    
-    margins <- margins*prices
-    
-    nprods <- ncol(object@shares)
-    
-    
-    thisobj <- object
-    
-    minD <- function(theta){
-      
-      alpha <- theta[1]
-      outParm  <- theta[-1]
-      
-      thisobj@slopes$alpha <- alpha
-      thisobj@slopes$meanval <- log(shares)- log(shares[,idx]) -slopes*(prices - prices[,idx])
-      thisobj@shareOutParm <- outParm
-      
-      marginsCand <- calcMargins(thisobj,preMerger=TRUE,levels=TRUE)
-      
-      m1 <- (margins - marginsCand)/prices
-      measure <- sum((c(m1)*100)^2,na.rm=TRUE)
-      
-      return(measure)
-    }
-    
-    ## Constrain optimizer to look  alpha <0,  Beta Parameters >= 1
-    lowerB <- c(-Inf,1,1)
-    upperB <- c(-1e-10,Inf,Inf)
-    
-    
-    
-    minTheta <- optim(object@parmsStart,minD,
-                      method="L-BFGS-B",
-                      lower= lowerB,upper=upperB,
-                      control=object@control.slopes)$par
-    
-    minAlpha <- minTheta[1]
-    minOutParm  <- minTheta[-1]
-    meanval <- log(shares)- log(shares[,idx]) -minAlpha*(prices - prices[,idx])
-
-    names(meanval)   <- object@labels
-    
-    object@slopes      <- list(alpha=minAlpha,meanval=meanval)
-    object@shareOutParm <- minOutParm
-    object@mktSize <-  object@insideSize/object@shareInside
-    
-    return(object)
-    
-  }
-  
-)
 
 #'@rdname Params-Methods
 #'@export

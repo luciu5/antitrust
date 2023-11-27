@@ -2,7 +2,7 @@ Package: antitrust
 Type: Package
 Title: Tools for Antitrust Practitioners
 Version: 0.99.28
-Date: 2024-10-31
+Date: 2023-10-31
 Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com",
                   role = c("aut", "cre")),
              person("Michael", "Sandfort",
@@ -58,8 +58,6 @@ Collate:
     'CMCRBertrandFunctions.R'
     'CMCRCournotFunctions.R'
     'CournotFunctions.R'
-    'DebtClasses.R'
-    'DebtFunctions.R'
     'HHIFunctions.R'
     'LinearFunctions.R'
     'LogitFunctions.R'

@@ -217,67 +217,6 @@ setClass(
 
   })
 
-
-#'@rdname BertrandRUM-Classes
-#@export
-setClass(
-  Class   = "LogitDebt",
-  contains="Logit",
-  representation=representation(
-    parties      ="logical",
-    debtPre      = "numeric",
-    debtPost     = "numeric",
-    focal        = "numeric",
-    normIndex    = "numeric",
-    insideSize   = "numeric",
-    mktid        = "character",
-    prodid       = "character",
-    nMarkets     = "numeric",
-    nProducts       = "numeric",
-    hFocalIntegral = "function",
-    gFocalIntegral = "function", 
-    tOtherIntegral = "function",
-    rOtherIntegral = "function"
-  ),
-  prototype=prototype(
-    normIndex         =  1,
-    focal             =  1,
-    control.slopes = list(
-      factr = 1e7
-    )
-  ),
-  
-  validity=function(object){
-    
-    nProducts=length(unique(object@prodid))
-    nFirms=length(unique(object@ownerPre))
-    nMarkets=length(unique(object@ownerPre))
-    
-    if(length(object@shares)!=length(object@prices)){stop("'prices' and 'shares' must have the same length.")}
-    if(length(object@shares)!=length(object@margins)){stop("'prices' and 'margins' must have the same length.")}
-    if(length(object@shares)!=length(object@mcDelta)){stop("'prices' and 'mcDelta' must have the same length.")}
-    if(length(object@shares)!=dim(object@subset)){stop("'prices' and 'subset' must have the same length.")}
-    
-    if(length(object@debtPre) != nFirms || 
-       length(object@debtPre) != length(object@debtPost)){
-      stop("'debtPre' and 'debtDelta' must have the same number of elements as columns in 'prices'")}
-    
-    nMargins  <- length(object@margins[!is.na(object@margins)])
-    
-    if(nMargins< nMarkets+2){stop("At least", nMarkets+2, "elements of 'margins' must not be NA in order to calibrate demand parameters")}
-    
-    if(!isTRUE(all.equal(unname(rowSums(object@shares)),rep(1,nMarkets)))){
-      stop("sum of 'shares' must equal 1")
-    }
-    
-    
-    if(length(object@parmsStart)!=nMarkets+2){
-      stop("'parmsStart' must a vector of length ",nMarkets+2)
-    }
-  }
-)
-
-
 #'@rdname BertrandRUM-Classes
 #'@export
 setClass(

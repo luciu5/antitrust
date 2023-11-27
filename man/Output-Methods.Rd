@@ -20,7 +20,6 @@
 \alias{calcShares,CESNests-method}
 \alias{calcShares,Linear-method}
 \alias{calcShares,Logit-method}
-\alias{calcShares,LogitDebt-method}
 \alias{calcShares,LogitNests-method}
 \alias{calcShares,Auction2ndLogit-method}
 \alias{calcShares,Auction2ndLogitNests-method}
@@ -75,8 +74,6 @@
 \S4method{calcShares}{VertBarg2ndLogit}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{Logit}(object, preMerger = TRUE, revenue = FALSE)
-
-\S4method{calcShares}{LogitDebt}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{AIDS}(object, preMerger = TRUE, revenue = TRUE)
 
