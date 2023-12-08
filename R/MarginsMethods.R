@@ -6,6 +6,7 @@
 #' calcMargins,ANY-method
 #' calcMargins,AIDS-method
 #' calcMargins,Bertrand-method
+#' calcMargins,LogitCournot-method
 #' calcMargins,VertBargBertLogit-method
 #' calcMargins,LogitCap-method
 #' calcMargins,Auction2ndLogit-method
@@ -75,6 +76,54 @@ setMethod(
     return(as.vector(margins))
   }
 
+)
+
+
+## compute margins
+#'@rdname Margins-Methods
+#'@export
+setMethod(
+  f= "calcMargins",
+  signature= "LogitCournot",
+  definition=function(object,preMerger=TRUE, level=FALSE){
+    
+    alpha <- object@slopes$alpha
+    idx   <-  object@normIndex
+    
+    if( preMerger) {
+      
+      prices <- object@pricePre
+      owner  <- object@ownerPre
+      
+    }
+    
+    else{
+      prices <- object@pricePost
+      owner  <- object@ownerPost
+      
+    }
+    
+    shares <- calcShares(object,preMerger,revenue=FALSE)
+    
+    if(is.na(idx)){
+      idxShare <- 1 - sum(shares)
+    }
+    else{
+      idxShare <- shares[idx]
+     
+    }
+    sharesFirm <- as.numeric(owner %*% shares) 
+    
+    
+    margins <- -1*(1 + sharesFirm/idxShare)/alpha
+    
+    if(!level) {margins <- margins/prices }
+    
+    names(margins) <- object@labels
+    
+    return(as.vector(margins))
+  }
+  
 )
 
 

@@ -683,6 +683,129 @@ setMethod(
 #'@export
 setMethod(
   f= "calcSlopes",
+  signature= "LogitCournot",
+  definition=function(object){
+    
+    ## Uncover Demand Coefficents
+    
+    
+    ownerPre     <-  object@ownerPre
+    shares       <-  object@shares
+    margins      <-  object@margins
+    
+    prices       <-  object@prices
+    idx          <-  object@normIndex
+    mktElast     <-  object@mktElast
+    shareInside  <-  object@shareInside
+    diversion    <-  object@diversion
+    
+    margins      <- margins*prices 
+    
+    if(is.na(idx)){
+      idxShare <- 1 - shareInside
+      idxPrice <- object@priceOutside
+    }
+    else{
+      idxShare <- shares[idx]
+      idxPrice <- prices[idx]
+    }
+    
+    ## Choose starting parameter values
+    notMissing <- which(!is.na(margins))[1]
+    
+    parmStart <- -1/(margins[notMissing])*(1 + shares[notMissing]/idxShare)
+    mvalStart <-  log(shares) - log(idxShare) - parmStart * (prices - idxPrice)
+    if(!is.na(idx)) mvalStart <-  mvalStart[-idx]
+    parmStart <- c(parmStart, mvalStart)
+    
+    ## Uncover price coefficient and mean valuation from margins and revenue shares
+    
+    
+    nprods <- length(shares)
+    
+    avgPrice <- sum(shares * prices, na.rm=TRUE) / sum(shares)
+    
+    
+    ## Minimize the distance between observed and predicted margins
+    minD <- function(theta){
+      
+      alpha <- theta[1]
+      
+      if(!is.na(idx)){
+        meanval <- rep(0,nprods)
+        meanval[-idx] <- theta[-1]
+      }
+      else{meanval <- theta[-1]}
+      
+      probs <- shares
+      
+      predshares <- exp(meanval + alpha*(prices-idxPrice))
+      predshares <- predshares/(is.na(idx) + sum(predshares) )
+      
+      preddiversion <-tcrossprod( 1/(1-predshares),predshares)
+      diag(preddiversion) <- -1
+      
+      if(!is.na(mktElast)){
+        shareInside <-   1 - mktElast/( alpha * avgPrice )
+        probs <- probs/sum(probs,na.rm=TRUE) * shareInside
+        
+      }
+      
+      predsharesFirm <- as.numeric(ownerPre %*% predshares)
+      
+      marginsCand <- -1*(1+predsharesFirm/idxShare)/alpha
+      
+      m1 <- (margins - marginsCand)/prices
+      m2 <- predshares - probs
+      m3 <- drop(diversion - preddiversion)
+      measure <- sum((c(m1, m2, m3)*100)^2,na.rm=TRUE)
+      
+      return(measure)
+    }
+    
+    
+    ##  Constrained optimizer to look for solutions where alpha<0,  
+    lowerB <- upperB <- rep(Inf,length(parmStart))
+    lowerB <- lowerB * -1
+    upperB[1] <- 0
+    
+    minTheta <- optim(parmStart,minD,method="L-BFGS-B",
+                      lower= lowerB,upper=upperB,
+                      control=object@control.slopes)
+    
+    
+    if(minTheta$convergence != 0){
+      warning("'calcSlopes' nonlinear solver may not have successfully converge. Reason: '",minTheta$message,"'")
+    }
+    
+    
+    minAlpha           <- minTheta$par[1]
+    names(minAlpha)    <- "alpha"
+    
+    if(is.na(idx)) meanval <-  minTheta$par[-1]
+    else{
+      meanval <- rep(0,nprods)
+      meanval[-idx] <- minTheta$par[-1]
+    }
+    
+    names(meanval)   <- object@labels
+    
+    
+    
+    object@slopes    <- list(alpha=minAlpha,meanval=meanval)
+    object@priceOutside <- idxPrice
+    object@mktSize <- object@insideSize / sum(shares)
+    
+    
+    return(object)
+  }
+)
+
+
+#'@rdname Params-Methods
+#'@export
+setMethod(
+  f= "calcSlopes",
   signature= "LogLin",
   definition=function(object){
 

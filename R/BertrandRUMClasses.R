@@ -3,7 +3,7 @@
 #'@aliases Logit-class
 
 #'@description Each class contains all the information needed to calibrate a specific type of demand system and
-#'perform a merger simulation analysis under the assumption that firms are playing a differentiated products Bertrand pricing game.
+#'perform a merger simulation analysis under the assumption that firms are playing a differentiated products Bertrand pricing game. Also included is \dQuote{LogitCournot}, for modelling firms playing a differentiated products Cournot quantity game.
 #'
 #'@description The \dQuote{Logit} class has the information for a Logit demand system.
 #'@description The \dQuote{LogitCap} class has the information for a Logit demand system and assumes that
@@ -216,6 +216,13 @@ setClass(
     return(TRUE)
 
   })
+
+#'@rdname BertrandRUM-Classes
+#'@export
+setClass(
+  Class   = "LogitCournot",
+  contains="Logit"
+)
 
 #'@rdname BertrandRUM-Classes
 #'@export

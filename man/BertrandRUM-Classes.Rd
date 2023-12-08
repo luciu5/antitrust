@@ -4,6 +4,7 @@
 \name{BertrandRUM-Classes}
 \alias{BertrandRUM-Classes}
 \alias{Logit-class}
+\alias{LogitCournot-class}
 \alias{LogitCap-class}
 \alias{LogitCapALM-class}
 \alias{LogitNests-class}

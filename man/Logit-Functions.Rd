@@ -4,6 +4,7 @@
 \alias{Logit-Functions}
 \alias{logit}
 \alias{logit.nests}
+\alias{logit.cournot}
 \alias{logit.nests.alm}
 \alias{logit.cap}
 \alias{logit.alm}
@@ -11,6 +12,26 @@
 \title{(Nested) Logit Demand Calibration and Merger Simulation)}
 \usage{
 logit(
+  prices,
+  shares,
+  margins,
+  diversions,
+  ownerPre,
+  ownerPost,
+  normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  insideSize = NA_real_,
+  priceOutside = 0,
+  priceStart = prices,
+  isMax = FALSE,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
+
+logit.cournot(
   prices,
   shares,
   margins,
