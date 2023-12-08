@@ -16,7 +16,7 @@
 \title{\dQuote{Bertrand RUM} Classes}
 \description{
 Each class contains all the information needed to calibrate a specific type of demand system and
-perform a merger simulation analysis under the assumption that firms are playing a differentiated products Bertrand pricing game.
+perform a merger simulation analysis under the assumption that firms are playing a differentiated products Bertrand pricing game. Also included is \dQuote{LogitCournot}, for modelling firms playing a differentiated products Cournot quantity game.
 
 The \dQuote{Logit} class has the information for a Logit demand system.
 

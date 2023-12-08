@@ -253,10 +253,11 @@ child class of \code{\linkS4class{Logit}.}
 Calibrates consumer demand using (Nested) Logit
 and then simulates the price effect of a merger between two firms
 under the assumption that all firms in the market are playing a
-differentiated products Bertrand pricing game.
+either a differentiated products Bertrand pricing game or a differentiated
+products Cournot quantity game (logit.cournot).
 
 Let k denote the number of products produced by all
-firms playing the Bertrand pricing game below.
+firms playing the game below.
 }
 \details{
 Using product prices, quantity shares and all of the

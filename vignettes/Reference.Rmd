@@ -835,7 +835,6 @@ values for $\alpha$ and $s_0$ that best satisfy all the FOCs for which there
  $n$ complete FOCs and $n$ choice probabilities).
 
 
-
 ### CES Demand
 
 The Bertrand model with Constant Elasticity of Substitution (CES) demand may be implemented using the
@@ -1396,6 +1395,12 @@ Currently, `cournot` contains two different ways to specify plant costs. First, 
 Alternatively, users can specify both plant-level marginal and variable costs. Marginal costs may be specified by setting   the 'mcfunPre' argument equal to a length $n$ list of functions that each take as an input the vector of product quantities produced at a plant and then return the marginal cost associated with producing that level of output at that plant. Likewise, the 'vcfunPre' argument can be similarly used to specify plant-level variable costs. Note that when marginal costs and variable costs are specified in this manner, `cournot` makes no attempt to calibrate any parameters on the cost side. 
 
 Currently, `cournot` allows users to specify that product demand is either linear ($p_j=b_j + a_j\sum_{k\in n}q_j^k$) or log-linear ($\ln(p_j)=b_j + a_j\ln(\sum_{k\in n}q_j^k)$). Users can specify product demand by setting `cournot`'s 'demand' argument equal to a $j$-length character vector equal to either "linear" for linear demand or "log" for log-linear demand. 
+
+
+## Cournot with Logit Demand 
+A Cournot quantity setting game with constant marginal costs and Logit demand  may be implemented using the
+`logit.cournot` function. Except for a different equilibrium margin for product $k$, $m_k=-\alpha^{-1}(1+\frac{ \sum_{j\in J_k}s_j}{s_0})$, `logit.cournot` works the same as the other functions in the `logit.*` family. See Chapter \@ref(nblogit) for further details.
+
 
 ## Simulating Merger Effects
 ### Summarizing Results
