@@ -21,6 +21,9 @@ Let k denote the number of products produced by all firms below.
 
 \item{\code{pricePost}}{A length k vector of simulated post-merger prices.}
 
+\item{\code{output}}{A length 1 logical vector equal to TRUE if merger simulates the effect in an output market,
+and FALSE if the merger simulates the effect in an input market. Default is TRUE.}
+
 \item{\code{ownerPre}}{A k x k matrix of pre-merger ownership shares.}
 
 \item{\code{ownerPost}}{A k x k matrix of post-merger ownership shares.}

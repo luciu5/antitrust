@@ -81,6 +81,7 @@ setMethod(
   signature= "Cournot",
   definition=function(object,preMerger=TRUE,market=FALSE,...){
 
+    #output <- object@output
     slopes <- object@slopes
     intercepts <- object@intercepts
     quantityStart <- object@quantityStart

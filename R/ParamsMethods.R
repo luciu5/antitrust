@@ -75,11 +75,13 @@ setMethod(
     quantities[is.na(quantities)] <- 0
     margins <- object@margins
     mktElast <- object@mktElast
-
+    output <- object@output
+    outSign <- ifelse(output,-1,1)
 
     cap <- object@capacitiesPre
 
-    mc <- t(t(1 - margins) * prices)
+    if(output) {mc <- t(t(1 - margins) * prices)}
+    else{mc <- t(t(1 + margins) * prices) }
 
     products <- object@productsPre
     demand <- object@demand
@@ -141,24 +143,29 @@ setMethod(
     margGuess[is.na(margGuess)] <- -t(t(sharesOwner)/mktElast)[is.na(margGuess)]
 
     bStart      =   ifelse(isLinearD,
-                           colMeans(-(prices*margGuess)/(sharesOwner*quantTot),na.rm=TRUE),
-                           colMeans(-margGuess/sharesOwner,na.rm=TRUE))
+                           colMeans(outSign*(prices*margGuess)/(sharesOwner*quantTot),na.rm=TRUE),
+                           colMeans(outSign*margGuess/sharesOwner,na.rm=TRUE))
     intStart    =   ifelse(isLinearD,
                            prices - bStart*quantTot,
                            log(prices/(quantTot^bStart)))
-    intStart    =   abs(intStart)
+    intStart    =   -1*outSign*abs(intStart)
 
     parmStart   =   c( intStart,bStart)
 
-    lowerB <- c(rep(0, nprods), rep(-Inf, nprods))
-    upperB <- c(rep(Inf,  nprods), rep(0, nprods))
-
+    if(output){
+     lowerB <- c(rep(0, nprods), rep(-Inf, nprods))
+      upperB <- c(rep(Inf,  nprods), rep(0, nprods))
+    }
+    else{ lowerB <- c(rep(-Inf,  nprods), rep(0, nprods))
+          upperB <- c(rep(0, nprods), rep(Inf, nprods))
+    }
+    
     if(noCosts){
 
-      margStart     <- matrix(rowMeans(-(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE), ncol=nprods, nrow=nplants)
-      margStart[,!isLinearD]     <-  rowMeans(-sharesOwner*bStart,na.rm=TRUE)
+      margStart     <- matrix(rowMeans(outSign*(sharesOwner*quantTot)/(prices/bStart),na.rm=TRUE), ncol=nprods, nrow=nplants)
+      margStart[,!isLinearD]     <-  rowMeans(outSign*sharesOwner*bStart,na.rm=TRUE)
       
-      mcStart  <- abs(prices*(margStart - 1))
+      mcStart  <- abs(prices*(margStart + 1))
       capStart <- ifelse(isLinearC, quantPlants/mcStart, mcStart)
       parmStart <- c(capStart,parmStart)
 
@@ -535,6 +542,7 @@ setMethod(
     mktElast     <-  object@mktElast
     shareInside  <-  object@shareInside
     diversion    <-  object@diversion
+    output       <-  object@output 
    
     
     if(is.na(idx)){
@@ -632,7 +640,13 @@ setMethod(
     ##  Constrained optimizer to look for solutions where alpha<0,  
     lowerB <- upperB <- rep(Inf,length(parmStart))
     lowerB <- lowerB * -1
-    upperB[1] <- 0
+    
+    if(output){
+      upperB[1] <- 0
+    }
+    else{
+      lowerB[1] <- 0
+    }
     
     minTheta <- optim(parmStart,minD,method="L-BFGS-B",
                       lower= lowerB,upper=upperB,
@@ -698,7 +712,7 @@ setMethod(
     mktElast     <-  object@mktElast
     shareInside  <-  object@shareInside
     diversion    <-  object@diversion
-    
+    output       <-  object@output 
     margins      <- margins*prices 
     
     if(is.na(idx)){
@@ -753,7 +767,11 @@ setMethod(
       
       predsharesFirm <- as.numeric(ownerPre %*% predshares)
       
-      marginsCand <- -1*(1+predsharesFirm/idxShare)/alpha
+      if(is.na(idx)){idxPredShare <- 1-sum(predshares)}
+      else{idxPredShare <- predshares[idx]}
+      marginsCand <- (1+predsharesFirm/idxPredShare)/alpha
+      
+      marginsCand <- ifelse(output,-1,1)*(marginsCand)
       
       m1 <- (margins - marginsCand)/prices
       m2 <- predshares - probs
@@ -767,7 +785,14 @@ setMethod(
     ##  Constrained optimizer to look for solutions where alpha<0,  
     lowerB <- upperB <- rep(Inf,length(parmStart))
     lowerB <- lowerB * -1
-    upperB[1] <- 0
+    
+    if(output){
+      upperB[1] <- 0
+    }
+    else{
+      lowerB[1] <- 0
+    }
+    
     
     minTheta <- optim(parmStart,minD,method="L-BFGS-B",
                       lower= lowerB,upper=upperB,
@@ -1107,7 +1132,10 @@ setMethod(
     prices       <-  object@prices
     capacities  <-  object@capacitiesPre/object@insideSize
     idx          <-  object@normIndex
-
+    output      <- object@output
+    
+  
+    
     if(is.na(idx)){
       idxShare <- 1 - object@shareInside
       idxPrice <- object@priceOutside
@@ -1146,7 +1174,11 @@ setMethod(
       return(measure)
     }
 
-    minAlpha <- optimize(minD,c(-1e6,0),
+    
+    if(output){bounds <- c(-1e6,0)}
+    else{bounds <- c(0,1e6)}
+    
+    minAlpha <- optimize(minD,bounds,
                          tol=object@control.slopes$reltol)$minimum
 
 
@@ -1189,7 +1221,8 @@ setMethod(
     nests        <- object@nests
     nestCnt      <- tapply(prices,nests,length)
     constraint   <- object@constraint
-
+    output       <- object@output
+    
     isSingletonNest <- nestCnt==1
 
     
@@ -1311,7 +1344,13 @@ setMethod(
     ##  sigma > 1 or sigma < 0 imply complements
     lowerB <- upperB <- rep(-Inf,length(parmsStart))
     upperB <- upperB*-1
-    upperB[1] <- 0
+    
+    if(!output){
+      lowerB[1] <- 0
+    }
+    else{
+      upperB[1] <- 0
+    }
     
     upperB[-(1:((nprods - !is.na(idx))+1))] <- 1
     lowerB[-(1:((nprods - !is.na(idx))+1))] <- 1e-3
@@ -1374,6 +1413,7 @@ setMethod(
     
     diversion <- object@diversion
     margins      <-  object@margins
+    output    <-  object@output
     
     prices <- object@prices
     
@@ -1474,8 +1514,17 @@ setMethod(
     
     ##  Constrained optimizer to look for solutions where alpha<0,  1 > sigma > 0.
     ##  sigma > 1 or sigma < 0 imply complements
-    lowerB <- c(-Inf,0)
-    upperB <- c(0,1)
+    
+    
+    if(output){
+      lowerB <- c(-Inf,0)
+      upperB <- c(0,1)
+    }
+    
+    else{
+      lowerB <- c(0,0)
+      upperB <- c(Inf,1)
+    }
     
     minTheta <- optim(parmsStart,minD,method="L-BFGS-B",
                       lower= lowerB,upper=upperB,
@@ -1658,7 +1707,8 @@ setMethod(
     nests        <- object@nests
     nestCnt      <- tapply(prices,nests,length)
     constraint   <- object@constraint
-
+    output       <- object@output
+    
     isSingletonNest <- nestCnt==1
 
 
@@ -1713,9 +1763,12 @@ setMethod(
     ## Constrain optimizer to look  alpha <0, 0 < sOut < 1, sigma
 
     lowerB <- upperB <- rep(0,length(parmsStart))
-    lowerB[1] <- -Inf
+    
     upperB[-1] <- 1
 
+    if(output){lowerB[1] <- -Inf}
+    else{upperB[1] <- Inf}
+    
     minTheta <- optim(parmsStart,minD,method="L-BFGS-B",
                       lower= lowerB,upper=upperB,
                       control=object@control.slopes)
@@ -1771,7 +1824,7 @@ setMethod(
     prices       <-  object@prices
     idx          <-  object@normIndex
     mktElast     <-  object@mktElast
-    
+    output       <-  object@output
 
 
     avgPrice <- weighted.mean(prices,shares)
@@ -1810,7 +1863,9 @@ setMethod(
       return(measure)
     }
 
-    minAlpha <- optimize(minD,c(-1e6,0),
+    if(output){bounds <- c(-1e6,0)}
+    else{bounds <- c(0,1e6)}
+    minAlpha <- optimize(minD,bounds,
                          tol=object@control.slopes$reltol)$minimum
 
     
@@ -1846,7 +1901,7 @@ setMethod(
     margins      <-  object@margins
     mktElast     <-  object@mktElast
     prices       <-  object@prices
-   
+   output        <- object@output
 
     avgPrice     <- sum(shares * prices,na.rm=TRUE)/sum(shares[!is.na(prices)])
 
@@ -1873,9 +1928,14 @@ setMethod(
     }
 
     ## Constrain optimizer to look  alpha <0,  0 < sOut < 1
+
     lowerB <- c(-Inf,1e-9)
     upperB <- c(-1e-10,.9999999999)
 
+    if(!output){
+      lowerB[1] <- 1e-10
+      upperB[1] <- Inf
+    }
     if(!is.na(mktElast)){upperB[1] <- mktElast/avgPrice}
 
     # minTheta <- optim(object@parmsStart,minD,
@@ -2427,7 +2487,7 @@ setMethod(
     shareInside  <-  object@shareInside
     diversion    <-  object@diversion
     barg         <-  object@bargpowerPre
-    
+    output       <-  object@output
     
     
     if(is.na(idx)){
@@ -2525,8 +2585,15 @@ setMethod(
     
     ##  Constrained optimizer to look for solutions where alpha<0,  
     lowerB <- upperB <- rep(Inf,length(parmStart))
+   
     lowerB <- lowerB * -1
-    upperB[1] <- 0
+    
+    if(output){
+      upperB[1] <- 0
+    }
+    else{
+      lowerB[1] <- 0
+    }
     
     if(any(is.na(barg))){
       lowerB[nprods] <- 0

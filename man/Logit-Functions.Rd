@@ -18,6 +18,7 @@ logit(
   diversions,
   ownerPre,
   ownerPost,
+  output = TRUE,
   normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
@@ -38,6 +39,7 @@ logit.cournot(
   diversions,
   ownerPre,
   ownerPost,
+  output = TRUE,
   normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
@@ -58,6 +60,7 @@ logit.nests(
   diversions,
   ownerPre,
   ownerPost,
+  output = TRUE,
   nests = rep(1, length(shares)),
   normIndex = ifelse(sum(shares) < 1, NA, 1),
   mcDelta = rep(0, length(prices)),
@@ -80,6 +83,7 @@ logit.nests.alm(
   ownerPre,
   ownerPost,
   nests = rep(1, length(shares)),
+  output = TRUE,
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
   priceOutside = 0,
@@ -102,6 +106,7 @@ logit.cap(
   capacitiesPre = rep(Inf, length(prices)),
   capacitiesPost = capacitiesPre,
   insideSize,
+  output = TRUE,
   normIndex = ifelse(sum(shares) < 1, NA, 1),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
@@ -122,6 +127,7 @@ logit.alm(
   ownerPost,
   mktElast = NA_real_,
   insideSize = NA_real_,
+  output = TRUE,
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
   priceOutside = 0,
@@ -144,6 +150,7 @@ logit.cap.alm(
   capacitiesPost = capacitiesPre,
   mktElast = NA_real_,
   insideSize,
+  output = TRUE,
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
   priceOutside = 0,
@@ -175,6 +182,9 @@ a k x k matrix of pre-merger ownership shares.}
 \item{ownerPost}{EITHER a vector of length k whose values
 indicate which firm produced a product after the merger OR
 a k x k matrix of post-merger ownership shares.}
+
+\item{output}{a length 1 logical vector equal to TRUE if merger simulation performed
+on output market, FALSE if simulation performed on input market. Default TRUE.}
 
 \item{normIndex}{An integer equalling the index (position) of the
 inside product whose mean valuation will be normalized to 1. Default

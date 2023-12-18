@@ -77,12 +77,15 @@ setMethod(
   signature= "Bertrand",
   definition= function(object,preMerger=TRUE){
 
+    output <- object@output
+    
     object@pricePre <- object@prices
 
 
-    marginPre <- calcMargins(object,preMerger = TRUE)
+    marginPre <- calcMargins(object,preMerger = TRUE,level=FALSE)
 
-    mc <- (1 - marginPre) * object@prices
+    if(output) {mc <- (1 - marginPre) * object@prices}
+    else{mc <- (1 + marginPre) * object@prices}
 
     if(!preMerger){
       mc <- mc*(1+object@mcDelta)
@@ -298,10 +301,12 @@ setMethod(
   definition= function(object,preMerger=TRUE,exAnte=FALSE){
 
     prices <- object@prices
-
+    output <- object@output  
+    
     marginPre <- calcMargins(object, preMerger = TRUE, level = TRUE)
 
-    mc <-  prices - marginPre
+    if(output) {mc <-  prices - marginPre}
+    else{mc <- marginPre + prices}
 
     if(!preMerger){
       mc <- mc + object@mcDelta

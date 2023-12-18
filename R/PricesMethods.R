@@ -113,7 +113,8 @@ setMethod(
 
 
     priceStart <- object@priceStart
-
+    output    <-  object@output
+    
     if(preMerger){
       owner <- object@ownerPre
       mc    <- object@mcPre
@@ -147,7 +148,8 @@ setMethod(
       else{          object@pricePost[subset] <- priceCand}
 
 
-      margins   <- 1 - mc/priceCand
+      if(output){margins   <- 1 - mc/priceCand}
+      else{margins   <- mc/priceCand - 1}
       revenues  <- calcShares(object,preMerger,revenue=TRUE)[subset]
       elasticities     <- t(elast(object,preMerger)[subset,subset])
 
@@ -192,6 +194,7 @@ setMethod(
     idx <- object@normIndex
     priceStart <- object@priceStart
     alpha <- object@slopes$alpha
+    output <- object@output
     
     if(preMerger){
       owner <- object@ownerPre
@@ -227,7 +230,8 @@ setMethod(
       else{          object@pricePost[subset] <- priceCand}
       
       
-      margins   <- priceCand - mc
+      if(output){margins   <- priceCand - mc}
+      else{margins <- mc - priceCand}
       shares <-  calcShares(object,preMerger,revenue=FALSE)[subset]
       sharesFirm <- as.numeric(owner %*%shares)
       if(is.na(idx)){ idxShare <- 1-sum(shares)}
@@ -273,7 +277,8 @@ setMethod(
   definition=function(object,preMerger=TRUE,exAnte=FALSE){
 
     nprods <- length(object@shares)
-
+    output <- object@output
+    
     if(preMerger){
       owner <- object@ownerPre
       mc <- object@mcPre
@@ -284,8 +289,11 @@ setMethod(
 
     margins <- calcMargins(object,preMerger,exAnte=FALSE)
 
-    prices <- margins + mc
+    
 
+    if(output){prices <- margins + mc}
+    else{prices <- mc - margins }
+    
     if(exAnte){
 
 
@@ -307,7 +315,7 @@ setMethod(
   definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
 
 
-
+    output <- object@output
 
     if(preMerger){
       owner <- object@ownerPre
@@ -344,7 +352,10 @@ setMethod(
       else{          object@pricePost[subset] <- priceCand}
 
 
-      margins          <- 1 - mc/priceCand
+      
+      if(output){margins   <- 1 - mc/priceCand}
+      else{margins   <- mc/priceCand - 1}
+      
       revenues         <- calcShares(object, preMerger = preMerger, revenue = TRUE)
       quantities       <- calcQuantities(object, preMerger = preMerger)
       revenues         <- revenues[subset]

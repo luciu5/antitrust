@@ -45,6 +45,7 @@ setMethod(
   signature= "Bertrand",
   definition=function(object,preMerger=TRUE, level=FALSE){
 
+    output <- ifelse(object@output,-1,1)
 
 
     if( preMerger) {
@@ -64,8 +65,8 @@ setMethod(
     
     elast <-  elast(object,preMerger)
     
-    margins <-  try(-1 * as.vector(solve(t(elast)*owner) %*% (revenue * diag(owner))) / revenue,silent=TRUE)
-    if(any(class(margins) == "try-error")){margins <- -1 * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue}
+    margins <-  try(output * as.vector(solve(t(elast)*owner) %*% (revenue * diag(owner))) / revenue,silent=TRUE)
+    if(any(class(margins) == "try-error")){margins <- output * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue}
     
     
     
@@ -87,6 +88,8 @@ setMethod(
   signature= "LogitCournot",
   definition=function(object,preMerger=TRUE, level=FALSE){
     
+    
+    output <- ifelse(object@output,-1,1)
     alpha <- object@slopes$alpha
     idx   <-  object@normIndex
     
@@ -115,7 +118,7 @@ setMethod(
     sharesFirm <- as.numeric(owner %*% shares) 
     
     
-    margins <- -1*(1 + sharesFirm/idxShare)/alpha
+    margins <- output*(1 + sharesFirm/idxShare)/alpha
     
     if(!level) {margins <- margins/prices }
     
@@ -135,6 +138,8 @@ setMethod(
   signature= "Bargaining2ndLogit",
   definition=function(object,preMerger=TRUE,exAnte=FALSE,level=TRUE){
   
+    
+    
     if( preMerger) {
       
       barg <- object@bargpowerPre
@@ -160,6 +165,7 @@ setMethod(
   signature= "BargainingLogit",
   definition=function(object,preMerger=TRUE, level=FALSE){
     
+    output <- ifelse(object@output,1,-1)
     
     alpha <- object@slopes$alpha
     
@@ -198,6 +204,7 @@ setMethod(
     margins <-  as.vector(margins %*% ((log(1-shares)*diag(owner))/(alpha*(barg*div - 
                                                                log(1-shares)))))
     
+    margins <- output*margins
     
     if(!level) {margins <- margins / prices }
     
@@ -376,6 +383,8 @@ setMethod(
   definition=function(object,preMerger=TRUE, level=FALSE){
 
 
+     output <- object@output
+     
     if(preMerger){
       prices <- object@pricePre
     }
@@ -386,7 +395,8 @@ setMethod(
 
 
 
-    margin <- prices - mc
+    if(output){margin <- prices - mc}
+    else{margin <- mc - prices}
     if(!level){margin <- margin/prices}
 
     dimnames(margin) <- object@labels
@@ -483,6 +493,8 @@ setMethod(
   definition=function(object,preMerger=TRUE,exAnte=FALSE,level=TRUE){
 
 
+    output <- ifelse(object@output,1,-1)
+    
     nprods <- length(object@shares)
    
    
@@ -504,7 +516,7 @@ setMethod(
     shares <- calcShares(object,preMerger=preMerger,revenue=FALSE)
     shares <- shares[subset]
     firmShares <- drop(owner %*% shares)
-    margins[subset] <-  log(1-firmShares)/(alpha * firmShares)
+    margins[subset] <-  output*log(1-firmShares)/(alpha * firmShares)
 
     if(exAnte){ margins[subset] <-  margins[subset] * shares}
     if(!level){margins <- margins/prices}
@@ -523,7 +535,7 @@ setMethod(
   signature= "Auction2ndLogitNests",
   definition=function(object,preMerger=TRUE,exAnte=FALSE,level=FALSE){
     
-    
+    output <- ifelse(object@output,1,-1)
     nprods <- length(object@shares)
     
     
@@ -564,7 +576,7 @@ setMethod(
     ownerValue <-   1 - (1 - ((owner*nestMat)%*%sharesIn))^sigma[nests]
     ownerValue <-  drop(1 - owner %*%(ownerValue * sharesAcross/dupCnt))
     
-    margins[subset] <-  log(ownerValue)/(alpha*firmShares) 
+    margins[subset] <-  output*log(ownerValue)/(alpha*firmShares) 
     
     
     if(exAnte){ margins[subset] <-  margins[subset] * shares}

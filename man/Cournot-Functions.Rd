@@ -24,6 +24,7 @@ cournot(
   productsPost = productsPre,
   ownerPre,
   ownerPost,
+  output = TRUE,
   mktElast = rep(NA_real_, length(prices)),
   mcDelta = rep(0, nrow(quantities)),
   quantityStart = as.vector(quantities),
@@ -53,6 +54,7 @@ stackelberg(
   productsPost = productsPre,
   ownerPre,
   ownerPost,
+  output = TRUE,
   mcDelta = rep(0, nrow(quantities)),
   quantityStart = as.vector(quantities),
   control.slopes,
@@ -110,6 +112,9 @@ an n x n matrix of pre-merger ownership shares.}
 \item{ownerPost}{EITHER a vector of length n whose values
 indicate which plants will be commonly owned after the merger OR
 an n x n matrix of post-merger ownership shares.}
+
+\item{output}{A length 1 logical vector equal to TRUE if merger simulates an output, FALSE 
+if merger simulates an input. Default is TRUE.}
 
 \item{mktElast}{A length k vector of product elasticities. Default is a length k vector of NAs}
 

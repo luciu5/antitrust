@@ -17,6 +17,8 @@
 #'Objects can be created by calls of the form \code{new("Antitrust", ...)}.
 #'@slot pricePre A length k vector of simulated pre-merger prices.
 #'@slot pricePost A length k vector of simulated post-merger prices.
+#'@slot output A length 1 logical vector equal to TRUE if merger simulates the effect in an output market,
+#'and FALSE if the merger simulates the effect in an input market. Default is TRUE.
 #'@slot ownerPre  A k x k matrix of pre-merger ownership shares.
 #'@slot ownerPost  A k x k matrix of post-merger ownership shares.
 #'@slot labels A length k vector of labels.
@@ -47,6 +49,7 @@ setClass(
     pricePost    = "numeric",
     mcPre        = "numeric",
     mcPost       = "numeric",
+    output       ="logical",
     labels       = "characterOrList",
     cls        = "character",
     control.slopes = "list",
@@ -58,6 +61,7 @@ setClass(
     mcPre     = numeric(),
     mcPost    = numeric(),
     cls  =    character(),
+    output= TRUE,
     ##copied from 'optim' definition:
     control.slopes = list(
       reltol = sqrt(.Machine$double.eps)

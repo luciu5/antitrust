@@ -57,6 +57,8 @@
 #' indicate which plants will be commonly owned after the merger OR
 #' an n x n matrix of post-merger ownership shares.
 #' @param mktElast A length k vector of product elasticities. Default is a length k vector of NAs
+#' @param output A length 1 logical vector equal to TRUE if merger simulates an output, FALSE 
+#' if merger simulates an input. Default is TRUE.
 #' @param mcDelta A length n vector where each element equals the
 #' proportional change in a firm's marginal costs due to
 #' the merger. Default is 0, which assumes that the merger does not
@@ -268,6 +270,7 @@ cournot <- function(prices,quantities,
                     productsPre=!is.na(quantities),
                     productsPost=productsPre,
                     ownerPre,ownerPost,
+                    output=TRUE,
                     mktElast = rep(NA_real_, length(prices)),
                     mcDelta =rep(0,nrow(quantities)),
                     quantityStart=as.vector(quantities),
@@ -297,7 +300,8 @@ cournot <- function(prices,quantities,
                 shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand, cost=cost,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
                 capacitiesPre=capacitiesPre,capacitiesPost=capacitiesPost,
-                ownerPre=ownerPre, mktElast = mktElast,productsPre=productsPre,productsPost=productsPost,
+                ownerPre=ownerPre, output=output,
+                mktElast = mktElast,productsPre=productsPre,productsPost=productsPost,
                 ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
 
 
@@ -346,6 +350,7 @@ stackelberg <- function(prices,quantities,margins,
                         productsPre=!is.na(quantities),
                         productsPost=productsPre,
                         ownerPre,ownerPost,
+                        output=TRUE,
                         mcDelta =rep(0,nrow(quantities)),
                         quantityStart=as.vector(quantities),
                         control.slopes,
@@ -374,7 +379,7 @@ stackelberg <- function(prices,quantities,margins,
                 shares=shares,mcDelta=mcDelta, subset= rep(TRUE,length(shares)), demand = demand, cost = cost,
                 mcfunPre=mcfunPre, mcfunPost=mcfunPost,vcfunPre=vcfunPre, vcfunPost=vcfunPost,
                 dmcfunPre=dmcfunPre, dmcfunPost=dmcfunPost, isLeaderPre = isLeaderPre, isLeaderPost = isLeaderPost,
-                ownerPre=ownerPre,productsPre=productsPre,productsPost=productsPost,
+                ownerPre=ownerPre,output=output,productsPre=productsPre,productsPost=productsPost,
                 capacitiesPre=capacitiesPre,capacitiesPost=capacitiesPost,
                 ownerPost=ownerPost, quantityStart=quantityStart,labels=labels)
 
