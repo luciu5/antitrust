@@ -13,6 +13,7 @@ auction2nd.logit(
   margins,
   ownerPre,
   ownerPost,
+  output = TRUE,
   normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
@@ -73,6 +74,9 @@ a k x k matrix of pre-merger ownership shares.}
 \item{ownerPost}{EITHER a vector of length k whose values
 indicate which firm produced a product after the merger OR
 a k x k matrix of post-merger ownership shares.}
+
+\item{output}{a length 1 logical vector equal to TRUE if merger simulation performed
+on output market, FALSE if simulation performed on input market. Default TRUE.}
 
 \item{normIndex}{An integer equalling the index (position) of the
 inside product whose mean valuation will be normalized to 1. Default

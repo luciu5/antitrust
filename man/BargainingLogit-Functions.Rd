@@ -14,6 +14,7 @@ bargaining.logit(
   ownerPost,
   bargpowerPre = rep(0.5, length(prices)),
   bargpowerPost = bargpowerPre,
+  output = TRUE,
   normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
@@ -66,6 +67,9 @@ though must be calibrated from additional margin and share data. Default is 0.5.
 \item{bargpowerPost}{A length k vector of post-merger bargaining power parameters. Values
 must be between 0 (sellers have the power) and 1 (buyers the power). NA values are allowed,
 though must be calibrated from additional margin and share data. Default is \sQuote{bargpowerPre}.}
+
+\item{output}{a length 1 logical vector equal to TRUE if merger simulation performed
+on output market, FALSE if simulation performed on input market. Default TRUE.}
 
 \item{normIndex}{An integer equalling the index (position) of the
 inside product whose mean valuation will be normalized to 1. Default

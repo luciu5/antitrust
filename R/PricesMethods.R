@@ -114,6 +114,8 @@ setMethod(
 
     priceStart <- object@priceStart
     output    <-  object@output
+    outSign <- ifelse(output,-1,1)
+    alpha <- object@slopes$alpha
     
     if(preMerger){
       owner <- object@ownerPre
@@ -148,12 +150,11 @@ setMethod(
       else{          object@pricePost[subset] <- priceCand}
 
 
-      if(output){margins   <- 1 - mc/priceCand}
-      else{margins   <- mc/priceCand - 1}
-      revenues  <- calcShares(object,preMerger,revenue=TRUE)[subset]
-      elasticities     <- t(elast(object,preMerger)[subset,subset])
-
-      thisFOC <- revenues * diag(owner) + as.vector((elasticities * owner) %*% (margins * revenues))
+      if(output){margins   <- priceCand - mc}
+      else{margins   <- mc - priceCand}
+      predMargin <- calcMargins(object,preMerger,level=TRUE)[subset]
+      
+      thisFOC <- margins - predMargin
 
       return(thisFOC)
     }

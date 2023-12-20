@@ -165,7 +165,7 @@ setMethod(
   signature= "BargainingLogit",
   definition=function(object,preMerger=TRUE, level=FALSE){
     
-    output <- ifelse(object@output,1,-1)
+    output <- ifelse(object@output,-1,1)
     
     alpha <- object@slopes$alpha
     
@@ -201,10 +201,10 @@ setMethod(
     diag(margins) <- diag(owner) +  diag(margins)
     margins <- solve(t(margins))
     
-    margins <-  as.vector(margins %*% ((log(1-shares)*diag(owner))/(alpha*(barg*div - 
+    margins <-  as.vector(margins %*% ((log(1-shares)*diag(owner))/(-1*output*alpha*(barg*div - 
                                                                log(1-shares)))))
     
-    margins <- output*margins
+    margins <- margins
     
     if(!level) {margins <- margins / prices }
     

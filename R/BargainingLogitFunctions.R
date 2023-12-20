@@ -27,6 +27,8 @@
 #' @param ownerPost EITHER a vector of length k whose values
 #' indicate which firm produced a product after the merger OR
 #' a k x k matrix of post-merger ownership shares.
+#' @param output a length 1 logical vector equal to TRUE if merger simulation performed
+#' on output market, FALSE if simulation performed on input market. Default TRUE.
 #' @param bargpowerPre A length k vector of pre-merger bargaining power parameters. Values
 #' must be between 0 (sellers have the power) and 1 (buyers the power). NA values are allowed,
 #' though must be calibrated from additional margin and share data. Default is 0.5.
@@ -112,6 +114,7 @@ bargaining.logit <- function(prices,shares,margins,
                              ownerPre,ownerPost,
                              bargpowerPre=rep(0.5,length(prices)),
                              bargpowerPost=bargpowerPre,
+                             output=TRUE,
                              normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
                              mcDelta=rep(0,length(prices)),
                              subset=rep(TRUE,length(prices)),
@@ -133,6 +136,7 @@ bargaining.logit <- function(prices,shares,margins,
                 ownerPost=ownerPost,
                 bargpowerPre=bargpowerPre,
                 bargpowerPost=bargpowerPost,
+                output=output,
                 insideSize = insideSize,
                 mcDelta=mcDelta,
                 subset=subset,
@@ -213,6 +217,7 @@ bargaining2nd.logit <- function(prices,shares,margins,
   result@ownerPre  <- ownerToMatrix(result,TRUE)
   result@ownerPost <- ownerToMatrix(result,FALSE)
   
+
   ## Calculate Demand Slope Coefficients
   result <- calcSlopes(result)
   

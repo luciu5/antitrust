@@ -348,7 +348,7 @@ logit.cournot <- function(prices,shares,margins, diversions,
   
   ## Calculate Demand Slope Coefficients
   result <- calcSlopes(result)
-  
+
   ## Calculate marginal cost
   result@mcPre <-  calcMC(result,TRUE)
   result@mcPost <- calcMC(result,FALSE)

@@ -29,6 +29,8 @@
 #' @param ownerPost EITHER a vector of length k whose values
 #' indicate which firm produced a product after the merger OR
 #' a k x k matrix of post-merger ownership shares.
+#' @param output a length 1 logical vector equal to TRUE if merger simulation performed
+#' on output market, FALSE if simulation performed on input market. Default TRUE.
 #' @param mktElast a negative value indicating market elasticity. Default is NA.
 #' @param insideSize An integer equal to total pre-merger units sold.
 #' If shares sum to one, this also equals the size of the market.
@@ -141,6 +143,7 @@ NULL
 #'@export
 auction2nd.logit <- function(prices,shares,margins,
                              ownerPre,ownerPost,
+                             output=TRUE,
                              normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
                              mcDelta=rep(0,length(prices)),
                              subset=rep(TRUE,length(prices)),
@@ -157,6 +160,7 @@ auction2nd.logit <- function(prices,shares,margins,
                 normIndex=normIndex,
                 ownerPre=ownerPre,
                 ownerPost=ownerPost,
+                output=output,
                 insideSize = insideSize,
                 mcDelta=mcDelta,
                 subset=subset,
