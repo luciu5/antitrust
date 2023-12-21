@@ -106,7 +106,7 @@ setMethod(
       
     }
     
-    shares <- calcShares(object,preMerger,revenue=FALSE)
+    shares <- calcShares(object,preMerger=preMerger,revenue=FALSE)
     
     if(is.na(idx)){
       idxShare <- 1 - sum(shares)

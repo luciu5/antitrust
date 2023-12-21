@@ -15,7 +15,6 @@
 \alias{calcPrices,VertBargBertLogit-method}
 \alias{calcPrices,VertBarg2ndLogit-method}
 \alias{calcPrices}
-\alias{calcPrices,LogitCournot-method}
 \alias{calcPrices,BargainingLogit-method}
 \title{\dQuote{Calculating Prices} Methods}
 \usage{
@@ -24,8 +23,6 @@
 \S4method{calcPrices}{Auction2ndCap}(object, preMerger = TRUE, exAnte = TRUE)
 
 \S4method{calcPrices}{Logit}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
-
-\S4method{calcPrices}{LogitCournot}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
 
 \S4method{calcPrices}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE)
 

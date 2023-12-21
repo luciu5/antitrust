@@ -106,11 +106,12 @@ setMethod(
 
     # outVal <- ifelse(object@shareInside<1, 1, 0)
     outVal <- ifelse(is.na(object@normIndex), 1, 0)
+    output <- ifelse(object@output,1,-1)
 
     VPre  <- sum(exp(meanval + (object@pricePre - object@priceOutside)*alpha))  + outVal
     VPost <- sum(exp(meanval + (object@pricePost - object@priceOutside)*alpha)[subset] ) + outVal
 
-    result <- log(VPost/VPre)/alpha
+    result <- output*log(VPost/VPre)/alpha
 
     if(!is.na(mktSize)){ result <- result * mktSize}
 
@@ -206,6 +207,8 @@ setMethod(
     meanvalPre = object@slopes$meanval
     idx <- object@normIndex
     subset <- object@subset
+    output <- object@output
+    outSign <- ifelse(output,-1,1)
     
     mcDelta <- object@mcDelta
     
@@ -230,12 +233,12 @@ setMethod(
     
     
     
-    result <-   - log(VPost/VPre)/alpha  
-    result <- result - (sum(marginPost,na.rm=TRUE) - sum(marginPre, na.rm =TRUE))
+    result <-   outSign * log(VPost/VPre)/alpha  
+    result <- result + outSign*(sum(marginPost,na.rm=TRUE) - sum(marginPre, na.rm =TRUE))
     
     if(!is.na(mktSize)){result <- mktSize * result}
 
-    return(-result)
+    return(outSign*result)
   })
 
 

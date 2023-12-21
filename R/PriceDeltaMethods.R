@@ -275,6 +275,8 @@ setMethod(
   signature= "Auction2ndLogit",
   definition=function(object,levels=TRUE, market=FALSE,exAnte=ifelse(market,TRUE,FALSE),...){
 
+    output <- object@output
+    
     if(!levels){
       result <- callNextMethod()
       return(result)
@@ -294,6 +296,8 @@ setMethod(
     result <- calcMargins(object, preMerger=FALSE,exAnte=exAnte) + mcDelta -
       calcMargins(object, preMerger=TRUE,exAnte=exAnte)
 
+    if(!output) result <- -1*result
+    
     if(market) result <- sum(result,na.rm=TRUE)
     
  

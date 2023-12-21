@@ -119,17 +119,18 @@ setGeneric (
 setMethod(
   f= "HypoMonTest",
   signature= "Bertrand",
-  definition=function(object,prodIndex,ssnip=.05,...){
+  definition=function(object,prodIndex,ssnip=ifelse(object@output,.05,-.05),...){
 
     ownerPre <- object@ownerPre
     nprods   <- ncol(ownerPre)
     pricesDelta <- rep(0,nprods)
+    output <- object@output
 
     if(missing(prodIndex) || any(prodIndex>nprods | prodIndex <1 ) ){
       stop("'prodIndex' must be a vector of product indices between 1 and ",nprods)
     }
 
-    if(length(ssnip)>1 || ssnip<0 | ssnip>1 ){stop("'ssnip' must be a number between 0 and 1")}
+    if(length(ssnip)>1 || abs(ssnip)>1 ){stop("absolute value of 'ssnip' must be less than 1")}
 
     isParty <- rowSums( abs(object@ownerPost - ownerPre) )>0 #identify which products belong to the merging parties
 
@@ -143,7 +144,10 @@ setMethod(
     pricesDelta[prodIndex] <-  calcPriceDeltaHypoMon(object,prodIndex,...)
 
 
-    result <- max(pricesDelta[isParty]) > ssnip
+    
+    result <- ifelse(output,max(pricesDelta[isParty]) > ssnip,
+                     min(pricesDelta[isParty]) < ssnip)
+                     
 
     return( result)
   }
@@ -156,7 +160,7 @@ setMethod(
 setMethod(
   f= "HypoMonTest",
   signature= "Cournot",
-  definition=function(object,plantIndex,prodIndex,ssnip=.05,...){
+  definition=function(object,plantIndex,prodIndex,ssnip=ifelse(object@output,.05,-.05),...){
     
     ownerPre <- object@ownerPre
     nprods   <- ncol(ownerPre)
@@ -170,7 +174,7 @@ setMethod(
     if(missing(prodIndex) || length(prodIndex) != 1 || any(prodIndex>nprods | prodIndex <1 ) ){
       stop("'prodIndex' must be between between 1 and ",nprods)
     }
-    if(length(ssnip)>1 || ssnip<0 | ssnip>1 ){stop("'ssnip' must be a number between 0 and 1")}
+    if(length(ssnip)>1 || abs(ssnip)>1 ){stop("absolute value of 'ssnip' must be a number between 0 and 1")}
     
     isParty <- rowSums( abs(object@ownerPost - object@ownerPre) )>0 #identify which plants belong to the merging parties
     
@@ -184,7 +188,9 @@ setMethod(
     pricesDelta <-  calcPriceDeltaHypoMon(object,prodIndex=prodIndex,plantIndex=plantIndex,...)
     
     
-    result <-pricesDelta > ssnip
+
+    result <- ifelse(output,max(pricesDelta) > ssnip,
+                     min(pricesDelta) < ssnip)
     
     return( result)
   }
@@ -345,6 +351,8 @@ setMethod(
 
     mc       <- object@mcPre[prodIndex]
     pricePre <- object@pricePre
+    output <- object@output
+    outSign <- ifelse(output,1,-1)
 
     calcMonopolySurplus <- function(priceCand){
 
@@ -352,7 +360,7 @@ setMethod(
       object@pricePre     <- pricePre
       sharesCand          <- calcShares(object,TRUE,revenue=FALSE)
 
-      surplus             <- (priceCand-mc)*sharesCand[prodIndex]
+      surplus             <- outSign*(priceCand-mc)*sharesCand[prodIndex]
 
       return(sum(surplus,na.rm=TRUE))
     }
@@ -383,6 +391,8 @@ setMethod(
 
     mc <- object@mcPre[prodIndex]
     pricePre <- object@pricePre
+    output <- object@output
+    outSign <- ifelse(output,1,-1)
 
     calcMonopolySurplus <- function(priceCand){
 
@@ -391,7 +401,7 @@ setMethod(
       quantityCand        <- calcQuantities(object,TRUE)
 
 
-      surplus             <- (priceCand-mc)*quantityCand[prodIndex]
+      surplus             <- outSign*(priceCand-mc)*quantityCand[prodIndex]
 
 
       return(sum(surplus))
@@ -450,7 +460,11 @@ setMethod(
 
       object@pricePre <- thisPrice
 
-      margins          <- 1 - mc/priceCand
+      output <- object@output
+      outSign <- ifelse(output,1,-1)
+      
+      margins          <- outSign*(1 - mc/priceCand)
+      
       quantities       <- calcQuantities(object,preMerger=TRUE)[prodIndex]
       revenues         <- quantities * priceCand
       elasticities     <- elast(object,preMerger=TRUE)[prodIndex,prodIndex]

@@ -1864,11 +1864,6 @@ setMethod(
                          tol=object@control.slopes$reltol)$minimum
 
     
-    ## calculate costs conditional on a product winning
-    marginsPre <- - log(1 /(1-firmShares))/(minAlpha * firmShares)
-
-    
-
 
     meanval <- log(shares) - log(idxShare)
 

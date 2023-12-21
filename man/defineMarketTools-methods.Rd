@@ -27,9 +27,15 @@
 \alias{HypoMonTest,Cournot-method}
 \title{Methods For Implementing The Hypothetical Monopolist Test}
 \usage{
-\S4method{HypoMonTest}{Bertrand}(object, prodIndex, ssnip = 0.05, ...)
+\S4method{HypoMonTest}{Bertrand}(object, prodIndex, ssnip = ifelse(object@output, 0.05, -0.05), ...)
 
-\S4method{HypoMonTest}{Cournot}(object, plantIndex, prodIndex, ssnip = 0.05, ...)
+\S4method{HypoMonTest}{Cournot}(
+  object,
+  plantIndex,
+  prodIndex,
+  ssnip = ifelse(object@output, 0.05, -0.05),
+  ...
+)
 
 \S4method{calcPricesHypoMon}{Cournot}(object, plantIndex, prodIndex)
 
