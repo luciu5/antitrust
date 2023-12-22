@@ -165,6 +165,7 @@ setMethod(
     ownerPre <- object@ownerPre
     nprods   <- ncol(ownerPre)
     nplants <- nrow(ownerPre)
+    output <- object@output
 
     
     if(missing(plantIndex) || any(plantIndex>nplants | plantIndex <1 ) ){
