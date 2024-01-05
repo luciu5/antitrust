@@ -19,6 +19,8 @@
 #' a k x k matrix of pre-merger ownership shares.
 #' @param ownerPost A k x k matrix of post-merger
 #' ownership shares. Default is a k x k matrix of 1s.
+#' @param output length 1 logical vector equal TRUE if calculation is for output market and 
+#' FALSE if for input market. Default is TRUE
 #' @param mcDelta A vector of length k where each element equals the
 #' proportional change in a product's marginal costs due to
 #' the merger. Default is 0, which assumes that the merger does not
@@ -29,7 +31,7 @@
 #' @param labels A length-k vector of product labels.
 #'
 #' @details All \sQuote{prices} elements must be positive, all \sQuote{margins}
-#' elements must be between 0 and 1, and all \sQuote{diversions} elements must be
+#' elements must be between 0 and 1 (\sQuote{output}=TRUE only), and all \sQuote{diversions} elements must be
 #' between 0 and 1 in absolute value. In
 #' addition, off-diagonal elements (i,j) of \sQuote{diversions}
 #' must equal an estimate of the diversion ratio from product i to product j
@@ -122,6 +124,7 @@ NULL
 #'@export
 cmcr.bertrand <- function(prices, margins, diversions, ownerPre, 
                           ownerPost=matrix(1,ncol=length(prices), nrow=length(prices)),
+                          output=TRUE,
                           rel=c("cost","price"),
                           labels=names(prices))
 {
@@ -130,6 +133,7 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre,
 
   rel=match.arg(rel)
   
+  outSign <- ifelse(output,1,-1)
   
   if(!(is.vector(prices) & is.vector(margins))){
     stop("'prices' and 'margins' must be vectors")}
@@ -141,7 +145,8 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre,
     stop("'prices'and 'margins' vectors must be the same length")}
 
   if(any(prices < 0,na.rm=TRUE)){ stop("'prices'  must be non-negative")}
-  if(any(margins < 0 | margins > 1,na.rm=TRUE) ){ stop("'margins' vector elements  must be between 0 and 1")}
+  if(any(margins <= 0 ,na.rm=TRUE) ){ stop("'margins' vector elements  must be positive")}
+  if(output && any(margins > 1 ,na.rm=TRUE) ){ stop("'margins' vector elements  must be between 0 and 1")}
 
   if(!is.matrix(diversions)){ stop("'diversions'  must be a matrix")}
   if(!all(diag(diversions) == -1,na.rm=TRUE)){ stop("'diversions' diagonal elements must all equal -1")}
@@ -202,10 +207,13 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre,
   )
 
   ## calculate changes in marginal cost relative to pre-merger prices
-  mcDelta= (marginPost - margins)
-  
+ mcDelta <-  (marginPost - margins)
+ 
   ## calculate changes in marginal cost relative to pre-merger costs
-  if(rel=="cost"){mcDelta <- mcDelta/(1 - margins)}
+  if(rel=="cost"){
+    if(output){mcDelta <- mcDelta/(1 - margins)}
+    else{mcDelta <- mcDelta/(margins+1)}
+  }
 
   names(mcDelta) <- labels
 
@@ -217,6 +225,7 @@ cmcr.bertrand <- function(prices, margins, diversions, ownerPre,
 #'@export
 upp.bertrand <- function(prices, margins, diversions, ownerPre,
                          ownerPost=matrix(1,ncol=length(prices), nrow=length(prices)),
+                         output=TRUE,
                          mcDelta=rep(0,length(prices)),
                          labels=paste("Prod",1:length(prices),sep=""))
 {
@@ -225,14 +234,15 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
     stop("'prices' and 'margins'  must be vectors")}
 
   nprod = length(prices)
-
+  outSign <- ifelse(output,1,-1)
 
   if(nprod != length(margins)){
     stop("'prices'and 'margins' vectors must be the same length")}
 
   if(any(prices < 0,na.rm=TRUE)){ stop("'prices' must be non-negative")}
-  if(any(margins < 0 | margins > 1,na.rm=TRUE) ){ stop("'margins' vector elements  must be between 0 and 1")}
-
+  if(any(margins <= 0 ,na.rm=TRUE) ){ stop("'margins' vector elements  must be positive")}
+  if(output && any(margins > 1 ,na.rm=TRUE) ){ stop("'margins' vector elements  must be between 0 and 1")}
+  
   if(!is.matrix(diversions)){ stop("'diversions' must be a matrix")}
   if(!all(diag(diversions) == -1,na.rm=TRUE)){ stop("'diversions' diagonal elements must all equal -1")}
   if(any( abs(diversions) > 1,na.rm=TRUE)){ stop("'diversions' elements must be between -1 and 1")}
@@ -281,11 +291,13 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
 
 
 
-  mcPre  <- prices*(1-margins)
+  if(output){mcPre  <- prices*(1-margins)}
+  else{mcPre <- prices*(1+margins)}
   mcPost <- mcPre*(1+mcDelta)
 
   marginsPre <- margins
-  marginsPost <- 1 - mcPost/prices
+  if(output){marginsPost <- 1 - mcPost/prices}
+  else{marginsPost <- mcPost/prices - 1}
 
   ## weight diversion ratios by price ratios and ownership matrices ##
   priceRatio = tcrossprod(1/prices, prices)
@@ -298,6 +310,6 @@ upp.bertrand <- function(prices, margins, diversions, ownerPre,
 
   names(result) <- labels
 
-  return(result*100) #net UPP
+  return(outSign*result*100) #net UPP
 
 }

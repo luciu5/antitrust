@@ -14,6 +14,7 @@ cmcr.bertrand(
   diversions,
   ownerPre,
   ownerPost = matrix(1, ncol = length(prices), nrow = length(prices)),
+  output = TRUE,
   rel = c("cost", "price"),
   labels = names(prices)
 )
@@ -24,6 +25,7 @@ upp.bertrand(
   diversions,
   ownerPre,
   ownerPost = matrix(1, ncol = length(prices), nrow = length(prices)),
+  output = TRUE,
   mcDelta = rep(0, length(prices)),
   labels = paste("Prod", 1:length(prices), sep = "")
 )
@@ -53,6 +55,9 @@ Default is ``cost''.}
 proportional change in a product's marginal costs due to
 the merger. Default is 0, which assumes that the merger does not
 affect any products' marginal cost.}
+
+\item{a}{length 1 logical vector equal TRUE if calculation is for output market and 
+FALSE if for input market. Default is TRUE}
 }
 \value{
 \code{cmcr.bertrand} returns a length-k vector whose values
@@ -74,7 +79,7 @@ Let k denote the number of products produced by the merging parties below.
 }
 \details{
 All \sQuote{prices} elements must be positive, all \sQuote{margins}
-elements must be between 0 and 1, and all \sQuote{diversions} elements must be
+elements must be between 0 and 1 (\sQuote{output}=TRUE only), and all \sQuote{diversions} elements must be
 between 0 and 1 in absolute value. In
 addition, off-diagonal elements (i,j) of \sQuote{diversions}
 must equal an estimate of the diversion ratio from product i to product j

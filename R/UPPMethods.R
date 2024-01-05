@@ -42,6 +42,8 @@ setMethod(
   definition=function(object){
 
     isParty     <- rowSums( abs(object@ownerPost  - object@ownerPre) ) > 0
+    
+    output <- object@output
 
     ownerPre    <- object@ownerPre
     ownerPost   <- object@ownerPost
@@ -55,9 +57,15 @@ setMethod(
     mcPost      <- object@mcPost
 
 
-    marginsPre      <-  1 - mcPre/pricesPre
-    marginsPost      <- 1 - mcPost/pricesPre
-
+    if(output){
+     marginsPre      <-  1 - mcPre/pricesPre
+      marginsPost      <- 1 - mcPost/pricesPre
+    }
+    else{
+      marginsPre      <-  mcPre/pricesPre  - 1
+      marginsPost      <- mcPost/pricesPre - 1
+      
+    }
     focPre  <-  sharesPre*diag(ownerPre) +(t(elastPre)*ownerPre)  %*% (sharesPre*marginsPre)
     focPost <-  sharesPre*diag(ownerPost)+(t(elastPre)*ownerPost) %*% (sharesPre*marginsPost)
 
