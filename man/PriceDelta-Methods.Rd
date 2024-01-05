@@ -16,6 +16,7 @@
   object,
   levels = FALSE,
   market = FALSE,
+  party = FALSE,
   index = c("paasche", "laspeyres"),
   ...
 )
@@ -30,6 +31,7 @@
   levels = FALSE,
   subset,
   market = FALSE,
+  party = FALSE,
   index = c("paasche", "laspeyres"),
   ...
 )
@@ -38,6 +40,7 @@
   object,
   levels = TRUE,
   market = FALSE,
+  party = FALSE,
   exAnte = ifelse(market, TRUE, FALSE),
   ...
 )
@@ -48,6 +51,8 @@
 \item{levels}{If TRUE, report results in levels. If FALSE, report results in percents. Default is FALSE.}
 
 \item{market}{If TRUE, calculates (post-merger) share-weighted average of metric. Default is FALSE.}
+
+\item{party}{If TRUE, calculates (post-merger) share-weighted average of metric for merging parties. Default is FALSE.}
 
 \item{index}{If "paasche",calculates market-wide price changes using post-merger predicted shares. If  "laspeyres", 
 calculates price index using pre-merger shares. Default is "paasche".}

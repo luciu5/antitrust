@@ -124,8 +124,8 @@ setMethod(
       results <- with(results,
                       data.frame(
                         'HHI Change' = as.integer(HHI(outputPre/sum(outputPre),owner=object@ownerPost) - HHI(outputPre/sum(outputPre),owner=object@ownerPre)),
-                        'Industry Price Change (%)' = sum(priceDelta * outputPost/sum(outputPost, na.rm = TRUE),na.rm=TRUE),
-                        'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty], na.rm=TRUE),
+                        'Industry Price Change (%)' = calcPriceDelta(object,market=TRUE,levels=levels,index="paasche")*100,
+                        'Merging Party Price Change (%)'=  calcPriceDelta(object,party=TRUE,levels=levels,index="paasche")*100,
                         'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty], na.rm=TRUE),
                         'Consumer Harm ($)' = thiscv,
                         'Producer Benefit ($)' = thispsdelta,
@@ -434,8 +434,8 @@ setMethod(
       results <- with(results,
                     data.frame(
                       'HHI Change' = as.integer(HHI(outPre/sum(outPre),owner=object@ownerPost) - HHI(outPre/sum(outPre),owner=object@ownerPre)),
-                      'Industry Price Change (%)' = sum(priceDelta * outPost/sum(outPost, na.rm = TRUE),na.rm=TRUE),
-                      'Merging Party Price Change (%)'= sum(priceDelta[isParty] * outPost[isParty], na.rm=TRUE) / sum(outPost[isParty], na.rm=TRUE),
+                      'Industry Price Change (%)' = calcPriceDelta(object,market=TRUE,levels=levels,index="paasche")*100,
+                      'Merging Party Price Change (%)'= calcPriceDelta(object,party=TRUE,levels=levels,index="paasche")*100,
                       'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outPost[isParty]) / sum(outPost[isParty], na.rm=TRUE),
                       'Consumer Harm ($)' = thiscv,
                       'Producer Benefit ($)' = thispsdelta,

@@ -45,6 +45,9 @@ a k x k matrix of pre-merger ownership shares.}
 \item{ownerPost}{A k x k matrix of post-merger
 ownership shares. Default is a k x k matrix of 1s.}
 
+\item{output}{length 1 logical vector equal TRUE if calculation is for output market and 
+FALSE if for input market. Default is TRUE}
+
 \item{rel}{A length 1 character vector indicating whether CMCR should be calculated
 relative to pre-merger cost (``cost'') or pre-merger price (``price''), 
 Default is ``cost''.}
@@ -55,9 +58,6 @@ Default is ``cost''.}
 proportional change in a product's marginal costs due to
 the merger. Default is 0, which assumes that the merger does not
 affect any products' marginal cost.}
-
-\item{a}{length 1 logical vector equal TRUE if calculation is for output market and 
-FALSE if for input market. Default is TRUE}
 }
 \value{
 \code{cmcr.bertrand} returns a length-k vector whose values

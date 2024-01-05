@@ -22,6 +22,7 @@
 #' @param object An instance of one of the classes listed above.
 #' @param levels If TRUE, report results in levels. If FALSE, report results in percents. Default is FALSE.
 #' @param market If TRUE, calculates (post-merger) share-weighted average of metric. Default is FALSE.
+#' @param party If TRUE, calculates (post-merger) share-weighted average of metric for merging parties. Default is FALSE.
 #' @param index If "paasche",calculates market-wide price changes using post-merger predicted shares. If  "laspeyres", 
 #' calculates price index using pre-merger shares. Default is "paasche".
 #' @param isMax If TRUE, uses numerical derivatives to determine if
@@ -51,7 +52,7 @@ setGeneric (
 setMethod(
   f= "calcPriceDelta",
   signature= "Antitrust",
-  definition=function(object, levels = FALSE, market = FALSE, index=c("paasche","laspeyres"), ...  ){
+  definition=function(object, levels = FALSE, market = FALSE, party = FALSE, index=c("paasche","laspeyres"), ...  ){
 
     index <- match.arg(index)
     
@@ -63,7 +64,7 @@ setMethod(
     else{priceDelta <- pricePost/pricePre - 1}
     #names(priceDelta) <- object@labels
 
-    if(market){
+    if(market || party){
       
       sharesPre <- calcShares(object, preMerger=TRUE,revenue=FALSE,...)
       sharesPre <- sharesPre/sum(sharesPre,na.rm=TRUE)
@@ -71,6 +72,14 @@ setMethod(
       sharesPost <- calcShares(object, preMerger=FALSE,revenue=FALSE,...)
       sharesPost <- sharesPost/sum(sharesPost,revenue=FALSE,na.rm=TRUE)
       
+      if(party){
+        isParty <- rowSums( abs(object@ownerPost - object@ownerPre))>0
+        sharesPre <- sharesPre[isParty]
+        sharesPost <- sharesPost[isParty]
+        pricePre <- pricePre[isParty]
+        pricePost <- pricePost[isParty]
+        
+      }
       
       if(index=="paasche")  priceDelta <- sum(sharesPost*pricePost)/sum(sharesPost*pricePre) - 1
       else if (index=="laspeyres")  priceDelta <- sum(sharesPre*pricePost)/sum(sharesPre*pricePre) - 1
@@ -194,16 +203,25 @@ setMethod(
 setMethod(
   f= "calcPriceDelta",
   signature= "AIDS",
-  definition=function(object,isMax=FALSE,levels=FALSE,subset,market=FALSE, index=c("paasche","laspeyres"),...){
+  definition=function(object,isMax=FALSE,levels=FALSE,subset,market=FALSE,party=FALSE, index=c("paasche","laspeyres"),...){
 
     index <- match.arg(index)
     
-    if(market){
+    if(market || party){
       
+      if(all(!is.na(object@pricePre))){result <- callNextMethod()
+      return(result)
+      }
+      priceDelta <- object@priceDelta 
       if(index=="paasche") shares <-  calcShares(object, preMerger = FALSE)
       else{shares <-  calcShares(object, preMerger = TRUE)}
     
-      return(sum(object@priceDelta * shares,na.rm=TRUE))
+      if(party){
+        isParty <- rowSums( abs(object@ownerPost - object@ownerPre))>0
+        priceDelta <- priceDelta[isParty]
+        shares <- shares[isParty]
+      }
+      return(sum( priceDelta * shares,na.rm=TRUE))
            }
 
     ownerPost <- object@ownerPost
@@ -273,7 +291,7 @@ setMethod(
 setMethod(
   f= "calcPriceDelta",
   signature= "Auction2ndLogit",
-  definition=function(object,levels=TRUE, market=FALSE,exAnte=ifelse(market,TRUE,FALSE),...){
+  definition=function(object,levels=TRUE, market=FALSE,party=FALSE,exAnte=ifelse(market,TRUE,FALSE),...){
 
     output <- object@output
     
@@ -288,7 +306,7 @@ setMethod(
 
 
     
-    if(exAnte){
+    if(exAnte || market || party){
       sharesPost <- calcShares(object, preMerger=FALSE)
       mcDelta <- mcDelta*sharesPost
     }
@@ -299,10 +317,14 @@ setMethod(
     if(!output) result <- -1*result
     
     if(market) result <- sum(result,na.rm=TRUE)
+    if(party){
+      isParty <- rowSums( abs(object@ownerPost - object@ownerPre))>0
+      result <- sum(result[isParty],na.rm=TRUE)
+    }
     
  
 
-    if(!market) names(result) <- object@labels
+    if(!market && !party) names(result) <- object@labels
     
     return(result)
   }
