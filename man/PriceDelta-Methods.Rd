@@ -17,22 +17,39 @@
   levels = FALSE,
   market = FALSE,
   party = FALSE,
+  isMax = FALSE,
   index = c("paasche", "laspeyres"),
   ...
 )
 
-\S4method{calcPriceDelta}{Cournot}(object, levels = FALSE, market = TRUE, ...)
+\S4method{calcPriceDelta}{Cournot}(
+  object,
+  levels = FALSE,
+  market = FALSE,
+  party = FALSE,
+  isMax = FALSE,
+  index = c("paasche", "laspeyres"),
+  ...
+)
 
-\S4method{calcPriceDelta}{VertBargBertLogit}(object, levels = FALSE, market = FALSE, ...)
+\S4method{calcPriceDelta}{VertBargBertLogit}(
+  object,
+  levels = FALSE,
+  market = FALSE,
+  party = FALSE,
+  isMax = FALSE,
+  index = c("paasche", "laspeyres"),
+  ...
+)
 
 \S4method{calcPriceDelta}{AIDS}(
   object,
-  isMax = FALSE,
   levels = FALSE,
-  subset,
   market = FALSE,
   party = FALSE,
+  isMax = FALSE,
   index = c("paasche", "laspeyres"),
+  subset,
   ...
 )
 
@@ -54,14 +71,14 @@
 
 \item{party}{If TRUE, calculates (post-merger) share-weighted average of metric for merging parties. Default is FALSE.}
 
+\item{isMax}{If TRUE, uses numerical derivatives to determine if
+equilibrium price vector is a local maximum. Default is FALSE.}
+
 \item{index}{If "paasche",calculates market-wide price changes using post-merger predicted shares. If  "laspeyres", 
 calculates price index using pre-merger shares. Default is "paasche".}
 
 \item{...}{Additional values that may be used to change the default values of the non-linear
 equation solver.}
-
-\item{isMax}{If TRUE, uses numerical derivatives to determine if
-equilibrium price vector is a local maximum. Default is FALSE.}
 
 \item{subset}{A vector of length k where each element equals TRUE if
 the product indexed by that element should be included in the

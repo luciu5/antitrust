@@ -43,8 +43,7 @@ NULL
 
 setGeneric (
   name= "calcPriceDelta",
-  def=function(object,levels = FALSE, market = FALSE,...){standardGeneric("calcPriceDelta")}
-)
+  def=function(object,levels = FALSE, market = FALSE, party = FALSE, isMax=FALSE,index=c("paasche","laspeyres"),...){standardGeneric("calcPriceDelta")},signature="object")
 
 ## Method to compute price changes
 #'@rdname PriceDelta-Methods
@@ -203,24 +202,33 @@ setMethod(
 setMethod(
   f= "calcPriceDelta",
   signature= "AIDS",
-  definition=function(object,isMax=FALSE,levels=FALSE,subset,market=FALSE,party=FALSE, index=c("paasche","laspeyres"),...){
+  definition=function(object,levels=FALSE,market=FALSE,party=FALSE,isMax=FALSE, index=c("paasche","laspeyres"),subset,...){
 
     index <- match.arg(index)
     
-    if(market || party){
+  
+    priceDelta <- object@priceDelta 
+
       
-      if(all(!is.na(object@pricePre))){result <- callNextMethod()
+  if (market || party){
+    
+    if(!is.null(object@pricePre) && all(!is.na(object@pricePre))){
+      result <- callNextMethod()
       return(result)
-      }
-      priceDelta <- object@priceDelta 
+    }
+    
+    if(party){
       if(index=="paasche") shares <-  calcShares(object, preMerger = FALSE)
       else{shares <-  calcShares(object, preMerger = TRUE)}
+      
+      
+      isParty <- rowSums( abs(object@ownerPost - object@ownerPre))>0
+      priceDelta <- priceDelta[isParty]
+      shares <- shares[isParty]
+    }
     
-      if(party){
-        isParty <- rowSums( abs(object@ownerPost - object@ownerPre))>0
-        priceDelta <- priceDelta[isParty]
-        shares <- shares[isParty]
-      }
+
+     
       return(sum( priceDelta * shares,na.rm=TRUE))
            }
 
@@ -295,7 +303,7 @@ setMethod(
 
     output <- object@output
     
-    if(!levels){
+    if(all(!is.na(object@pricePre)) || !levels){
       result <- callNextMethod()
       return(result)
     }
