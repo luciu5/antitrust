@@ -323,6 +323,7 @@ setMethod(
 
     gamma       <- object@slopes$gamma
     meanval     <- object@slopes$meanval
+    output <- ifelse(object@output,1,-1)
     
 
     outVal <- ifelse(is.na(object@normIndex), 1, 0)
@@ -330,7 +331,7 @@ setMethod(
     VPre  <- sum(meanval * (object@pricePre / object@priceOutside)^(1-gamma),na.rm=TRUE) + outVal
     VPost <- sum(meanval * (object@pricePost/ object@priceOutside)^(1-gamma),na.rm=TRUE) + outVal
 
-    result <- log(VPost/VPre) / ((1+alpha)*(1-gamma))
+    result <- output*log(VPost/VPre) / ((1+alpha)*(1-gamma))
 
     result <- exp(result) - 1
 

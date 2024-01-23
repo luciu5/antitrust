@@ -16,7 +16,7 @@
 \alias{calcMargins,BargainingLogit-method}
 \alias{calcMargins,Bargaining2ndLogit-method}
 \alias{calcMargins,Auction2ndCap-method}
-\title{Methods for Calculating Diagnostics}
+\title{Methods for Calculating Margins}
 \usage{
 \S4method{calcMargins}{Bertrand}(object, preMerger = TRUE, level = FALSE)
 

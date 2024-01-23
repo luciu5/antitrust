@@ -2102,7 +2102,9 @@ setMethod(
     insideSize   <-  object@insideSize
     diversion    <-  object@diversion
     mktElast     <-  object@mktElast 
+    output       <-  object@output
     
+    outSign <- ifelse(output,1,-1)
     shareOut <- 1 - shareInside
 
     ## uncover Numeraire Coefficients
@@ -2122,7 +2124,7 @@ setMethod(
     ## Choose starting paramter values
     notMissing <- which(!is.na(margins))[1]
     
-    parmStart <- (shares[notMissing] - 1/margins[notMissing])/(shares[notMissing] - 1 ) 
+    parmStart <- (shares[notMissing] - outSign/margins[notMissing])/(shares[notMissing] - 1 ) 
     parmStart <- c(parmStart, exp(log(shares) - log(idxShare) - (parmStart - 1) * (log(prices) - log(idxPrice))))
     
 
@@ -2154,7 +2156,7 @@ setMethod(
       if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elasticity * ownerPre)}
       
       
-      marginsCand <- -1 * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
+      marginsCand <- -1 * outSign * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
       #measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
       #FOC <- (shares * diag(ownerPre)) + (elasticity * ownerPre) %*% (shares * margins)
       
@@ -2171,10 +2173,14 @@ setMethod(
 
     
     ##  Constrained optimizer to look for solutions where gamma>1
+    
+    
     lowerB <- upperB <- rep(Inf,length(parmStart))
     lowerB <- lowerB * -1
-    lowerB[1] <- 1
-
+    
+    if(output){lowerB[1] <- 1}
+    else{upperB[1] <- 1 }
+    
     minTheta <- optim(parmStart,minD,method="L-BFGS-B",
                       lower= lowerB,upper=upperB,
                       control=object@control.slopes)

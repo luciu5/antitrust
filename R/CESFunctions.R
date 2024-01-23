@@ -25,6 +25,8 @@
 #' @param ownerPost EITHER a vector of length k whose values
 #' indicate which firm produced a product after the merger OR
 #' a k x k matrix of post-merger ownership shares.
+#' @param output a length 1 logical vector equal to TRUE if merger simulation performed
+#' on output market, FALSE if simulation performed on input market. Default TRUE.
 #' @param mktElast a negative value indicating market elasticity. Default is NA.
 #' @param normIndex An integer specifying the product index against which
 #' the mean values of all other products are normalized. Default is 1.
@@ -179,6 +181,7 @@ NULL
 #'@export
 ces <- function(prices,shares,margins,  diversions,
                 ownerPre,ownerPost,
+                output=TRUE,
                 normIndex=ifelse(sum(shares)<1,NA,1),
                 mktElast=NA_real_,
                 insideSize = NA_real_,
@@ -207,6 +210,7 @@ ces <- function(prices,shares,margins,  diversions,
                 priceOutside=priceOutside,
                 ownerPre=ownerPre,
                 ownerPost=ownerPost,
+                output=output,
                 priceStart=priceStart,
                 shareInside= sum(shares),labels=labels)
 

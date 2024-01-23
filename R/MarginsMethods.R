@@ -1,4 +1,4 @@
-#' @title Methods for Calculating Diagnostics
+#' @title Methods for Calculating Margins
 #' @name Margins-Methods
 #' @docType methods
 #'

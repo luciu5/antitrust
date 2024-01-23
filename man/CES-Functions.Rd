@@ -14,6 +14,7 @@ ces(
   diversions,
   ownerPre,
   ownerPost,
+  output = TRUE,
   normIndex = ifelse(sum(shares) < 1, NA, 1),
   mktElast = NA_real_,
   insideSize = NA_real_,
@@ -88,6 +89,9 @@ a k x k matrix of pre-merger ownership shares.}
 \item{ownerPost}{EITHER a vector of length k whose values
 indicate which firm produced a product after the merger OR
 a k x k matrix of post-merger ownership shares.}
+
+\item{output}{a length 1 logical vector equal to TRUE if merger simulation performed
+on output market, FALSE if simulation performed on input market. Default TRUE.}
 
 \item{normIndex}{An integer specifying the product index against which
 the mean values of all other products are normalized. Default is 1.}

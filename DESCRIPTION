@@ -48,6 +48,7 @@ Collate:
     'CVMethods.R'
     'DiagnosticsMethods.R'
     'AIDSFunctions.R'
+    'AggregateGamesMethods.R'
     'Antitrust_Shiny.R'
     'AntitrustPackage.R'
     'Auction2ndCapFunctions.R'
