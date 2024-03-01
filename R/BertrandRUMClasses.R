@@ -210,8 +210,8 @@ setClass(
     if(!is.na(object@mktElast) && object@mktElast >0 ) stop("'mktElast' must be negative")
     #if(!is.na(object@mktElast) && !isTRUE(all.equal(sum(object@shares, na.rm=TRUE),1)) ) stop("`shares' must sum to 1 when 'mktElast' is supplied")
 
-    if(length(object@mktSize)!=1 ||
-       (!is.na(object@mktSize) && isTRUE(object@mktSize<0))){
+    if(#length(object@mktSize)!=1 ||
+       any(is.na(object@mktSize) | object@mktSize<0)){
       stop("mktSize must be a positive number")}
     return(TRUE)
 
