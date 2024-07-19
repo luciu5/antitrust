@@ -2745,6 +2745,15 @@ setMethod(
     
     up <- object@up
     down <- object@down
+    
+    sigma <- 0.1
+    
+    if(grepl("Nest",class(object))){
+      nests <- down@nests
+      sigma <- rep(0.1,nlevels(nests))
+      names(sigma) <- levels(nests)
+    }
+    
     constrain <- object@constrain
     
 
@@ -2872,7 +2881,8 @@ setMethod(
       else{mval <- log(sharesDown) - log(idxShare) - alpha*(pricesDown - idxPrice)}
       
       down@slopes <- list(alpha = alpha,
-                          meanval = mval
+                          meanval = mval,
+                          sigma=sigma
                           )
       
       marginsCandDown <- calcMargins(down, preMerger= TRUE,level=TRUE)
@@ -2929,7 +2939,7 @@ setMethod(
     names(bargparmPost) <- down@labels
       
       
-    down@slopes <- list(alpha=alphaOpt,meanval=mvalOpt)  
+    down@slopes <- list(alpha=alphaOpt,meanval=mvalOpt,sigma=sigma)  
     down@mktSize <- down@insideSize/down@shareInside
     object@down <- down
     

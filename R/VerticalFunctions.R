@@ -232,8 +232,12 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
   }
   else{
     nests <- factor(nests, levels= unique(nests))
-    if(supplyDown =="bertrand"){downClass = "LogitNests"}
-    else{downClass = "Auction2ndLogitNests"}
+    if(supplyDown =="bertrand"){
+      resclass = "VertBargBertLogitNests"
+      downClass = "LogitNests"}
+    else{
+      stop("Vertical Supply Chain with Nested Logit and 2nd score auction has not yet been implemented.")
+      downClass = "Auction2ndLogitNests"}
   }
   
   ## Create  containers to store relevant data

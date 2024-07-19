@@ -181,15 +181,16 @@ setMethod(
     alpha       <- object@slopes$alpha
     sigma       <- object@slopes$sigma
     meanval     <- object@slopes$meanval
+    mktSize <- object@mktSize
 
+    outVal <- ifelse(is.na(object@normIndex), exp(alpha*object@priceOutside), 0)
 
+    VPre  <- sum( tapply(exp((meanval + object@pricePre*alpha)  / sigma[nests]),nests,sum,na.rm=TRUE) ^ sigma ) + outVal
+    VPost <- sum( tapply(exp((meanval + object@pricePost*alpha) / sigma[nests]),nests,sum,na.rm=TRUE) ^ sigma ) + outVal
 
-    VPre  <- sum( tapply(exp((meanval + object@pricePre*alpha)  / sigma[nests]),nests,sum,na.rm=TRUE) ^ sigma )
-    VPost <- sum( tapply(exp((meanval + object@pricePost*alpha) / sigma[nests]),nests,sum,na.rm=TRUE) ^ sigma )
-
-
-
+  
     result <- log(VPost/VPre)/alpha
+    if(!is.na(mktSize)){ result <- result * mktSize}
     names(result) <- NULL
     return(result)
 
@@ -250,7 +251,7 @@ setMethod(
   definition=function(object){
     
     down <- object@down
-    logitCV <- selectMethod("CV","Logit")
+    logitCV <- selectMethod("CV",class(down))
     
     return(logitCV(down))
   }

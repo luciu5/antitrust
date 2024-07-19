@@ -63,6 +63,24 @@ setClass(
  
 )
 
+
+#'@rdname Vertical-Classes
+#@export
+setClass(
+  
+  Class = "VertBargBertLogitNests",
+  contains = "VertBargBertLogit"
+  ,
+  representation=representation(
+    up = "Bargaining",
+    down = "LogitNests"
+  )
+  
+)
+
+
+
+
 #'@rdname Vertical-Classes
 #@export
 setClass(

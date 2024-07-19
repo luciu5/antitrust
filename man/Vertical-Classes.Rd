@@ -8,6 +8,7 @@
 \alias{VertBargBertLogitNests}
 \alias{VertBarg2ndLogitNests}
 \alias{VertBargBertLogit-class}
+\alias{VertBargBertLogitNests-class}
 \alias{VertBarg2ndLogit-class}
 \alias{VertBarg2ndLogitNests-class}
 \title{\dQuote{Vertical} Classes}

@@ -4,6 +4,7 @@
 #' @aliases HypoMonTest
 #' HypoMonTest,ANY-method
 #' HypoMonTest,Bertrand-method
+#' HypoMonTest,VertBargBertLogit-method
 #' calcPricesHypoMon
 #' calcPricesHypoMon,ANY-method
 #' calcPricesHypoMon,AIDS-method
@@ -154,6 +155,23 @@ setMethod(
 
 )
 
+
+setMethod(
+  f= "HypoMonTest",
+  signature= "VertBargBertLogit",
+  
+  definition=function(object,prodIndex,ssnip,...){
+    
+    if(missing(ssnip)){
+      ssnip <- ifelse(object@down@output,.05,-.05)}
+    
+    down <- object@down
+    down@ownerPre <- ownerToMatrix(down,preMerger=TRUE)
+    down@ownerPost <- ownerToMatrix(down,preMerger=FALSE)
+    
+    HypoMonTest(object=down,prodIndex=prodIndex,ssnip=ssnip,...)
+    
+  })
 
 #'@rdname defineMarketTools-methods
 #'@export
