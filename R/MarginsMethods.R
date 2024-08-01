@@ -483,7 +483,7 @@ setMethod(
     div <- divSameNest * nestMat + divDiffNest*(1-nestMat)
 
     diag(div) <- -shareDown
-
+    div[is.na(div)] <- 0
 
 
 

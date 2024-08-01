@@ -168,6 +168,7 @@ setMethod(
     down <- object@down
     down@ownerPre <- ownerToMatrix(down,preMerger=TRUE)
     down@ownerPost <- ownerToMatrix(down,preMerger=FALSE)
+    down@pricePre <- calcPrices(down,preMerger=TRUE)
     
     HypoMonTest(object=down,prodIndex=prodIndex,ssnip=ssnip,...)
     
