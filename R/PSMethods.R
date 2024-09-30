@@ -217,7 +217,7 @@ setMethod(
     nprod  <- length(object@labels)
     if(!is.numeric(coalition) ||
        length(coalition) > nprod ||
-       !coalition %in% 1:nprod){
+       !all(coalition %in% 1:nprod)){
       stop ("'coalition' must be a vector of product indices no greater than the number of products")
     }
     if(any(discount<=0 | discount>=1,na.rm=TRUE)){
