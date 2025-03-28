@@ -28,13 +28,20 @@
 \alias{HypoMonTest,Cournot-method}
 \title{Methods For Implementing The Hypothetical Monopolist Test}
 \usage{
-\S4method{HypoMonTest}{Bertrand}(object, prodIndex, ssnip = ifelse(object@output, 0.05, -0.05), ...)
+\S4method{HypoMonTest}{Bertrand}(
+  object,
+  prodIndex,
+  ssnip = ifelse(object@output, 0.05, -0.05),
+  hmg = c("2023", "2010"),
+  ...
+)
 
 \S4method{HypoMonTest}{Cournot}(
   object,
   plantIndex,
   prodIndex,
   ssnip = ifelse(object@output, 0.05, -0.05),
+  hmg = c("2023", "2010"),
   ...
 )
 
@@ -70,6 +77,8 @@
 \item{ssnip}{A number between 0 and 1 that equals the threshold for a \dQuote{Small but Significant and
 Non-transitory Increase in Price} (SSNIP). Default is .05, or 5\%.}
 
+\item{hmg}{Either the string "2023" (default) or "2010". Implements the Hypothetical Monopolist Test described in either the 2010 or 2023 Merger Guidelines.}
+
 \item{...}{Pass options to the optimizer used to solve for equilibrium prices.}
 
 \item{plantIndex}{A vector of plant indices that are to be placed under the control of the Hypothetical Monopolist (Cournot).}
@@ -91,7 +100,7 @@ Monopolist (i.e. all products indexed by \sQuote{prodIndex}).
 where element i,j is the diversion from product i to product j.
 }
 \description{
-An Implementation of the Hypothetical Monopolist Test described in the 2010 Horizontal Merger Guidelines.
+An Implementation of the Hypothetical Monopolist Test described in either the 2023 or 2010 Merger Guidelines.
 
 \code{\link{HypoMonTest}} implements the Hypothetical Monopolist Test for a given \sQuote{ssnip}.
 
@@ -109,12 +118,14 @@ Hypothetical Monopolist) and prices set in the pre-merger equilibrium.
 \details{
 Let k denote the number of products produced by all firms playing the Bertrand pricing game above.
 
-\code{HypoMonTest} is an implementation of the Hypothetical Monopolist Test
+\code{HypoMonTest} is an implementation of the 2023 Merger Guidelines Hypothetical Monopolist Test
 on the products indexed by \sQuote{prodIndex} for a \sQuote{ssnip}. The
-Hypothetical Monopolist Test determines whether a profit-maximizing
+Hypothetical Monopolist Test described in the 2023 Merger Guidelines determines whether a profit-maximizing
 Hypothetical Monopolist who controls the products indexed by
-\sQuote{prodIndex} would increase the price of at least one of the merging parties' products in \sQuote{prodIndex} by a
-small, significant, and non-transitory amount (i.e. impose a SSNIP).
+\sQuote{prodIndex} would increase the price of at least one of the products in \sQuote{prodIndex} by a
+small, significant, and non-transitory amount (i.e. impose a SSNIP). Setting \sQuote{hmg} to "2010" implements the
+Hypothetical Monopolist Test described in the 2010 Merger Guidelines, which requires the Hypothetical Monopolist to 
+increase the price of one of the merging parties' products in \sQuote{prodIndex} by a SSNIP.
 
 \code{calcPriceDeltaHypoMon} calculates the price changes relative to (predicted) pre-merger prices that a
 Hypothetical Monopolist would impose on the products indexed by \sQuote{prodIndex}, holding the prices of products not

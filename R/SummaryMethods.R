@@ -319,8 +319,6 @@ if(any(isPartyHorzUp)){
                         'HHI Change' =  hhidelta,
                         'Up Price Change (%)' = priceDelta$up,
                         'Down Price Change (%)' = priceDelta$down,
-                        #'Merging Party Price Change (%)'= sum(priceDelta[isparty] * outputPost[isparty], na.rm=TRUE) / sum(outputPost[isparty]),
-                        #'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty]),
                         'Consumer Harm ($)' = thiscv,
                         'Up Producer Benefit ($)' = thispsdeltaUp,
                         'Down Producer Benefit ($)' = thispsdeltaDown,
