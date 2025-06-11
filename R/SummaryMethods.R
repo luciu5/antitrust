@@ -37,7 +37,7 @@ NULL
 setMethod(
   f= "summary",
   signature= "Bertrand",
-  definition=function(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,market=FALSE,insideOnly = TRUE,digits=2,...){
+  definition=function(object,revenue=TRUE,shares=TRUE,levels=FALSE,parameters=FALSE,market=FALSE,insideOnly = FALSE,digits=2,...){
 
     curWidth <-  getOption("width")
 
@@ -202,7 +202,7 @@ setMethod(
   signature= "VertBargBertLogit",
   definition=function(object,revenue=TRUE,
                       levels=FALSE,parameters=FALSE,
-                      market=FALSE,insideOnly = TRUE,
+                      market=FALSE,insideOnly = FALSE,
                       digits=2,...){
     
     curWidth <-  getOption("width")
