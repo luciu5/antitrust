@@ -111,37 +111,40 @@ firms are playing a differentiated products pricing game.
 
 If \sQuote{demand} equals \sQuote{Linear}, \sQuote{LogLin}, or
 \sQuote{AIDS}, then \sQuote{demand.param} must be a
-list containing \sQuote{slopes}, a k x k matrix of slope coefficients, and
-\sQuote{intercepts}, a length-k vector of intercepts. Additionally, if
-\sQuote{demand} equals \sQuote{AIDS}, \sQuote{demand.param} must contain \sQuote{mktElast}, an
-estimate of aggregate market elasticity.  For \sQuote{Linear}
-demand models, \code{sim} returns an error if any intercepts are
-negative, and for both \sQuote{Linear}, \sQuote{LogLin}, and \sQuote{AIDS} models,  \code{sim}
-returns an error if not all diagonal elements of the slopes matrix are
-negative.
+list containing:
+\describe{
+  \item{slopes}{A k x k matrix of slope coefficients.}
+  \item{intercepts}{A length-k vector of intercepts.}
+}
+Additionally, if \sQuote{demand} equals \sQuote{AIDS},
+\sQuote{demand.param} must also contain:
+\describe{
+  \item{mktElast}{An estimate of aggregate market elasticity.}
+}
+For \sQuote{Linear} demand models, \code{sim} returns an error if
+any intercepts are negative. For \sQuote{Linear}, \sQuote{LogLin},
+and \sQuote{AIDS} models, \code{sim} returns an error if not all
+diagonal elements of the slopes matrix are negative.
 
 If \sQuote{demand} equals \sQuote{Logit} or \sQuote{LogitNests}, then
-\sQuote{demand.param} must equal a list containing
-\itemize{
+\sQuote{demand.param} must equal a list containing:
+\describe{
   \item{alpha}{The price coefficient.}
-  \item{meanval}{A length-k vector of mean valuations \sQuote{meanval}. If
-    none of the values of \sQuote{meanval} are zero, an outside good is assumed
-    to exist.}
+  \item{meanval}{A length-k vector of mean valuations. If none of the
+  values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
 }
-If demand equals \sQuote{CES} or \sQuote{CESNests}, then
-\sQuote{demand.param} must equal a list containing
 
-\itemize{
-  \item{gamma}{ The price coefficient,}
+If \sQuote{demand} equals \sQuote{CES} or \sQuote{CESNests}, then
+\sQuote{demand.param} must equal a list containing:
+\describe{
+  \item{gamma}{The price coefficient.}
   \item{alpha}{The coefficient on the numeraire good. May instead be
-    calibrated using \sQuote{shareInside},}
-  \item{meanval}{A length-k vector of mean valuations \sQuote{meanval}. If
-    none of the values of \sQuote{meanval} are zero, an outside good is assumed
-    to exist,}
-  \item{shareInside}{ The budget share of all products in the
-    market. Default is 1, meaning that all consumer wealth is spent on
-    products in the market. May instead be specified using \sQuote{alpha}.}
-
+  calibrated using \sQuote{shareInside}.}
+  \item{meanval}{A length-k vector of mean valuations. If none of the
+  values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
+  \item{shareInside}{The budget share of all products in the
+  market. Default is 1, meaning that all consumer wealth is spent on
+  products in the market. May instead be specified using \sQuote{alpha}.}
 }
 }
 \examples{

@@ -94,11 +94,11 @@
 #' ## a single product.
 #' 
 #' shareDown <- c( 0.1293482, 0.1422541, 0.4631014, 0.2152962)
-#' marginDown <- c( 0.2067532, 0.2572216, 0.3082511, 0.3539681)
+#' marginDown <- c( 13.04232,13.04233,29.53958,29.53958)
 #' priceDown <- c( 63.08158, 50.70465, 95.82960, 83.45267)
 #' ownerPreDown <- paste0("D",rep(c(1,2),each=2))
 #' marginUp <- c(23.31000, 14.78715, 23.31000, 14.78715)
-#' priceUp <- c( 0.5810900,0.5331135,0.5810900,0.5331135)
+#' priceUp <- c( 58.10900,53.31135,58.10900,53.31135)
 #' ownerPreUp <- paste0("U",rep(c(1,2),2))
 #' priceOutSide <- 10
 #'
@@ -110,11 +110,11 @@
 #'
 #' simres_up <- vertical.barg(sharesDown =shareDown,
 #' pricesDown = priceDown,
-#' marginsDown = marginDown,
+#' marginsDown = marginDown/priceDown,
 #' ownerPreDown = ownerPreDown,
 #' ownerPostDown = ownerPreDown,
 #' pricesUp = priceUp,
-#' marginsUp = marginUp,
+#' marginsUp = marginUp/priceUp,
 #' ownerPreUp = ownerPreUp,
 #' ownerPostUp = ownerPostUp,
 #' priceOutside = priceOutSide)
@@ -130,11 +130,11 @@
 #' 
 #' simres_down <- vertical.barg(sharesDown =shareDown,
 #' pricesDown = priceDown,
-#' marginsDown = marginDown,
+#' marginsDown = marginDown/priceDown,
 #' ownerPreDown = ownerPreDown,
 #' ownerPostDown = ownerPostDown,
 #' pricesUp = priceUp,
-#' marginsUp = marginUp,
+#' marginsUp = marginUp/priceUp,
 #' ownerPreUp = ownerPreUp,
 #' ownerPostUp = ownerPreUp,
 #' priceOutside = priceOutSide)
@@ -151,11 +151,11 @@
 #' 
 #' simres_vert <- vertical.barg(sharesDown =shareDown,
 #' pricesDown = priceDown,
-#' marginsDown = marginDown,
+#' marginsDown = marginDown/priceDown,
 #' ownerPreDown = ownerPreDown,
 #' ownerPostDown = ownerPostDown,
 #' pricesUp = priceUp,
-#' marginsUp = marginUp,
+#' marginsUp = marginUp/priceUp,
 #' ownerPreUp = ownerPreUp,
 #' ownerPostUp = ownerPreUp,
 #' priceOutside = priceOutSide)

@@ -19,7 +19,7 @@
   levels = FALSE,
   parameters = FALSE,
   market = FALSE,
-  insideOnly = TRUE,
+  insideOnly = FALSE,
   digits = 2,
   ...
 )
@@ -30,12 +30,19 @@
   levels = FALSE,
   parameters = FALSE,
   market = FALSE,
-  insideOnly = TRUE,
+  insideOnly = FALSE,
   digits = 2,
   ...
 )
 
-\S4method{summary}{Auction2ndCap}(object, exAnte = FALSE, parameters = FALSE, market = TRUE, digits = 2)
+\S4method{summary}{Auction2ndCap}(
+  object,
+  exAnte = FALSE,
+  levels = FALSE,
+  parameters = FALSE,
+  market = TRUE,
+  digits = 2
+)
 
 \S4method{summary}{Cournot}(
   object,

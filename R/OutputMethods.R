@@ -492,7 +492,7 @@ setMethod(
 setMethod(
   f= "calcShares",
   signature= "Auction2ndCap",
-  definition=function(object,preMerger=TRUE,exAnte=TRUE){
+  definition=function(object,preMerger=TRUE,exAnte=TRUE,revenue=FALSE){
 
 
     ownerPre  <- object@ownerPre

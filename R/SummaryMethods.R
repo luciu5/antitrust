@@ -381,16 +381,14 @@ if(any(isPartyHorzUp)){
 setMethod(
   f= "summary",
   signature= "Auction2ndCap",
-  definition=function(object,exAnte=FALSE,parameters=FALSE,market=TRUE,digits=2){
+  definition=function(object,exAnte=FALSE,levels=FALSE,parameters=FALSE,market=TRUE,digits=2){
 
     curWidth <-  getOption("width")
 
 
     pricePre   <-  calcPrices(object,preMerger=TRUE,exAnte=exAnte)
     pricePost  <-  calcPrices(object,preMerger=FALSE,exAnte=exAnte)
-    priceDelta <- (pricePost/pricePre - 1) * 100
-
-
+   
     outPre  <-  calcShares(object,TRUE,exAnte=exAnte) * 100
     outPost <-  calcShares(object,FALSE,exAnte=exAnte) * 100
 
@@ -400,7 +398,12 @@ setMethod(
 
     mcDelta <- object@mcDelta
 
-    outDelta <- (outPost/outPre - 1) * 100
+    if(!levels){ 
+      priceDelta <- (pricePost/pricePre - 1) * 100
+      outDelta <- (outPost/outPre - 1) * 100
+    }
+    else{ priceDelta <- pricePost - pricePre
+    outDelta <- outPost - outPre }
 
 
     isParty <- object@ownerPost != object@ownerPre

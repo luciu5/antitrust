@@ -61,7 +61,7 @@
 
 \S4method{calcRevenues}{CES}(object, preMerger = TRUE, market = FALSE)
 
-\S4method{calcShares}{Auction2ndCap}(object, preMerger = TRUE, exAnte = TRUE)
+\S4method{calcShares}{Auction2ndCap}(object, preMerger = TRUE, exAnte = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{Cournot}(object, preMerger = TRUE, revenue = FALSE)
 

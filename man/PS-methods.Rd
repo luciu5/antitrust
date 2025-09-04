@@ -57,7 +57,6 @@ and cost parameters calculated from the \sQuote{ownerPre} matrix.}
 equal to the number of products produced by any firm participating in
 the coalition and the following 5 columns
 
-\itemize{
     \item{Discount:}{The user-supplied discount rate}
     \item{Coord:}{Single period producer surplus from coordinating}
     \item{Defect:}{Single period producer surplus from defecting}
@@ -65,7 +64,6 @@ the coalition and the following 5 columns
     \item{IC:}{TRUE if the discounted producer surplus from coordinating across all firm products are
     greater than the surplus from defecting across all firm products for one period and receiving
     discounted Bertrand surplus for all subsequent periods under Grim Trigger.}
-}
 }
 \description{
 In the following methods, \code{calcProducerSurplus} computes the expected profits of each supplier

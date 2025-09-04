@@ -71,8 +71,13 @@ setMethod(
       sharesPost <- calcShares(object, preMerger=FALSE,revenue=FALSE,...)
       sharesPost <- sharesPost/sum(sharesPost,revenue=FALSE,na.rm=TRUE)
       
+      
+      
       if(party){
-        isParty <- rowSums( abs(object@ownerPost - object@ownerPre))>0
+        ownerPre <- ownerToMatrix(object,preMerger=TRUE)
+        ownerPost <-ownerToMatrix(object,preMerger=FALSE)
+        
+        isParty <- rowSums( abs(ownerPost - ownerPre))>0
         sharesPre <- sharesPre[isParty]
         sharesPost <- sharesPost[isParty]
         pricePre <- pricePre[isParty]

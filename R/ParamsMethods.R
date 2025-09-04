@@ -1993,7 +1993,7 @@ setMethod(
 
     nprods <- length(object@shares)
     
-    margins <- margins*prices
+    #margins <- margins*prices
 
     ##identify which products have enough margin information
     ##  to impute Bertrand margins
@@ -2015,7 +2015,8 @@ setMethod(
       elastInv <- try(solve(elast * ownerPre),silent=TRUE)
       if(any(class(elastInv)=="try-error")){elastInv <- MASS::ginv(elast * ownerPre)}
       
-      marginsCand <- outSign/(alpha*(1-as.numeric(crossprod(ownerPre,predshares))))
+      #marginsCand <- outSign/(alpha*(1-as.numeric(crossprod(ownerPre,predshares))))
+      marginsCand <-  outSign*elastInv
       
       m1 <- margins - marginsCand
       m2 <- mktElast/(avgPrice * alpha ) - sOut

@@ -17,6 +17,12 @@
 #' FALSE, returns post-merger outcome.  Default is TRUE.
 #' @param level IF TRUE, return margins in dollars. If FALSE, returns 
 #' margins in proportions. Default for most classes is FALSE.
+#' @param subset A vector whose length equals the number  of products where each element equals TRUE if
+#' the product indexed by that element should be included in the
+#' post-merger simulation and FALSE if it should be excluded. Default is a
+#' length k vector of TRUE.
+#' @param isMax If TRUE, a check is run to determine if the calculated equilibrium price vector locally maximizes profits.
+#' Default is FALSE.
 #' @include MarginsMethods.R
 #' @keywords methods
 #' @references 
@@ -187,7 +193,7 @@ setMethod(
 setMethod(
   f= "calcPricesAG",
   signature= "Logit",
-  definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
+  definition=function(object,preMerger=TRUE,isMax=FALSE,subset){
     
     
     priceStart <- object@priceStart
