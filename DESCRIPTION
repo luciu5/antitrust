@@ -1,8 +1,8 @@
 Package: antitrust
 Type: Package
 Title: Tools for Antitrust Practitioners
-Version: 0.99.29
-Date: 2025-09-03
+Version: 0.99.30
+Date: 2025-09-12
 Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com",
                   role = c("aut", "cre")),
              person("Michael", "Sandfort",
@@ -12,7 +12,7 @@ Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com
                   )
 Maintainer: Charles Taragin <ctaragin+antitrustr@gmail.com>
 Imports: methods, BB, numDeriv
-Suggests: ggplot2, knitr, bookdown, rmarkdown, competitiontoolbox
+Suggests: MASS, ggplot2, knitr, bookdown, rmarkdown, competitiontoolbox
 VignetteBuilder: knitr
 Encoding: UTF-8
 Description: A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects of mergers under different competitive regimes.
@@ -65,4 +65,4 @@ Collate:
     'SimFunctions.R'
     'VerticalFunctions.R'
     'antitrust-deprecated.R'
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
