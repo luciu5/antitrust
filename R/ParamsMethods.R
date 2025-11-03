@@ -714,7 +714,7 @@ setMethod(
     if(is.null(alphaMean)){
       stop("LogitBLP calcSlopes: missing 'alpha' (or 'alphaMean') in slopes.")
     }
-    sigma        <-  object@slopes$sigma       # Std dev of price coefficient
+    sigma        <-  object@slopes$sigma       # Std dev of price coefficient (random coefficient)
     if(is.null(sigma)){
       stop("LogitBLP calcSlopes: missing 'sigma' in slopes.")
     }
@@ -723,7 +723,7 @@ setMethod(
     if(is.null(piDemog)) piDemog <- numeric(0)
     nDemog       <-  object@slopes$nDemog      # Number of demographics
     if(is.null(nDemog)) nDemog <- 0
-    nestOutside  <-  object@slopes$nestOutside # Nesting parameter for outside good
+    sigmaNest    <-  object@slopes$sigmaNest   # Nesting parameter for outside good: sigmaNest in (0,1]
     
     # Check if meanval (delta) is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
@@ -779,8 +779,8 @@ setMethod(
       idxPrice <- prices[idx]
     }
     
-    # Set default nestOutside if not provided
-    if(is.null(nestOutside)) nestOutside <- 0
+    # Set default sigmaNest if not provided: sigmaNest=1 is flat logit (no nesting)
+    if(is.null(sigmaNest)) sigmaNest <- 1
     
     # If delta (meanval) is already provided, skip contraction
     if(deltaProvided){
@@ -802,11 +802,11 @@ setMethod(
       # Use price relative to outside good for consistency with shares
       utilities <- tcrossprod(rep(1, length(alphas)), delta) + 
                    tcrossprod(alphas, prices - object@priceOutside)
-      expUtil <- exp(utilities / (1 - nestOutside))
+      expUtil <- exp(utilities / sigmaNest)
       
       # Denominator depends on whether an outside good exists (idx = NA)
       sumExpUtil <- rowSums(expUtil)
-      insideIV <- sumExpUtil^(1 - nestOutside)
+      insideIV <- sumExpUtil^sigmaNest
       if(is.na(idx)){
         # Outside good present
         denom <- 1 + insideIV
@@ -840,14 +840,15 @@ setMethod(
     names(delta) <- object@labels
     names(alphaMean) <- "alphaMean"
     names(sigma) <- "sigma"
-    names(nestOutside) <- "nestOutside"
+    names(sigmaNest) <- "sigmaNest"
     if(length(piDemog) > 0){
       names(piDemog) <- paste0("pi_", 1:length(piDemog))
     }
     
     # Store both alpha and alphaMean for downstream compatibility
-    object@slopes <- list(alpha=as.numeric(alphaMean), alphaMean=alphaMean, meanval=delta, sigma=sigma, 
-                         piDemog=piDemog, nDemog=nDemog, nestOutside=nestOutside,
+    # Note: sigma is the random coefficient std dev, sigmaNest is the nesting parameter
+    object@slopes <- list(alpha=as.numeric(alphaMean), alphaMean=alphaMean, meanval=delta, sigma=sigma, sigmaNest=sigmaNest,
+                         piDemog=piDemog, nDemog=nDemog,
                          alphas=as.numeric(alphas), demogDraws=demogDraws)
     object@priceOutside <- idxPrice
     object@mktSize <- object@insideSize / sum(shares)

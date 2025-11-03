@@ -252,8 +252,8 @@ setClass(
       if(!is.null(object@slopes$nDemog) && (length(object@slopes$nDemog)!=1 || is.na(object@slopes$nDemog) || object@slopes$nDemog < 0)){
         stop("'slopes$nDemog' must be a single non-negative number when provided")
       }
-      if(!is.null(object@slopes$nestOutside) && (!is.numeric(object@slopes$nestOutside) || object@slopes$nestOutside < 0 || object@slopes$nestOutside >= 1)){
-        stop("'slopes$nestOutside' must be in [0,1) when provided")
+      if(!is.null(object@slopes$sigmaNest) && (!is.numeric(object@slopes$sigmaNest) || object@slopes$sigmaNest <= 0 || object@slopes$sigmaNest > 1)){
+        stop("'slopes$sigmaNest' (nesting parameter) must be in (0,1] when provided")
       }
     }
 

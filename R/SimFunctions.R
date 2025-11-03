@@ -91,12 +91,14 @@
 #'   \item{alpha}{The mean price coefficient (or use alphaMean).}
 #'   \item{meanval}{A length-k vector of mean valuations. If none of the
 #'   values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
-#'   \item{sigma}{The standard deviation of the price coefficient across consumers,
+#'   \item{sigma}{The standard deviation of the random coefficient on price, 
 #'   representing consumer heterogeneity in price sensitivity.}
+#'   \item{sigmaNest}{Optional nesting parameter for the outside good: sigmaNest in (0,1] 
+#'   where sigmaNest=1 is flat logit (no nesting) and sigmaNest->0 means products are 
+#'   perfect substitutes within the nest. Default is 1.}
 #'   \item{piDemog}{Optional vector of demographic coefficients for the price coefficient. 
 #'   Each element represents the interaction effect of a demographic variable with price.}
 #'   \item{nDemog}{Number of demographic variables. Required if piDemog is provided. Default is 0.}
-#'  \item{nestOutside}{Optional nesting parameter for the outside good. Default is 0 (flat logit).}
 #'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
 #' }
 #'
@@ -250,15 +252,15 @@ sim <- function(prices,
         if(demand.param$nDemog > 0 && length(demand.param$piDemog) != demand.param$nDemog){
           stop("'piDemog' must have length equal to 'nDemog'.")
         }
-        # Handle nesting parameter for outside good
-        if(!("nestOutside" %in% names(demand.param))){
-          demand.param$nestOutside <- 0  # Default: no nesting (standard logit)
+        # Handle nesting parameter for outside good: sigmaNest in (0,1]
+        if(!("sigmaNest" %in% names(demand.param))){
+          demand.param$sigmaNest <- 1  # Default: sigmaNest=1 is flat logit (no nesting)
         }
-        # Validate: scalar numeric in [0,1). 1 is not allowed because of division by (1 - nestOutside)
-        if(!is.numeric(demand.param$nestOutside) || length(demand.param$nestOutside) != 1 ||
-           is.na(demand.param$nestOutside) || !is.finite(demand.param$nestOutside) ||
-           demand.param$nestOutside < 0 || demand.param$nestOutside >= 1){
-          stop("'nestOutside' must be a single numeric value in [0,1).")
+        # Validate: scalar numeric in (0,1]. sigmaNest=1 is flat logit, sigmaNest->0 is perfect substitutes
+        if(!is.numeric(demand.param$sigmaNest) || length(demand.param$sigmaNest) != 1 ||
+           is.na(demand.param$sigmaNest) || !is.finite(demand.param$sigmaNest) ||
+           demand.param$sigmaNest <= 0 || demand.param$sigmaNest > 1){
+          stop("'sigmaNest' (nesting parameter) must be a single numeric value in (0,1].")
         }
       }
 

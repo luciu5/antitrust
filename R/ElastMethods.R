@@ -195,8 +195,10 @@ setMethod(
     # Retrieve random coefficients on price created by calcSlopes(LogitBLP)
     alphas <- object@slopes$alphas
     nDraws <- length(alphas)
-    nestOutside <- object@slopes$nestOutside
-    if(is.null(nestOutside)) nestOutside <- 0
+    
+    # Outside-good nesting parameter: sigmaNest in (0,1]
+    sigmaNest <- object@slopes$sigmaNest
+    if(is.null(sigmaNest)) sigmaNest <- 1
     
     if(market) {
       # For market elasticity, we use the mean alpha 
@@ -214,9 +216,9 @@ setMethod(
       delta <- object@slopes$meanval
       for(r in 1:nDraws) {
         util <- matrix(rep(delta, 1), ncol=1) + outer(prices - object@priceOutside, alphas[r])
-        expUtil <- exp(util / (1 - nestOutside))
+        expUtil <- exp(util / sigmaNest)
         sumExpUtil <- sum(expUtil)
-        insideIV <- sumExpUtil^(1 - nestOutside)
+        insideIV <- sumExpUtil^sigmaNest
         denom <- 1 + insideIV
         sInd <- drop(expUtil/denom)  # shares for consumer type r
         
@@ -226,13 +228,13 @@ setMethod(
         # For output market (α<0): own-elasticity is negative (price up → share down)
         # For input market (α>0): own-elasticity is positive (price up → share up)
         for(j in 1:nprods) {
-          elastDraws[j,j,r] <- alphas[r] * prices[j] / (1 - nestOutside) * 
-                               (1 - (1 - nestOutside) * sInd[j] - nestOutside * sum(sInd))
+          elastDraws[j,j,r] <- alphas[r] * prices[j] / sigmaNest * 
+                               (1 - sigmaNest * sInd[j] - (1 - sigmaNest) * sum(sInd))
           # Cross-price elasticity: ∂log(s_j)/∂log(p_k)
           for(k in 1:nprods) {
             if(j != k) {
-              elastDraws[j,k,r] <- -alphas[r] * prices[k] / (1 - nestOutside) * 
-                                   ((1 - nestOutside) * sInd[k] + nestOutside * sum(sInd))
+              elastDraws[j,k,r] <- -alphas[r] * prices[k] / sigmaNest * 
+                                   (sigmaNest * sInd[k] + (1 - sigmaNest) * sum(sInd))
             }
           }
         }

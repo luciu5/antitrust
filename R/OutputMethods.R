@@ -686,23 +686,24 @@ setMethod(
       return(na_vec)
     }
 
-    # Outside-good nesting parameter (optional)
-    nestOutside <- object@slopes$nestOutside
-    if(is.null(nestOutside)) nestOutside <- 0
+    # Outside-good nesting parameter (optional): sigmaNest in (0,1]
+    # sigmaNest = 1: no nesting (flat logit); sigmaNest -> 0: perfect substitutes within nest
+    sigmaNest <- object@slopes$sigmaNest
+    if(is.null(sigmaNest)) sigmaNest <- 1
     
     # Calculate utilities for each consumer type (k x nDraws)
     k <- length(prices)
     delta_mat <- matrix(delta, nrow=k, ncol=nDraws)
     price_term <- tcrossprod(prices - object@priceOutside, alphas)
     util <- delta_mat + price_term
-    expUtil <- exp(util / (1 - nestOutside))
+    expUtil <- exp(util / sigmaNest)
 
     # Within-nest shares (inside-only nest): normalize by sum over products per draw
     sumExpUtil <- colSums(expUtil)                 # length nDraws
     withinNest <- expUtil / matrix(sumExpUtil, nrow = k, ncol = nDraws, byrow = TRUE)
 
     # Across-nest share of inside vs outside for each draw
-    insideIV <- sumExpUtil^(1 - nestOutside)       # length nDraws
+    insideIV <- sumExpUtil^sigmaNest       # length nDraws
     if(is.na(object@normIndex)){
       # Outside good present
       acrossNest <- insideIV / (1 + insideIV)

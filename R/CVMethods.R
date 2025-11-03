@@ -133,8 +133,10 @@ setMethod(
     subset      <- object@subset
     mktSize     <- object@mktSize
     nDraws      <- length(alphas)
-    nestOutside <- object@slopes$nestOutside
-    if(is.null(nestOutside)) nestOutside <- 0
+    
+    # Outside-good nesting parameter: sigmaNest in (0,1]
+    sigmaNest <- object@slopes$sigmaNest
+    if(is.null(sigmaNest)) sigmaNest <- 1
     
     outVal <- ifelse(is.na(object@normIndex), 1, 0)
     output <- ifelse(object@output, 1, -1)
@@ -143,20 +145,20 @@ setMethod(
     # Utilities: nDraws x nProducts matrix
     utilPre <- outer(alphas, (object@pricePre - object@priceOutside))
     utilPre <- sweep(utilPre, 2, meanval, "+")
-    expUtilPre <- exp(utilPre / (1 - nestOutside))
+    expUtilPre <- exp(utilPre / sigmaNest)
     sumExpUtilPre <- rowSums(expUtilPre)
-    insideIVPre <- sumExpUtilPre^(1 - nestOutside)
+    insideIVPre <- sumExpUtilPre^sigmaNest
     VPre <- log(1 + insideIVPre)
     
     utilPost <- outer(alphas, (object@pricePost - object@priceOutside)[subset])
     utilPost <- sweep(utilPost, 2, meanval[subset], "+")
-    expUtilPost <- exp(utilPost / (1 - nestOutside))
+    expUtilPost <- exp(utilPost / sigmaNest)
     sumExpUtilPost <- rowSums(expUtilPost)
-    insideIVPost <- sumExpUtilPost^(1 - nestOutside)
+    insideIVPost <- sumExpUtilPost^sigmaNest
     VPost <- log(1 + insideIVPost)
     
     # CV for each consumer type with nesting
-    cvInd <- output * (1 - nestOutside) * (VPost - VPre) / alphas
+    cvInd <- output * sigmaNest * (VPost - VPre) / alphas
     
     # Average across consumer types
     result <- mean(cvInd)
