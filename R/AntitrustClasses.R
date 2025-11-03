@@ -69,7 +69,7 @@ setClass(
     ## copied from 'BBsolve' definition:
     ## changed 'maxit' to 2000 from 1500
     ## changed tol to sqrt(.Machine$double.eps) < 1e-07 (default)
-    control.equ = list(maxit = 2000, M = c(50, 10),
+    control.equ = list(maxit = 2000L, M = c(50, 10),
                        tol = sqrt(.Machine$double.eps), trace = FALSE,
                        triter = 10,
                        noimp = 100, NM = c(TRUE, FALSE))

@@ -15,6 +15,7 @@
 \alias{elast,LogitNests-method}
 \alias{elast,Cournot-method}
 \alias{elast,VertBargBertLogit-method}
+\alias{elast,LogitBLP-method}
 \title{Methods For Calculating Own and Cross-Price Elasticities}
 \usage{
 \S4method{elast}{Cournot}(object, preMerger = TRUE, market = FALSE)
@@ -22,6 +23,8 @@
 \S4method{elast}{Linear}(object, preMerger = TRUE, market = FALSE)
 
 \S4method{elast}{Logit}(object, preMerger = TRUE, market = FALSE)
+
+\S4method{elast}{LogitBLP}(object, preMerger = TRUE, market = FALSE)
 
 \S4method{elast}{LogLin}(object, preMerger = TRUE, market = FALSE)
 

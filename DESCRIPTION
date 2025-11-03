@@ -1,8 +1,8 @@
 Package: antitrust
 Type: Package
 Title: Tools for Antitrust Practitioners
-Version: 0.99.30
-Date: 2025-09-12
+Version: 0.99.31
+Date: 2025-11-02
 Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com",
                   role = c("aut", "cre")),
              person("Michael", "Sandfort",
@@ -11,7 +11,7 @@ Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com
                   role = c("ctb"))     
                   )
 Maintainer: Charles Taragin <ctaragin+antitrustr@gmail.com>
-Imports: methods, BB, numDeriv
+Imports: methods, BB, numDeriv, nleqslv
 Suggests: MASS, ggplot2, knitr, bookdown, rmarkdown, competitiontoolbox
 VignetteBuilder: knitr
 Encoding: UTF-8

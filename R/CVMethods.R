@@ -11,6 +11,7 @@
 #' CV,Linear-method
 #' CV,LogLin-method
 #' CV,Logit-method
+#' CV,LogitBLP-method
 #' CV,LogitNests-method
 #' CV,Auction2ndLogit-method
 #' CV,VertBargBertLogit-method
@@ -117,6 +118,53 @@ setMethod(
 
     return(unname(result))
 
+  })
+
+#'@rdname CV-Methods
+#'@export
+setMethod(
+  f= "CV",
+  signature= "LogitBLP",
+  definition=function(object){
+    
+    # Get parameters and data
+    meanval     <- object@slopes$meanval
+    alphas      <- object@slopes$alphas  # Individual-specific price coefficients
+    subset      <- object@subset
+    mktSize     <- object@mktSize
+    nDraws      <- length(alphas)
+    nestOutside <- object@slopes$nestOutside
+    if(is.null(nestOutside)) nestOutside <- 0
+    
+    outVal <- ifelse(is.na(object@normIndex), 1, 0)
+    output <- ifelse(object@output, 1, -1)
+    
+    # Calculate consumer surplus for each individual consumer type (vectorized)
+    # Utilities: nDraws x nProducts matrix
+    utilPre <- outer(alphas, (object@pricePre - object@priceOutside))
+    utilPre <- sweep(utilPre, 2, meanval, "+")
+    expUtilPre <- exp(utilPre / (1 - nestOutside))
+    sumExpUtilPre <- rowSums(expUtilPre)
+    insideIVPre <- sumExpUtilPre^(1 - nestOutside)
+    VPre <- log(1 + insideIVPre)
+    
+    utilPost <- outer(alphas, (object@pricePost - object@priceOutside)[subset])
+    utilPost <- sweep(utilPost, 2, meanval[subset], "+")
+    expUtilPost <- exp(utilPost / (1 - nestOutside))
+    sumExpUtilPost <- rowSums(expUtilPost)
+    insideIVPost <- sumExpUtilPost^(1 - nestOutside)
+    VPost <- log(1 + insideIVPost)
+    
+    # CV for each consumer type with nesting
+    cvInd <- output * (1 - nestOutside) * (VPost - VPre) / alphas
+    
+    # Average across consumer types
+    result <- mean(cvInd)
+    
+    if(!is.na(mktSize)){ result <- result * mktSize}
+    
+    return(unname(result))
+    
   })
 
 #'@rdname CV-Methods

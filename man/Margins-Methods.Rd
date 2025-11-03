@@ -16,12 +16,15 @@
 \alias{calcMargins,Cournot-method}
 \alias{calcMargins,BargainingLogit-method}
 \alias{calcMargins,Bargaining2ndLogit-method}
+\alias{calcMargins,LogitBLP-method}
 \alias{calcMargins,Auction2ndCap-method}
 \title{Methods for Calculating Margins}
 \usage{
 \S4method{calcMargins}{Bertrand}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{LogitCournot}(object, preMerger = TRUE, level = FALSE)
+
+\S4method{calcMargins}{LogitBLP}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{Bargaining2ndLogit}(object, preMerger = TRUE, exAnte = FALSE, level = TRUE)
 

@@ -12,6 +12,7 @@
 \alias{CV,Linear-method}
 \alias{CV,LogLin-method}
 \alias{CV,Logit-method}
+\alias{CV,LogitBLP-method}
 \alias{CV,LogitNests-method}
 \alias{CV,Auction2ndLogit-method}
 \alias{CV,VertBargBertLogit-method}
@@ -24,6 +25,8 @@
 \S4method{CV}{Linear}(object)
 
 \S4method{CV}{Logit}(object)
+
+\S4method{CV}{LogitBLP}(object)
 
 \S4method{CV}{LogLin}(object)
 

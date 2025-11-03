@@ -15,6 +15,7 @@
 #' calcMargins,Cournot-method
 #' calcMargins,BargainingLogit-method
 #' calcMargins,Bargaining2ndLogit-method
+#' calcMargins,LogitBLP-method
 #'
 #' @description Computes equilibrium product margins assuming that firms are playing a
 #' Nash-Bertrand, Cournot, 2nd Score Auction, or Bargaining game. For "LogitCap", assumes firms are
@@ -127,9 +128,45 @@ setMethod(
     
     return(as.vector(margins))
   }
-  
 )
 
+#'@rdname Margins-Methods
+#'@export
+setMethod(
+  f= "calcMargins",
+  signature= "LogitBLP",
+  definition=function(object, preMerger=TRUE, level=FALSE) {
+    output <- ifelse(object@output, -1, 1)
+    
+    if(preMerger) {
+      prices <- object@pricePre
+      owner <- object@ownerPre
+    } else {
+      prices <- object@pricePost
+      owner <- object@ownerPost
+    }
+    
+    # Get elasticities
+    elast <- elast(object, preMerger)
+    
+    # Calculate revenue shares
+    revenue <- calcShares(object, preMerger, revenue=TRUE)
+    
+    # Solve the FOCs for margins
+    # Try regular inverse first, if that fails use generalized inverse
+    margins <- try(output * as.vector(solve(t(elast)*owner) %*% (revenue * diag(owner))) / revenue, silent=TRUE)
+    if(any(class(margins) == "try-error")) {
+      margins <- output * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue
+    }
+    
+    if(level) {
+      margins <- margins * prices
+    }
+    
+    names(margins) <- object@labels
+    return(as.vector(margins))
+  }
+)
 
 ## compute margins
 #'@rdname Margins-Methods

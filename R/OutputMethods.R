@@ -24,6 +24,7 @@
 #' calcShares,Auction2ndLogit-method
 #' calcShares,Auction2ndLogitNests-method
 #' calcShares,Cournot-method
+#' calcShares,LogitBLP-method
 #' calcRevenues
 #' calcRevenues,ANY-method
 #' calcRevenues,Bertrand-method
@@ -661,7 +662,74 @@ setMethod(
   }
 )
 
+#'@rdname Output-Methods
+#'@export
+setMethod(
+  f= "calcShares",
+  signature= "LogitBLP",
+  definition=function(object, preMerger=TRUE, revenue=FALSE) {
+    if(preMerger) { 
+      prices <- object@pricePre
+    } else {
+      prices <- object@pricePost
+    }
+    # Retrieve mean utilities (delta) and random coefficients (alphas)
+    delta <- object@slopes$meanval
+    alphas <- object@slopes$alphas
+    nDraws <- length(alphas)
+    k <- length(delta)
+    nLabels <- length(object@labels)
+    if(k < 1 || nDraws < 1 || nLabels < 1){
+      # Return a vector of NAs with correct names if any required input is missing
+      na_vec <- rep(NA_real_, nLabels)
+      names(na_vec) <- object@labels
+      return(na_vec)
+    }
 
+    # Outside-good nesting parameter (optional)
+    nestOutside <- object@slopes$nestOutside
+    if(is.null(nestOutside)) nestOutside <- 0
+    
+    # Calculate utilities for each consumer type (k x nDraws)
+    k <- length(prices)
+    delta_mat <- matrix(delta, nrow=k, ncol=nDraws)
+    price_term <- tcrossprod(prices - object@priceOutside, alphas)
+    util <- delta_mat + price_term
+    expUtil <- exp(util / (1 - nestOutside))
+
+    # Within-nest shares (inside-only nest): normalize by sum over products per draw
+    sumExpUtil <- colSums(expUtil)                 # length nDraws
+    withinNest <- expUtil / matrix(sumExpUtil, nrow = k, ncol = nDraws, byrow = TRUE)
+
+    # Across-nest share of inside vs outside for each draw
+    insideIV <- sumExpUtil^(1 - nestOutside)       # length nDraws
+    if(is.na(object@normIndex)){
+      # Outside good present
+      acrossNest <- insideIV / (1 + insideIV)
+    } else {
+      # No outside good; all mass inside
+      acrossNest <- rep(1, nDraws)
+    }
+
+    shares_draw <- withinNest * matrix(acrossNest, nrow = k, ncol = nDraws, byrow = TRUE)
+    shares <- rowMeans(shares_draw)
+
+    if(revenue) {
+      # Convert quantity shares to revenue shares; include outside revenue if outside present
+      total_rev_inside <- sum(prices * shares)
+      if(is.na(object@normIndex)){
+        share_outside <- 1 - sum(shares, na.rm = TRUE)
+        total_rev <- total_rev_inside + object@priceOutside * share_outside
+      } else {
+        total_rev <- total_rev_inside
+      }
+      shares <- prices * shares / total_rev
+    }
+    
+    names(shares) <- object@labels
+    return(shares)
+  }
+)
 
 #'@rdname Output-Methods
 #'@export

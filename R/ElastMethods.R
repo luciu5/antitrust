@@ -14,6 +14,7 @@
 #' elast,LogitNests-method
 #' elast,Cournot-method
 #' elast,VertBargBertLogit-method
+#' elast,LogitBLP-method
 #'
 #' @description Calculate the own and cross-price elasticity between any two products in the market.
 #' @param object An instance of one of the classes listed above.
@@ -175,6 +176,71 @@ setMethod(
 
     return(elast)
 
+  }
+)
+
+#'@rdname Elast-Methods
+#'@export
+setMethod(
+  f= "elast", 
+  signature= "LogitBLP",
+  definition=function(object, preMerger=TRUE, market=FALSE){
+    if(preMerger) {
+      prices <- object@pricePre
+    } else {
+      prices <- object@pricePost
+    }
+    
+    shares <- calcShares(object, preMerger=preMerger)
+    # Retrieve random coefficients on price created by calcSlopes(LogitBLP)
+    alphas <- object@slopes$alphas
+    nDraws <- length(alphas)
+    nestOutside <- object@slopes$nestOutside
+    if(is.null(nestOutside)) nestOutside <- 0
+    
+    if(market) {
+      # For market elasticity, we use the mean alpha 
+      alphaMean <- mean(alphas)
+      elast <- alphaMean * sum(shares/sum(shares)*prices, na.rm=TRUE) * (1 - sum(shares, na.rm=TRUE))
+      names(elast) <- NULL
+      
+    } else {
+      nprods <- length(shares)
+      
+      # For individual elasticities, we need to account for the distribution of random coefficients
+      # Calculate the matrix of elasticities for each consumer type and then average
+      elastDraws <- array(0, dim=c(nprods, nprods, nDraws))
+      
+      delta <- object@slopes$meanval
+      for(r in 1:nDraws) {
+        util <- matrix(rep(delta, 1), ncol=1) + outer(prices - object@priceOutside, alphas[r])
+        expUtil <- exp(util / (1 - nestOutside))
+        sumExpUtil <- sum(expUtil)
+        insideIV <- sumExpUtil^(1 - nestOutside)
+        denom <- 1 + insideIV
+        sInd <- drop(expUtil/denom)  # shares for consumer type r
+        
+        # Calculate elasticities for this consumer type with nesting
+        # Own-price elasticity includes nesting effect
+        for(j in 1:nprods) {
+          elastDraws[j,j,r] <- -alphas[r] * prices[j] / (1 - nestOutside) * 
+                               (1 - (1 - nestOutside) * sInd[j] - nestOutside * sum(sInd))
+          # Cross-price elasticity
+          for(k in 1:nprods) {
+            if(j != k) {
+              elastDraws[j,k,r] <- alphas[r] * prices[k] / (1 - nestOutside) * 
+                                   ((1 - nestOutside) * sInd[k] + nestOutside * sum(sInd))
+            }
+          }
+        }
+      }
+      
+      # Average across consumer types
+      elast <- apply(elastDraws, c(1,2), mean)
+      dimnames(elast) <- list(object@labels, object@labels)
+    }
+    
+    return(elast)
   }
 )
 

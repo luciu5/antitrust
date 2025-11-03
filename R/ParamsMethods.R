@@ -24,6 +24,7 @@
 #' calcSlopes,Cournot-method
 #' calcSlopes,Stackelberg-method
 #' calcSlopes,VertBargBertLogit-method
+#' calcSlopes,LogitBLP-method
 #' calcSlopes,BargainingLogit-method
 #' calcSlopes,Bargaining2ndLogit-method
 #' getParms
@@ -686,6 +687,152 @@ setMethod(
   }
 )
 
+
+#'@rdname Params-Methods
+#'@export
+setMethod(
+  f= "calcSlopes",
+  signature= "LogitBLP",
+  definition=function(object){
+    ## NOTE: This method differs from other calcSlopes implementations.
+    ## Unlike Logit, LogitNests, etc., this method does NOT calibrate parameters
+    ## from observed prices, shares, and margins. Instead, it assumes alphaMean
+    ## and sigma are already provided (via demand.param in sim()) and uses
+    ## BLP contraction mapping to recover mean utilities (delta) that rationalize
+    ## observed shares given the supplied random coefficient parameters.
+    ## 
+    ## This is because the full BLP calibration routine with GMM/nested fixed point
+    ## estimation is not yet implemented. Users must supply alphaMean and sigma externally.
+    
+    shares       <-  object@shares
+    prices       <-  object@prices
+    idx          <-  object@normIndex
+    shareInside  <-  object@shareInside
+    
+    # Get parameters from object (accept aliases for alpha)
+    alphaMean    <-  if(!is.null(object@slopes$alpha)) object@slopes$alpha else object@slopes$alphaMean
+    if(is.null(alphaMean)){
+      stop("LogitBLP calcSlopes: missing 'alpha' (or 'alphaMean') in slopes.")
+    }
+    sigma        <-  object@slopes$sigma       # Std dev of price coefficient
+    if(is.null(sigma)){
+      stop("LogitBLP calcSlopes: missing 'sigma' in slopes.")
+    }
+    nDraws       <-  object@nDraws
+    piDemog      <-  object@slopes$piDemog     # Demographic coefficients (if any)
+    if(is.null(piDemog)) piDemog <- numeric(0)
+    nDemog       <-  object@slopes$nDemog      # Number of demographics
+    if(is.null(nDemog)) nDemog <- 0
+    nestOutside  <-  object@slopes$nestOutside # Nesting parameter for outside good
+    
+    # Check if meanval (delta) is already provided
+    deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
+    
+    # Generate consumer heterogeneity draws (unobserved)
+    consDraws <- rnorm(nDraws)
+    
+    # Generate demographic draws (observed heterogeneity)
+    if(!is.null(nDemog) && nDemog > 0){
+      demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
+      demogEffect <- demogDraws %*% piDemog
+    } else {
+      demogDraws <- matrix(nrow=nDraws, ncol=0)
+      demogEffect <- 0
+      piDemog <- numeric(0)
+      nDemog <- 0
+    }
+    
+    # Compute individual-specific price coefficients
+    # alpha_i = alphaMean + sigma * nu_i + pi * d_i
+    alphas <- alphaMean + sigma * consDraws + demogEffect
+    
+    nprods <- length(shares)
+    
+    if(is.na(idx)){
+      idxShare <- 1 - shareInside
+      idxPrice <- object@priceOutside
+    }
+    else{
+      idxShare <- shares[idx]
+      idxPrice <- prices[idx]
+    }
+    
+    # Set default nestOutside if not provided
+    if(is.null(nestOutside)) nestOutside <- 0
+    
+    # If delta (meanval) is already provided, skip contraction
+    if(deltaProvided){
+      delta <- object@slopes$meanval
+      message("Using provided meanval (delta) for LogitBLP - skipping contraction mapping")
+    } else {
+      # Initialize mean utilities (delta) with simple logit approximation
+      delta <- log(shares) - log(idxShare)
+      
+      # BLP contraction mapping to recover mean utilities
+      # Allow user override via demand.param
+      tol <- ifelse(!is.null(object@slopes$contractionTol), object@slopes$contractionTol, 1e-12)
+      maxIter <- ifelse(!is.null(object@slopes$contractionMaxIter), object@slopes$contractionMaxIter, 1000)
+      
+      message("Running BLP contraction with ", nDraws, " draws (tol=", sprintf("%.0e", tol), ", maxIter=", maxIter, ")...")
+      for(iter in 1:maxIter){
+      # Compute predicted shares given current delta
+      # Utilities for each draw (rows) and product (cols)
+      # Use price relative to outside good for consistency with shares
+      utilities <- tcrossprod(rep(1, length(alphas)), delta) + 
+                   tcrossprod(alphas, prices - object@priceOutside)
+      expUtil <- exp(utilities / (1 - nestOutside))
+      
+      # Denominator depends on whether an outside good exists (idx = NA)
+      sumExpUtil <- rowSums(expUtil)
+      insideIV <- sumExpUtil^(1 - nestOutside)
+      if(is.na(idx)){
+        # Outside good present
+        denom <- 1 + insideIV
+      } else {
+        # No outside good (one product normalized)
+        denom <- insideIV
+      }
+      
+      predShares <- colMeans(expUtil / denom)
+      
+      # Update delta
+      deltaNew <- delta + log(shares) - log(predShares)
+      
+      # Check convergence
+      maxDiff <- max(abs(deltaNew - delta))
+      if(maxDiff < tol){
+        delta <- deltaNew
+        message("BLP contraction converged in ", iter, " iterations (max diff: ", sprintf("%.2e", maxDiff), ")")
+        break
+      }
+      
+      delta <- deltaNew
+      }
+      
+      if(iter == maxIter){
+        warning("BLP contraction mapping did not converge within ", maxIter, " iterations (max diff: ", sprintf("%.2e", maxDiff), ")")
+      }
+    }
+    
+    # Store results
+    names(delta) <- object@labels
+    names(alphaMean) <- "alphaMean"
+    names(sigma) <- "sigma"
+    names(nestOutside) <- "nestOutside"
+    if(length(piDemog) > 0){
+      names(piDemog) <- paste0("pi_", 1:length(piDemog))
+    }
+    
+    # Store both alpha and alphaMean for downstream compatibility
+    object@slopes <- list(alpha=as.numeric(alphaMean), alphaMean=alphaMean, meanval=delta, sigma=sigma, 
+                         piDemog=piDemog, nDemog=nDemog, nestOutside=nestOutside,
+                         alphas=as.numeric(alphas), demogDraws=demogDraws)
+    object@priceOutside <- idxPrice
+    object@mktSize <- object@insideSize / sum(shares)
+    
+    return(object)
+  }
+)
 
 #'@rdname Params-Methods
 #'@export

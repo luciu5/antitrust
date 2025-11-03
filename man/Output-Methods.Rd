@@ -24,6 +24,7 @@
 \alias{calcShares,Auction2ndLogit-method}
 \alias{calcShares,Auction2ndLogitNests-method}
 \alias{calcShares,Cournot-method}
+\alias{calcShares,LogitBLP-method}
 \alias{calcRevenues}
 \alias{calcRevenues,ANY-method}
 \alias{calcRevenues,Bertrand-method}
@@ -74,6 +75,8 @@
 \S4method{calcShares}{VertBarg2ndLogit}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{Logit}(object, preMerger = TRUE, revenue = FALSE)
+
+\S4method{calcShares}{LogitBLP}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{AIDS}(object, preMerger = TRUE, revenue = TRUE)
 

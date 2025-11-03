@@ -265,21 +265,36 @@ setMethod(
 
 
     ## Find price changes that set FOCs equal to 0
-    minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ)
-
-
-    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+    ## Try nleqslv first, fallback to BBsolve
+    nleqslv_maxit <- as.integer(object@control.equ$maxit)
+    if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
+    minResult <- nleqslv::nleqslv(object@priceStart, FOC, method="Broyden",
+                                   control=list(ftol=object@control.equ$tol,
+                                               maxit=nleqslv_maxit))
+    
+    if(minResult$termcd > 2){
+      minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ)
+      priceDelta_solution <- minResult$par
+      if(minResult$convergence != 0){
+        warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")
+      }
+    } else {
+      priceDelta_solution <- minResult$x
+      if(minResult$termcd > 1){
+        warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ",minResult$termcd)
+      }
+    }
 
     if(isMax){
 
-      hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
+      hess <- genD(FOC,priceDelta_solution) #compute the numerical approximation of the FOC hessian at optimium
       hess <- hess$D[,1:hess$p]
 
 
       if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. Price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
     }
 
-    deltaPrice <- exp(minResult$par)-1
+    deltaPrice <- exp(priceDelta_solution)-1
     names(deltaPrice) <- object@labels
 
     if(levels){deltaPrice <- calcPrices(object,FALSE) - calcPrices(object,TRUE)}

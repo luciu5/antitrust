@@ -25,6 +25,7 @@
 \alias{calcSlopes,Cournot-method}
 \alias{calcSlopes,Stackelberg-method}
 \alias{calcSlopes,VertBargBertLogit-method}
+\alias{calcSlopes,LogitBLP-method}
 \alias{calcSlopes,BargainingLogit-method}
 \alias{calcSlopes,Bargaining2ndLogit-method}
 \alias{getParms}
@@ -43,6 +44,8 @@
 \S4method{calcSlopes}{Linear}(object)
 
 \S4method{calcSlopes}{Logit}(object)
+
+\S4method{calcSlopes}{LogitBLP}(object)
 
 \S4method{calcSlopes}{LogitCournot}(object)
 

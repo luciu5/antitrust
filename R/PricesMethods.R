@@ -160,14 +160,31 @@ setMethod(
     }
 
     ## Find price changes that set FOCs equal to 0
-    minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
-
-    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+    ## Try nleqslv first (faster, more reliable for smooth FOCs)
+    nleqslv_maxit <- as.integer(object@control.equ$maxit)
+    if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
+    minResult <- nleqslv::nleqslv(priceStart, FOC, method="Broyden", 
+                                   control=list(ftol=object@control.equ$tol, 
+                                               maxit=nleqslv_maxit))
+    
+    ## Fallback to BBsolve if nleqslv fails
+    if(minResult$termcd > 2){
+      minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+      priceEst_solution <- minResult$par
+      if(minResult$convergence != 0){
+        warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")
+      }
+    } else {
+      priceEst_solution <- minResult$x
+      if(minResult$termcd > 1){
+        warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ",minResult$termcd)
+      }
+    }
 
 
     if(isMax){
 
-      hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
+      hess <- genD(FOC,priceEst_solution) #compute the numerical approximation of the FOC hessian at optimium
       hess <- hess$D[,1:hess$p]
       hess <- hess * (owner>0)   #0 terms not under the control of a common owner
 
@@ -177,7 +194,7 @@ setMethod(
     }
 
 
-    priceEst[subset]        <- minResult$par
+    priceEst[subset]        <- priceEst_solution
     names(priceEst) <- object@labels
 
     return(priceEst)
@@ -290,16 +307,32 @@ setMethod(
 
 
     ## Find price changes that set FOCs equal to 0
-    minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+    ## Try nleqslv first (faster for smooth FOCs); fallback to BBsolve for non-smooth constraints
+    nleqslv_maxit <- as.integer(object@control.equ$maxit)
+    if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
+    minResult <- nleqslv::nleqslv(object@priceStart, FOC, method="Broyden",
+                                   control=list(ftol=object@control.equ$tol,
+                                               maxit=nleqslv_maxit))
+    
+    if(minResult$termcd > 2){
+      minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+      priceEst_solution <- minResult$par
+      if(minResult$convergence != 0){
+        warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")
+      }
+    } else {
+      priceEst_solution <- minResult$x
+      if(minResult$termcd > 1){
+        warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ",minResult$termcd)
+      }
+    }
 
-    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
-
-    priceEst[subset]        <- minResult$par
+    priceEst[subset]        <- priceEst_solution
     names(priceEst) <- object@labels
 
     if(isMax){
 
-      hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
+      hess <- genD(FOC,priceEst_solution) #compute the numerical approximation of the FOC hessian at optimium
       hess <- hess$D[,1:hess$p]
       hess <- hess * (owner>0)   #0 terms not under the control of a common owner
 
@@ -440,12 +473,25 @@ setMethod(
       return(thisFOC)
     }
 
-    minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
-
-    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBSolve' reports: '",minResult$message,"'")}
-
-
-    priceEst        <- minResult$par
+    ## Try nleqslv first, fallback to BBsolve
+    nleqslv_maxit <- as.integer(object@control.equ$maxit)
+    if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
+    minResult <- nleqslv::nleqslv(object@priceStart, FOC, method="Broyden",
+                                   control=list(ftol=object@control.equ$tol,
+                                               maxit=nleqslv_maxit))
+    
+    if(minResult$termcd > 2){
+      minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+      priceEst <- minResult$par
+      if(minResult$convergence != 0){
+        warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBSolve' reports: '",minResult$message,"'")
+      }
+    } else {
+      priceEst <- minResult$x
+      if(minResult$termcd > 1){
+        warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ",minResult$termcd)
+      }
+    }
     names(priceEst) <- object@labels
     return(priceEst)
 
@@ -541,14 +587,30 @@ setMethod(
     }
     
     ## Find price changes that set FOCs equal to 0
-    minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+    ## Try nleqslv first, fallback to BBsolve
+    nleqslv_maxit <- as.integer(object@control.equ$maxit)
+    if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
+    minResult <- nleqslv::nleqslv(priceStart, FOC, method="Broyden",
+                                   control=list(ftol=object@control.equ$tol,
+                                               maxit=nleqslv_maxit))
     
-    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
+    if(minResult$termcd > 2){
+      minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+      priceEst_solution <- minResult$par
+      if(minResult$convergence != 0){
+        warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")
+      }
+    } else {
+      priceEst_solution <- minResult$x
+      if(minResult$termcd > 1){
+        warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ",minResult$termcd)
+      }
+    }
     
     
     if(isMax){
       
-      hess <- genD(FOC,minResult$par) #compute the numerical approximation of the FOC hessian at optimium
+      hess <- genD(FOC,priceEst_solution) #compute the numerical approximation of the FOC hessian at optimium
       hess <- hess$D[,1:hess$p]
       hess <- hess * (owner>0)   #0 terms not under the control of a common owner
       
@@ -558,7 +620,7 @@ setMethod(
     }
     
     
-    priceEst[subset]        <- minResult$par
+    priceEst[subset]        <- priceEst_solution
     names(priceEst) <- object@labels
     
     return(priceEst)
@@ -711,11 +773,25 @@ setMethod(
     }
     
    
-
-      minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=down@control.equ,...)
+      ## Try nleqslv first, fallback to BBsolve
+      nleqslv_maxit <- as.integer(down@control.equ$maxit)
+      if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
+      minResult <- nleqslv::nleqslv(priceStart, FOC, method="Broyden",
+                                     control=list(ftol=down@control.equ$tol,
+                                                 maxit=nleqslv_maxit))
       
-      if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
-      minResult <- minResult$par
+      if(minResult$termcd > 2){
+        minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=down@control.equ,...)
+        priceResult <- minResult$par
+        if(minResult$convergence != 0){
+          warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")
+        }
+      } else {
+        priceResult <- minResult$x
+        if(minResult$termcd > 1){
+          warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ",minResult$termcd)
+        }
+      }
       
       minResultUp <- rep(NA, length(priceStartUp))
       minResultDown <- rep(NA, length(priceStartDown))
@@ -725,17 +801,17 @@ setMethod(
       
     
       if(chain_level == "full"){
-        minResultUp[subsetDown] <- minResult[1:length(priceStartUp[subsetDown])] 
-        minResultDown[subsetDown] <- minResult[-(1:length(priceStartUp[subsetDown]))]
+        minResultUp[subsetDown] <- priceResult[1:length(priceStartUp[subsetDown])] 
+        minResultDown[subsetDown] <- priceResult[-(1:length(priceStartUp[subsetDown]))]
         
       }
       else if (chain_level =="retailer"){
         minResultUp[subsetDown] <- upPricePre[subsetDown]
-        minResultDown[subsetDown] <- minResult
+        minResultDown[subsetDown] <- priceResult
        
       }
       else if (chain_level =="wholesaler"){
-        minResultUp[subsetDown] <- minResult
+        minResultUp[subsetDown] <- priceResult
         minResultDown[subsetDown] <- downPricePre[subsetDown]
         
       }
@@ -842,19 +918,33 @@ setMethod(
     }
     
     
+    ## Try nleqslv first, fallback to BBsolve
+    nleqslv_maxit <- as.integer(down@control.equ$maxit)
+    if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
+    minResult <- nleqslv::nleqslv(priceStart, FOC, method="Broyden",
+                                   control=list(ftol=down@control.equ$tol,
+                                               maxit=nleqslv_maxit))
     
-    minResult <- BB::BBsolve(priceStart,FOC,quiet=TRUE,control=down@control.equ,...)
-    
-    if(minResult$convergence != 0){warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")}
-    minResult <- minResult$par
+    if(minResult$termcd > 2){
+      minResult <- BB::BBsolve(priceStart,FOC,quiet=TRUE,control=down@control.equ,...)
+      priceResult <- minResult$par
+      if(minResult$convergence != 0){
+        warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")
+      }
+    } else {
+      priceResult <- minResult$x
+      if(minResult$termcd > 1){
+        warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ",minResult$termcd)
+      }
+    }
     
     minResultUp <- rep(NA, length(priceStartUp))
     minResultDown <- rep(NA, length(priceStartDown))
     
     
     
-    minResultUp[subsetDown] <- minResult[1:length(priceStartUp[subsetDown])] 
-    minResultDown[subsetDown] <- minResult[-(1:length(priceStartUp[subsetDown]))]
+    minResultUp[subsetDown] <- priceResult[1:length(priceStartUp[subsetDown])] 
+    minResultDown[subsetDown] <- priceResult[-(1:length(priceStartUp[subsetDown]))]
     
     down@slopes$meanval <- meanval  + alpha *(minResultUp - priceOutside)
     

@@ -9,7 +9,7 @@ sim(
   prices,
   supply = c("bertrand", "auction", "bargaining", "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
-    "LogitCap"),
+    "LogitCap", "LogitBLP"),
   demand.param,
   ownerPre,
   ownerPost,
@@ -132,6 +132,21 @@ If \sQuote{demand} equals \sQuote{Logit} or \sQuote{LogitNests}, then
   \item{alpha}{The price coefficient.}
   \item{meanval}{A length-k vector of mean valuations. If none of the
   values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
+}
+
+If \sQuote{demand} equals \sQuote{LogitBLP}, then
+\sQuote{demand.param} must equal a list containing:
+\describe{
+  \item{alpha}{The mean price coefficient (or use alphaMean).}
+  \item{meanval}{A length-k vector of mean valuations. If none of the
+  values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
+  \item{sigma}{The standard deviation of the price coefficient across consumers,
+  representing consumer heterogeneity in price sensitivity.}
+  \item{piDemog}{Optional vector of demographic coefficients for the price coefficient. 
+  Each element represents the interaction effect of a demographic variable with price.}
+  \item{nDemog}{Number of demographic variables. Required if piDemog is provided. Default is 0.}
+ \item{nestOutside}{Optional nesting parameter for the outside good. Default is 0 (flat logit).}
+  \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
 }
 
 If \sQuote{demand} equals \sQuote{CES} or \sQuote{CESNests}, then

@@ -85,6 +85,21 @@
 #'   values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
 #' }
 #'
+#' If \sQuote{demand} equals \sQuote{LogitBLP}, then
+#' \sQuote{demand.param} must equal a list containing:
+#' \describe{
+#'   \item{alpha}{The mean price coefficient (or use alphaMean).}
+#'   \item{meanval}{A length-k vector of mean valuations. If none of the
+#'   values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
+#'   \item{sigma}{The standard deviation of the price coefficient across consumers,
+#'   representing consumer heterogeneity in price sensitivity.}
+#'   \item{piDemog}{Optional vector of demographic coefficients for the price coefficient. 
+#'   Each element represents the interaction effect of a demographic variable with price.}
+#'   \item{nDemog}{Number of demographic variables. Required if piDemog is provided. Default is 0.}
+#'  \item{nestOutside}{Optional nesting parameter for the outside good. Default is 0 (flat logit).}
+#'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
+#' }
+#'
 #' If \sQuote{demand} equals \sQuote{CES} or \sQuote{CESNests}, then
 #' \sQuote{demand.param} must equal a list containing:
 #' \describe{
@@ -150,7 +165,7 @@ NULL
 #'@export
 sim <- function(prices,
                 supply=c("bertrand","auction","bargaining","bargaining2nd"),
-                demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap"),demand.param,
+                demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap","LogitBLP"),demand.param,
                 ownerPre,ownerPost,nests, capacities,
                 mcDelta=rep(0,length(prices)),
                 subset=rep(TRUE,length(prices)),
@@ -159,7 +174,8 @@ sim <- function(prices,
                 priceStart,
                 bargpowerPre=rep(0.5,length(prices)),
                 bargpowerPost=bargpowerPre,
-                labels=paste("Prod",1:length(prices),sep=""),...){
+                labels=paste("Prod",1:length(prices),sep=""),
+                ...){
 
   demand <- match.arg(demand)
   supply <- match.arg(supply)
@@ -186,16 +202,65 @@ sim <- function(prices,
   if(!is.list(demand.param)){stop("'demand.param' must be a list.")}
 
   ## Checks for discrete choice models
-  if(demand %in% c("CESNests","LogitNests","CES","Logit","LogitCap")){
+  if(demand %in% c("CESNests","LogitNests","CES","Logit","LogitCap","LogitBLP")){
 
-    if(!("meanval" %in% names(demand.param))){
-      stop("'demand.param' does not contain 'meanval'.")
-    }
-    if(length(demand.param$meanval) != nprods || any(is.na(demand.param$meanval))){
-      stop("'meanval' must be a length-k vector of product mean valuations. NAs not allowed.")
+    # meanval is optional for LogitBLP (recovered via contraction if not provided)
+    if(demand != "LogitBLP"){
+      if(!("meanval" %in% names(demand.param))){
+        stop("'demand.param' does not contain 'meanval'.")
+      }
+      if(length(demand.param$meanval) != nprods || any(is.na(demand.param$meanval))){
+        stop("'meanval' must be a length-k vector of product mean valuations. NAs not allowed.")
+      }
+    } else {
+      # For LogitBLP, validate meanval only if provided
+      if("meanval" %in% names(demand.param)){
+        if(length(demand.param$meanval) != nprods || any(is.na(demand.param$meanval))){
+          stop("'meanval' must be a length-k vector of product mean valuations. NAs not allowed.")
+        }
+      }
     }
 
-    if(demand %in% c("LogitNests","Logit","LogitCap")){
+    if(demand %in% c("LogitNests","Logit","LogitCap","LogitBLP")){
+      
+      if(demand == "LogitBLP") {
+        # Check if meanval is provided (optional for LogitBLP)
+        # If NOT provided, calcSlopes will recover it via BLP contraction from observed shares
+        if(!("meanval" %in% names(demand.param))){
+          message("Note: 'meanval' (delta) not provided for LogitBLP. It will be recovered via BLP contraction from observed shares/prices.")
+        }
+        
+        # No need to check random_draws as they are handled in calcSlopes
+        if(!("sigma" %in% names(demand.param)) || length(demand.param$sigma) != 1){
+          stop("'demand.param' must contain 'sigma', a scalar parameter for price coefficient heterogeneity.")
+        }
+        # Set default nDraws if not provided
+        if(!("nDraws" %in% names(demand.param))){
+          demand.param$nDraws <- 500
+          message("'nDraws' not provided for LogitBLP. Defaulting to 500 draws.")
+        }
+        # Handle demographic parameters
+        if(!("nDemog" %in% names(demand.param))){
+          demand.param$nDemog <- 0
+        }
+        if(!("piDemog" %in% names(demand.param))){
+          demand.param$piDemog <- numeric(0)
+        }
+        # Validate consistency between nDemog and piDemog
+        if(demand.param$nDemog > 0 && length(demand.param$piDemog) != demand.param$nDemog){
+          stop("'piDemog' must have length equal to 'nDemog'.")
+        }
+        # Handle nesting parameter for outside good
+        if(!("nestOutside" %in% names(demand.param))){
+          demand.param$nestOutside <- 0  # Default: no nesting (standard logit)
+        }
+        # Validate: scalar numeric in [0,1). 1 is not allowed because of division by (1 - nestOutside)
+        if(!is.numeric(demand.param$nestOutside) || length(demand.param$nestOutside) != 1 ||
+           is.na(demand.param$nestOutside) || !is.finite(demand.param$nestOutside) ||
+           demand.param$nestOutside < 0 || demand.param$nestOutside >= 1){
+          stop("'nestOutside' must be a single numeric value in [0,1).")
+        }
+      }
 
       ## An outside option is assumed to exist if all mean valuations are non-zero
       if(all(demand.param$meanval!=0)){
@@ -212,11 +277,19 @@ sim <- function(prices,
 
       }
 
-      if(!("alpha" %in% names(demand.param))   ||
-         length(demand.param$alpha) != 1     ||
-         isTRUE(demand.param$alpha>0)){
-        stop("'demand.param' does not contain 'alpha' or 'alpha' is not a negative number.")
+      # Determine alpha mean and set output sign accordingly (TRUE if alpha<0, FALSE if alpha>0)
+      # Accept aliases: alpha, alphaMean, alpha_mean
+      alphaVal <- ifelse("alpha" %in% names(demand.param), demand.param$alpha,
+                  ifelse("alphaMean" %in% names(demand.param), demand.param$alphaMean,
+                  ifelse("alpha_mean" %in% names(demand.param), demand.param$alpha_mean, NA)))
+      
+      if(length(alphaVal) != 1 || is.na(alphaVal)){
+        stop("'demand.param' must include a scalar 'alpha' (or 'alphaMean'/'alpha_mean').")
       }
+      # Normalize into 'alpha' for downstream methods
+      demand.param$alpha <- alphaVal
+      # output=TRUE for negative alpha (output market), FALSE for positive alpha (input market)
+      outputFlag <- alphaVal < 0
 
       shareInside <- sum(shares)
       if(missing(priceOutside)){priceOutside <- 0}
@@ -362,6 +435,25 @@ sim <- function(prices,
   }
 
 
+  else if(demand == "LogitBLP") {
+    result <- new(demand, 
+                 prices=prices, 
+                 shares=shares,
+                 margins=margins,
+                 slopes=demand.param,
+                 normIndex=normIndex,
+                 mcDelta=mcDelta,
+                 insideSize=insideSize,
+                 subset=subset,
+                 ownerPre=ownerPre,
+                 ownerPost=ownerPost,
+                 priceStart=priceStart,
+                 priceOutside=priceOutside,
+                 shareInside=shareInside,
+                 output=outputFlag,
+                 nDraws=demand.param$nDraws,
+                 labels=labels)
+  }
   else if( demand %in% c("Logit","CES")){
 
 
@@ -377,6 +469,7 @@ sim <- function(prices,
                   priceStart=priceStart,
                   priceOutside=priceOutside,
                   shareInside=shareInside,
+                  output=outputFlag,
                   labels=labels),
                   bargaining=new("BargainingLogit",prices=prices, shares=shares,
                      margins=margins,
@@ -391,6 +484,7 @@ sim <- function(prices,
                      priceOutside=priceOutside,
                      shareInside=shareInside,
                      priceStart=priceStart,
+                     output=outputFlag,
                      labels=labels,
                      cls = "BargainingLogit"),
                 auction=new("Auction2ndLogit",prices=prices, shares=shares,
@@ -404,6 +498,7 @@ sim <- function(prices,
                                       priceOutside=priceOutside,
                                       shareInside=shareInside,
                                       priceStart=priceStart,
+                                      output=outputFlag,
                                       labels=labels,
                                       cls = "Auction2ndLogit"),
                 bargaining2nd=new("Bargaining2ndLogit",prices=prices, shares=shares,
@@ -419,6 +514,7 @@ sim <- function(prices,
                             priceOutside=priceOutside,
                             shareInside=shareInside,
                             priceStart=priceStart,
+                            output=outputFlag,
                             labels=labels,
                             cls = "Bargaining2ndLogit")
                 
@@ -451,6 +547,7 @@ sim <- function(prices,
                   mcDelta=mcDelta,
                   subset=subset,
                   priceStart=priceStart,shareInside=shareInside,
+                  output=outputFlag,
                   labels=labels)
   }
 
@@ -503,14 +600,19 @@ sim <- function(prices,
   }
   else{result@slopes=demand.param}
 
+  ## For LogitBLP, recover delta and generate random coefficients via calcSlopes
+  if(demand == "LogitBLP"){
+    result <- calcSlopes(result)
+  }
+
 
   ## Convert ownership vectors to ownership matrices
   result@ownerPre  <- ownerToMatrix(result,TRUE)
   result@ownerPost <- ownerToMatrix(result,FALSE)
 
-  ## Calculate marginal cost
-  result@mcPre     <-  calcMC(result,TRUE)
-  result@mcPost    <-  calcMC(result,FALSE)
+  ## Calibrate marginal costs from observed prices and demand params
+  result@mcPre     <-  calcMC(result, TRUE)
+  result@mcPost    <-  calcMC(result, FALSE)
 
   if(demand == "AIDS"){
     ## Solve Non-Linear System for Price Changes
@@ -518,11 +620,14 @@ sim <- function(prices,
   }
 
 
-  ## Solve Non-Linear System for Price Changes
-  result@pricePre  <- calcPrices(result,TRUE,...)
-  
-  if(!supply %in% c("auction","bargaining2nd")) result@pricePost <- calcPrices(result,FALSE,subset=subset,...)
-  else{result@pricePost <- calcPrices(result,FALSE,...)}
+  ## Use observed prices as pre-merger equilibrium and only solve post-merger prices
+  ## calcMC above already calibrated MCs using the supplied prices.
+  result@pricePre <- prices
+  if(!supply %in% c("auction","bargaining2nd")) {
+    result@pricePost <- calcPrices(result, FALSE, subset = subset, ...)
+  } else {
+    result@pricePost <- calcPrices(result, FALSE, ...)
+  }
 
   if(any(grepl("logit",demand,ignore.case = TRUE),na.rm=TRUE)){result@mktSize <- insideSize/sum(calcShares(result))}
   else if(any(grepl("ces",demand,ignore.case = TRUE),na.rm=TRUE)){result@mktSize <- insideSize*(1+result@slopes$alpha)}

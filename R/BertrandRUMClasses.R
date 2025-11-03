@@ -220,6 +220,50 @@ setClass(
 #'@rdname BertrandRUM-Classes
 #'@export
 setClass(
+  Class   = "LogitBLP",
+  contains = "Logit",
+  slots = list(
+    nDraws = "numeric"
+  ),
+  prototype = prototype(
+    nDraws = 1000
+  ),
+  validity = function(object){
+    # nDraws must be a single positive numeric value
+    if(length(object@nDraws) != 1 || is.na(object@nDraws) || !is.finite(object@nDraws) || object@nDraws <= 0){
+      stop("'nDraws' must be a single positive number")
+    }
+
+    # If present, check slopes list types without requiring them at construction time
+    if(!is.null(object@slopes)){
+      if(!is.list(object@slopes)) stop("'slopes' must be a list when provided")
+      if(!is.null(object@slopes$alpha) && !is.numeric(object@slopes$alpha)){
+        stop("'slopes$alpha' must be numeric when provided")
+      }
+      if(!is.null(object@slopes$alphaMean) && !is.numeric(object@slopes$alphaMean)){
+        stop("'slopes$alphaMean' must be numeric when provided")
+      }
+      if(!is.null(object@slopes$sigma) && (!is.numeric(object@slopes$sigma) || length(object@slopes$sigma)!=1)){
+        stop("'slopes$sigma' must be a single numeric value when provided")
+      }
+      if(!is.null(object@slopes$piDemog) && !is.numeric(object@slopes$piDemog)){
+        stop("'slopes$piDemog' must be numeric when provided")
+      }
+      if(!is.null(object@slopes$nDemog) && (length(object@slopes$nDemog)!=1 || is.na(object@slopes$nDemog) || object@slopes$nDemog < 0)){
+        stop("'slopes$nDemog' must be a single non-negative number when provided")
+      }
+      if(!is.null(object@slopes$nestOutside) && (!is.numeric(object@slopes$nestOutside) || object@slopes$nestOutside < 0 || object@slopes$nestOutside >= 1)){
+        stop("'slopes$nestOutside' must be in [0,1) when provided")
+      }
+    }
+
+    return(TRUE)
+  }
+)
+
+#'@rdname BertrandRUM-Classes
+#'@export
+setClass(
   Class   = "LogitCournot",
   contains="Logit"
 )
