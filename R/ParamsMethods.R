@@ -746,6 +746,28 @@ setMethod(
     # alpha_i = alphaMean + sigma * nu_i + pi * d_i
     alphas <- alphaMean + sigma * consDraws + demogEffect
     
+    # Use output slot to verify sign consistency:
+    # output=TRUE (output market) requires alpha < 0 (higher prices reduce utility)
+    # output=FALSE (input market) requires alpha > 0 (higher prices increase utility)
+    output <- object@output
+    expectedSign <- ifelse(output, -1, 1)
+    
+    # Check if alphaMean has the wrong sign for this market type
+    if(sign(alphaMean) != expectedSign && alphaMean != 0){
+      warning("Price coefficient sign inconsistent with market type (output=", output, 
+              "). Expected ", ifelse(output, "negative", "positive"), " alpha, got ", 
+              round(alphaMean, 4), ". Flipping sign to maintain consistency.")
+      alphas <- -alphas
+      alphaMean <- -alphaMean
+    }
+    
+    # Ensure all individual alphas have the correct sign (some may cross zero due to random draws)
+    wrongSigns <- if(expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
+    if(wrongSigns > 0){
+      warning(wrongSigns, " out of ", length(alphas), " individual price coefficients have wrong sign. ",
+              "Consider reducing sigma or adjusting alphaMean to keep all draws on correct side of zero.")
+    }
+    
     nprods <- length(shares)
     
     if(is.na(idx)){

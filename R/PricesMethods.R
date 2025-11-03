@@ -112,8 +112,9 @@ setMethod(
   definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
 
 
+    output <- object@output
+    # Start from pre-merger prices when available; fall back to priceStart
     priceStart <- object@priceStart
-    output    <-  object@output
     outSign <- ifelse(output,-1,1)
     alpha <- object@slopes$alpha
     
@@ -127,6 +128,10 @@ setMethod(
     }
 
     nprods <- length(object@shares)
+    if(!preMerger){
+      cand <- object@pricePre
+      if(length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
+    }
     if(missing(subset)){
       subset <- rep(TRUE,nprods)
     }
@@ -161,7 +166,7 @@ setMethod(
 
     ## Find price changes that set FOCs equal to 0
     ## Try nleqslv first (faster, more reliable for smooth FOCs)
-    nleqslv_maxit <- as.integer(object@control.equ$maxit)
+  nleqslv_maxit <- as.integer(object@control.equ$maxit)
     if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
     minResult <- nleqslv::nleqslv(priceStart, FOC, method="Broyden", 
                                    control=list(ftol=object@control.equ$tol, 
@@ -248,8 +253,10 @@ setMethod(
   signature= "LogitCap",
   definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
 
-
-    output <- object@output
+    # We'll pick a robust starting vector after we know nprods; default to priceStart
+    priceStart <- object@priceStart
+    # For post-merger, provide a stronger starting point from pre-merger prices
+    priceStart <- if(preMerger) object@priceStart else object@pricePre
 
     if(preMerger){
       owner <- object@ownerPre
@@ -263,6 +270,13 @@ setMethod(
     }
 
     nprods <- length(object@shares)
+    # For post-merger, prefer pre-merger prices if available and finite; otherwise fall back
+    if(!preMerger){
+      cand <- object@pricePre
+      if(length(cand) == nprods && all(is.finite(cand))){
+        priceStart <- cand
+      }
+    }
     if(missing(subset)){
       subset <- rep(TRUE,nprods)
     }
@@ -310,12 +324,12 @@ setMethod(
     ## Try nleqslv first (faster for smooth FOCs); fallback to BBsolve for non-smooth constraints
     nleqslv_maxit <- as.integer(object@control.equ$maxit)
     if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
-    minResult <- nleqslv::nleqslv(object@priceStart, FOC, method="Broyden",
+  minResult <- nleqslv::nleqslv(priceStart, FOC, method="Broyden",
                                    control=list(ftol=object@control.equ$tol,
                                                maxit=nleqslv_maxit))
     
     if(minResult$termcd > 2){
-      minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+  minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
       priceEst_solution <- minResult$par
       if(minResult$convergence != 0){
         warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '",minResult$message,"'")
@@ -438,6 +452,9 @@ setMethod(
   signature= "LogLin",
   definition=function(object,preMerger=TRUE,subset,...){
 
+    # Use better starting values for post-merger; fallback to priceStart if missing/invalid
+    priceStart <- object@priceStart
+
     if(preMerger){
       owner <- object@ownerPre
       mc    <- object@mcPre
@@ -453,6 +470,11 @@ setMethod(
     }
 
     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'quantities'")}
+
+    if(!preMerger){
+      cand <- object@pricePre
+      if(length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
+    }
 
 
     FOC <- function(priceCand){
@@ -476,12 +498,12 @@ setMethod(
     ## Try nleqslv first, fallback to BBsolve
     nleqslv_maxit <- as.integer(object@control.equ$maxit)
     if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
-    minResult <- nleqslv::nleqslv(object@priceStart, FOC, method="Broyden",
+  minResult <- nleqslv::nleqslv(priceStart, FOC, method="Broyden",
                                    control=list(ftol=object@control.equ$tol,
                                                maxit=nleqslv_maxit))
     
     if(minResult$termcd > 2){
-      minResult <- BBsolve(object@priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
+  minResult <- BBsolve(priceStart,FOC,quiet=TRUE,control=object@control.equ,...)
       priceEst <- minResult$par
       if(minResult$convergence != 0){
         warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBSolve' reports: '",minResult$message,"'")
@@ -527,6 +549,7 @@ setMethod(
   definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
     
     
+    # Better starting values improve convergence for post-merger; guard against missing/NA
     priceStart <- object@priceStart
     
     alpha <- object@slopes$alpha
@@ -551,6 +574,14 @@ setMethod(
     }
     
     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
+    
+    # If solving post-merger, try to initialize from pre-merger prices when valid
+    if(!preMerger){
+      cand <- object@pricePre
+      if(length(cand) == nprods && all(is.finite(cand))){
+        priceStart <- cand
+      }
+    }
     
     if(any(!subset)){
       owner <- owner[subset,subset]

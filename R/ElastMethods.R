@@ -221,14 +221,17 @@ setMethod(
         sInd <- drop(expUtil/denom)  # shares for consumer type r
         
         # Calculate elasticities for this consumer type with nesting
-        # Own-price elasticity includes nesting effect
+        # Own-price elasticity: ∂log(s_j)/∂log(p_j)
+        # With nested logit utility: u_ij = δ_j + α_i*(p_j - p0)
+        # For output market (α<0): own-elasticity is negative (price up → share down)
+        # For input market (α>0): own-elasticity is positive (price up → share up)
         for(j in 1:nprods) {
-          elastDraws[j,j,r] <- -alphas[r] * prices[j] / (1 - nestOutside) * 
+          elastDraws[j,j,r] <- alphas[r] * prices[j] / (1 - nestOutside) * 
                                (1 - (1 - nestOutside) * sInd[j] - nestOutside * sum(sInd))
-          # Cross-price elasticity
+          # Cross-price elasticity: ∂log(s_j)/∂log(p_k)
           for(k in 1:nprods) {
             if(j != k) {
-              elastDraws[j,k,r] <- alphas[r] * prices[k] / (1 - nestOutside) * 
+              elastDraws[j,k,r] <- -alphas[r] * prices[k] / (1 - nestOutside) * 
                                    ((1 - nestOutside) * sInd[k] + nestOutside * sum(sInd))
             }
           }
