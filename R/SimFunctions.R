@@ -8,6 +8,8 @@
 #' @description Let k denote the number of products produced by all firms below.
 #'
 #' @param prices A length k vector of product prices.
+#' @param shares A length k vector of product shares. If missing, defaults to equal shares (1/k for each product).
+#' Required for \sQuote{LogitBLP} to perform BLP contraction mapping. Optional for other demand systems.
 #' @param supply A character string indicating how firms compete with one another. Valid
 #' values are "bertrand" (Nash Bertrand),  "auction2nd"
 #' (2nd score auction), "bargaining", or "bargaining2nd".
@@ -166,6 +168,7 @@ NULL
 #'@rdname Sim-Functions
 #'@export
 sim <- function(prices,
+                shares,
                 supply=c("bertrand","auction","bargaining","bargaining2nd"),
                 demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap","LogitBLP"),demand.param,
                 ownerPre,ownerPost,nests, capacities,
@@ -194,7 +197,21 @@ sim <- function(prices,
 
   ## Create placeholders values to fill required Class slots
 
-  shares <- margins <- rep(1/nprods,nprods)
+  sharesProvided <- !missing(shares)
+  
+  if(missing(shares)){
+    shares <- rep(1/nprods, nprods)
+  } else {
+    if(length(shares) != nprods){
+      stop("'shares' must have the same length as 'prices'")
+    }
+    # Warn if shares provided but not used
+    if(demand != "LogitBLP"){
+      warning("'shares' argument is only used for LogitBLP demand (for BLP contraction mapping). For '", demand, "', shares are ignored.")
+    }
+  }
+  
+  margins <- rep(1/nprods,nprods)
 
 
   if(!missing(nests)){nests <- factor(nests,levels=unique(nests))}
@@ -229,6 +246,10 @@ sim <- function(prices,
         # Check if meanval is provided (optional for LogitBLP)
         # If NOT provided, calcSlopes will recover it via BLP contraction from observed shares
         if(!("meanval" %in% names(demand.param))){
+          # If meanval not provided, shares MUST be provided for BLP contraction
+          if(!sharesProvided){
+            stop("For LogitBLP, either 'meanval' must be in 'demand.param' OR 'shares' must be provided. Cannot recover delta without observed shares.")
+          }
           message("Note: 'meanval' (delta) not provided for LogitBLP. It will be recovered via BLP contraction from observed shares/prices.")
         }
         
@@ -267,7 +288,10 @@ sim <- function(prices,
       ## An outside option is assumed to exist if all mean valuations are non-zero
       if(all(demand.param$meanval!=0)){
         normIndex <- NA
-        shares <- rep(1/(nprods+1),nprods)
+        # Only override shares if they weren't explicitly provided by user
+        if(!sharesProvided){
+          shares <- rep(1/(nprods+1),nprods)
+        }
       }
       else{
         normIndex <- which(demand.param$meanval==0)
