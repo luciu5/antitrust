@@ -8,8 +8,7 @@
 #' @description Let k denote the number of products produced by all firms below.
 #'
 #' @param prices A length k vector of product prices.
-#' @param shares A length k vector of product shares. If missing, defaults to equal shares (1/k for each product).
-#' Required for \sQuote{LogitBLP} to perform BLP contraction mapping. Optional for other demand systems.
+#' @param shares A length k vector of product shares. Only used for \sQuote{LogitBLP} demand. See Details.
 #' @param supply A character string indicating how firms compete with one another. Valid
 #' values are "bertrand" (Nash Bertrand),  "auction2nd"
 #' (2nd score auction), "bargaining", or "bargaining2nd".
@@ -92,7 +91,9 @@
 #' \describe{
 #'   \item{alpha}{The mean price coefficient (or use alphaMean).}
 #'   \item{meanval}{A length-k vector of mean valuations. If none of the
-#'   values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
+#'   values of \sQuote{meanval} are zero, an outside good is assumed to exist.
+#'   If \sQuote{meanval} is not provided, then \sQuote{shares} must be supplied
+#'   so that mean valuations can be recovered via BLP contraction mapping.}
 #'   \item{sigma}{The standard deviation of the random coefficient on price, 
 #'   representing consumer heterogeneity in price sensitivity.}
 #'   \item{sigmaNest}{Optional nesting parameter for the outside good: sigmaNest in (0,1] 
@@ -103,6 +104,12 @@
 #'   \item{nDemog}{Number of demographic variables. Required if piDemog is provided. Default is 0.}
 #'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
 #' }
+#'
+#' Note: The \sQuote{shares} argument is only used with \sQuote{LogitBLP} demand. 
+#' If supplied for any other demand system, a warning will be issued but the function will proceed
+#' (shares will be ignored). For \sQuote{LogitBLP},
+#' either \sQuote{meanval} must be provided in \sQuote{demand.param} OR \sQuote{shares} 
+#' must be supplied to the \code{sim} function to perform BLP contraction mapping.
 #'
 #' If \sQuote{demand} equals \sQuote{CES} or \sQuote{CESNests}, then
 #' \sQuote{demand.param} must equal a list containing:
@@ -205,9 +212,9 @@ sim <- function(prices,
     if(length(shares) != nprods){
       stop("'shares' must have the same length as 'prices'")
     }
-    # Warn if shares provided but not used
+    # Warn if shares provided for non-LogitBLP demand
     if(demand != "LogitBLP"){
-      warning("'shares' argument is only used for LogitBLP demand (for BLP contraction mapping). For '", demand, "', shares are ignored.")
+      warning("'shares' argument is only used for LogitBLP demand (for BLP contraction mapping). For '", demand, "', shares will be ignored.")
     }
   }
   
@@ -286,21 +293,29 @@ sim <- function(prices,
       }
 
       ## An outside option is assumed to exist if all mean valuations are non-zero
-      if(all(demand.param$meanval!=0)){
+      ## For LogitBLP, meanval might not be in demand.param yet (recovered via BLP contraction)
+      if("meanval" %in% names(demand.param)){
+        if(all(demand.param$meanval!=0)){
+          normIndex <- NA
+          # Only override shares if they weren't explicitly provided by user
+          if(!sharesProvided){
+            shares <- rep(1/(nprods+1),nprods)
+          }
+        }
+        else{
+          normIndex <- which(demand.param$meanval==0)
+
+          if(length(normIndex)>1){
+            warning("multiple values of meanval are equal to zero. Normalizing with respect to the first product with zero mean value.")
+            normIndex <- normIndex[1]
+          }
+        }
+      } else {
+        # meanval not provided - this should only happen for LogitBLP
+        # and we've already verified shares were provided (error thrown at line 251 if not)
+        # Assume outside good exists, will be determined after BLP contraction
         normIndex <- NA
-        # Only override shares if they weren't explicitly provided by user
-        if(!sharesProvided){
-          shares <- rep(1/(nprods+1),nprods)
-        }
-      }
-      else{
-        normIndex <- which(demand.param$meanval==0)
-
-        if(length(normIndex)>1){
-          warning("multiple values of meanval are equal to zero. Normalizing with respect to the first product with zero mean value.")
-          normIndex <- normIndex[1]
-        }
-
+        # sharesProvided must be TRUE here (or we would have errored), so don't override shares
       }
 
       # Determine alpha mean and set output sign accordingly (TRUE if alpha<0, FALSE if alpha>0)

@@ -7,6 +7,7 @@
 \usage{
 sim(
   prices,
+  shares,
   supply = c("bertrand", "auction", "bargaining", "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
     "LogitCap", "LogitBLP"),
@@ -28,6 +29,8 @@ sim(
 }
 \arguments{
 \item{prices}{A length k vector of product prices.}
+
+\item{shares}{A length k vector of product shares. Only used for \sQuote{LogitBLP} demand. See Details.}
 
 \item{supply}{A character string indicating how firms compete with one another. Valid
 values are "bertrand" (Nash Bertrand),  "auction2nd"
@@ -139,15 +142,25 @@ If \sQuote{demand} equals \sQuote{LogitBLP}, then
 \describe{
   \item{alpha}{The mean price coefficient (or use alphaMean).}
   \item{meanval}{A length-k vector of mean valuations. If none of the
-  values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
-  \item{sigma}{The standard deviation of the price coefficient across consumers,
+  values of \sQuote{meanval} are zero, an outside good is assumed to exist.
+  If \sQuote{meanval} is not provided, then \sQuote{shares} must be supplied
+  so that mean valuations can be recovered via BLP contraction mapping.}
+  \item{sigma}{The standard deviation of the random coefficient on price, 
   representing consumer heterogeneity in price sensitivity.}
+  \item{sigmaNest}{Optional nesting parameter for the outside good: sigmaNest in (0,1] 
+  where sigmaNest=1 is flat logit (no nesting) and sigmaNest->0 means products are 
+  perfect substitutes within the nest. Default is 1.}
   \item{piDemog}{Optional vector of demographic coefficients for the price coefficient. 
   Each element represents the interaction effect of a demographic variable with price.}
   \item{nDemog}{Number of demographic variables. Required if piDemog is provided. Default is 0.}
- \item{nestOutside}{Optional nesting parameter for the outside good. Default is 0 (flat logit).}
   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
 }
+
+Note: The \sQuote{shares} argument is only used with \sQuote{LogitBLP} demand. 
+If supplied for any other demand system, a warning will be issued but the function will proceed
+(shares will be ignored). For \sQuote{LogitBLP},
+either \sQuote{meanval} must be provided in \sQuote{demand.param} OR \sQuote{shares} 
+must be supplied to the \code{sim} function to perform BLP contraction mapping.
 
 If \sQuote{demand} equals \sQuote{CES} or \sQuote{CESNests}, then
 \sQuote{demand.param} must equal a list containing:
