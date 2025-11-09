@@ -790,66 +790,81 @@ setMethod(
       idxPrice <- object@priceOutside
     }
     
-    # If delta (meanval) is already provided, skip contraction
-    if(deltaProvided){
+    
+    
+    if (deltaProvided) {
       delta <- object@slopes$meanval
       message("Using provided meanval (delta) for LogitBLP - skipping contraction mapping")
-    } else {
-      # Initialize mean utilities (delta) with simple logit approximation
-      if(idxShare > 1e-10){
-        delta <- log(shares) - log(idxShare)
+    }
+    else {
+      # Define the fixed point function
+      fpFunction <- function(delta) {
+        utilities <- tcrossprod(rep(1, length(alphas)), delta) + 
+          tcrossprod(alphas, prices - object@priceOutside)
+        
+        # Prevent numeric overflow
+        maxUtil <- 700
+        utilities <- pmin(pmax(utilities/sigmaNest, -maxUtil), maxUtil)
+        expUtil <- exp(utilities)
+        
+        sumExpUtil <- rowSums(expUtil)
+        insideIV <- sumExpUtil^sigmaNest
+        if (is.na(idx)) {
+          denom <- 1 + insideIV
+        } else {
+          denom <- insideIV
+        }
+        predShares <- colMeans(expUtil/denom)
+        
+        return(delta + log(shares) - log(predShares))
+      }
+      
+      # Initial guess
+      delta <- log(shares) #+ log(object@insideSize)
+      
+      # Use BB::dfsane for fixed point iteration
+      tol <- ifelse(!is.null(object@slopes$contractionTol), 
+                    object@slopes$contractionTol, 1e-12)
+      maxIter <- ifelse(!is.null(object@slopes$contractionMaxIter), 
+                        object@slopes$contractionMaxIter, 1000)
+      
+      message("Running BLP contraction with BB::dfsane (tol=", sprintf("%.0e", tol), 
+              ", maxIter=", maxIter, ")...")
+      
+  
+      result <- try(BB::dfsane(par = delta, fn = function(x) fpFunction(x) - x, 
+                               control = list(tol = tol, maxit = maxIter, trace = FALSE)))
+      
+      if (class(result)[1] == "try-error" || result$convergence != 0) {
+        # Fall back to dampened fixed point iteration if BB fails
+        message("BB::dfsane failed to converge, falling back to dampened fixed point iteration")
+        dampFactor <- 0.5
+        delta <- log(shares) + log(object@insideSize)
+        
+        for (iter in 1:maxIter) {
+          deltaNew <- fpFunction(delta)
+          absDiff <- max(abs(deltaNew - delta))
+          relDiff <- max(abs((deltaNew - delta)/(abs(delta) + 1e-8)))
+          
+          if (relDiff < tol || absDiff < tol*1e-2) {
+            delta <- deltaNew
+            message("BLP contraction converged in ", iter, " iterations")
+            break
+          }
+          delta <- delta + dampFactor * (deltaNew - delta)
+        }
+        if (iter == maxIter) {
+          warning("BLP contraction mapping did not converge within ", maxIter, " iterations")
+        }
       } else {
-        # When outside share is negligible, use log(shares) to avoid log(0)
-        delta <- log(shares)
-      }
-      
-      # BLP contraction mapping to recover mean utilities
-      # Allow user override via demand.param
-      tol <- ifelse(!is.null(object@slopes$contractionTol), object@slopes$contractionTol, 1e-12)
-      maxIter <- ifelse(!is.null(object@slopes$contractionMaxIter), object@slopes$contractionMaxIter, 1000)
-      
-      message("Running BLP contraction with ", nDraws, " draws (tol=", sprintf("%.0e", tol), ", maxIter=", maxIter, ")...")
-      for(iter in 1:maxIter){
-      # Compute predicted shares given current delta
-      # Nested logit share formula with outside good in separate nest:
-      # s_j = exp(V_j/σ) / (1 + [Σ_k exp(V_k/σ)]^σ)
-      # This accounts for within-nest correlation among inside products
-      utilities <- tcrossprod(rep(1, length(alphas)), delta) + 
-                   tcrossprod(alphas, prices - object@priceOutside)
-      expUtil <- exp(utilities / sigmaNest)
-      
-      # Denominator depends on whether an outside good exists (idx = NA)
-      sumExpUtil <- rowSums(expUtil)
-      insideIV <- sumExpUtil^sigmaNest
-      if(is.na(idx)){
-        # Outside good present
-        denom <- 1 + insideIV
-      } else {
-        # No outside good (one product normalized)
-        denom <- insideIV
-      }
-      
-      predShares <- colMeans(expUtil / denom)
-      
-      # Update delta
-      deltaNew <- delta + log(shares) - log(predShares)
-      
-      # Check convergence
-      maxDiff <- max(abs(deltaNew - delta))
-      if(maxDiff < tol){
-        delta <- deltaNew
-        message("BLP contraction converged in ", iter, " iterations (max diff: ", sprintf("%.2e", maxDiff), ")")
-        break
-      }
-      
-      delta <- deltaNew
-      }
-      
-      if(iter == maxIter){
-        warning("BLP contraction mapping did not converge within ", maxIter, " iterations (max diff: ", sprintf("%.2e", maxDiff), ")")
+        delta <- result$par
+        message("BB::dfsane converged in ", result$iter, " iterations")
       }
     }
     
+    
+    
+  
     # Store results
     names(delta) <- object@labels
     names(alphaMean) <- "alphaMean"
