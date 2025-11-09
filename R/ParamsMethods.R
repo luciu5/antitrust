@@ -782,13 +782,26 @@ setMethod(
     # Set default sigmaNest if not provided: sigmaNest=1 is flat logit (no nesting)
     if(is.null(sigmaNest)) sigmaNest <- 1
     
+    # When sigmaNest != 1, nesting requires an outside good
+    # If normIndex != NA (one product normalized), force outside good to exist
+    if(!is.na(idx) && sigmaNest != 1){
+      idx <- NA
+      idxShare <- 1 - sum(shares)  # Outside share (may be ~0 if shares sum to 1)
+      idxPrice <- object@priceOutside
+    }
+    
     # If delta (meanval) is already provided, skip contraction
     if(deltaProvided){
       delta <- object@slopes$meanval
       message("Using provided meanval (delta) for LogitBLP - skipping contraction mapping")
     } else {
       # Initialize mean utilities (delta) with simple logit approximation
-      delta <- log(shares) - log(idxShare)
+      if(idxShare > 1e-10){
+        delta <- log(shares) - log(idxShare)
+      } else {
+        # When outside share is negligible, use log(shares) to avoid log(0)
+        delta <- log(shares)
+      }
       
       # BLP contraction mapping to recover mean utilities
       # Allow user override via demand.param
@@ -798,8 +811,9 @@ setMethod(
       message("Running BLP contraction with ", nDraws, " draws (tol=", sprintf("%.0e", tol), ", maxIter=", maxIter, ")...")
       for(iter in 1:maxIter){
       # Compute predicted shares given current delta
-      # Utilities for each draw (rows) and product (cols)
-      # Use price relative to outside good for consistency with shares
+      # Nested logit share formula with outside good in separate nest:
+      # s_j = exp(V_j/σ) / (1 + [Σ_k exp(V_k/σ)]^σ)
+      # This accounts for within-nest correlation among inside products
       utilities <- tcrossprod(rep(1, length(alphas)), delta) + 
                    tcrossprod(alphas, prices - object@priceOutside)
       expUtil <- exp(utilities / sigmaNest)
