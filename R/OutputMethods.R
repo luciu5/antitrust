@@ -50,6 +50,9 @@
 #' FALSE, returns post-merger outcome.  Default is TRUE.
 #' @param revenue If TRUE, returns revenues. If FALSE,
 #' returns quantities. Default is TRUE.
+#' @param aggregate If TRUE (default), returns the average product shares across all simulated draws. 
+#' If FALSE, returns a matrix of individual shares for each draw (products in rows, draws in columns). 
+#' Only used for objects of class \code{LogitBLP}.
 #' @param market If TRUE, reports market-level summary.
 #' Otherwise reports product/plant level summary. Default is FALSE.
 #' @param exAnte If \sQuote{exAnte} equals TRUE then the
@@ -665,72 +668,92 @@ setMethod(
 #'@rdname Output-Methods
 #'@export
 setMethod(
-  f= "calcShares",
-  signature= "LogitBLP",
-  definition=function(object, preMerger=TRUE, revenue=FALSE) {
-    if(preMerger) { 
-      prices <- object@pricePre
-    } else {
-      prices <- object@pricePost
-    }
-    # Retrieve mean utilities (delta) and random coefficients (alphas)
-    delta <- object@slopes$meanval
-    alphas <- object@slopes$alphas
-    nDraws <- length(alphas)
-    k <- length(delta)
-    nLabels <- length(object@labels)
-    if(k < 1 || nDraws < 1 || nLabels < 1){
-      # Return a vector of NAs with correct names if any required input is missing
-      na_vec <- rep(NA_real_, nLabels)
-      names(na_vec) <- object@labels
-      return(na_vec)
-    }
-
-    # Outside-good nesting parameter (optional): sigmaNest in (0,1]
-    # sigmaNest = 1: no nesting (flat logit); sigmaNest -> 0: perfect substitutes within nest
-    sigmaNest <- object@slopes$sigmaNest
-    if(is.null(sigmaNest)) sigmaNest <- 1
-    
-    # Calculate utilities for each consumer type (k x nDraws)
-    k <- length(prices)
-    delta_mat <- matrix(delta, nrow=k, ncol=nDraws)
-    price_term <- tcrossprod(prices - object@priceOutside, alphas)
-    util <- delta_mat + price_term
-    expUtil <- exp(util / sigmaNest)
-
-    # Within-nest shares (inside-only nest): normalize by sum over products per draw
-    sumExpUtil <- colSums(expUtil)                 # length nDraws
-    withinNest <- expUtil / matrix(sumExpUtil, nrow = k, ncol = nDraws, byrow = TRUE)
-
-    # Across-nest share of inside vs outside for each draw
-    insideIV <- sumExpUtil^sigmaNest       # length nDraws
-    if(is.na(object@normIndex)){
-      # Outside good present
-      acrossNest <- insideIV / (1 + insideIV)
-    } else {
-      # No outside good; all mass inside
-      acrossNest <- rep(1, nDraws)
-    }
-
-    shares_draw <- withinNest * matrix(acrossNest, nrow = k, ncol = nDraws, byrow = TRUE)
-    shares <- rowMeans(shares_draw)
-
-    if(revenue) {
-      # Convert quantity shares to revenue shares; include outside revenue if outside present
-      total_rev_inside <- sum(prices * shares)
-      if(is.na(object@normIndex)){
-        share_outside <- 1 - sum(shares, na.rm = TRUE)
-        total_rev <- total_rev_inside + object@priceOutside * share_outside
+    f = "calcShares",
+    signature = "LogitBLP",
+    definition = function(object, preMerger = TRUE, revenue = FALSE, aggregate = TRUE) {
+      
+      # 1 Set prices
+      if (preMerger) { 
+        prices <- object@pricePre
       } else {
-        total_rev <- total_rev_inside
+        prices <- object@pricePost
       }
-      shares <- prices * shares / total_rev
+      
+      # 2 Retrieve mean utilities (delta) and random coefficients (alphas)
+      delta <- object@slopes$meanval
+      alphas <- object@slopes$alphas       # vector length = number of draws
+      nDraws <- length(alphas)
+      k <- length(delta)
+      nLabels <- length(object@labels)
+      
+      if (k < 1 || nDraws < 1 || nLabels < 1) {
+        na_vec <- rep(NA_real_, nLabels)
+        names(na_vec) <- object@labels
+        return(na_vec)
+      }
+      
+      # 3 Nesting parameter
+      sigmaNest <- object@slopes$sigmaNest
+      if (is.null(sigmaNest)) sigmaNest <- 1
+      
+      # 4 Compute utilities for each draw (k x nDraws)
+      delta_mat <- matrix(delta, nrow = k, ncol = nDraws)
+      price_term <- tcrossprod(prices - object@priceOutside, alphas)
+      util <- delta_mat + price_term
+      expUtil <- exp(util / sigmaNest)
+      
+      # 5 Inside (within-nest) shares
+      sumExpUtil <- colSums(expUtil)                        # length nDraws
+      withinNest <- expUtil / matrix(sumExpUtil, nrow = k, ncol = nDraws, byrow = TRUE)
+      
+      # 6 Across-nest (inside vs outside)
+      insideIV <- sumExpUtil^sigmaNest
+      if (is.na(object@normIndex)) {
+        acrossNest <- insideIV / (1 + insideIV)
+      } else {
+        acrossNest <- rep(1, nDraws)
+      }
+      
+      shares_draw <- withinNest * matrix(acrossNest, nrow = k, ncol = nDraws, byrow = TRUE)
+      
+      # 7 Aggregate or return full draws
+      if (aggregate) {
+        shares <- rowMeans(shares_draw)
+      } else {
+        shares <- shares_draw    # returns k x nDraws matrix
+      }
+      
+      # 8 Revenue shares (optional)
+      if (revenue) {
+        if (aggregate) {
+          total_rev_inside <- sum(prices * shares)
+          if (is.na(object@normIndex)) {
+            share_outside <- 1 - sum(shares, na.rm = TRUE)
+            total_rev <- total_rev_inside + object@priceOutside * share_outside
+          } else {
+            total_rev <- total_rev_inside
+          }
+          shares <- prices * shares / total_rev
+        } else {
+          # For per-draw shares, divide by total revenue per draw
+          total_rev_inside <- colSums(prices * shares)
+          if (is.na(object@normIndex)) {
+            share_outside <- 1 - colSums(shares, na.rm = TRUE)
+            total_rev <- total_rev_inside + object@priceOutside * share_outside
+          } else {
+            total_rev <- total_rev_inside
+          }
+          shares <- sweep(prices * shares, 2, total_rev, "/")
+        }
+      }
+      
+      # 9 Names (only for aggregate)
+      if (aggregate) names(shares) <- object@labels
+      
+      return(shares)
     }
-    
-    names(shares) <- object@labels
-    return(shares)
-  }
-)
+  )
+  
 
 #'@rdname Output-Methods
 #'@export

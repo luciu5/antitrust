@@ -76,7 +76,7 @@
 
 \S4method{calcShares}{Logit}(object, preMerger = TRUE, revenue = FALSE)
 
-\S4method{calcShares}{LogitBLP}(object, preMerger = TRUE, revenue = FALSE)
+\S4method{calcShares}{LogitBLP}(object, preMerger = TRUE, revenue = FALSE, aggregate = TRUE)
 
 \S4method{calcShares}{AIDS}(object, preMerger = TRUE, revenue = TRUE)
 
@@ -107,6 +107,10 @@ expected result conditional on each firm winning the auction. Default is FALSE.}
 
 \item{revenue}{If TRUE, returns revenues. If FALSE,
 returns quantities. Default is TRUE.}
+
+\item{aggregate}{If TRUE (default), returns the average product shares across all simulated draws. 
+If FALSE, returns a matrix of individual shares for each draw (products in rows, draws in columns). 
+Only used for objects of class \code{LogitBLP}.}
 }
 \description{
 This section contains three types of methods: calcShares, calcQuantities, and calcRevenues.

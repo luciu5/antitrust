@@ -6,6 +6,7 @@
 #' calcPrices,Cournot-method
 #' calcPrices,Linear-method
 #' calcPrices,Logit-method
+#' calcPrices,LogitBLP-method
 #' calcPrices,LogLin-method
 #' calcPrices,AIDS-method
 #' calcPrices,LogitCap-method
@@ -206,6 +207,115 @@ setMethod(
 
   }
 )
+
+
+#' @rdname Prices-Methods
+#' @export
+setMethod(
+  f = "calcPrices",
+  signature = "LogitBLP",
+  definition = function(object, preMerger = TRUE, isMax = FALSE, subset, ...) {
+    
+    # 1 Set prices and ownership
+    output <- object@output
+    priceStart <- object@priceStart
+    
+    if (preMerger) {
+      owner <- object@ownerPre
+      mc    <- object@mcPre
+    } else {
+      owner <- object@ownerPost
+      mc    <- object@mcPost
+    }
+    
+    nprods <- length(object@shares)
+    if (!preMerger) {
+      cand <- object@pricePre
+      if (length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
+    }
+    if (missing(subset)) subset <- rep(TRUE, nprods)
+    if (!is.logical(subset) || length(subset) != nprods) 
+      stop("'subset' must be a logical vector the same length as 'shares'")
+    
+    if (any(!subset)) {
+      owner <- owner[subset, subset]
+      mc <- mc[subset]
+      priceStart <- priceStart[subset]
+    }
+    
+    # 2 Define FOCs function
+    FOC <- function(priceCand) {
+      if (preMerger) object@pricePre[subset] <- priceCand
+      else object@pricePost[subset] <- priceCand
+      
+      # Margins
+      margins <- if (output) priceCand - mc else mc - priceCand
+      predMargin <- calcMargins(object, preMerger, level = TRUE)[subset]
+      
+      # FOC = margin - predicted margin
+      return(margins - predMargin)
+    }
+    
+    # 3 Define analytic Jacobian using individual shares
+    JAC <- function(priceCand) {
+      if (preMerger) object@pricePre[subset] <- priceCand
+      else object@pricePost[subset] <- priceCand
+      
+      # 3a. Compute individual shares per draw
+      shares_draw <- calcShares(object, preMerger = preMerger, aggregate = FALSE)[subset, , drop = FALSE]
+      
+      # 3b. Price coefficients per draw
+      alphas <- object@slopes$alphas   # vector of length nDraws
+      R <- length(alphas)
+      
+      # 3c. Vectorized BLP Jacobian: ds/dp
+      Pa <- sweep(shares_draw, 2, alphas, "*")       # k x R
+      mean_alphaP <- rowMeans(Pa)
+      cross_term <- shares_draw %*% (shares_draw * alphas) / R
+      J_s <- -(diag(mean_alphaP) - cross_term)       # k x k
+      
+      # 3d. FOC Jacobian: dF/dp = I - ? * d s / d p
+      J_FOC <- diag(length(subset)) - owner * J_s
+      return(J_FOC)
+    }
+    
+    # 4 Solve FOCs
+    nleqslv_maxit <- as.integer(object@control.equ$maxit)
+    if (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) 
+      nleqslv_maxit <- 150L
+    
+    minResult <- nleqslv::nleqslv(
+      x = priceStart, fn = FOC, jac = JAC,
+      method = "Newton",
+      control = list(ftol = object@control.equ$tol, maxit = nleqslv_maxit)
+    )
+    
+    # Fallback to BBsolve
+    if (minResult$termcd > 2) {
+      warning("'nleqslv' failed; falling back to BBsolve")
+      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = object@control.equ, ...)
+      priceEst_solution <- minResult$par
+    } else {
+      priceEst_solution <- minResult$x
+    }
+    
+    # 5 Optional Hessian check for maximization
+    if (isMax) {
+      hess <- numDeriv::jacobian(FOC, priceEst_solution)
+      hess <- hess * (owner > 0)
+      if (any(eigen(hess)$values > 0)) {
+        warning("Hessian not positive definite at solution.")
+      }
+    }
+    
+    # 6 Return final prices
+    priceEst <- rep(NA, nprods)
+    priceEst[subset] <- priceEst_solution
+    names(priceEst) <- object@labels
+    return(priceEst)
+  }
+)
+
 
 
 #'@rdname Prices-Methods

@@ -8,6 +8,7 @@
 \alias{calcPrices,Cournot-method}
 \alias{calcPrices,Linear-method}
 \alias{calcPrices,Logit-method}
+\alias{calcPrices,LogitBLP-method}
 \alias{calcPrices,LogLin-method}
 \alias{calcPrices,AIDS-method}
 \alias{calcPrices,LogitCap-method}
@@ -23,6 +24,8 @@
 \S4method{calcPrices}{Auction2ndCap}(object, preMerger = TRUE, exAnte = TRUE)
 
 \S4method{calcPrices}{Logit}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
+
+\S4method{calcPrices}{LogitBLP}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
 
 \S4method{calcPrices}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE)
 
