@@ -257,12 +257,21 @@ setMethod(
     }
     
     # 3 Define analytic Jacobian using individual shares
+    # Cache mechanism to avoid recalculating shares when prices unchanged
+    last_prices <- NULL
+    cached_shares <- NULL
+    
     JAC <- function(priceCand) {
       if (preMerger) object@pricePre[subset] <- priceCand
       else object@pricePost[subset] <- priceCand
       
-      # 3a. Compute individual shares per draw
-      shares_draw <- calcShares(object, preMerger = preMerger, aggregate = FALSE)[subset, , drop = FALSE]
+      # 3a. Compute individual shares per draw (with caching)
+      # Only recalculate if prices have changed
+      if (is.null(last_prices) || !identical(priceCand, last_prices)) {
+        cached_shares <<- calcShares(object, preMerger = preMerger, aggregate = FALSE)[subset, , drop = FALSE]
+        last_prices <<- priceCand
+      }
+      shares_draw <- cached_shares
       
       # 3b. Get parameters
       alphas <- object@slopes$alphas   # vector of length nDraws
@@ -282,9 +291,7 @@ setMethod(
       diag_term <- rowMeans(Pa * (1 - sigmaNest * shares_draw))
       
       # Cross-price derivative: -E[alpha * s_j * s_k]
-      # For each pair (j,k): sum over draws i of alpha_i * s_ij * s_ik / R
-      # This is: shares_draw %*% diag(alphas) %*% t(shares_draw) / R
-      # Or equivalently: (shares_draw * alphas) %*% t(shares_draw) / R
+      # Optimized: compute shares_alpha once and reuse
       shares_alpha <- sweep(shares_draw, 2, alphas, "*")    # k x R: s_ij * alpha_i
       cross_term <- shares_alpha %*% t(shares_draw) / R     # k x k: E[alpha_i * s_ij * s_ik]
       

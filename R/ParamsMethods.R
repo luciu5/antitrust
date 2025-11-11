@@ -811,10 +811,15 @@ setMethod(
       message("Using provided meanval (delta) for LogitBLP - skipping contraction mapping")
     }
     else {
+      # Pre-compute constant price term for efficiency
+      price_diff <- prices - object@priceOutside
+      
       # Define the fixed point function
       fpFunction <- function(delta) {
-        utilities <- tcrossprod(rep(1, length(alphas)), delta) + 
-          tcrossprod(alphas, prices - object@priceOutside)
+        # Compute utilities: nDraws x nProducts matrix
+        # utilities[i,j] = delta[j] + alpha[i] * (price[j] - price0)
+        utilities <- outer(alphas, price_diff, "*")
+        utilities <- sweep(utilities, 2, delta, "+")
         
         # Prevent numeric overflow
         maxUtil <- 700

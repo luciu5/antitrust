@@ -214,6 +214,8 @@ setMethod(
       elastDraws <- array(0, dim=c(nprods, nprods, nDraws))
       
       delta <- object@slopes$meanval
+      
+      # Vectorized calculation over draws - much faster than nested loops
       for(r in 1:nDraws) {
         util <- matrix(rep(delta, 1), ncol=1) + outer(prices - object@priceOutside, alphas[r])
         expUtil <- exp(util / sigmaNest)
@@ -227,17 +229,26 @@ setMethod(
         # With nested logit utility: u_ij = δ_j + α_i*(p_j - p0)
         # For output market (α<0): own-elasticity is negative (price up → share down)
         # For input market (α>0): own-elasticity is positive (price up → share up)
-        for(j in 1:nprods) {
-          elastDraws[j,j,r] <- alphas[r] * prices[j] / sigmaNest * 
-                               (1 - sigmaNest * sInd[j] - (1 - sigmaNest) * sum(sInd))
-          # Cross-price elasticity: ∂log(s_j)/∂log(p_k)
-          for(k in 1:nprods) {
-            if(j != k) {
-              elastDraws[j,k,r] <- -alphas[r] * prices[k] / sigmaNest * 
-                                   (sigmaNest * sInd[k] + (1 - sigmaNest) * sum(sInd))
-            }
-          }
-        }
+        
+        S_inside <- sum(sInd)
+        alpha_scaled <- alphas[r] / sigmaNest
+        
+        # Vectorized: Own-price elasticities (diagonal)
+        diag_elast <- alpha_scaled * prices * 
+                      (1 - sigmaNest * sInd - (1 - sigmaNest) * S_inside)
+        
+        # Vectorized: Cross-price elasticities (full matrix including diagonal, will overwrite diagonal)
+        # Create matrix: rows=j (own product), cols=k (other product price)
+        # Each element [j,k] = -α * p_k / σ * (σ*s_k + (1-σ)*S_inside)
+        price_matrix <- matrix(prices, nrow=nprods, ncol=nprods, byrow=TRUE)
+        sInd_matrix <- matrix(sInd, nrow=nprods, ncol=nprods, byrow=TRUE)
+        
+        cross_elast <- -alpha_scaled * price_matrix * 
+                       (sigmaNest * t(sInd_matrix) + (1 - sigmaNest) * S_inside)
+        
+        # Combine: use cross_elast matrix and overwrite diagonal with own-elasticities
+        elastDraws[,,r] <- cross_elast
+        diag(elastDraws[,,r]) <- diag_elast
       }
       
       # Average across consumer types
