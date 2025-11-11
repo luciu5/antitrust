@@ -264,18 +264,39 @@ setMethod(
       # 3a. Compute individual shares per draw
       shares_draw <- calcShares(object, preMerger = preMerger, aggregate = FALSE)[subset, , drop = FALSE]
       
-      # 3b. Price coefficients per draw
+      # 3b. Get parameters
       alphas <- object@slopes$alphas   # vector of length nDraws
+      sigmaNest <- object@slopes$sigmaNest
+      if (is.null(sigmaNest)) sigmaNest <- 1
       R <- length(alphas)
+      k <- nrow(shares_draw)
       
-      # 3c. Vectorized BLP Jacobian: ds/dp
-      Pa <- sweep(shares_draw, 2, alphas, "*")       # k x R
-      mean_alphaP <- rowMeans(Pa)
-      cross_term <- shares_draw %*% (shares_draw * alphas) / R
-      J_s <- -(diag(mean_alphaP) - cross_term)       # k x k
+      # 3c. Compute share Jacobian for nested logit with random coefficients
+      # shares_draw is k x R (products x draws)
+      # ds_j/dp_j = E[alpha_i * s_ij / sigmaNest * (1 - sigmaNest * s_ij)]
+      # ds_j/dp_k = -E[alpha_i * s_ij * s_ik] (j != k)
       
-      # 3d. FOC Jacobian: dF/dp = I - ? * d s / d p
-      J_FOC <- diag(length(subset)) - owner * J_s
+      Pa <- sweep(shares_draw, 2, alphas / sigmaNest, "*")  # k x R: s_ij * alpha_i / sigma
+      
+      # Own-price derivative: E[alpha * s / sigma * (1 - sigma * s)]
+      diag_term <- rowMeans(Pa * (1 - sigmaNest * shares_draw))
+      
+      # Cross-price derivative: -E[alpha * s_j * s_k]
+      # For each pair (j,k): sum over draws i of alpha_i * s_ij * s_ik / R
+      # This is: shares_draw %*% diag(alphas) %*% t(shares_draw) / R
+      # Or equivalently: (shares_draw * alphas) %*% t(shares_draw) / R
+      shares_alpha <- sweep(shares_draw, 2, alphas, "*")    # k x R: s_ij * alpha_i
+      cross_term <- shares_alpha %*% t(shares_draw) / R     # k x k: E[alpha_i * s_ij * s_ik]
+      
+      J_s <- diag(diag_term) - cross_term                    # k x k share Jacobian
+      
+      # 3d. FOC Jacobian: dF/dp
+      # FOC is: margin - predicted_margin = 0
+      # d(FOC)/dp = I - d(predicted_margin)/dp
+      # The predicted margin depends on ownership structure and share Jacobian
+      # Jacobian of FOC: I + Omega %*% J_s (note: J_s has negative sign built in for cross terms)
+      J_FOC <- diag(k) + owner %*% J_s
+      
       return(J_FOC)
     }
     

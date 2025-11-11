@@ -728,18 +728,32 @@ setMethod(
     # Check if meanval (delta) is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
     
-    # Generate consumer heterogeneity draws (unobserved)
-    consDraws <- rnorm(nDraws)
+    # Check if draws already exist (to ensure consistency across calls)
+    drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
     
-    # Generate demographic draws (observed heterogeneity)
-    if(!is.null(nDemog) && nDemog > 0){
-      demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
-      demogEffect <- demogDraws %*% piDemog
+    if(drawsExist) {
+      # Reuse existing draws
+      consDraws <- object@slopes$consDraws
+      demogDraws <- object@slopes$demogDraws
+      if(!is.null(demogDraws) && ncol(demogDraws) > 0) {
+        demogEffect <- demogDraws %*% piDemog
+      } else {
+        demogEffect <- 0
+      }
     } else {
-      demogDraws <- matrix(nrow=nDraws, ncol=0)
-      demogEffect <- 0
-      piDemog <- numeric(0)
-      nDemog <- 0
+      # Generate new consumer heterogeneity draws (unobserved)
+      consDraws <- rnorm(nDraws)
+      
+      # Generate demographic draws (observed heterogeneity)
+      if(!is.null(nDemog) && nDemog > 0){
+        demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
+        demogEffect <- demogDraws %*% piDemog
+      } else {
+        demogDraws <- matrix(nrow=nDraws, ncol=0)
+        demogEffect <- 0
+        piDemog <- numeric(0)
+        nDemog <- 0
+      }
     }
     
     # Compute individual-specific price coefficients
@@ -878,7 +892,7 @@ setMethod(
     # Note: sigma is the random coefficient std dev, sigmaNest is the nesting parameter
     object@slopes <- list(alpha=as.numeric(alphaMean), alphaMean=alphaMean, meanval=delta, sigma=sigma, sigmaNest=sigmaNest,
                          piDemog=piDemog, nDemog=nDemog,
-                         alphas=as.numeric(alphas), demogDraws=demogDraws)
+                         alphas=as.numeric(alphas), consDraws=consDraws, demogDraws=demogDraws)
     object@priceOutside <- idxPrice
     object@mktSize <- object@insideSize / sum(shares)
     
