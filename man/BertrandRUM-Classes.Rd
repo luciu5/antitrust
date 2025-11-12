@@ -4,7 +4,9 @@
 \name{BertrandRUM-Classes}
 \alias{BertrandRUM-Classes}
 \alias{Logit-class}
+\alias{PriceLeadership-class}
 \alias{LogitBLP-class}
+\alias{PriceLeadershipBLP-class}
 \alias{LogitCournot-class}
 \alias{LogitCap-class}
 \alias{LogitCapALM-class}
@@ -20,6 +22,12 @@ Each class contains all the information needed to calibrate a specific type of d
 perform a merger simulation analysis under the assumption that firms are playing a differentiated products Bertrand pricing game. Also included is \dQuote{LogitCournot}, for modelling firms playing a differentiated products Cournot quantity game.
 
 The \dQuote{Logit} class has the information for a Logit demand system.
+
+The \dQuote{PriceLeadership} class extends \dQuote{Logit} to model coordinated effects
+using the price leadership framework of Mansley, Miller, Sheu \& Weinberg (2023). In this model,
+a leader firm announces a supermarkup above Bertrand prices, coalition firms follow the leader,
+and fringe firms best-respond. The model calibrates the supermarkup and timing parameter from
+observed margins and tests incentive compatibility constraints.
 
 The \dQuote{LogitCap} class has the information for a Logit demand system and assumes that
 firms are playing a differentiated products Bertrand pricing game with capacity constraints.
@@ -92,6 +100,8 @@ valuations (\sQuote{meanval}) (CES only)}
 \section{Objects from the Class}{
 
 For Logit, objects can be created by using the constructor function \code{\link{logit}}.
+
+For PriceLeadership, objects can be created by using the constructor function \code{\link{plm}}.
 
 For LogitALM, objects can be created by using the constructor function \code{\link{logit.alm}}.
 

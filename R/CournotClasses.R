@@ -99,7 +99,7 @@ setClass(
     if(nplants != length(object@capacitiesPre)){
       stop("capacitiesPre' must be a vector whose length equals the number of rows in 'quantities'")}
 
-    if( any(object@capacitiesPre<0 ,na.rm=TRUE)){stop("'capacitiesPre' values must be positive, and not NA")}
+    if(isTRUE(any(object@capacitiesPre<0 ,na.rm=TRUE))){stop("'capacitiesPre' values must be positive, and not NA")}
 
 
 
@@ -146,10 +146,10 @@ setClass(
     if (isTRUE(nprods != length(object@labels[[2]]))) stop("'labels' length must be a list whose 2nd element is a vector whose length equals the number of products")
 
 
-    if(any(object@prices<=0,na.rm=TRUE))             stop("'prices' values must be positive")
-    if(any(object@quantities<=0,na.rm=TRUE))          stop("'quantities' values must be positive")
-    if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
-    if(any(colSums(object@margins,na.rm=TRUE) == 0  & is.na(object@mktElast))) stop("at least one plant margin or a market elasticity must be supplied for each product")
+    if(isTRUE(any(object@prices<=0,na.rm=TRUE)))             stop("'prices' values must be positive")
+    if(isTRUE(any(object@quantities<=0,na.rm=TRUE)))          stop("'quantities' values must be positive")
+    if(isTRUE(any(object@margins<0 | object@margins>1,na.rm=TRUE))) stop("'margins' values must be between 0 and 1")
+    if(isTRUE(any(colSums(object@margins,na.rm=TRUE) == 0  & is.na(object@mktElast)))) stop("at least one plant margin or a market elasticity must be supplied for each product")
 
     if(all(!(object@demand %in% c("linear","log")))){stop("'demand' must equal 'linear' or 'log'")}
     if(length(object@demand) != nprods) stop("the length of 'demand' must equal the number of products")
@@ -163,7 +163,7 @@ setClass(
 
     if(ncol(object@quantities) != nprods) stop("the number of columns in 'quantities' must equal the number of products")
 
-    if(any(rowSums(object@quantities,na.rm=TRUE) > object@capacitiesPre)){
+    if(isTRUE(any(rowSums(object@quantities,na.rm=TRUE) > object@capacitiesPre))){
       stop("pre-merger plant output must be less than pre-merger capacity constraint")
     }
 

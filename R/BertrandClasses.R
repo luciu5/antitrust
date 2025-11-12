@@ -115,7 +115,7 @@ setClass(
         nprods != length(object@subset))){
       stop("'labels', 'shares', and 'subset' must all have the same length")}
 
-    if(any(object@shares < 0 | object@shares > 1,na.rm=TRUE)){
+    if(isTRUE(any(object@shares < 0 | object@shares > 1,na.rm=TRUE))){
       stop("'shares' values must be between 0 and 1")}
 
     # if(!(sum(object@shares,na.rm=TRUE) < 1 ||
@@ -127,7 +127,7 @@ setClass(
        any(is.na(object@mcDelta))){
       stop("'mcDelta' must be a numeric vector with the same length as 'shares' and no element of 'mcDelta' can equal NA")}
 
-    if(any(object@mcDelta>0,na.rm=TRUE)){
+    if(isTRUE(any(object@mcDelta>0,na.rm=TRUE))){
       warning("positive values of 'mcDelta' imply an INCREASE in marginal costs")}
     
     diversion <- object@diversion
@@ -189,9 +189,9 @@ setClass(
        nprods != length(object@prices)){
       stop("'prices', 'quantities', 'margins', and 'shares' must all be vectors with the same length")}
 
-    if(any(object@prices<0,na.rm=TRUE))             stop("'prices' values must be positive")
-    if(any(object@quantities<0,na.rm=TRUE))          stop("'quantities' values must be positive")
-    if(any(object@margins<0 | object@margins>1,na.rm=TRUE)) stop("'margins' values must be between 0 and 1")
+    if(isTRUE(any(object@prices<0,na.rm=TRUE)))             stop("'prices' values must be positive")
+    if(isTRUE(any(object@quantities<0,na.rm=TRUE)))          stop("'quantities' values must be positive")
+    if(isTRUE(any(object@margins<0 | object@margins>1,na.rm=TRUE))) stop("'margins' values must be between 0 and 1")
 
 
     if(any(is.na(object@diversion))){stop("'diversions' matrix cannot contain NA")}
