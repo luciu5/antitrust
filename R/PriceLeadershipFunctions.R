@@ -1271,9 +1271,10 @@ setGeneric(
   def = function(object, ...) {standardGeneric("calcSupermarkup")}
 )
 
-#' @rdname calcSupermarkup-methods
 #' Calculate Equilibrium Supermarkup
 #' 
+#' @name calcSupermarkup
+#' @title Calculate Equilibrium Supermarkup
 #' @description Calculates the equilibrium supermarkup for the price leadership model.
 #' Can compute either unconstrained (full collusion) or IC-constrained supermarkup.
 #' 
@@ -1297,7 +1298,7 @@ setGeneric(
 #' all coalition firms' IC constraints are satisfied using firm-specific timing 
 #' parameters from object@@timingParam:
 #' IC_f: π^PL_f(m) - π^D_f(m) + δ_f/(1-δ_f) * [π^PL_f(m) - π^B_f] ≥ 0
-#' 
+#' @rdname calcSupermarkup
 #' @export
 setMethod(
   f = "calcSupermarkup",
