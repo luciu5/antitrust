@@ -70,6 +70,9 @@ setMethod(
     if(any(class(margins) == "try-error")){margins <- output * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue}
     
     
+    # Clamp margins to avoid negative prices
+    margins <- pmax(margins, 1e-6)
+    
     
     if(level) {margins <- margins * prices }
     

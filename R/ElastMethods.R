@@ -181,84 +181,60 @@ setMethod(
 
 #'@rdname Elast-Methods
 #'@export
-setMethod(
-  f= "elast", 
-  signature= "LogitBLP",
-  definition=function(object, preMerger=TRUE, market=FALSE){
-    if(preMerger) {
-      prices <- object@pricePre
-    } else {
-      prices <- object@pricePost
-    }
-    
-    shares <- calcShares(object, preMerger=preMerger)
-    # Retrieve random coefficients on price created by calcSlopes(LogitBLP)
-    alphas <- object@slopes$alphas
-    nDraws <- length(alphas)
-    
-    # Outside-good nesting parameter: sigmaNest in (0,1]
-    sigmaNest <- object@slopes$sigmaNest
-    if(is.null(sigmaNest)) sigmaNest <- 1
-    
-    if(market) {
-      # For market elasticity, we use the mean alpha 
-      alphaMean <- mean(alphas)
-      elast <- alphaMean * sum(shares/sum(shares)*prices, na.rm=TRUE) * (1 - sum(shares, na.rm=TRUE))
-      names(elast) <- NULL
+  setMethod(
+    f = "elast",
+    signature = "LogitBLP",
+    definition = function(object, preMerger = TRUE, market = FALSE) {
       
-    } else {
-      nprods <- length(shares)
-      
-      # For individual elasticities, we need to account for the distribution of random coefficients
-      # Calculate the matrix of elasticities for each consumer type and then average
-      elastDraws <- array(0, dim=c(nprods, nprods, nDraws))
-      
+      prices <- if(preMerger) object@pricePre else object@pricePost
       delta <- object@slopes$meanval
+      alphas <- object@slopes$alphas   # vector of length nDraws
+      sigmaNest <- object@slopes$sigmaNest
+      if (is.null(sigmaNest)) sigmaNest <- 1
       
-      # Vectorized calculation over draws - much faster than nested loops
-      for(r in 1:nDraws) {
-        util <- matrix(rep(delta, 1), ncol=1) + outer(prices - object@priceOutside, alphas[r])
-        expUtil <- exp(util / sigmaNest)
-        sumExpUtil <- sum(expUtil)
-        insideIV <- sumExpUtil^sigmaNest
-        denom <- 1 + insideIV
-        sInd <- drop(expUtil/denom)  # shares for consumer type r
-        
-        # Calculate elasticities for this consumer type with nesting
-        # Own-price elasticity: ∂log(s_j)/∂log(p_j)
-        # With nested logit utility: u_ij = δ_j + α_i*(p_j - p0)
-        # For output market (α<0): own-elasticity is negative (price up → share down)
-        # For input market (α>0): own-elasticity is positive (price up → share up)
-        
-        S_inside <- sum(sInd)
-        alpha_scaled <- alphas[r] / sigmaNest
-        
-        # Vectorized: Own-price elasticities (diagonal)
-        diag_elast <- alpha_scaled * prices * 
-                      (1 - sigmaNest * sInd - (1 - sigmaNest) * S_inside)
-        
-        # Vectorized: Cross-price elasticities (full matrix including diagonal, will overwrite diagonal)
-        # Create matrix: rows=j (own product), cols=k (other product price)
-        # Each element [j,k] = -α * p_k / σ * (σ*s_k + (1-σ)*S_inside)
-        price_matrix <- matrix(prices, nrow=nprods, ncol=nprods, byrow=TRUE)
-        sInd_matrix <- matrix(sInd, nrow=nprods, ncol=nprods, byrow=TRUE)
-        
-        cross_elast <- -alpha_scaled * price_matrix * 
-                       (sigmaNest * t(sInd_matrix) + (1 - sigmaNest) * S_inside)
-        
-        # Combine: use cross_elast matrix and overwrite diagonal with own-elasticities
-        elastDraws[,,r] <- cross_elast
-        diag(elastDraws[,,r]) <- diag_elast
-      }
+      nDraws <- length(alphas)
+      nprods <- length(delta)
       
-      # Average across consumer types
-      elast <- apply(elastDraws, c(1,2), mean)
-      dimnames(elast) <- list(object@labels, object@labels)
+      # Early exit for empty objects
+      if(nprods < 1 || nDraws < 1) return(matrix(0, nprods, nprods))
+      
+      # 1. Compute utility matrix: k x R
+      # Each column = draw, each row = product
+      util_mat <- matrix(delta, nrow = nprods, ncol = nDraws) +
+        (prices - object@priceOutside) %*% t(alphas)
+      
+      # 2. Compute individual shares: k x R
+      expUtil <- exp(util_mat / sigmaNest)
+      sumExp <- colSums(expUtil)                 # sum across products for each draw
+      sInd <- expUtil / matrix(1 + sumExp^sigmaNest, nrow = nprods, ncol = nDraws, byrow = TRUE)
+      
+      # 3. Own-price derivatives: k x R
+      diag_elast <- sInd * (1 - sigmaNest * sInd - (1 - sigmaNest) * matrix(colSums(sInd), nrow = nprods, ncol = nDraws, byrow = TRUE))
+      diag_elast <- diag_elast * matrix(alphas / sigmaNest, nrow = nprods, ncol = nDraws, byrow = TRUE) * prices
+      
+      # 4. Cross-price derivatives: k x k x R
+      # Use outer product over draws
+      S_inside <- matrix(colSums(sInd), nrow = nprods, ncol = nDraws, byrow = TRUE)
+      cross_elast_list <- lapply(1:nDraws, function(r) {
+        -alphas[r]/sigmaNest * prices %o% (sigmaNest * sInd[,r] + (1 - sigmaNest) * S_inside[,r])
+      })
+      
+      # Fill diagonal with own-price elasticities
+      elastDraws <- array(unlist(cross_elast_list), dim = c(nprods, nprods, nDraws))
+      for(r in 1:nDraws) diag(elastDraws[,,r]) <- diag_elast[,r]
+      
+      # 5. Average across draws
+      elast_mat <- apply(elastDraws, c(1,2), mean)
+      
+      # 6. Clamp very small values to stabilize
+      elast_mat[abs(elast_mat) < 1e-6] <- sign(elast_mat[abs(elast_mat) < 1e-6]) * 1e-6
+      dimnames(elast_mat) <- list(object@labels, object@labels)
+      
+      return(elast_mat)
     }
-    
-    return(elast)
-  }
-)
+  )
+  
+  
 
 #'@rdname Elast-Methods
 #'@export

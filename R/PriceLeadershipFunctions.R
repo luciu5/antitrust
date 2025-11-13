@@ -543,176 +543,128 @@ setGeneric(
 #' Uses BB::dfsane for robust convergence with fallback to dampened fixed point.
 #' Handles nesting parameters (sigmaNest) and demographic interactions (piDemog).
 #' 
+#' 
 #' @keywords internal
+
 setMethod(
   f = "calcMeanval",
   signature = "LogitBLP",
-  definition = function(object){
+  definition = function(object) {
     
-    shares       <-  object@shares
-    prices       <-  object@prices
-    idx          <-  object@normIndex
-    shareInside  <-  object@shareInside
+    shares       <- object@shares
+    prices       <- object@prices
+    idx          <- object@normIndex
+    shareInside  <- object@shareInside
     
-    # Get parameters from object (accept aliases for alpha)
-    alphaMean    <-  if(!is.null(object@slopes$alpha)) object@slopes$alpha else object@slopes$alphaMean
-    if(is.null(alphaMean)){
-      stop("calcBLPDelta: missing 'alpha' (or 'alphaMean') in slopes.")
-    }
-    sigma        <-  object@slopes$sigma
-    if(is.null(sigma)){
-      stop("calcBLPDelta: missing 'sigma' in slopes.")
-    }
-    nDraws       <-  object@nDraws
-    piDemog      <-  object@slopes$piDemog
+    # Parameters
+    alphaMean    <- if(!is.null(object@slopes$alpha)) object@slopes$alpha else object@slopes$alphaMean
+    if(is.null(alphaMean)) stop("LogitBLP calcMeanval: missing 'alpha' (or 'alphaMean') in slopes.")
+    
+    sigma        <- object@slopes$sigma
+    if(is.null(sigma)) stop("LogitBLP calcMeanval: missing 'sigma' in slopes.")
+    
+    nDraws       <- object@nDraws
+    piDemog      <- object@slopes$piDemog
     if(is.null(piDemog)) piDemog <- numeric(0)
-    nDemog       <-  object@slopes$nDemog
+    nDemog       <- object@slopes$nDemog
     if(is.null(nDemog)) nDemog <- 0
-    sigmaNest    <-  object@slopes$sigmaNest
+    sigmaNest    <- object@slopes$sigmaNest
+    if(is.null(sigmaNest)) sigmaNest <- 1
     
     # Check if meanval (delta) is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
     
-    # Check if draws already exist (to ensure consistency across calls)
-    drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
-    
-    if(drawsExist) {
-      # Reuse existing draws
+    # Reuse draws if they exist
+    if(!is.null(object@slopes$consDraws) && !is.null(object@slopes$demogDraws)) {
       consDraws <- object@slopes$consDraws
       demogDraws <- object@slopes$demogDraws
-      if(!is.null(demogDraws) && ncol(demogDraws) > 0) {
-        demogEffect <- demogDraws %*% piDemog
-      } else {
-        demogEffect <- 0
-      }
+      demogEffect <- if(ncol(demogDraws) > 0) demogDraws %*% piDemog else 0
     } else {
-      # Generate new consumer heterogeneity draws (unobserved)
+      # Generate random draws
       consDraws <- rnorm(nDraws)
-      
-      # Generate demographic draws (observed heterogeneity)
-      if(!is.null(nDemog) && nDemog > 0){
+      if(nDemog > 0) {
         demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
-        demogEffect <- demogDraws %*% piDemog
+        demogEffect <- as.numeric(demogDraws %*% piDemog)
       } else {
-        demogDraws <- matrix(nrow=nDraws, ncol=0)
+        demogDraws <- rep(0,nDraws)
         demogEffect <- 0
-        piDemog <- numeric(0)
-        nDemog <- 0
       }
     }
     
-    # Compute individual-specific price coefficients
-    # alpha_i = alphaMean + sigma * nu_i + pi * d_i
+    # Individual alphas
     alphas <- alphaMean + sigma * consDraws + demogEffect
     
-    # Use output slot to verify sign consistency
+    # Sign check
     output <- object@output
     expectedSign <- ifelse(output, -1, 1)
-    
-    # Check if alphaMean has the wrong sign for this market type
     if(sign(alphaMean) != expectedSign && alphaMean != 0){
-      warning("Price coefficient sign inconsistent with market type (output=", output, 
-              "). Expected ", ifelse(output, "negative", "positive"), " alpha, got ", 
-              round(alphaMean, 4), ". Flipping sign to maintain consistency.")
+      warning("Price coefficient sign inconsistent with market type. Flipping sign.")
       alphas <- -alphas
       alphaMean <- -alphaMean
     }
     
-    # Ensure all individual alphas have the correct sign
-    wrongSigns <- if(expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
-    if(wrongSigns > 0){
-      warning(wrongSigns, " out of ", length(alphas), " individual price coefficients have wrong sign. ",
-              "Consider reducing sigma or adjusting alphaMean to keep all draws on correct side of zero.")
-    }
-    
-    nprods <- length(shares)
-    
-    if(is.na(idx)){
-      idxShare <- 1 - shareInside
+    # Indexing for outside good
+    if(is.na(idx)) {
       idxPrice <- object@priceOutside
-    }
-    else{
-      idxShare <- shares[idx]
+    } else {
       idxPrice <- prices[idx]
     }
     
-    # Set default sigmaNest if not provided: sigmaNest=1 is flat logit (no nesting)
-    if(is.null(sigmaNest)) sigmaNest <- 1
-    
-    # When sigmaNest != 1, nesting requires an outside good
-    if(!is.na(idx) && sigmaNest != 1){
-      idx <- NA
-      idxShare <- 1 - sum(shares)
-      idxPrice <- object@priceOutside
-    }
-    
-    if (deltaProvided) {
+    # Delta fixed point
+    if(deltaProvided) {
       delta <- object@slopes$meanval
-      message("Using provided meanval (delta) for BLP - skipping contraction mapping")
-    }
-    else {
-      # Pre-compute constant price term for efficiency
-      price_diff <- prices - object@priceOutside
+      message("Using provided meanval (delta) for LogitBLP - skipping contraction mapping")
+    } else {
       
-      # Define the fixed point function
+      # Price differences
+      price_diff <- prices - object@priceOutside
+      price_diff[is.na(price_diff)] <- 0
+      
+      # Fixed point function
       fpFunction <- function(delta) {
-        # Compute utilities: nDraws x nProducts matrix
         utilities <- outer(alphas, price_diff, "*")
         utilities <- sweep(utilities, 2, delta, "+")
-        
-        # Prevent numeric overflow
-        maxUtil <- 700
-        utilities <- pmin(pmax(utilities/sigmaNest, -maxUtil), maxUtil)
+        # Cap extreme values to prevent overflow
+        utilities <- pmin(pmax(utilities / sigmaNest, -700), 700)
         expUtil <- exp(utilities)
-        
         sumExpUtil <- rowSums(expUtil)
-        insideIV <- sumExpUtil^sigmaNest
-        if (is.na(idx)) {
-          denom <- 1 + insideIV
+        if(is.na(idx)) {
+          denom <- 1 + sumExpUtil^sigmaNest
         } else {
-          denom <- insideIV
+          denom <- sumExpUtil^sigmaNest
         }
-        predShares <- colMeans(expUtil/denom)
-        
-        return(delta + log(shares) - log(predShares))
+        predShares <- colMeans(expUtil / denom)
+        # Ensure no zeros for log
+        predShares[predShares <= 1e-10] <- 1e-10
+        delta + log(shares) - log(predShares)
       }
       
       # Initial guess
       delta <- log(shares)
       
-      # Use BB::dfsane for fixed point iteration
-      tol <- ifelse(!is.null(object@slopes$contractionTol), 
-                    object@slopes$contractionTol, 1e-12)
-      maxIter <- ifelse(!is.null(object@slopes$contractionMaxIter), 
-                        object@slopes$contractionMaxIter, 1000)
+      # BB::dfsane
+      tol <- ifelse(!is.null(object@slopes$contractionTol), object@slopes$contractionTol, 1e-10)
+      maxIter <- ifelse(!is.null(object@slopes$contractionMaxIter), object@slopes$contractionMaxIter, 1000)
       
       message("Running BLP contraction with BB::dfsane (tol=", sprintf("%.0e", tol), 
               ", maxIter=", maxIter, ")...")
       
-      result <- try(BB::dfsane(par = delta, fn = function(x) fpFunction(x) - x, 
+      result <- try(BB::dfsane(par = delta, fn = function(x) fpFunction(x) - x,
                                control = list(tol = tol, maxit = maxIter, trace = FALSE)))
       
-      if (class(result)[1] == "try-error" || result$convergence != 0) {
-        # Fall back to dampened fixed point iteration if BB fails
-        message("BB::dfsane failed to converge, falling back to dampened fixed point iteration")
+      if(class(result)[1] == "try-error" || result$convergence != 0) {
+        message("BB::dfsane failed, falling back to dampened fixed point iteration")
         dampFactor <- 0.5
-        delta <- log(shares) + log(object@insideSize)
-        
-        for (iter in 1:maxIter) {
+        for(iter in 1:maxIter) {
           deltaNew <- fpFunction(delta)
-          absDiff <- max(abs(deltaNew - delta))
-          relDiff <- max(abs((deltaNew - delta)/(abs(delta) + 1e-8)))
-          
-          if (relDiff < tol || absDiff < tol*1e-2) {
+          if(max(abs(deltaNew - delta)) < tol) {
             delta <- deltaNew
             message("BLP contraction converged in ", iter, " iterations")
             break
           }
           delta <- delta + dampFactor * (deltaNew - delta)
         }
-        if (iter == maxIter) {
-          warning("BLP contraction mapping did not converge within ", maxIter, " iterations")
-        }
+        if(iter == maxIter) warning("BLP contraction did not converge in ", maxIter, " iterations")
       } else {
         delta <- result$par
         message("BB::dfsane converged in ", result$iter, " iterations")
@@ -721,29 +673,24 @@ setMethod(
     
     # Store results
     names(delta) <- object@labels
-    names(alphaMean) <- "alphaMean"
-    names(sigma) <- "sigma"
-    names(sigmaNest) <- "sigmaNest"
-    if(length(piDemog) > 0){
-      names(piDemog) <- paste0("pi_", 1:length(piDemog))
-    }
-    
-    # Store both alpha and alphaMean for downstream compatibility
-    object@slopes$alpha <- as.numeric(alphaMean)
-    object@slopes$alphaMean <- alphaMean
-    object@slopes$meanval <- delta
-    object@slopes$sigma <- sigma
-    object@slopes$sigmaNest <- sigmaNest
-    object@slopes$piDemog <- piDemog
-    object@slopes$nDemog <- nDemog
-    object@slopes$alphas <- as.numeric(alphas)
-    object@slopes$consDraws <- consDraws
-    object@slopes$demogDraws <- demogDraws
+    object@slopes <- list(
+      alpha = as.numeric(alphaMean),
+      alphaMean = alphaMean,
+      meanval = delta,
+      sigma = sigma,
+      sigmaNest = sigmaNest,
+      piDemog = piDemog,
+      nDemog = nDemog,
+      alphas = as.numeric(alphas),
+      consDraws = consDraws,
+      demogDraws = demogDraws
+    )
+    object@priceOutside <- idxPrice
+    object@mktSize <- object@insideSize / sum(shares)
     
     return(object)
   }
 )
-
 
 ## ownerToMatrix method for PriceLeadership class
 ## Returns ownership matrix accounting for coalition coordination when control=TRUE
@@ -1079,6 +1026,12 @@ setMethod(
     ## This differs from PriceLeadership which calibrates both demand AND leadership params
     
     nprods <- length(object@prices)
+    margins <- object@margins
+    prices <- object@margins
+    margins <- margins * prices
+    
+    # Recover observed marginal costs to calibrate supermarkup
+    mcObs <- prices  - margins
     
     # Extract coalition indices (handle both vector and matrix forms)
     if(is.matrix(object@coalitionPre)){
@@ -1103,21 +1056,30 @@ setMethod(
     ## Calculate supermarkup from observed margins
     ## supermarkup = observed margins - Bertrand margins for coalition products
     # First, solve for pure Bertrand equilibrium prices
-    bertrandPrices <- calcPrices(object, preMerger = TRUE, regime = "bertrand")
-    
-    # Temporarily set prices to Bertrand equilibrium
-    object@pricePre <- bertrandPrices
+    object@mcPre   <- mcObs
+    object@pricePre <- calcPrices(object, preMerger = TRUE, regime = "bertrand")
     
     # Calculate Bertrand margins at Bertrand prices
     bertrandMargins <- calcMargins(object, preMerger = TRUE, regime = "bertrand")
     
     # Supermarkup is the difference for coalition products
-    supermarkupPre <- mean((object@margins - bertrandMargins)[coalition], na.rm = TRUE)
+    supermarkupPre <- mean((margins - bertrandMargins)[coalition], na.rm = TRUE)
     object@supermarkupPre <- supermarkupPre
+    
+    # calibrate all bertrand prices
+    priceBertrandObs <- prices - supermarkupPre
+    
+    ## Calculate marginal costs using BLP-calibrated demand (after supermarkup calibration)
+    object@pricePre <- priceBertrandObs
+    object@mcPre <- calcMC(object, preMerger = TRUE)
+    
+    ## Calculate post-merger marginal costs
+    object@mcPost <- calcMC(object, preMerger = FALSE)
+    
     
     ## Calibrate timing parameters from IC constraints at the observed level of coordination
     # Solve for coordinated Bertrand prices (coalition coordinates with m=0)
-    pricesColl <- calcPrices(object, preMerger = TRUE, isMax = FALSE, regime = "coordination")
+    pricesColl <- calcPrices(object, preMerger = TRUE, regime = "coordination")
     
     # Calculate price leadership parameters (timing parameters and IC slack at observed coordination)
     pleParams <- calcPriceLeadershipParams(object, preMerger = TRUE, 
@@ -1129,12 +1091,7 @@ setMethod(
     object@bindingFirm <- pleParams$bindingFirm
     object@slackValues <- pleParams$slackValues
     
-    ## Calculate marginal costs using BLP-calibrated demand (after supermarkup calibration)
-    object@mcPre <- calcMC(object, preMerger = TRUE)
     
-    ## Calculate post-merger marginal costs
-    object@mcPost <- calcMC(object, preMerger = FALSE)
-
     ## For BLP, post-merger supermarkup using pre-merger calibrated timing parameters
     # Get post-merger coalition
     if(is.matrix(object@coalitionPost)){
@@ -1150,12 +1107,12 @@ setMethod(
       # Check if full collusion is sustainable post-merger using pre-merger timing parameters
       
       # Calculate post-merger collusive profits (unconstrained price leader profits)
-      pricesCollPost <- calcPrices(object, preMerger = FALSE, isMax = FALSE, regime = "coordination")
+      pricesCollPost <- calcPrices(object, preMerger = FALSE, regime = "coordination")
       object@pricePost <- pricesCollPost
       profitsCollPost <- calcProducerSurplus(object, preMerger = FALSE)
       
       # Calculate post-merger Bertrand profits
-      pricesBertrandPost <- calcPrices(object, preMerger = FALSE, isMax = FALSE, regime = "bertrand")
+      pricesBertrandPost <- calcPrices(object, preMerger = FALSE, regime = "bertrand")
       object@pricePost <- pricesBertrandPost
       profitsBertrandPost <- calcProducerSurplus(object, preMerger = FALSE)
       

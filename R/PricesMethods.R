@@ -257,57 +257,47 @@ setMethod(
     }
     
     # 3 Define analytic Jacobian using individual shares
-    # Cache mechanism to avoid recalculating shares when prices unchanged
-    last_prices <- NULL
-    cached_shares <- NULL
-    
     JAC <- function(priceCand) {
+      # Update prices in object
       if (preMerger) object@pricePre[subset] <- priceCand
       else object@pricePost[subset] <- priceCand
       
-      # 3a. Compute individual shares per draw (with caching)
-      # Only recalculate if prices have changed
-      if (is.null(last_prices) || !identical(priceCand, last_prices)) {
-        cached_shares <<- calcShares(object, preMerger = preMerger, aggregate = FALSE)[subset, , drop = FALSE]
-        last_prices <<- priceCand
-      }
-      shares_draw <- cached_shares
+      # Compute shares per draw (k x R)
+      shares_draw <- calcShares(object, preMerger = preMerger, aggregate = FALSE)[subset, , drop = FALSE]
       
-      # 3b. Get parameters
-      alphas <- object@slopes$alphas   # vector of length nDraws
+      # Parameters
+      alphas <- object@slopes$alphas   # vector length = nDraws
       sigmaNest <- object@slopes$sigmaNest
       if (is.null(sigmaNest)) sigmaNest <- 1
       R <- length(alphas)
       k <- nrow(shares_draw)
       
-      # 3c. Compute share Jacobian for nested logit with random coefficients
-      # shares_draw is k x R (products x draws)
-      # ds_j/dp_j = E[alpha_i * s_ij / sigmaNest * (1 - sigmaNest * s_ij)]
-      # ds_j/dp_k = -E[alpha_i * s_ij * s_ik] (j != k)
+      # Multiply shares by alpha for derivatives
+      shares_alpha <- sweep(shares_draw, 2, alphas, "*")  # k x R
       
-      Pa <- sweep(shares_draw, 2, alphas / sigmaNest, "*")  # k x R: s_ij * alpha_i / sigma
+      # Own-price derivatives (diag): E[alpha_i * s_ij * (1 - sigmaNest * s_ij)]
+      diag_term <- rowMeans(shares_alpha * (1 - sigmaNest * shares_draw))
       
-      # Own-price derivative: E[alpha * s / sigma * (1 - sigma * s)]
-      diag_term <- rowMeans(Pa * (1 - sigmaNest * shares_draw))
+      # Cross-price derivatives: -E[alpha_i * s_ij * s_ik] (j != k)
+      cross_term <- shares_alpha %*% t(shares_draw) / R
+      cross_term <- pmin(pmax(cross_term, -1e6), 1e6)  # clip extremes for stability
       
-      # Cross-price derivative: -E[alpha * s_j * s_k]
-      # Optimized: compute shares_alpha once and reuse
-      shares_alpha <- sweep(shares_draw, 2, alphas, "*")    # k x R: s_ij * alpha_i
-      cross_term <- shares_alpha %*% t(shares_draw) / R     # k x k: E[alpha_i * s_ij * s_ik]
+      # Construct share Jacobian (k x k)
+      J_s <- diag(diag_term) - cross_term
       
-      J_s <- diag(diag_term) - cross_term                    # k x k share Jacobian
-      
-      # 3d. FOC Jacobian: dF/dp
-      # FOC is: margin - predicted_margin = 0
-      # d(FOC)/dp = I - d(predicted_margin)/dp
-      # The predicted margin depends on ownership structure and share Jacobian
-      # Jacobian of FOC: I + Omega %*% J_s (note: J_s has negative sign built in for cross terms)
+      # FOC Jacobian: I + Omega %*% J_s
       J_FOC <- diag(k) + owner %*% J_s
+      
+      # Optional: tiny regularization to improve conditioning
+      eps <- 1e-8
+      diag(J_FOC) <- diag(J_FOC) + eps
       
       return(J_FOC)
     }
     
-    # 4 Solve FOCs
+  
+    
+    # 4 Solve FOCs. JAC not working so omit for now
     nleqslv_maxit <- as.integer(object@control.equ$maxit)
     if (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) 
       nleqslv_maxit <- 150L
@@ -319,7 +309,7 @@ setMethod(
     )
     
     # Fallback to BBsolve
-    if (minResult$termcd > 2) {
+    if (minResult$termcd > 2 || any(minResult$x<0)) {
       warning("'nleqslv' failed; falling back to BBsolve")
       minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = object@control.equ, ...)
       priceEst_solution <- minResult$par
