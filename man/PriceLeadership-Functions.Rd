@@ -34,6 +34,7 @@ ple(
 ple.blp(
   prices,
   shares,
+  margins,
   ownerPre,
   ownerPost,
   coalitionPre,
@@ -75,10 +76,8 @@ a k x k matrix of post-merger ownership shares.}
 pre-merger coordinating coalition. Products not in this vector are treated as fringe.
 Internally converted to a control matrix.}
 
-\item{coalitionPost}{Optional. A numeric vector of product indices in the post-merger
-coalition. If not specified, automatically determined: if a merger brings a coalition
-member together with a non-coalition member under common ownership, both join the
-post-merger coalition. Internally converted to a control matrix.}
+\item{coalitionPost}{Required. A numeric vector of product indices in the post-merger
+coalition. Products not in this vector are treated as fringe.}
 
 \item{timingParam}{Optional. If provided, firm-specific timing/discount parameters
 (delta) are fixed at these values rather than calibrated. Should be a named vector
@@ -166,7 +165,7 @@ timing parameters cannot be identified from the data.
 # Beer industry example (MSW 2023)
 prices <- c(0.93, 0.88, 1.10, 1.02)
 shares <- c(0.35, 0.25, 0.25, 0.15)
-margins <- c(0.40, NA, 0.25, NA)  # Coalition and fringe margins
+margins <- c(0.40, NA, 0.35, 0.25)  # Coalition margins and one fringe margin
 
 result <- ple(
   prices = prices,
@@ -175,6 +174,7 @@ result <- ple(
   ownerPre = c("AB", "AB", "MC", "Fringe"),
   ownerPost = c("AB", "AB", "MC", "Fringe"),
   coalitionPre = c(1, 2, 3),  # Products 1-3 in coalition, 4 is fringe
+  coalitionPost = c(1, 2, 3),  # Same coalition post-merger
 )
 
 summary(result)

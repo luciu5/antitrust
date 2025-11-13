@@ -16,10 +16,10 @@
  #' @param coalitionPre A numeric vector of product indices that are part of the
  #'   pre-merger coordinating coalition. Products not in this vector are treated as fringe.
  #'   Internally converted to a control matrix.
- #' @param coalitionPost Optional. A numeric vector of product indices in the post-merger
- #'   coalition. If not specified, automatically determined: if a merger brings a coalition
- #'   member together with a non-coalition member under common ownership, both join the
- #'   post-merger coalition. Internally converted to a control matrix.
+ #' @param coalitionPost Required. A numeric vector of product indices in the post-merger
+ #'   coalition. Products not in this vector are treated as fringe.
+ 
+ 
  #' @param timingParam Optional. If provided, firm-specific timing/discount parameters
  #'   (delta) are fixed at these values rather than calibrated. Should be a named vector
  #'   where names match firm identifiers and values are between 0 and 1. If any IC constraint
@@ -94,7 +94,7 @@
 #' # Beer industry example (MSW 2023)
 #' prices <- c(0.93, 0.88, 1.10, 1.02)
 #' shares <- c(0.35, 0.25, 0.25, 0.15)
-#' margins <- c(0.40, NA, 0.25, NA)  # Coalition and fringe margins
+#' margins <- c(0.40, NA, 0.35, 0.25)  # Coalition margins and one fringe margin
 #' 
 #' result <- ple(
 #'   prices = prices,
@@ -103,6 +103,7 @@
 #'   ownerPre = c("AB", "AB", "MC", "Fringe"),
 #'   ownerPost = c("AB", "AB", "MC", "Fringe"),
 #'   coalitionPre = c(1, 2, 3),  # Products 1-3 in coalition, 4 is fringe
+#'   coalitionPost = c(1, 2, 3),  # Same coalition post-merger
 #' )
 #' 
 #' summary(result)
@@ -157,54 +158,12 @@ ple <- function(
     stop("At least one fringe margin must be supplied for calibration")
   }
   
-  ## Determine post-merger coalition
-  ## Logic: If merger brings a coalition member together with a non-coalition member,
-  ## assume both join the coalition post-merger (common ownership enables coordination)
-  
-  ## Check if user specified post-merger coalition
-  if(!missing(coalitionPost)){
-    # User provided explicit post-merger coalition
-    if(length(coalitionPost) < 2){
-      stop("'coalitionPost' must contain at least 2 products")
-    }
-    # Use as-is
-  } else {
-    # Automatically determine post-merger coalition based on ownership changes
-    coalitionPost <- coalitionPre  # Start with same coalition
-    
-    ## Detect merger changes by comparing ownership
-    ## Convert ownership vectors to matrices for comparison (vectorized for performance)
-    if(!is.matrix(ownerPre)){
-      ownerPreMat <- outer(ownerPre, ownerPre, "==") * 1
-    } else {
-      ownerPreMat <- ownerPre
-    }
-    
-    if(!is.matrix(ownerPost)){
-      ownerPostMat <- outer(ownerPost, ownerPost, "==") * 1
-    } else {
-      ownerPostMat <- ownerPost
-    }
-    
-    ## Find products that become commonly owned post-merger but weren't pre-merger
-    newCommonOwnership <- (ownerPostMat > 0) & (ownerPreMat == 0)
-    
-    ## For each coalition product, check if it's now commonly owned with any non-coalition product
-    for(coalProd in coalitionPre){
-      # Find products that are now commonly owned with this coalition product
-      newPartners <- which(newCommonOwnership[coalProd, ])
-      
-      # Add any non-coalition partners to the post-merger coalition
-      for(partner in newPartners){
-        if(!(partner %in% coalitionPost)){
-          coalitionPost <- c(coalitionPost, partner)
-          message("Product ", partner, " added to post-merger coalition (merged with coalition product ", coalProd, ")")
-        }
-      }
-    }
-    
-    ## Sort coalition for consistency
-    coalitionPost <- sort(coalitionPost)
+  ## Check post-merger coalition
+  if(missing(coalitionPost)){
+    stop("'coalitionPost' must be specified")
+  }
+  if(length(coalitionPost) < 2){
+    stop("'coalitionPost' must contain at least 2 products")
   }
   
   ## Create object - validity method will check coalition, timingParam, etc.
@@ -250,8 +209,8 @@ ple <- function(
   result <- calcSlopes(result)
   
   ## Solve Non-Linear System for Price Changes
-  result@pricePre  <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePre  <- calcPrices(result, preMerger = TRUE, isMax = isMax, regime = "constrained", ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, regime = "constrained", ...)
   
   return(result)
 }
@@ -262,6 +221,7 @@ ple <- function(
 ple.blp <- function(
   prices,
   shares,
+  margins,
   ownerPre,
   ownerPost,
   coalitionPre,
@@ -285,9 +245,9 @@ ple.blp <- function(
   
   nprods <- length(prices)
   
-  ## Determine post-merger coalition (if not specified)
+  ## Check post-merger coalition
   if(missing(coalitionPost)){
-    coalitionPost <- .determineCoalitionPost(coalitionPre, ownerPre, ownerPost)
+    stop("'coalitionPost' must be specified")
   }
   
   ## Create object - validity method will check coalition, slopes, set defaults, etc.
@@ -295,7 +255,7 @@ ple.blp <- function(
   result <- new("PriceLeadershipBLP",
                 prices = prices,
                 shares = shares,
-                margins = rep(1/nprods, nprods),  # Not used for BLP
+                margins = margins,
                 normIndex = normIndex,
                 ownerPre = ownerPre,
                 ownerPost = ownerPost,
@@ -333,74 +293,14 @@ ple.blp <- function(
   result <- calcSlopes(result)
   
   ## Solve Non-Linear System for Price Changes
-  result@pricePre  <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePre  <- calcPrices(result, preMerger = TRUE, isMax = isMax, regime = "constrained", ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, regime = "constrained", ...)
   
   return(result)
 }
 
 
-## Helper function: Extract owner vector from matrix or vector
-## Used to avoid repeated apply() operations
-.extractOwnerVec <- function(owner){
-  if(is.vector(owner) || is.factor(owner)){
-    return(owner)
-  }
-  # Extract from matrix - use row indices as firm IDs
-  apply(owner, 1, function(row) which(row > 0)[1])
-}
 
-
-## Helper function: Determine post-merger coalition
-## Automatically expands coalition if merger brings coalition member together with non-coalition member
-.determineCoalitionPost <- function(coalitionPre, ownerPre, ownerPost){
-  
-  coalitionPost <- coalitionPre  # Start with same coalition
-  
-  ## Convert ownership vectors to matrices for comparison (vectorized for performance)
-  if(!is.matrix(ownerPre)){
-    ownerPreMat <- outer(ownerPre, ownerPre, "==") * 1
-  } else {
-    ownerPreMat <- ownerPre
-  }
-  
-  if(!is.matrix(ownerPost)){
-    ownerPostMat <- outer(ownerPost, ownerPost, "==") * 1
-  } else {
-    ownerPostMat <- ownerPost
-  }
-  
-  ## Find products that become commonly owned post-merger but weren't pre-merger
-  newCommonOwnership <- (ownerPostMat > 0) & (ownerPreMat == 0)
-  
-  ## For each coalition product, check if it's now commonly owned with any non-coalition product
-  for(coalProd in coalitionPre){
-    # Find products that are now commonly owned with this coalition product
-    newPartners <- which(newCommonOwnership[coalProd, ])
-    
-    # Add any non-coalition partners to the post-merger coalition
-    for(partner in newPartners){
-      if(!(partner %in% coalitionPost)){
-        coalitionPost <- c(coalitionPost, partner)
-        message("Product ", partner, " added to post-merger coalition (merged with coalition product ", coalProd, ")")
-      }
-    }
-  }
-  
-  ## Sort coalition for consistency
-  return(sort(coalitionPost))
-}
-
-
-## Helper function: Extract owner vector from matrix or vector
-## Used to avoid repeated apply() operations
-.extractOwnerVec <- function(owner){
-  if(is.vector(owner) || is.factor(owner)){
-    return(owner)
-  }
-  # Extract from matrix - use row indices as firm IDs
-  apply(owner, 1, function(row) which(row > 0)[1])
-}
 
 
 ## Generic and method for calibrating price leadership parameters
@@ -489,7 +389,9 @@ setMethod(
     }
     
     # Calculate optimal deviation profits for each coalition firm
-    ownerVec_temp <- .extractOwnerVec(ownerOriginal)
+    # For each firm, compute profits if it deviates from coordination
+    # Method: Temporarily remove the firm from the coalition and solve for new equilibrium
+    ownerVec_temp <- ownerToVec(object, preMerger=preMerger)
     coalitionFirms_temp <- unique(ownerVec_temp[coalition])
     
     profitsDeviation_byFirm_temp <- sapply(coalitionFirms_temp, function(firm){
@@ -498,55 +400,77 @@ setMethod(
       
       if(length(deviatingCoalitionProducts) == 0) return(0)
       
-      subset <- rep(FALSE, nprods)
-      subset[deviatingCoalitionProducts] <- TRUE
-      
-      optimalPrices <- calcPrices(object, preMerger = preMerger, subset = subset, regime = "deviation")
-      
+      # Store original coalition matrix to restore later
       if(preMerger){
-        object@pricePre <- optimalPrices
+        originalCoalitionMat <- object@coalitionPre
       } else {
-        object@pricePost <- optimalPrices
+        originalCoalitionMat <- object@coalitionPost
       }
       
-      deviationProfit <- calcProducerSurplus(object, preMerger = preMerger)
+      # Create modified coalition matrix excluding this firm
+      # Use ownerToMatrix with exclude parameter for cleaner implementation
+      nprods <- length(ownerVec_temp)
+      excludeVec <- rep(FALSE, nprods)
+      excludeVec[firmProducts] <- TRUE
+      modifiedCoalitionMat <- ownerToMatrix(object, preMerger = preMerger, 
+                                           control = TRUE, exclude = excludeVec)
+      
+      # Temporarily set the modified coalition matrix
+      if(preMerger){
+        object@coalitionPre <- modifiedCoalitionMat
+      } else {
+        object@coalitionPost <- modifiedCoalitionMat
+      }
+      
+      # Solve for deviation equilibrium (deviating firm competes, others coordinate)
+      deviationProfit <- calcProducerSurplus(object, preMerger = preMerger, 
+                                            regime = "coordination")
+      
+      # Restore original coalition matrix
+      if(preMerger){
+        object@coalitionPre <- originalCoalitionMat
+      } else {
+        object@coalitionPost <- originalCoalitionMat
+      }
+      
       sum(deviationProfit[firmProducts])
     })
     
     # Get firm identifiers for aggregation
-    ownerVec <- .extractOwnerVec(if(preMerger) ownerPre else object@ownerPost)
+    ownerVec <- ownerToVec(object, preMerger=preMerger)
+    ownerMat <- if(preMerger) object@ownerPre else object@ownerPost
     coalitionFirms <- unique(ownerVec[coalition])
     nCoalitionFirms <- length(coalitionFirms)
     
-    # Aggregate profits by firm
-    profitsPL_byFirm <- sapply(coalitionFirms, function(firm){
-      sum(profitsPL[ownerVec == firm])
-    })
+    # Aggregate profits by firm using ownership matrix
+    allProfitsPLFirm <- ownerMat %*% profitsPL
+    profitsPLFirm <- allProfitsPLFirm[coalitionFirms]
     
     profitsDeviation_byFirm <- profitsDeviation_byFirm_temp
     
-    profitsBertrand_byFirm <- sapply(coalitionFirms, function(firm){
-      sum(profitsBertrand[ownerVec == firm])
-    })
+    allProfitsBertrandFirm <- ownerMat %*% profitsBertrand
+    profitsBertrandFirm <- allProfitsBertrandFirm[coalitionFirms]
     
-    names(profitsPL_byFirm) <- coalitionFirms
+    names(profitsPLFirm) <- coalitionFirms
     names(profitsDeviation_byFirm) <- as.character(coalitionFirms)
-    names(profitsBertrand_byFirm) <- coalitionFirms
+    names(profitsBertrandFirm) <- coalitionFirms
     
     # Check IC slack for each firm
-    IC_slack_byFirm <- profitsPL_byFirm - profitsDeviation_byFirm
+    IC_slack_byFirm <- profitsPLFirm - profitsDeviation_byFirm
     
     ## Identify supermarkup and timing parameters based on IC constraints
     if(supermarkup_observed <= tol){
       # No supermarkup observed - just coordinated Bertrand
       supermarkup <- 0
-      timingParam <- numeric()
+      # Timing parameters are NA when not observed
+      timingParam <- rep(NA_real_, nCoalitionFirms)
+      names(timingParam) <- coalitionFirms
       bindingFirm <- NA_integer_
       
     } else if(all(IC_slack_byFirm >= -tol)){
       # All ICs satisfied at δ=1 (static constraint holds)
       supermarkup <- supermarkup_observed
-      timingParam <- rep(1, nCoalitionFirms)
+      timingParam <- rep(NA_real_, nCoalitionFirms)
       names(timingParam) <- coalitionFirms
       bindingFirm <- NA_integer_
       
@@ -555,8 +479,8 @@ setMethod(
       # δ_f = (π^D_f - π^PL_f) / (π^D_f - π^B_f)
       
       timingParam <- sapply(coalitionFirms, function(firm){
-        delta_f <- (profitsDeviation_byFirm[as.character(firm)] - profitsPL_byFirm[as.character(firm)]) / 
-                   (profitsDeviation_byFirm[as.character(firm)] - profitsBertrand_byFirm[as.character(firm)])
+        delta_f <- (profitsDeviation_byFirm[as.character(firm)] - profitsPLFirm[as.character(firm)]) / 
+                   (profitsDeviation_byFirm[as.character(firm)] - profitsBertrandFirm[as.character(firm)])
         
         # Constrain to valid range
         if(is.na(delta_f) || delta_f < 0){
@@ -828,11 +752,14 @@ setMethod(
 #' @param control For PriceLeadership class only. If TRUE, returns the effective 
 #'   control matrix where coalition products are treated as coordinating (full 
 #'   cross-ownership). If FALSE (default), returns traditional ownership matrix.
+#' @param exclude Optional logical vector of length equal to number of products.
+#'   When control=TRUE, products where exclude[i]=TRUE are excluded from coalition
+#'   coordination. Useful for deviation profit calculations and other partial coalition scenarios.
 #' @export
 setMethod(
   f = "ownerToMatrix",
   signature = "PriceLeadership",
-  definition = function(object, preMerger = TRUE, control = FALSE){
+  definition = function(object, preMerger = TRUE, control = FALSE, exclude = NULL){
     
     # Get traditional ownership matrix first
     if(preMerger){
@@ -854,6 +781,7 @@ setMethod(
       }
     } else {
       ownerMat <- thisOwner
+      nprod <- nrow(ownerMat)
     }
     
     # If control=TRUE, modify to reflect coalition coordination
@@ -861,6 +789,25 @@ setMethod(
       # Coalition products coordinate pricing (act as single entity)
       # Set full cross-ownership for coalition products
       ownerMat[coalition, coalition] <- 1
+      
+      # If exclude is specified, remove those products from coalition coordination
+      if(!is.null(exclude)){
+        if(!is.logical(exclude) || length(exclude) != nprod){
+          stop("'exclude' must be a logical vector the same length as the number of products")
+        }
+        
+        excludeProducts <- which(exclude)
+        
+        if(length(excludeProducts) > 0){
+          # Remove coordination between excluded products and other coalition products
+          otherCoalitionProducts <- setdiff(coalition, excludeProducts)
+          ownerMat[excludeProducts, otherCoalitionProducts] <- 0
+          ownerMat[otherCoalitionProducts, excludeProducts] <- 0
+          
+          # Keep coordination among excluded products themselves
+          ownerMat[excludeProducts, excludeProducts] <- 1
+        }
+      }
     }
     
     return(ownerMat)
@@ -873,10 +820,10 @@ setMethod(
 setMethod(
   f = "ownerToMatrix",
   signature = "PriceLeadershipBLP",
-  definition = function(object, preMerger = TRUE, control = FALSE){
+  definition = function(object, preMerger = TRUE, control = FALSE, exclude = NULL){
     # Reuse PriceLeadership implementation - logic is identical
     # Both classes have coalitionPre/Post and ownerPre/Post slots
-    selectMethod("ownerToMatrix", "PriceLeadership")(object, preMerger, control)
+    selectMethod("ownerToMatrix", "PriceLeadership")(object, preMerger, control, excludeFirms)
   }
 )
 
@@ -1013,7 +960,7 @@ setMethod(
     object@supermarkupPre <- pleParams$supermarkup
     
     ## Store timing parameters (user can override by providing timingParam in constructor)
-    if(length(object@timingParam) == 0){
+    if(all(is.na(object@timingParam)) || length(object@timingParam) == 0){
       object@timingParam <- pleParams$timingParam
     }
     
@@ -1140,19 +1087,8 @@ setMethod(
       coalition <- object@coalitionPre
     }
     
-    ## Validate BLP parameters (deferred from validity method)
-    if(is.null(object@slopes) || !is.list(object@slopes)){
-      stop("BLP demand parameters must be provided in 'slopes' list")
-    }
-    
-    if(!("sigma" %in% names(object@slopes))){
-      stop("'slopes' must contain 'sigma' (std. dev. of random price coefficient)")
-    }
-    
-    # Alpha validation - accept either alpha or alphaMean
-    if(!("alpha" %in% names(object@slopes)) && !("alphaMean" %in% names(object@slopes))){
-      stop("'slopes' must contain either 'alpha' or 'alphaMean' (mean price coefficient)")
-    }
+    ## Validate BLP parameters (now in validity method)
+    # BLP parameter validation moved to PriceLeadershipBLP validity method
     
   ## Run BLP contraction mapping to get meanval (delta) via shared method
   ## This ensures delta is consistent with observed shares given random coefficients
@@ -1164,32 +1100,43 @@ setMethod(
       object@mktSize <- object@insideSize / shareInside
     }
     
-    ## Calculate marginal costs using BLP-calibrated demand
-    object@mcPre <- calcMC(object, preMerger = TRUE)
+    ## Calculate supermarkup from observed margins
+    ## supermarkup = observed margins - Bertrand margins for coalition products
+    # First, solve for pure Bertrand equilibrium prices
+    bertrandPrices <- calcPrices(object, preMerger = TRUE, regime = "bertrand")
     
-    ## Identify supermarkup and timing parameter using shared method
+    # Temporarily set prices to Bertrand equilibrium
+    object@pricePre <- bertrandPrices
+    
+    # Calculate Bertrand margins at Bertrand prices
+    bertrandMargins <- calcMargins(object, preMerger = TRUE, regime = "bertrand")
+    
+    # Supermarkup is the difference for coalition products
+    supermarkupPre <- mean((object@margins - bertrandMargins)[coalition], na.rm = TRUE)
+    object@supermarkupPre <- supermarkupPre
+    
+    ## Calibrate timing parameters from IC constraints at the observed level of coordination
     # Solve for coordinated Bertrand prices (coalition coordinates with m=0)
     pricesColl <- calcPrices(object, preMerger = TRUE, isMax = FALSE, regime = "coordination")
     
-    # Calculate price leadership parameters (supermarkup, timing, IC slack)
+    # Calculate price leadership parameters (timing parameters and IC slack at observed coordination)
     pleParams <- calcPriceLeadershipParams(object, preMerger = TRUE, 
                                            pricesColl = pricesColl, 
                                            coalition = coalition)
     
-    object@supermarkupPre <- pleParams$supermarkup
-    
-    ## Store timing parameters (user can override by providing timingParam in constructor)
-    if(length(object@timingParam) == 0){
-      object@timingParam <- pleParams$timingParam
-    }
-    
+    # Store timing parameters calibrated from IC constraints
+    object@timingParam <- pleParams$timingParam
     object@bindingFirm <- pleParams$bindingFirm
     object@slackValues <- pleParams$slackValues
     
+    ## Calculate marginal costs using BLP-calibrated demand (after supermarkup calibration)
+    object@mcPre <- calcMC(object, preMerger = TRUE)
+    
     ## Calculate post-merger marginal costs
     object@mcPost <- calcMC(object, preMerger = FALSE)
-    
-    ## Post-merger supermarkup
+
+    ## For BLP, post-merger supermarkup using pre-merger calibrated timing parameters
+    # Get post-merger coalition
     if(is.matrix(object@coalitionPost)){
       coalitionPost <- which(rowSums(object@coalitionPost) > 1)
     } else {
@@ -1197,15 +1144,93 @@ setMethod(
     }
     
     if(length(coalitionPost) == 0){
+      # No post-merger coalition - no supermarkup
       object@supermarkupPost <- 0
     } else {
-      pricesCollPost <- calcPrices(object, preMerger = FALSE, isMax = FALSE, regime = "coordination")
+      # Check if full collusion is sustainable post-merger using pre-merger timing parameters
       
-      timingNonNA <- object@timingParam[!is.na(object@timingParam)]
-      if(length(timingNonNA) > 0 && isTRUE(any(timingNonNA < 1))){
-        object@supermarkupPost <- calcSupermarkup(object, preMerger = FALSE, constrained = TRUE)
+      # Calculate post-merger collusive profits (unconstrained price leader profits)
+      pricesCollPost <- calcPrices(object, preMerger = FALSE, isMax = FALSE, regime = "coordination")
+      object@pricePost <- pricesCollPost
+      profitsCollPost <- calcProducerSurplus(object, preMerger = FALSE)
+      
+      # Calculate post-merger Bertrand profits
+      pricesBertrandPost <- calcPrices(object, preMerger = FALSE, isMax = FALSE, regime = "bertrand")
+      object@pricePost <- pricesBertrandPost
+      profitsBertrandPost <- calcProducerSurplus(object, preMerger = FALSE)
+      
+      # Calculate optimal deviation profits for each coalition firm
+      # For each firm, compute profits if it deviates from coordination
+      # Method: Temporarily remove the firm from the coalition and solve for new equilibrium
+      profitsDeviationPost <- sapply(coalitionFirms, function(firm){
+        firmProducts <- which(ownerVec == firm)
+        deviatingCoalitionProducts <- intersect(firmProducts, coalitionPost)
+        
+        if(length(deviatingCoalitionProducts) == 0) return(0)
+        
+        # Store original coalition matrix to restore later
+        originalCoalitionMat <- object@coalitionPost
+        
+        # Create modified coalition matrix excluding this firm
+        # Use ownerToMatrix with exclude parameter for cleaner implementation
+        nprods <- length(ownerVec)
+        excludeVec <- rep(FALSE, nprods)
+        excludeVec[firmProducts] <- TRUE
+        modifiedCoalitionMat <- ownerToMatrix(object, preMerger = FALSE, 
+                                             control = TRUE, exclude = excludeVec)
+        
+        # Temporarily set the modified coalition matrix
+        object@coalitionPost <- modifiedCoalitionMat
+        
+        # Solve for deviation equilibrium (deviating firm competes, others coordinate)
+        deviationProfit <- calcProducerSurplus(object, preMerger = FALSE, 
+                                              regime = "coordination")
+        
+        # Restore original coalition matrix
+        object@coalitionPost <- originalCoalitionMat
+        
+        sum(deviationProfit[firmProducts])
+      })
+      
+      names(profitsDeviationPost) <- as.character(coalitionFirms)
+      
+      # Aggregate profits by firm using ownership matrix
+      allProfitsCollPostFirm <- ownerMat %*% profitsCollPost
+      profitsCollPostFirm <- allProfitsCollPostFirm[coalitionFirms]
+      
+      allProfitsBertrandPostFirm <- ownerMat %*% profitsBertrandPost
+      profitsBertrandPostFirm <- allProfitsBertrandPostFirm[coalitionFirms]
+      
+      # Check IC constraints using pre-merger timing parameters
+      IC_slack <- sapply(coalitionFirms, function(firm){
+        firmName <- as.character(firm)
+        delta_f <- object@timingParam[firmName]
+        
+        # If firm doesn't have timing param, use 1 (static constraint)
+        if(is.na(delta_f)) delta_f <- 1
+        
+        # IC_f: π^PL_f - π^D_f + δ_f/(1-δ_f) * (π^PL_f - π^B_f) ≥ 0
+        slack_f <- (profitsCollPostFirm[firmName] - profitsDeviationPost[firmName]) + 
+          (delta_f / (1 - delta_f)) * (profitsCollPostFirm[firmName] - profitsBertrandPostFirm[firmName])
+        
+        return(slack_f)
+      })
+      
+      # If all IC constraints are satisfied (slack >= 0), full collusion is sustainable
+      if(all(IC_slack >= -1e-6)){
+        # Back out supermarkup from margins: collusive margins - Bertrand margins
+        # Set prices to collusive equilibrium for margin calculation
+        object@pricePost <- pricesCollPost
+        collusiveMargins <- calcMargins(object, preMerger = FALSE, regime = "coordination")
+        
+        # Set prices to Bertrand equilibrium for margin calculation
+        object@pricePost <- pricesBertrandPost
+        bertrandMargins <- calcMargins(object, preMerger = FALSE, regime = "bertrand")
+        
+        object@supermarkupPost <- mean((collusiveMargins - bertrandMargins)[coalitionPost], na.rm = TRUE)
       } else {
-        object@supermarkupPost <- calcSupermarkup(object, preMerger = FALSE, constrained = FALSE)
+        # IC constraints violated - find maximum sustainable supermarkup
+        object@supermarkupPost <- calcSupermarkup(object, preMerger = FALSE, constrained = TRUE)
       }
     }
     
@@ -1223,15 +1248,15 @@ setMethod(
 #'   \itemize{
 #'     \item "bertrand" - Solve for Bertrand prices then evaluate
 #'     \item "coordination" - Solve for coordination prices then evaluate (default)
+#'     \item "deviation" - Solve for deviation equilibrium prices then evaluate
 #'   }
-#'   Note: For deviation profits, use \code{\link{calcDeviationProfit}} directly.
 #'   To evaluate at current prices without solving, use the parent class method directly.
 #' @export
 setMethod(
   f = "calcProducerSurplus",
   signature = "PriceLeadership",
   definition = function(object, preMerger = TRUE,
-                        regime = c("coordination", "bertrand"), ...){
+                        regime = c("coordination", "bertrand", "deviation"), ...){
     
     regime <- match.arg(regime)
     
@@ -1364,7 +1389,8 @@ setMethod(
   owner <- if(preMerger) ownerPre else ownerPost
   
   # Extract owner vector (cached for efficiency)
-  ownerVec <- .extractOwnerVec(owner)
+  ownerVec <- ownerToVec(object, preMerger=preMerger)
+  ownerMat <- if(preMerger) object@ownerPre else object@ownerPost
   
   # Get coalition firms
   coalitionFirms <- unique(ownerVec[coalition])
@@ -1379,11 +1405,10 @@ setMethod(
   }
   profitsBertrand_fixed <- calcProducerSurplus(object, preMerger = preMerger)
   
-  # Aggregate Bertrand profits by firm (reused in every iteration)
-  profitsBertrand_byFirm <- sapply(coalitionFirms, function(firm){
-    sum(profitsBertrand_fixed[ownerVec == firm])
-  })
-  names(profitsBertrand_byFirm) <- coalitionFirms
+  # Aggregate Bertrand profits by firm using ownership matrix
+  allProfitsBertrandFirm <- ownerMat %*% profitsBertrand_fixed
+  profitsBertrandFirm <- allProfitsBertrandFirm[coalitionFirms]
+  names(profitsBertrandFirm) <- coalitionFirms
   
   # Objective: Find maximum m such that IC_f holds for all coalition firms f
   # IC_f: π^PL_f(m) - π^D_f(m) + δ_f/(1-δ_f) * (π^PL_f(m) - π^B_f) ≥ 0
@@ -1436,18 +1461,9 @@ setMethod(
       subset <- rep(FALSE, length(ownerVec))
       subset[deviatingCoalitionProducts] <- TRUE
       
-      # Solve for optimal deviation prices (deviation regime)
-      optimalPrices <- calcPrices(object, preMerger = preMerger, subset = subset, regime = "deviation")
-      
-      # Set prices to optimal deviation
-      if(preMerger){
-        object@pricePre <- optimalPrices
-      } else {
-        object@pricePost <- optimalPrices
-      }
-      
-      # Calculate firm's profit at optimal deviation
-      deviationProfit <- calcProducerSurplus(object, preMerger = preMerger)
+      # Calculate firm's profit at optimal deviation using calcProducerSurplus
+      deviationProfit <- calcProducerSurplus(object, preMerger = preMerger, 
+                                            regime = "deviation", subset = subset)
       
       return(sum(deviationProfit[firmProducts]))
     })
@@ -1461,12 +1477,11 @@ setMethod(
       object@pricePost <- pricesOriginal
     }
     
-    # Aggregate PL profits by firm
-    profitsPL_byFirm <- sapply(coalitionFirms, function(firm){
-      sum(profitsPL[ownerVec == firm])
-    })
+    # Aggregate PL profits by firm using ownership matrix
+    allProfitsPLFirm <- ownerMat %*% profitsPL
+    profitsPLFirm <- allProfitsPLFirm[coalitionFirms]
     
-    # Note: profitsBertrand_byFirm already calculated before loop
+    # Note: profitsBertrandFirm already calculated before loop
     
     # Check IC for each coalition firm using firm-specific timing parameter
     IC_slack_byFirm <- sapply(coalitionFirms, function(firm){
@@ -1479,8 +1494,8 @@ setMethod(
       }
       
       # IC_f: π^PL_f - π^D_f + δ_f/(1-δ_f) * (π^PL_f - π^B_f) ≥ 0
-      slack_f <- (profitsPL_byFirm[firmName] - profitsDeviation_byFirm[firmName]) + 
-        (delta_f / (1 - delta_f)) * (profitsPL_byFirm[firmName] - profitsBertrand_byFirm[firmName])
+      slack_f <- (profitsPLFirm[firmName] - profitsDeviation_byFirm[firmName]) + 
+        (delta_f / (1 - delta_f)) * (profitsPLFirm[firmName] - profitsBertrandFirm[firmName])
       
       return(slack_f)
     })
@@ -1534,7 +1549,7 @@ setMethod(
   f = "calcMargins",
   signature = "PriceLeadership",
   definition = function(object, preMerger = TRUE, level = FALSE, 
-                        regime = c("coordination", "bertrand", "deviation", "constrained")){
+                        regime = c("bertrand", "coordination", "deviation", "constrained")){
     
     regime <- match.arg(regime)
     
@@ -1783,8 +1798,10 @@ calcSlack <- function(object, preMerger = TRUE, ...){
     if(is.null(ownerVec)){
       ownerVec <- 1:nrow(owner)
     }
+    ownerMat <- owner
   } else {
     ownerVec <- owner
+    ownerMat <- if(preMerger) object@ownerPre else object@ownerPost
   }
   
   # Unique firms in coalition
@@ -1797,14 +1814,9 @@ calcSlack <- function(object, preMerger = TRUE, ...){
   ## Step 1: Calculate price leadership profits (π^PL) at current prices
   plProfits <- calcProducerSurplus(object, preMerger = preMerger)
   
-  # Aggregate by firm
-  plProfitsByFirm <- sapply(coalitionOwners, function(firm){
-    if(is.character(firm)){
-      sum(plProfits[ownerVec == firm])
-    } else {
-      sum(plProfits[owner[firm, ] > 0])
-    }
-  })
+  # Aggregate by firm using ownership matrix
+  allPlProfitsFirm <- ownerMat %*% plProfits
+  plProfitsFirm <- allPlProfitsFirm[coalitionOwners]
   
   ## Step 2: Calculate Bertrand profits (π^B) - punishment
   # Save original owner matrix and current prices
@@ -1828,13 +1840,9 @@ calcSlack <- function(object, preMerger = TRUE, ...){
   
   bertrandProfits <- calcProducerSurplus(object, preMerger = preMerger)
   
-  bertrandProfitsByFirm <- sapply(coalitionOwners, function(firm){
-    if(is.character(firm)){
-      sum(bertrandProfits[ownerVec == firm])
-    } else {
-      sum(bertrandProfits[owner[firm, ] > 0])
-    }
-  })
+  # Aggregate by firm using ownership matrix
+  allBertrandProfitsFirm <- ownerMat %*% bertrandProfits
+  bertrandProfitsFirm <- allBertrandProfitsFirm[coalitionOwners]
   
   ## Step 3: Calculate deviation profits (π^D) for each coalition firm
   ## Owner matrix is already set to no-coordination from Step 2
@@ -1848,13 +1856,9 @@ calcSlack <- function(object, preMerger = TRUE, ...){
   
   deviationProfits <- calcProducerSurplus(object, preMerger = preMerger)
   
-  deviationProfitsByFirm <- sapply(coalitionOwners, function(firm){
-    if(is.character(firm)){
-      sum(deviationProfits[ownerVec == firm])
-    } else {
-      sum(deviationProfits[owner[firm, ] > 0])
-    }
-  })
+  # Aggregate by firm using ownership matrix
+  allDeviationProfitsFirm <- ownerMat %*% deviationProfits
+  deviationProfitsFirm <- allDeviationProfitsFirm[coalitionOwners]
   
   # Restore original owner matrix
   if(preMerger){
@@ -1869,12 +1873,12 @@ calcSlack <- function(object, preMerger = TRUE, ...){
   if(is.na(timingParam)){
     # Cannot calculate slack without timing parameter
     # Return immediate payoff difference only
-    slackValues <- plProfitsByFirm - deviationProfitsByFirm
+    slackValues <- plProfitsFirm - deviationProfitsFirm
     warning("Timing parameter not specified. Slack values show only immediate payoff difference [π^PL - π^D].")
   } else {
     # Full slack calculation
-    slackValues <- (plProfitsByFirm - deviationProfitsByFirm) + 
-                   (timingParam / (1 - timingParam)) * (plProfitsByFirm - bertrandProfitsByFirm)
+    slackValues <- (plProfitsFirm - deviationProfitsFirm) + 
+                   (timingParam / (1 - timingParam)) * (plProfitsFirm - bertrandProfitsFirm)
   }
   
   return(slackValues)

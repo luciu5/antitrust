@@ -19,9 +19,9 @@
 
 \S4method{ownerToVec}{Antitrust}(object, preMerger = TRUE)
 
-\S4method{ownerToMatrix}{PriceLeadership}(object, preMerger = TRUE, control = FALSE)
+\S4method{ownerToMatrix}{PriceLeadership}(object, preMerger = TRUE, control = FALSE, exclude = NULL)
 
-\S4method{ownerToMatrix}{PriceLeadershipBLP}(object, preMerger = TRUE, control = FALSE)
+\S4method{ownerToMatrix}{PriceLeadershipBLP}(object, preMerger = TRUE, control = FALSE, exclude = NULL)
 }
 \arguments{
 \item{object}{An instance of the Antitrust class.}
@@ -33,6 +33,10 @@ pre-merger values, while FALSE invokes the method using the post-merger ownershi
 \item{control}{For PriceLeadership class only. If TRUE, returns the effective 
 control matrix where coalition products are treated as coordinating (full 
 cross-ownership). If FALSE (default), returns traditional ownership matrix.}
+
+\item{exclude}{Optional logical vector of length equal to number of products.
+When control=TRUE, products where exclude[i]=TRUE are excluded from coalition
+coordination. Useful for deviation profit calculations and other partial coalition scenarios.}
 }
 \description{
 \code{ownerToMatrix} converts an ownership vector (or factor) to a k x k matrix of

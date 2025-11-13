@@ -429,8 +429,20 @@ setClass(
       stop("'slopes' must be a list containing pre-calibrated BLP demand parameters")
     }
     
-    # Note: Detailed BLP parameter validation (sigma, meanval, alpha) is deferred to calcSlopes
-    # because slopes may be partially populated at object creation time
+    # Detailed BLP parameter validation
+    if(is.null(object@slopes) || !is.list(object@slopes)){
+      stop("BLP demand parameters must be provided in 'slopes' list")
+    }
+    
+    if(!("sigma" %in% names(object@slopes))){
+      stop("'slopes' must contain 'sigma' (std. dev. of random price coefficient)")
+    }
+    
+    if(!("alpha" %in% names(object@slopes)) && !("alphaMean" %in% names(object@slopes))){
+      stop("'slopes' must contain either 'alpha' or 'alphaMean' (mean price coefficient)")
+    }
+    
+    # Note: Additional validations (like meanval consistency) are deferred to calcSlopes
     
     # Set default values for optional BLP parameters if not provided
     if(!("sigmaNest" %in% names(object@slopes))){
@@ -531,6 +543,12 @@ setClass(
       if(length(object@bindingFirm) != 1 || !(object@bindingFirm %in% 1:nprods)){
         stop("'bindingFirm' must be a single product index between 1 and ", nprods, " or NA")
       }
+    }
+    
+    # For PriceLeadershipBLP, margins are required to calibrate supermarkup
+    nMargins <- length(object@margins[!is.na(object@margins)])
+    if(nMargins < 1){
+      stop("At least one margin must be supplied for PriceLeadershipBLP to calibrate supermarkup")
     }
     
     return(TRUE)

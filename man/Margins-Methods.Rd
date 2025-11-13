@@ -56,7 +56,7 @@
   object,
   preMerger = TRUE,
   level = FALSE,
-  regime = c("coordination", "bertrand", "deviation", "constrained")
+  regime = c("bertrand", "coordination", "deviation", "constrained")
 )
 }
 \arguments{

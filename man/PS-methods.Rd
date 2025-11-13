@@ -42,7 +42,7 @@
 \S4method{calcProducerSurplus}{PriceLeadership}(
   object,
   preMerger = TRUE,
-  regime = c("coordination", "bertrand"),
+  regime = c("coordination", "bertrand", "deviation"),
   ...
 )
 }
@@ -73,8 +73,8 @@ Options:
 \itemize{
   \item "bertrand" - Solve for Bertrand prices then evaluate
   \item "coordination" - Solve for coordination prices then evaluate (default)
+  \item "deviation" - Solve for deviation equilibrium prices then evaluate
 }
-Note: For deviation profits, use \code{\link{calcDeviationProfit}} directly.
 To evaluate at current prices without solving, use the parent class method directly.}
 }
 \value{
