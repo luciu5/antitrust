@@ -546,6 +546,7 @@ setGeneric(
 #' 
 #' @keywords internal
 
+
 setMethod(
   f = "calcMeanval",
   signature = "LogitBLP",
@@ -559,10 +560,8 @@ setMethod(
     # Parameters
     alphaMean    <- if(!is.null(object@slopes$alpha)) object@slopes$alpha else object@slopes$alphaMean
     if(is.null(alphaMean)) stop("LogitBLP calcMeanval: missing 'alpha' (or 'alphaMean') in slopes.")
-    
     sigma        <- object@slopes$sigma
     if(is.null(sigma)) stop("LogitBLP calcMeanval: missing 'sigma' in slopes.")
-    
     nDraws       <- object@nDraws
     piDemog      <- object@slopes$piDemog
     if(is.null(piDemog)) piDemog <- numeric(0)
@@ -571,30 +570,24 @@ setMethod(
     sigmaNest    <- object@slopes$sigmaNest
     if(is.null(sigmaNest)) sigmaNest <- 1
     
-    # Check if meanval (delta) is already provided
-    deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
-    
     # Reuse draws if they exist
     if(!is.null(object@slopes$consDraws) && !is.null(object@slopes$demogDraws)) {
       consDraws <- object@slopes$consDraws
       demogDraws <- object@slopes$demogDraws
       demogEffect <- if(ncol(demogDraws) > 0) demogDraws %*% piDemog else 0
     } else {
-      # Generate random draws
       consDraws <- rnorm(nDraws)
       if(nDemog > 0) {
-        demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
+        demogDraws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
         demogEffect <- as.numeric(demogDraws %*% piDemog)
       } else {
-        demogDraws <- rep(0,nDraws)
+        demogDraws <- rep(0, nDraws)
         demogEffect <- 0
       }
     }
     
-    # Individual alphas
+    # Individual alphas with correct sign
     alphas <- alphaMean + sigma * consDraws + demogEffect
-    
-    # Sign check
     output <- object@output
     expectedSign <- ifelse(output, -1, 1)
     if(sign(alphaMean) != expectedSign && alphaMean != 0){
@@ -604,93 +597,55 @@ setMethod(
     }
     
     # Indexing for outside good
-    if(is.na(idx)) {
-      idxPrice <- object@priceOutside
+    if(is.na(idx)) idxPrice <- object@priceOutside else idxPrice <- prices[idx]
+    
+    # Fixed point contraction for delta
+    delta <- if("meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)) {
+      object@slopes$meanval
     } else {
-      idxPrice <- prices[idx]
+      deltaInit <- log(shares)
+      tol <- if(!is.null(object@slopes$contractionTol)) object@slopes$contractionTol else 1e-9
+      maxIter <- if(!is.null(object@slopes$contractionMaxIter)) object@slopes$contractionMaxIter else 1000
+      damping <- 0.5
+      
+      for(iter in 1:maxIter) {
+        # Vectorized utility computation
+        delta_mat <- matrix(deltaInit, nrow = length(shares), ncol = nDraws)
+        price_diff <- prices - idxPrice
+        util <- sweep(delta_mat, 2, alphas * price_diff, "+")
+        util <- pmin(pmax(util / sigmaNest, -700), 700)
+        expUtil <- exp(util)
+        sumExp <- colSums(expUtil)
+        acrossNest <- if(is.na(idx)) 1 / (1 + sumExp^sigmaNest) else 1 / sumExp^sigmaNest
+        shares_hat <- rowMeans(expUtil / matrix(sumExp, nrow=length(shares), ncol=nDraws, byrow=TRUE) * 
+                                 matrix(acrossNest, nrow=length(shares), ncol=nDraws, byrow=TRUE))
+        shares_hat <- pmax(pmin(shares_hat, 1 - 1e-12), 1e-12)
+        
+        deltaNew <- deltaInit + damping * (log(shares) - log(shares_hat))
+        if(max(abs(deltaNew - deltaInit)) < tol) {
+          deltaInit <- deltaNew
+          break
+        }
+        deltaInit <- deltaNew
+      }
+      deltaInit
     }
     
-    # Delta fixed point
-    if(deltaProvided) {
-      delta <- object@slopes$meanval
-      message("Using provided meanval (delta) for LogitBLP - skipping contraction mapping")
-    } else {
-      
-      # Price differences
-      price_diff <- prices - object@priceOutside
-      price_diff[is.na(price_diff)] <- 0
-      
-      # Fixed point function
-      fpFunction <- function(delta) {
-        utilities <- outer(alphas, price_diff, "*")
-        utilities <- sweep(utilities, 2, delta, "+")
-        # Cap extreme values to prevent overflow
-        utilities <- pmin(pmax(utilities / sigmaNest, -700), 700)
-        expUtil <- exp(utilities)
-        sumExpUtil <- rowSums(expUtil)
-        if(is.na(idx)) {
-          denom <- 1 + sumExpUtil^sigmaNest
-        } else {
-          denom <- sumExpUtil^sigmaNest
-        }
-        predShares <- colMeans(expUtil / denom)
-        # Ensure no zeros for log
-        predShares[predShares <= 1e-10] <- 1e-10
-        delta + log(shares) - log(predShares)
-      }
-      
-      # Initial guess
-      delta <- log(shares)
-      
-      # BB::dfsane
-      tol <- ifelse(!is.null(object@slopes$contractionTol), object@slopes$contractionTol, 1e-10)
-      maxIter <- ifelse(!is.null(object@slopes$contractionMaxIter), object@slopes$contractionMaxIter, 1000)
-      
-      message("Running BLP contraction with BB::dfsane (tol=", sprintf("%.0e", tol), 
-              ", maxIter=", maxIter, ")...")
-      
-      result <- try(BB::dfsane(par = delta, fn = function(x) fpFunction(x) - x,
-                               control = list(tol = tol, maxit = maxIter, trace = FALSE)))
-      
-      if(class(result)[1] == "try-error" || result$convergence != 0) {
-        message("BB::dfsane failed, falling back to dampened fixed point iteration")
-        dampFactor <- 0.5
-        for(iter in 1:maxIter) {
-          deltaNew <- fpFunction(delta)
-          if(max(abs(deltaNew - delta)) < tol) {
-            delta <- deltaNew
-            message("BLP contraction converged in ", iter, " iterations")
-            break
-          }
-          delta <- delta + dampFactor * (deltaNew - delta)
-        }
-        if(iter == maxIter) warning("BLP contraction did not converge in ", maxIter, " iterations")
-      } else {
-        delta <- result$par
-        message("BB::dfsane converged in ", result$iter, " iterations")
-      }
-    }
-    
-    # Store results
     names(delta) <- object@labels
-    object@slopes <- list(
-      alpha = as.numeric(alphaMean),
-      alphaMean = alphaMean,
-      meanval = delta,
-      sigma = sigma,
-      sigmaNest = sigmaNest,
-      piDemog = piDemog,
-      nDemog = nDemog,
-      alphas = as.numeric(alphas),
-      consDraws = consDraws,
-      demogDraws = demogDraws
-    )
+    object@slopes$meanval <- delta
+    object@slopes$alphaMean <- alphaMean
+    object@slopes$alphas <- alphas
+    object@slopes$consDraws <- consDraws
+    object@slopes$demogDraws <- demogDraws
     object@priceOutside <- idxPrice
-    object@mktSize <- object@insideSize / sum(shares)
+    object@mktSize <- object@insideSize / sum(shares_hat)
     
     return(object)
   }
 )
+
+
+
 
 ## ownerToMatrix method for PriceLeadership class
 ## Returns ownership matrix accounting for coalition coordination when control=TRUE

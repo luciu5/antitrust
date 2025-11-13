@@ -71,7 +71,7 @@ setMethod(
     
     
     # Clamp margins to avoid negative prices
-    margins <- pmax(margins, 1e-6)
+    #margins <- pmax(margins, 1e-6)
     
     
     if(level) {margins <- margins * prices }
