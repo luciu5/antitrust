@@ -810,7 +810,7 @@ setMethod(
         }
         predShares <- colMeans(expUtil/denom)
         
-        return(delta + log(shares) - log(predShares))
+        return(delta + sigmaNest * (log(shares) - log(predShares)))
       }
       
       # Initial guess

@@ -60,6 +60,7 @@ Collate:
     'CMCRCournotFunctions.R'
     'CournotFunctions.R'
     'HHIFunctions.R'
+    'Incipiency.R'
     'LinearFunctions.R'
     'LogitFunctions.R'
     'SimFunctions.R'
