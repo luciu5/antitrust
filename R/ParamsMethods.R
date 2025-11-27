@@ -822,13 +822,20 @@ setMethod(
         } else {
           denom <- insideIV
         }
-        # Compute shares using correct RCNL formula (matching calcShares)
-        # For each draw i: s_ij = (exp(V_ij/sigma) / D_gi) * (D_gi^sigma / (1 + D_gi^sigma))
-        # Market share: s_j = mean_i(s_ij)
-        
-        withinNest <- expUtil / matrix(sumExpUtil, nrow = nrow(expUtil), ncol = ncol(expUtil), byrow = FALSE)
-        acrossNest <- insideIV / (1 + insideIV)
-        shares_draw <- withinNest * matrix(acrossNest, nrow = nrow(expUtil), ncol = ncol(expUtil), byrow = FALSE)
+        # Compute shares using correct RCNL formula (matching calcShares)
+
+        # For each draw i: s_ij = (exp(V_ij/sigma) / D_gi) * (D_gi^sigma / (1 + D_gi^sigma))
+
+        # Market share: s_j = mean_i(s_ij)
+
+        
+
+        withinNest <- expUtil / sumExpUtil
+
+        acrossNest <- insideIV / (1 + insideIV)
+
+        shares_draw <- withinNest * acrossNest
+
         predShares <- colMeans(shares_draw)
         
         return(delta + sigmaNest * (log(shares) - log(predShares)))
