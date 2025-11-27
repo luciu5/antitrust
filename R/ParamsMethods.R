@@ -769,8 +769,17 @@ setMethod(
     # Ensure all individual alphas have the correct sign (some may cross zero due to random draws)
     wrongSigns <- if(expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
     if(wrongSigns > 0){
-      warning(wrongSigns, " out of ", length(alphas), " individual price coefficients have wrong sign. ",
-              "Consider reducing sigma or adjusting alphaMean to keep all draws on correct side of zero.")
+      warning(wrongSigns, ' out of ', length(alphas), ' individual price coefficients have wrong sign. ',
+              'Clipping them to enforce correct sign (', ifelse(output, 'negative', 'positive'), ').')
+      
+      # Enforce sign constraint by clipping
+      if(output){
+        # Output market: alphas must be negative
+        alphas[alphas >= 0] <- -1e-4
+      } else {
+        # Input market: alphas must be positive
+        alphas[alphas <= 0] <- 1e-4
+      }
     }
     
     nprods <- length(shares)
