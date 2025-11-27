@@ -139,7 +139,7 @@ setMethod(
     if(is.null(sigmaNest)) sigmaNest <- 1
     
     outVal <- ifelse(is.na(object@normIndex), 1, 0)
-    output <- ifelse(object@output, -1, 1)
+    output <- ifelse(object@output, 1, -1)
     
     # Calculate consumer surplus for each individual consumer type (vectorized)
     # Utilities: nDraws x nProducts matrix

@@ -747,9 +747,9 @@ setMethod(
       # Generate demographic draws (observed heterogeneity)
       if(!is.null(nDemog) && nDemog > 0){
         demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
-        demogEffect <- demogDraws %*% piDemog
+        demogEffect <- as.vector(demogDraws %*% piDemog)
       } else {
-        demogDraws <- matrix(nrow=nDraws, ncol=0)
+        demogDraws <- rep(0,nDraws) 
         demogEffect <- 0
         piDemog <- numeric(0)
         nDemog <- 0
@@ -765,16 +765,7 @@ setMethod(
     # output=FALSE (input market) requires alpha > 0 (higher prices increase utility)
     output <- object@output
     expectedSign <- ifelse(output, -1, 1)
-    
-    # Check if alphaMean has the wrong sign for this market type
-    if(sign(alphaMean) != expectedSign && alphaMean != 0){
-      warning("Price coefficient sign inconsistent with market type (output=", output, 
-              "). Expected ", ifelse(output, "negative", "positive"), " alpha, got ", 
-              round(alphaMean, 4), ". Flipping sign to maintain consistency.")
-      alphas <- -alphas
-      alphaMean <- -alphaMean
-    }
-    
+  
     # Ensure all individual alphas have the correct sign (some may cross zero due to random draws)
     wrongSigns <- if(expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
     if(wrongSigns > 0){
@@ -785,25 +776,14 @@ setMethod(
     nprods <- length(shares)
     
     if(is.na(idx)){
-      idxShare <- 1 - shareInside
       idxPrice <- object@priceOutside
     }
     else{
-      idxShare <- shares[idx]
       idxPrice <- prices[idx]
     }
     
     # Set default sigmaNest if not provided: sigmaNest=1 is flat logit (no nesting)
     if(is.null(sigmaNest)) sigmaNest <- 1
-    
-    # When sigmaNest != 1, nesting requires an outside good
-    # If normIndex != NA (one product normalized), force outside good to exist
-    if(!is.na(idx) && sigmaNest != 1){
-      idx <- NA
-      idxShare <- 1 - sum(shares)  # Outside share (may be ~0 if shares sum to 1)
-      idxPrice <- object@priceOutside
-    }
-    
     
     
     if (deltaProvided) {
@@ -835,29 +815,24 @@ setMethod(
         }
         predShares <- colMeans(expUtil/denom)
         
-        return(delta + log(shares) - log(predShares))
+        return(delta + sigmaNest * (log(shares) - log(predShares)))
       }
       
       # Initial guess
-      delta <- log(shares) #+ log(object@insideSize)
+      delta <- log(shares) 
       
-      # Use BB::dfsane for fixed point iteration
+     
       tol <- ifelse(!is.null(object@slopes$contractionTol), 
-                    object@slopes$contractionTol, 1e-12)
+                    object@slopes$contractionTol, 1e-10)
       maxIter <- ifelse(!is.null(object@slopes$contractionMaxIter), 
-                        object@slopes$contractionMaxIter, 1000)
+                        object@slopes$contractionMaxIter, 1200)
       
-      message("Running BLP contraction with BB::dfsane (tol=", sprintf("%.0e", tol), 
+      message("Running BLP contraction (tol=", sprintf("%.0e", tol), 
               ", maxIter=", maxIter, ")...")
       
   
-      result <- try(BB::dfsane(par = delta, fn = function(x) fpFunction(x) - x, 
-                               control = list(tol = tol, maxit = maxIter, trace = FALSE)))
-      
-      if (class(result)[1] == "try-error" || result$convergence != 0) {
-        # Fall back to dampened fixed point iteration if BB fails
-        message("BB::dfsane failed to converge, falling back to dampened fixed point iteration")
-        dampFactor <- 0.5
+     
+     dampFactor <- 0.5
         delta <- log(shares) + log(object@insideSize)
         
         for (iter in 1:maxIter) {
@@ -875,10 +850,7 @@ setMethod(
         if (iter == maxIter) {
           warning("BLP contraction mapping did not converge within ", maxIter, " iterations")
         }
-      } else {
-        delta <- result$par
-        message("BB::dfsane converged in ", result$iter, " iterations")
-      }
+      
     }
     
     
@@ -899,7 +871,8 @@ setMethod(
                          piDemog=piDemog, nDemog=nDemog,
                          alphas=as.numeric(alphas), consDraws=consDraws, demogDraws=demogDraws)
     object@priceOutside <- idxPrice
-    object@mktSize <- object@insideSize / sum(shares)
+    object@pricePre=object@prices
+    object@mktSize <- object@insideSize / sum(calcShares(object,preMerger=TRUE))
     
     return(object)
   }
