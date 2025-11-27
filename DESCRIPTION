@@ -11,7 +11,7 @@ Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com
                   role = c("ctb"))     
                   )
 Maintainer: Charles Taragin <ctaragin+antitrustr@gmail.com>
-Imports: methods, BB, numDeriv, nleqslv
+Imports: methods, BB, numDeriv, nleqslv, SQUAREM
 Suggests: MASS, ggplot2, knitr, bookdown, rmarkdown, competitiontoolbox
 VignetteBuilder: knitr
 Encoding: UTF-8

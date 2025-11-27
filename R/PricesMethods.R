@@ -214,129 +214,174 @@ setMethod(
 setMethod(
   f = "calcPrices",
   signature = "LogitBLP",
-  definition = function(object, preMerger = TRUE, isMax = FALSE, subset, ...) {
-    
-    # 1 Set prices and ownership
-    output <- object@output
-    priceStart <- object@priceStart
-    
-    if (preMerger) {
-      owner <- object@ownerPre
-      mc    <- object@mcPre
-    } else {
-      owner <- object@ownerPost
-      mc    <- object@mcPost
-    }
-    
-    nprods <- length(object@shares)
-    if (!preMerger) {
-      cand <- object@pricePre
-      if (length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
-    }
-    if (missing(subset)) subset <- rep(TRUE, nprods)
-    if (!is.logical(subset) || length(subset) != nprods) 
-      stop("'subset' must be a logical vector the same length as 'shares'")
-    
-    if (any(!subset)) {
-      owner <- owner[subset, subset]
-      mc <- mc[subset]
-      priceStart <- priceStart[subset]
-    }
-    
-    # 2 Define FOCs function
-    FOC <- function(priceCand) {
-      if (preMerger) object@pricePre[subset] <- priceCand
-      else object@pricePost[subset] <- priceCand
+    definition = function(object, preMerger = TRUE, isMax = FALSE, subset, ...) {
       
-      # Margins
-      margins <- if (output) priceCand - mc else mc - priceCand
-      predMargin <- calcMargins(object, preMerger, level = TRUE)[subset]
+      # 1 Set prices and ownership
+      output <- object@output
+      priceStart <- object@priceStart
       
-      # FOC = margin - predicted margin
-      return(margins - predMargin)
-    }
-    
-    # 3 Define analytic Jacobian using individual shares
-    JAC <- function(priceCand) {
-      # 1. Make a temporary object with updated prices
-      tmpObject <- object
-      if(preMerger) tmpObject@pricePre[subset] <- priceCand
-      else tmpObject@pricePost[subset] <- priceCand
-      
-      # 2. Compute individual shares per draw (products x draws)
-      shares_draw <- calcShares(tmpObject, preMerger = preMerger, aggregate = FALSE)[subset, , drop = FALSE]
-      
-      # 2a. Clamp shares to avoid extreme 0 or 1
-      shares_draw <- pmax(pmin(shares_draw, 1 - 1e-12), 1e-12)
-      
-      # 3. Parameters
-      alphas <- tmpObject@slopes$alphas   # length R
-      sigmaNest <- tmpObject@slopes$sigmaNest
-      if(is.null(sigmaNest)) sigmaNest <- 1
-      R <- length(alphas)
-      k <- nrow(shares_draw)
-      
-      # 4. Compute share Jacobian (nested logit with random coefficients)
-      # Own-price derivative
-      diag_term <- rowMeans(sweep(shares_draw, 2, alphas / sigmaNest, "*") * (1 - sigmaNest * shares_draw))
-      
-      # Cross-price derivative
-      shares_alpha <- sweep(shares_draw, 2, alphas, "*")       # k x R
-      cross_term <- shares_alpha %*% t(shares_draw) / R        # k x k
-      
-      # Full share Jacobian
-      J_s <- diag(diag_term) - cross_term                       # k x k
-      
-      # 5. Ownership matrix
-      owner_sub <- owner[subset, subset, drop = FALSE]
-      stopifnot(all(is.finite(owner_sub)), nrow(owner_sub) == k, ncol(owner_sub) == k)
-      
-      # 6. FOC Jacobian: I + Omega %*% J_s
-      J_FOC <- diag(k) + owner_sub %*% J_s
-      
-      # 7. Check for finite values
-      if(any(!is.finite(J_FOC))) {
-        warning("Non-finite entries detected in FOC Jacobian")
+      if (preMerger) {
+        owner <- object@ownerPre
+        mc    <- object@mcPre
+      } else {
+        owner <- object@ownerPost
+        mc    <- object@mcPost
       }
       
-      return(J_FOC)
-    }
-    
-    # 4 Solve FOCs
-    nleqslv_maxit <- as.integer(object@control.equ$maxit)
-    if (nprods <=30 && (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1)) 
-      nleqslv_maxit <- 150L
-    
-    minResult <- nleqslv::nleqslv(
-      x = priceStart, fn = FOC, #jac = JAC,
-      method = "Newton",
-      control = list(ftol = object@control.equ$tol, maxit = nleqslv_maxit)
-    )
-    
-    # Fallback to BBsolve
-    if (nprods > 30 || minResult$termcd > 2) {
-      warning("'nleqslv' failed; falling back to BBsolve")
-      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = object@control.equ, ...)
-      priceEst_solution <- minResult$par
-    } else {
-      priceEst_solution <- minResult$x
-    }
-    
-    # 5 Optional Hessian check for maximization
-    if (isMax) {
-      hess <- numDeriv::jacobian(FOC, priceEst_solution)
-      hess <- hess * (owner > 0)
-      if (any(eigen(hess)$values > 0)) {
-        warning("Hessian not positive definite at solution.")
+      nprods <- length(object@shares)
+      if (!preMerger) {
+        cand <- object@pricePre
+        if (length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
       }
+      if (missing(subset)) subset <- rep(TRUE, nprods)
+      if (!is.logical(subset) || length(subset) != nprods) 
+        stop("'subset' must be a logical vector the same length as 'shares'")
+      
+      if (any(!subset)) {
+        owner <- owner[subset, subset]
+        mc <- mc[subset]
+        priceStart <- priceStart[subset]
+      }
+      
+      # 2 Define FOCs function (Unified for Root-Finding and Fixed-Point)
+      FOC <- function(priceCand, as_fp = FALSE) {
+        if (preMerger) object@pricePre[subset] <- priceCand
+        else object@pricePost[subset] <- priceCand
+        
+        # Predicted Margins (Omega^-1 * S)
+        predMargin <- calcMargins(object, preMerger, level = TRUE)[subset]
+        
+        if (as_fp) {
+          # Fixed Point Update: P = mc +/- Omega^-1 * S
+          if (output) {
+            return(mc + predMargin)
+          } else {
+            return(mc - predMargin)
+          }
+        } else {
+          # Residual: (Actual Margin) - (Predicted Margin)
+          margins <- if (output) priceCand - mc else mc - priceCand
+          return(margins - predMargin)
+        }
+      }
+      
+      # 3 Define analytic Jacobian using individual shares
+      JAC <- function(priceCand) {
+        # 1. Make a temporary object with updated prices
+        tmpObject <- object
+        if(preMerger) tmpObject@pricePre[subset] <- priceCand
+        else tmpObject@pricePost[subset] <- priceCand
+        
+        # 2. Compute individual shares per draw (products x draws)
+        shares_draw <- calcShares(tmpObject, preMerger = preMerger, aggregate = FALSE)[subset, , drop = FALSE]
+        
+        # 2a. Clamp shares to avoid extreme 0 or 1
+        shares_draw <- pmax(pmin(shares_draw, 1 - 1e-12), 1e-12)
+        
+        # 3. Parameters
+        alphas <- tmpObject@slopes$alphas   # length R
+        sigmaNest <- tmpObject@slopes$sigmaNest
+        if(is.null(sigmaNest)) sigmaNest <- 1
+        R <- length(alphas)
+        k <- nrow(shares_draw)
+        
+        # 4. Compute share Jacobian (nested logit with random coefficients)
+        # Own-price derivative
+        diag_term <- rowMeans(sweep(shares_draw, 2, alphas / sigmaNest, "*") * (1 - sigmaNest * shares_draw))
+        
+        # Cross-price derivative
+        shares_alpha <- sweep(shares_draw, 2, alphas, "*")       # k x R
+        cross_term <- shares_alpha %*% t(shares_draw) / R        # k x k
+        
+        # Full share Jacobian
+        J_s <- diag(diag_term) - cross_term                       # k x k
+        
+        # 5. Ownership matrix
+        owner_sub <- owner[subset, subset, drop = FALSE]
+        stopifnot(all(is.finite(owner_sub)), nrow(owner_sub) == k, ncol(owner_sub) == k)
+        
+        # 6. FOC Jacobian: I + Omega %*% J_s
+        J_FOC <- diag(k) + owner_sub %*% J_s
+        
+        # 7. Check for finite values
+        if(any(!is.finite(J_FOC))) {
+          warning("Non-finite entries detected in FOC Jacobian")
+        }
+        
+        return(J_FOC)
+      }
+      
+      # 4 Solve FOCs
+      
+      # Strategy 1: SQUAREM (Contraction Mapping)
+      sq_control <- list(tol = object@control.equ$tol, maxiter = 1500)
+      if (!is.null(object@control.equ$maxit) && !is.na(object@control.equ$maxit)) {
+         sq_control$maxiter <- object@control.equ$maxit
+      }
+      
+      minResult <- tryCatch({
+        SQUAREM::squarem(par = priceStart, fixptfn = FOC, as_fp = TRUE, control = sq_control)
+      }, error = function(e) NULL)
+      
+      success <- FALSE
+      if (!is.null(minResult) && minResult$convergence) {
+        priceEst_solution <- minResult$par
+        success <- TRUE
+      }
+      
+      # Strategy 2: BBsolve (Fallback)
+      if (!success) {
+        # warning("SQUAREM failed to converge, falling back to BBsolve...")
+        
+        minResult <- BB::BBsolve(
+          par = priceStart, fn = FOC, 
+          control = list(tol = object@control.equ$tol, maxit = 1500), 
+          quiet = TRUE
+        )
+        
+        if (minResult$convergence == 0) {
+          priceEst_solution <- minResult$par
+          success <- TRUE
+        }
+      }
+      
+      # Strategy 3: nleqslv (Final Fallback)
+      if (!success) {
+        # warning("BBsolve failed to converge, falling back to nleqslv...")
+        
+        nleqslv_maxit <- as.integer(object@control.equ$maxit)
+        if (nprods <= 30 && (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1)) 
+          nleqslv_maxit <- 150L
+        
+        minResult <- nleqslv::nleqslv(
+          x = priceStart, fn = FOC, 
+          method = "Newton",
+          control = list(ftol = object@control.equ$tol, maxit = nleqslv_maxit)
+        )
+        
+        priceEst_solution <- minResult$x
+        if (minResult$termcd == 1) success <- TRUE
+      }
+      
+      if (!success) {
+        warning("'calcPrices' solver hierarchy (SQUAREM -> BBsolve -> nleqslv) may not have fully converged.")
+      }
+      
+      # 5 Optional Hessian check for maximization
+      if (isMax) {
+        hess <- numDeriv::jacobian(FOC, priceEst_solution)
+        hess <- hess * (owner > 0)
+        if (any(eigen(hess)$values > 0)) {
+          warning("Hessian not positive definite at solution.")
+        }
+      }
+      
+      # 6 Return final prices
+      priceEst <- rep(NA, nprods)
+      priceEst[subset] <- priceEst_solution
+      names(priceEst) <- object@labels
+      return(priceEst)
     }
-    
-    # 6 Return final prices
-    priceEst <- rep(NA, nprods)
-    priceEst[subset] <- priceEst_solution
-    names(priceEst) <- object@labels
-    return(priceEst)
-  }
 )
 
 
