@@ -14,7 +14,6 @@
 #' calcPrices,VertBargBertLogit-method
 #' calcPrices,VertBarg2ndLogit-method
 #' calcPrices
-
 #' @param object An instance of the respective class (see description for the classes)
 #' @param  preMerger If TRUE, the pre-merger ownership structure is used. If FALSE, the post-merger ownership structure is used.
 #' Default is TRUE.
@@ -33,7 +32,6 @@
 #'
 #' For others, additional values that may be used to change the default values of \code{\link{constrOptim}}, the non-linear
 #' equation solver used to enforce non-negative equilibrium quantities.
-
 #' @description For Auction2ndCap, the calcPrices method computes the expected price that the buyer pays,
 #' conditional on the buyer purchasing from a particular firm.
 #' @description For Logit, the calcPrices method computes either pre-merger or post-merger equilibrium prices under the assumptions
@@ -51,68 +49,48 @@
 #' @include AuctionCapMethods.R VerticalClasses.R
 #' @keywords methods
 NULL
-
 setGeneric (
   name= "calcPrices",
   def=function(object,...){standardGeneric("calcPrices")}
 )
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
   f= "calcPrices",
   signature= "Cournot",
   definition=function(object,preMerger=TRUE){
-
     if(preMerger){
-
       quantities <- object@quantityPre
     }
     else{
       quantities <- object@quantityPost
     }
-
     intercepts <- object@intercepts
     slopes     <- object@slopes
-
-
     mktQuant <- colSums(quantities, na.rm=TRUE)
-
     prices <- ifelse(object@demand == "linear",
                      intercepts + slopes * mktQuant,
                      exp(intercepts) * mktQuant^slopes
     )
-
-
-
     names(prices) <- object@labels[[2]]
     return(prices)
-
-
   })
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
   f= "calcPrices",
   signature= "Auction2ndCap",
   definition=function(object,preMerger=TRUE,exAnte=TRUE){
-
-
     val <- calcProducerSurplus(object,preMerger=preMerger,exAnte=exAnte) + calcMC(object,preMerger=preMerger,exAnte=exAnte)
-
     names(val) <- object@labels
     return(val)
   })
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
   f= "calcPrices",
   signature= "Logit",
   definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
-
-
     output <- object@output
     # Start from pre-merger prices when available; fall back to priceStart
     priceStart <- object@priceStart
@@ -127,7 +105,6 @@ setMethod(
       owner <- object@ownerPost
       mc    <- object@mcPost
     }
-
     nprods <- length(object@shares)
     if(!preMerger){
       cand <- object@pricePre
@@ -136,35 +113,24 @@ setMethod(
     if(missing(subset)){
       subset <- rep(TRUE,nprods)
     }
-
     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
-
     if(any(!subset)){
       owner <- owner[subset,subset]
       mc    <- mc[subset]
       priceStart <- priceStart[subset]
     }
-
     priceEst <- rep(NA,nprods)
-
-
-
     ##Define system of FOC as a function of prices
     FOC <- function(priceCand){
-
       if(preMerger){ object@pricePre[subset] <- priceCand}
       else{          object@pricePost[subset] <- priceCand}
-
-
       if(output){margins   <- priceCand - mc}
       else{margins   <- mc - priceCand}
       predMargin <- calcMargins(object,preMerger,level=TRUE)[subset]
       
       thisFOC <- margins - predMargin
-
       return(thisFOC)
     }
-
     ## Find price changes that set FOCs equal to 0
     ## Try nleqslv first (faster, more reliable for smooth FOCs)
   nleqslv_maxit <- as.integer(object@control.equ$maxit)
@@ -186,29 +152,18 @@ setMethod(
         warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ",minResult$termcd)
       }
     }
-
-
     if(isMax){
-
       hess <- genD(FOC,priceEst_solution) #compute the numerical approximation of the FOC hessian at optimium
       hess <- hess$D[,1:hess$p]
       hess <- hess * (owner>0)   #0 terms not under the control of a common owner
-
       state <- ifelse(preMerger,"Pre-merger","Post-merger")
-
       if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. ",state," price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
     }
-
-
     priceEst[subset]        <- priceEst_solution
     names(priceEst) <- object@labels
-
     return(priceEst)
-
   }
 )
-
-
 #' @rdname Prices-Methods
 #' @export
 setMethod(
@@ -383,16 +338,12 @@ setMethod(
       return(priceEst)
     }
 )
-
-
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
   f= "calcPrices",
   signature= "Auction2ndLogit",
   definition=function(object,preMerger=TRUE,exAnte=FALSE){
-
     nprods <- length(object@shares)
     output <- object@output
     
@@ -403,39 +354,29 @@ setMethod(
     else{
       owner <- object@ownerPost
       mc <- object@mcPost}
-
     margins <- calcMargins(object,preMerger,exAnte=FALSE)
-
     
-
     if(output){prices <- margins + mc}
     else{prices <- mc - margins }
     
     if(exAnte){
-
-
       prices <- prices * calcShares(object, preMerger=preMerger,revenue=FALSE)
     }
-
-
     names(prices) <- object@labels
     return(prices)
   }
 )
-
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
   f= "calcPrices",
   signature= "LogitCap",
   definition=function(object,preMerger=TRUE,isMax=FALSE,subset,...){
-
+      output <- object@output
     # We'll pick a robust starting vector after we know nprods; default to priceStart
     priceStart <- object@priceStart
     # For post-merger, provide a stronger starting point from pre-merger prices
     priceStart <- if(preMerger) object@priceStart else object@pricePre
-
     if(preMerger){
       owner <- object@ownerPre
       mc    <- object@mcPre
@@ -446,7 +387,6 @@ setMethod(
       mc    <- object@mcPost
       capacities <- object@capacitiesPost
     }
-
     nprods <- length(object@shares)
     # For post-merger, prefer pre-merger prices if available and finite; otherwise fall back
     if(!preMerger){
@@ -458,26 +398,18 @@ setMethod(
     if(missing(subset)){
       subset <- rep(TRUE,nprods)
     }
-
     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'shares'")}
-
     if(any(!subset)){
       owner <- owner[subset,subset]
       mc    <- mc[subset]
       priceStart <- priceStart[subset]
       capacities <- capacities[subset]
     }
-
-
     priceEst <- rep(NA,nprods)
-
     ##Define system of FOC as a function of prices
     FOC <- function(priceCand){
-
       if(preMerger){ object@pricePre[subset] <- priceCand}
       else{          object@pricePost[subset] <- priceCand}
-
-
       
       if(output){margins   <- 1 - mc/priceCand}
       else{margins   <- mc/priceCand - 1}
@@ -486,18 +418,11 @@ setMethod(
       quantities       <- calcQuantities(object, preMerger = preMerger)
       revenues         <- revenues[subset]
       elasticities     <- elast(object,preMerger)[subset,subset]
-
       thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
       constraint <- ifelse(is.finite(capacities), (quantities - capacities) /object@insideSize, 0)
-
-
-
       measure <- ifelse( constraint != 0, thisFOC + constraint + sqrt(thisFOC^2 + constraint^2), thisFOC)
-
       return(measure)
     }
-
-
     ## Find price changes that set FOCs equal to 0
     ## Try nleqslv first (faster for smooth FOCs); fallback to BBsolve for non-smooth constraints
     nleqslv_maxit <- as.integer(object@control.equ$maxit)
@@ -518,38 +443,27 @@ setMethod(
         warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ",minResult$termcd)
       }
     }
-
     priceEst[subset]        <- priceEst_solution
     names(priceEst) <- object@labels
-
     if(isMax){
-
       hess <- genD(FOC,priceEst_solution) #compute the numerical approximation of the FOC hessian at optimium
       hess <- hess$D[,1:hess$p]
       hess <- hess * (owner>0)   #0 terms not under the control of a common owner
-
       state <- ifelse(preMerger,"Pre-merger","Post-merger")
-
       if(any(eigen(hess)$values>0)){warning("Hessian of first-order conditions is not positive definite. ",state," price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")}
     }
-
     return(priceEst)
-
   }
 )
-
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
   f= "calcPrices",
   signature= "Linear",
   definition=function(object,preMerger=TRUE,subset,...){
-
     slopes    <- object@slopes
     intercept <- object@intercepts
     priceStart<- object@priceStart
-
     if(preMerger){
       owner <- object@ownerPre
       mc    <- object@mcPre
@@ -558,17 +472,11 @@ setMethod(
       owner <- object@ownerPost
       mc    <- object@mcPost
     }
-
-
     nprods <- length(object@quantities)
     if(missing(subset)){
       subset <- rep(TRUE,nprods)
     }
-
     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'quantities'")}
-
-
-
     ##first try the analytic solution
     #      prices <-
     #          solve((slopes*diag(owner)) + (t(slopes)*owner)) %*%
@@ -586,53 +494,35 @@ setMethod(
     #          else if(any(subset)){
     #            warning("Elements of 'subset' are  FALSE. Computing equilbrium under the restriction that these products have 0 sales")
     #          }
-
     FOC <- function(priceCand){
-
       if(preMerger){ object@pricePre  <- priceCand}
       else{          object@pricePost <- priceCand}
-
       margins   <- priceCand - mc
       quantities  <- calcQuantities(object,preMerger)
-
       thisFOC <- quantities*diag(owner) + (t(slopes)*owner) %*% margins
       thisFOC[!subset] <- quantities[!subset] #set quantity equal to 0 for firms not in subset
-
       return(as.vector(crossprod(thisFOC)))
-
     }
-
     ##Find starting value that always meets boundary conditions
     ##startParm <- as.vector(solve(slopes) %*% (-intercept + 1))
-
     minResult <- constrOptim(object@priceStart,FOC,grad=NULL,ui=slopes,ci=-intercept,...)
-
     if(!isTRUE(all.equal(minResult$convergence,0,check.names=FALSE))){
       warning("'calcPrices' solver may not have successfully converged.'constrOptim' reports: '",minResult$message,"'")
     }
-
     prices <- minResult$par
-
     #}
-
     names(prices) <- object@labels
-
     return(prices)
-
-
   }
 )
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
   f= "calcPrices",
   signature= "LogLin",
   definition=function(object,preMerger=TRUE,subset,...){
-
     # Use better starting values for post-merger; fallback to priceStart if missing/invalid
     priceStart <- object@priceStart
-
     if(preMerger){
       owner <- object@ownerPre
       mc    <- object@mcPre
@@ -641,38 +531,26 @@ setMethod(
       owner <- object@ownerPost
       mc    <- object@mcPost
     }
-
     nprods <- length(object@quantities)
     if(missing(subset)){
       subset <- rep(TRUE,nprods)
     }
-
     if(!is.logical(subset) || length(subset) != nprods ){stop("'subset' must be a logical vector the same length as 'quantities'")}
-
     if(!preMerger){
       cand <- object@pricePre
       if(length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
     }
-
-
     FOC <- function(priceCand){
-
       if(preMerger){ object@pricePre <- priceCand}
       else{          object@pricePost <- priceCand}
-
-
       margins    <- 1 - mc/priceCand
       quantities <- calcQuantities(object,preMerger,revenue=TRUE)
       revenues   <- priceCand*quantities
       elasticities     <- t(elast(object,preMerger))
-
       thisFOC <- revenues * diag(owner) + as.vector((elasticities * owner) %*% (margins * revenues))
       thisFOC[!subset] <- revenues[!subset] #set quantity equal to 0 for firms not in subset
-
-
       return(thisFOC)
     }
-
     ## Try nleqslv first, fallback to BBsolve
     nleqslv_maxit <- as.integer(object@control.equ$maxit)
     if(length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
@@ -694,31 +572,21 @@ setMethod(
     }
     names(priceEst) <- object@labels
     return(priceEst)
-
   }
 )
-
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
   f= "calcPrices",
   signature= "AIDS",
   definition=function(object,preMerger=TRUE,...){
-
-
     ##if(any(is.na(object@prices)){warning("'prices' contains missing values. AIDS can only predict price changes, not price levels")}
-
     if(preMerger){prices <- object@prices}
     else{ prices <- object@prices * (1 + object@priceDelta)}
-
     names(prices) <- object@labels
     return(prices)
   }
 )
-
-
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
@@ -731,7 +599,6 @@ setMethod(
     priceStart <- object@priceStart
     
     alpha <- object@slopes$alpha
-
     
     if(preMerger){
       owner <- object@ownerPre
@@ -836,8 +703,6 @@ setMethod(
     
   }
 )
-
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
@@ -1029,8 +894,6 @@ setMethod(
       return(list(up=minResultUp,down=minResultDown)) 
   }
 )
-
-
 #'@rdname Prices-Methods
 #'@export
 setMethod(
@@ -1164,5 +1027,3 @@ setMethod(
     return(list(up=minResultUp,down=minResultDown)) 
   }
 )
-
-
