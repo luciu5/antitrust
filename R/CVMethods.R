@@ -158,7 +158,9 @@ setMethod(
     VPost <- log(1 + insideIVPost)
     
     # CV for each consumer type with nesting
-    cvInd <- output * sigmaNest * (VPost - VPre) / alphas
+    # Formula: (1/alpha) * (VPost - VPre)
+    # V is log(1 + (sum exp(u/sigma))^sigma)
+    cvInd <- output * (VPost - VPre) / alphas
     
     # Average across consumer types
     result <- mean(cvInd)
