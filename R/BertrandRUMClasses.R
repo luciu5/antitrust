@@ -264,6 +264,16 @@ setClass(
 #'@rdname BertrandRUM-Classes
 #'@export
 setClass(
+  Class   = "CournotBLP",
+  contains = "LogitBLP",
+  prototype = prototype(
+    output = TRUE
+  )
+)
+
+#'@rdname BertrandRUM-Classes
+#'@export
+setClass(
   Class   = "LogitCournot",
   contains="Logit"
 )

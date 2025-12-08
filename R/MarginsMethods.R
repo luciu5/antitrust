@@ -765,3 +765,58 @@ setMethod(
   }
   
 )
+#' @rdname Margins-Methods
+#' @export
+setMethod(
+  f= "calcMargins",
+  signature= "CournotBLP",
+  definition=function(object,preMerger=TRUE, level=FALSE){
+    
+    if(preMerger) {
+      prices <- object@pricePre
+      owner  <- object@ownerPre
+    }
+    else{
+      prices <- object@pricePost
+      owner  <- object@ownerPost
+    }
+    
+    shares <- calcShares(object, preMerger=preMerger, revenue=FALSE)
+    
+    # Get elasticity matrix: E_ij = (p_j / s_i) * (d s_i / d p_j)
+    elast_mat <- elast(object, preMerger=preMerger)
+    
+    # Convert to Jacobian: J_ij = d s_i / d p_j = E_ij * (s_i / p_j)
+    nprods <- length(shares)
+    
+    # Matrix of s_i / p_j
+    scale_mat <- matrix(shares, nrow=nprods, ncol=nprods, byrow=FALSE) /
+      matrix(prices, nrow=nprods, ncol=nprods, byrow=TRUE)
+    
+    J <- elast_mat * scale_mat
+    
+    # Invert Jacobian to get dP/dq (scaled by N)
+    # dP/dq = (1/N) * J^-1
+    # We need (dP/dq)' * q = (1/N) * (J^-1)' * (N * s) = (J^-1)' * s
+    
+    J_inv <- try(solve(J), silent=TRUE)
+    if(inherits(J_inv, "try-error")){
+      J_inv <- MASS::ginv(J)
+    }
+    
+    # Apply ownership: P - MC = - (Omega .* (dP/dq)') * q
+    # Margins = - (Omega * t(J_inv)) %*% s
+    
+    output <- ifelse(object@output, -1, 1)
+    
+    # Note: owner matrix is 1s and 0s (or shares). Element-wise multiplication applies the mask.
+    margins <- output * as.vector((owner * t(J_inv)) %*% shares)
+    
+    if(!level){
+      margins <- margins / prices
+    }
+    
+    names(margins) <- object@labels
+    return(margins)
+  }
+)

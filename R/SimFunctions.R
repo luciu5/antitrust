@@ -8,7 +8,7 @@
 #' @description Let k denote the number of products produced by all firms below.
 #'
 #' @param prices A length k vector of product prices.
-#' @param shares A length k vector of product shares. Only used for \sQuote{LogitBLP} demand. See Details.
+#' @param shares A length k vector of product shares. Only used for \sQuote{BLP} demand. See Details.
 #' @param supply A character string indicating how firms compete with one another. Valid
 #' values are "bertrand" (Nash Bertrand),  "auction2nd"
 #' (2nd score auction), "bargaining", or "bargaining2nd".
@@ -86,7 +86,7 @@
 #'   values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
 #' }
 #'
-#' If \sQuote{demand} equals \sQuote{LogitBLP}, then
+#' If \sQuote{demand} equals \sQuote{BLP}, then
 #' \sQuote{demand.param} must equal a list containing:
 #' \describe{
 #'   \item{alpha}{The mean price coefficient (or use alphaMean).}
@@ -94,21 +94,21 @@
 #'   values of \sQuote{meanval} are zero, an outside good is assumed to exist.
 #'   If \sQuote{meanval} is not provided, then \sQuote{shares} must be supplied
 #'   so that mean valuations can be recovered via BLP contraction mapping.}
-#'   \item{sigma}{The standard deviation of the random coefficient on price, 
+#'   \item{sigma}{The standard deviation of the random coefficient on price,
 #'   representing consumer heterogeneity in price sensitivity.}
-#'   \item{sigmaNest}{Optional nesting parameter for the outside good: sigmaNest in (0,1] 
-#'   where sigmaNest=1 is flat logit (no nesting) and sigmaNest->0 means products are 
+#'   \item{sigmaNest}{Optional nesting parameter for the outside good: sigmaNest in (0,1]
+#'   where sigmaNest=1 is flat logit (no nesting) and sigmaNest->0 means products are
 #'   perfect substitutes within the nest. Default is 1.}
-#'   \item{piDemog}{Optional vector of demographic coefficients for the price coefficient. 
+#'   \item{piDemog}{Optional vector of demographic coefficients for the price coefficient.
 #'   Each element represents the interaction effect of a demographic variable with price.}
 #'   \item{nDemog}{Number of demographic variables. Required if piDemog is provided. Default is 0.}
 #'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
 #' }
 #'
-#' Note: The \sQuote{shares} argument is only used with \sQuote{LogitBLP} demand. 
+#' Note: The \sQuote{shares} argument is only used with \sQuote{BLP} demand.
 #' If supplied for any other demand system, a warning will be issued but the function will proceed
-#' (shares will be ignored). For \sQuote{LogitBLP},
-#' either \sQuote{meanval} must be provided in \sQuote{demand.param} OR \sQuote{shares} 
+#' (shares will be ignored). For \sQuote{BLP},
+#' either \sQuote{meanval} must be provided in \sQuote{demand.param} OR \sQuote{shares}
 #' must be supplied to the \code{sim} function to perform BLP contraction mapping.
 #'
 #' If \sQuote{demand} equals \sQuote{CES} or \sQuote{CESNests}, then
@@ -137,181 +137,197 @@
 #' ## Source: Epstein/Rubenfeld 2004, pg 80
 #'
 #'
-#' prodNames <- c("BUD","OLD STYLE","MILLER","MILLER-LITE","OTHER-LITE","OTHER-REG")
-#' ownerPre <-c("BUD","OLD STYLE","MILLER","MILLER","OTHER-LITE","OTHER-REG")
-#' ownerPost <-c("BUD","BUD","MILLER","MILLER","OTHER-LITE","OTHER-REG")
-#' nests <- c("Reg","Reg","Reg","Light","Light","Reg")
+#' prodNames <- c("BUD", "OLD STYLE", "MILLER", "MILLER-LITE", "OTHER-LITE", "OTHER-REG")
+#' ownerPre <- c("BUD", "OLD STYLE", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
+#' ownerPost <- c("BUD", "BUD", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
+#' nests <- c("Reg", "Reg", "Reg", "Light", "Light", "Reg")
 #'
-#' price    <- c(.0441,.0328,.0409,.0396,.0387,.0497)
+#' price <- c(.0441, .0328, .0409, .0396, .0387, .0497)
 #'
-#' demand.param=list(alpha=-48.0457,
-#'                   meanval=c(0,0.4149233,1.1899885,0.8252482,0.1460183,1.4865730)
+#' demand.param <- list(
+#'   alpha = -48.0457,
+#'   meanval = c(0, 0.4149233, 1.1899885, 0.8252482, 0.1460183, 1.4865730)
 #' )
 #'
-#' sim.logit <- sim(price,supply="bertrand",demand="Logit",demand.param,
-#'                  ownerPre=ownerPre,ownerPost=ownerPost)
+#' sim.logit <- sim(price,
+#'   supply = "bertrand", demand = "Logit", demand.param,
+#'   ownerPre = ownerPre, ownerPost = ownerPost
+#' )
 #'
 #'
 #'
-#' print(sim.logit)           # return predicted price change
-#' summary(sim.logit)         # summarize merger simulation
+#' print(sim.logit) # return predicted price change
+#' summary(sim.logit) # summarize merger simulation
 #'
-#' elast(sim.logit,TRUE)      # returns premerger elasticities
-#' elast(sim.logit,FALSE)     # returns postmerger elasticities
+#' elast(sim.logit, TRUE) # returns premerger elasticities
+#' elast(sim.logit, FALSE) # returns postmerger elasticities
 #'
-#' diversion(sim.logit,TRUE)  # return premerger diversion ratios
-#' diversion(sim.logit,FALSE) # return postmerger diversion ratios
+#' diversion(sim.logit, TRUE) # return premerger diversion ratios
+#' diversion(sim.logit, FALSE) # return postmerger diversion ratios
 #'
 #'
-#' cmcr(sim.logit)            #calculate compensating marginal cost reduction
-#' upp(sim.logit)             #calculate Upwards Pricing Pressure Index
+#' cmcr(sim.logit) # calculate compensating marginal cost reduction
+#' upp(sim.logit) # calculate Upwards Pricing Pressure Index
 #'
-#' CV(sim.logit)              #calculate representative agent compensating variation
+#' CV(sim.logit) # calculate representative agent compensating variation
 #'
 #' @include LogitFunctions.R
 NULL
 
 
-#'@rdname Sim-Functions
-#'@export
+#' @rdname Sim-Functions
+#' @export
 sim <- function(prices,
                 shares,
-                supply=c("bertrand","auction","bargaining","bargaining2nd"),
-                demand=c("Linear","AIDS","LogLin","Logit","CES","LogitNests","CESNests","LogitCap","LogitBLP"),demand.param,
-                ownerPre,ownerPost,nests, capacities,
-                mcDelta=rep(0,length(prices)),
-                subset=rep(TRUE,length(prices)),
-                insideSize=1,
+                supply = c("bertrand", "cournot", "auction", "bargaining", "bargaining2nd"),
+                demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"), demand.param,
+                ownerPre, ownerPost, nests, capacities,
+                mcDelta = rep(0, length(prices)),
+                subset = rep(TRUE, length(prices)),
+                insideSize = 1,
                 priceOutside,
                 priceStart,
-                bargpowerPre=rep(0.5,length(prices)),
-                bargpowerPost=bargpowerPre,
-                labels=paste("Prod",1:length(prices),sep=""),
-                ...){
-
+                bargpowerPre = rep(0.5, length(prices)),
+                bargpowerPost = bargpowerPre,
+                labels = paste("Prod", 1:length(prices), sep = ""),
+                ...) {
   demand <- match.arg(demand)
   supply <- match.arg(supply)
   nprods <- length(prices)
 
-  if((supply != "bertrand"  &&  demand != "Logit") #&&
-     #(supply != "cournot" && demand !="Linear")
-     ){ stop(paste(supply,"/",demand,"currently not supported."))}
-  
-  if(missing(priceStart)){
-    if(demand=="AIDS"){priceStart <- runif(nprods)}
-    else{              priceStart <- prices}
+  # Validate supply/demand combinations
+  valid_combinations <- list(
+    bertrand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"),
+    cournot = c("BLP"),
+    auction = c("Logit"),
+    bargaining = c("Logit"),
+    bargaining2nd = c("Logit")
+  )
+
+  if (!(demand %in% valid_combinations[[supply]])) {
+    stop(paste(supply, "/", demand, "currently not supported."))
+  }
+
+
+  if (missing(priceStart)) {
+    if (demand == "AIDS") {
+      priceStart <- runif(nprods)
+    } else {
+      priceStart <- prices
+    }
   }
 
   ## Create placeholders values to fill required Class slots
 
   sharesProvided <- !missing(shares)
-  
-  if(missing(shares)){
-    shares <- rep(1/nprods, nprods)
+
+  if (missing(shares)) {
+    shares <- rep(1 / nprods, nprods)
   } else {
-    if(length(shares) != nprods){
+    if (length(shares) != nprods) {
       stop("'shares' must have the same length as 'prices'")
     }
-    # Warn if shares provided for non-LogitBLP demand
-    if(demand != "LogitBLP"){
-      warning("'shares' argument is only used for LogitBLP demand (for BLP contraction mapping). For '", demand, "', shares will be ignored.")
+    # Warn if shares provided for non-BLP demand
+    if (demand != "BLP") {
+      warning("'shares' argument is only used for BLP demand (for BLP contraction mapping). For '", demand, "', shares will be ignored.")
     }
   }
-  
-  margins <- rep(1/nprods,nprods)
+
+  margins <- rep(1 / nprods, nprods)
 
 
-  if(!missing(nests)){nests <- factor(nests,levels=unique(nests))}
+  if (!missing(nests)) {
+    nests <- factor(nests, levels = unique(nests))
+  }
 
 
   ## general checks
-  if(!is.list(demand.param)){stop("'demand.param' must be a list.")}
+  if (!is.list(demand.param)) {
+    stop("'demand.param' must be a list.")
+  }
 
   ## Checks for discrete choice models
-  if(demand %in% c("CESNests","LogitNests","CES","Logit","LogitCap","LogitBLP")){
-
-    # meanval is optional for LogitBLP (recovered via contraction if not provided)
-    if(demand != "LogitBLP"){
-      if(!("meanval" %in% names(demand.param))){
+  if (demand %in% c("CESNests", "LogitNests", "CES", "Logit", "LogitCap", "BLP")) {
+    # meanval is optional for BLP (recovered via contraction if not provided)
+    if (demand != "BLP") {
+      if (!("meanval" %in% names(demand.param))) {
         stop("'demand.param' does not contain 'meanval'.")
       }
-      if(length(demand.param$meanval) != nprods || any(is.na(demand.param$meanval))){
+      if (length(demand.param$meanval) != nprods || any(is.na(demand.param$meanval))) {
         stop("'meanval' must be a length-k vector of product mean valuations. NAs not allowed.")
       }
     } else {
-      # For LogitBLP, validate meanval only if provided
-      if("meanval" %in% names(demand.param)){
-        if(length(demand.param$meanval) != nprods || any(is.na(demand.param$meanval))){
+      # For BLP, validate meanval only if provided
+      if ("meanval" %in% names(demand.param)) {
+        if (length(demand.param$meanval) != nprods || any(is.na(demand.param$meanval))) {
           stop("'meanval' must be a length-k vector of product mean valuations. NAs not allowed.")
         }
       }
     }
 
-    if(demand %in% c("LogitNests","Logit","LogitCap","LogitBLP")){
-      
-      if(demand == "LogitBLP") {
-        # Check if meanval is provided (optional for LogitBLP)
+    if (demand %in% c("LogitNests", "Logit", "LogitCap", "BLP")) {
+      if (demand == "BLP") {
+        # Check if meanval is provided (optional for BLP)
         # If NOT provided, calcSlopes will recover it via BLP contraction from observed shares
-        if(!("meanval" %in% names(demand.param))){
+        if (!("meanval" %in% names(demand.param))) {
           # If meanval not provided, shares MUST be provided for BLP contraction
-          if(!sharesProvided){
-            stop("For LogitBLP, either 'meanval' must be in 'demand.param' OR 'shares' must be provided. Cannot recover delta without observed shares.")
+          if (!sharesProvided) {
+            stop("For BLP, either 'meanval' must be in 'demand.param' OR 'shares' must be provided. Cannot recover delta without observed shares.")
           }
-          message("Note: 'meanval' (delta) not provided for LogitBLP. It will be recovered via BLP contraction from observed shares/prices.")
+          message("Note: 'meanval' (delta) not provided for BLP. It will be recovered via BLP contraction from observed shares/prices.")
         }
-        
+
         # No need to check random_draws as they are handled in calcSlopes
-        if(!("sigma" %in% names(demand.param)) || length(demand.param$sigma) != 1){
+        if (!("sigma" %in% names(demand.param)) || length(demand.param$sigma) != 1) {
           stop("'demand.param' must contain 'sigma', a scalar parameter for price coefficient heterogeneity.")
         }
         # Set default nDraws if not provided
-        if(!("nDraws" %in% names(demand.param))){
+        if (!("nDraws" %in% names(demand.param))) {
           demand.param$nDraws <- 500
-          message("'nDraws' not provided for LogitBLP. Defaulting to 500 draws.")
+          message("'nDraws' not provided for BLP. Defaulting to 500 draws.")
         }
         # Handle demographic parameters
-        if(!("nDemog" %in% names(demand.param))){
+        if (!("nDemog" %in% names(demand.param))) {
           demand.param$nDemog <- 0
         }
-        if(!("piDemog" %in% names(demand.param))){
+        if (!("piDemog" %in% names(demand.param))) {
           demand.param$piDemog <- numeric(0)
         }
         # Validate consistency between nDemog and piDemog
-        if(demand.param$nDemog > 0 && length(demand.param$piDemog) != demand.param$nDemog){
+        if (demand.param$nDemog > 0 && length(demand.param$piDemog) != demand.param$nDemog) {
           stop("'piDemog' must have length equal to 'nDemog'.")
         }
         # Handle nesting parameter for outside good: sigmaNest in (0,1]
-        if(!("sigmaNest" %in% names(demand.param))){
-          demand.param$sigmaNest <- 1  # Default: sigmaNest=1 is flat logit (no nesting)
+        if (!("sigmaNest" %in% names(demand.param))) {
+          demand.param$sigmaNest <- 1 # Default: sigmaNest=1 is flat logit (no nesting)
         }
         # Validate: scalar numeric in (0,1]. sigmaNest=1 is flat logit, sigmaNest->0 is perfect substitutes
-        if(!is.numeric(demand.param$sigmaNest) || length(demand.param$sigmaNest) != 1 ||
-           is.na(demand.param$sigmaNest) || !is.finite(demand.param$sigmaNest) ||
-           demand.param$sigmaNest <= 0 || demand.param$sigmaNest > 1){
+        if (!is.numeric(demand.param$sigmaNest) || length(demand.param$sigmaNest) != 1 ||
+          is.na(demand.param$sigmaNest) || !is.finite(demand.param$sigmaNest) ||
+          demand.param$sigmaNest <= 0 || demand.param$sigmaNest > 1) {
           stop("'sigmaNest' (nesting parameter) must be a single numeric value in (0,1].")
         }
       }
 
       ## An outside option is assumed to exist if all mean valuations are non-zero
-      ## For LogitBLP, meanval might not be in demand.param yet (recovered via BLP contraction)
-      if("meanval" %in% names(demand.param)){
-        if(all(demand.param$meanval!=0)){
+      ## For BLP, meanval might not be in demand.param yet (recovered via BLP contraction)
+      if ("meanval" %in% names(demand.param)) {
+        if (all(demand.param$meanval != 0)) {
           normIndex <- NA
           # Only override shares if they weren't explicitly provided by user
-          if(!sharesProvided){
-            shares <- rep(1/(nprods+1),nprods)
+          if (!sharesProvided) {
+            shares <- rep(1 / (nprods + 1), nprods)
           }
-        }
-        else{
-          normIndex <- which(demand.param$meanval==0)
+        } else {
+          normIndex <- which(demand.param$meanval == 0)
 
-          if(length(normIndex)>1){
+          if (length(normIndex) > 1) {
             warning("multiple values of meanval are equal to zero. Normalizing with respect to the first product with zero mean value.")
             normIndex <- normIndex[1]
           }
         }
       } else {
-        # meanval not provided - this should only happen for LogitBLP
+        # meanval not provided - this should only happen for BLP
         # and we've already verified shares were provided (error thrown at line 251 if not)
         # Assume outside good exists, will be determined after BLP contraction
         normIndex <- NA
@@ -321,10 +337,12 @@ sim <- function(prices,
       # Determine alpha mean and set output sign accordingly (TRUE if alpha<0, FALSE if alpha>0)
       # Accept aliases: alpha, alphaMean, alpha_mean
       alphaVal <- ifelse("alpha" %in% names(demand.param), demand.param$alpha,
-                  ifelse("alphaMean" %in% names(demand.param), demand.param$alphaMean,
-                  ifelse("alpha_mean" %in% names(demand.param), demand.param$alpha_mean, NA)))
-      
-      if(length(alphaVal) != 1 || is.na(alphaVal)){
+        ifelse("alphaMean" %in% names(demand.param), demand.param$alphaMean,
+          ifelse("alpha_mean" %in% names(demand.param), demand.param$alpha_mean, NA)
+        )
+      )
+
+      if (length(alphaVal) != 1 || is.na(alphaVal)) {
         stop("'demand.param' must include a scalar 'alpha' (or 'alphaMean'/'alpha_mean').")
       }
       # Normalize into 'alpha' for downstream methods
@@ -333,346 +351,337 @@ sim <- function(prices,
       outputFlag <- alphaVal < 0
 
       shareInside <- sum(shares)
-      if(missing(priceOutside)){priceOutside <- 0}
-
-      
-    }
-
-
-    else  if(demand %in% c("CESNests","CES")){
-      if(!("gamma" %in% names(demand.param))   ||
-         length(demand.param$gamma) != 1     ||
-         isTRUE(demand.param$gamma<0)){
+      if (missing(priceOutside)) {
+        priceOutside <- 0
+      }
+    } else if (demand %in% c("CESNests", "CES")) {
+      if (!("gamma" %in% names(demand.param)) ||
+        length(demand.param$gamma) != 1 ||
+        isTRUE(demand.param$gamma < 0)) {
         stop("'demand.param' does not contain 'gamma' or 'gamma' is not a positive number.")
       }
 
 
       ## uncover Numeraire Coefficients
-      if(!("alpha" %in% names(demand.param)) &&
-         !("shareInside" %in% names(demand.param))){
+      if (!("alpha" %in% names(demand.param)) &&
+        !("shareInside" %in% names(demand.param))) {
         warning("'demand.param' does not contain either 'alpha' or 'shareInside'. Setting shareInside=1 and alpha=NULL.")
-        shareInside=1
-        demand.param$alpha=NULL
-      }
-
-      else if("shareInside" %in% names(demand.param)){
-        shareInside=demand.param$shareInside
+        shareInside <- 1
+        demand.param$alpha <- NULL
+      } else if ("shareInside" %in% names(demand.param)) {
+        shareInside <- demand.param$shareInside
         demand.param$shareInside <- NULL
 
-        if(shareInside<1) {demand.param$alpha <- 1/shareInside -1}
-        else{ demand.param$alpha <- NULL}
-
-
+        if (shareInside < 1) {
+          demand.param$alpha <- 1 / shareInside - 1
+        } else {
+          demand.param$alpha <- NULL
+        }
       }
 
 
       ## An outside option is assumed to exist if all mean valuations are non-zero
-      if(all(demand.param$meanval!=1)){
+      if (all(demand.param$meanval != 1)) {
         normIndex <- NA
-        shares <- rep(1/(nprods+1),nprods)
-      }
-      else{
-        normIndex <- which(demand.param$meanval==1)
+        shares <- rep(1 / (nprods + 1), nprods)
+      } else {
+        normIndex <- which(demand.param$meanval == 1)
 
-        if(length(normIndex)>1){
+        if (length(normIndex) > 1) {
           warning("multiple values of meanval are equal to one. Normalizing with respect to the first product with  mean value equal to 1.")
           normIndex <- normIndex[1]
         }
-
       }
 
 
-      if(missing(priceOutside)){priceOutside <- 1}
+      if (missing(priceOutside)) {
+        priceOutside <- 1
+      }
     }
 
-    if(demand %in% c("CESNests","LogitNests")){
-
-      if(!("sigma" %in% names(demand.param))){
+    if (demand %in% c("CESNests", "LogitNests")) {
+      if (!("sigma" %in% names(demand.param))) {
         stop("'demand.param' does not contain 'sigma'.")
       }
 
-      if(missing(nests) ||
-         length(nests)!= nprods ){stop("When 'demand' equals 'CESNests' or 'LogitNests', 'nests' must equal a vector whose length equals the number of products.")}
-
-      if(length(demand.param$sigma)==1){
-        constraint=TRUE
-        demand.param$sigma <- rep(demand.param$sigma,nlevels(nests))
+      if (missing(nests) ||
+        length(nests) != nprods) {
+        stop("When 'demand' equals 'CESNests' or 'LogitNests', 'nests' must equal a vector whose length equals the number of products.")
       }
-      else{constraint=FALSE}
+
+      if (length(demand.param$sigma) == 1) {
+        constraint <- TRUE
+        demand.param$sigma <- rep(demand.param$sigma, nlevels(nests))
+      } else {
+        constraint <- FALSE
+      }
 
 
-      if(nlevels(nests) != length(demand.param$sigma)){
-        stop("The number of nests in 'nests' must either equal the number of nesting parameters in 'demand.param$sigma'.")}
-
+      if (nlevels(nests) != length(demand.param$sigma)) {
+        stop("The number of nests in 'nests' must either equal the number of nesting parameters in 'demand.param$sigma'.")
+      }
     }
-
-
   }
 
 
   ## Checks for Linear-demand style models
-  if(demand %in% c("Linear","LogLin","AIDS")){
+  if (demand %in% c("Linear", "LogLin", "AIDS")) {
+    if (!("slopes" %in% names(demand.param))) {
+      stop("'demand.param' does not contain 'slopes'")
+    }
+    if (!("intercepts" %in% names(demand.param))) {
+      stop("'demand.param' does not contain 'intercepts'")
+    }
 
-    if(!("slopes" %in% names(demand.param))){stop("'demand.param' does not contain 'slopes'")}
-    if(!("intercepts" %in% names(demand.param))){stop("'demand.param' does not contain 'intercepts'")}
-
-    if(!(is.matrix(demand.param$slopes))   ||
-       ncol(demand.param$slopes)!=nprods   ||
-       nrow(demand.param$slopes)!=nprods   ||
-       any(diag(demand.param$slopes)>0)){
-      stop("'slopes' must be a k x k matrix of slope coeficients whose diagonal elements must all be negative.")}
-    if(!is.vector(demand.param$intercepts)     ||
-       length(demand.param$intercepts)!=nprods ||
-       isTRUE(any(demand.param$intercepts<0,na.rm=TRUE))){
+    if (!(is.matrix(demand.param$slopes)) ||
+      ncol(demand.param$slopes) != nprods ||
+      nrow(demand.param$slopes) != nprods ||
+      any(diag(demand.param$slopes) > 0)) {
+      stop("'slopes' must be a k x k matrix of slope coeficients whose diagonal elements must all be negative.")
+    }
+    if (!is.vector(demand.param$intercepts) ||
+      length(demand.param$intercepts) != nprods ||
+      isTRUE(any(demand.param$intercepts < 0, na.rm = TRUE))) {
       stop("'intercepts' must be a length-k vector whose elements are all non-negative")
     }
 
     if (demand == "AIDS" &&
-        !("mktElast" %in% names(demand.param))){
+      !("mktElast" %in% names(demand.param))) {
       warning("'demand.param' does not contain 'mktElast'. Setting 'mktElast' equal to -1")
-      demand.param$mktElast=-1
-
+      demand.param$mktElast <- -1
     }
-
   }
-
-
-
-
 
 
   ## Create constructors for each demand system specified in the 'demand' parameter
 
-  if(demand == "CESNests"){
-
-    result <- new(demand,prices=prices, shares=shares,margins=margins,
-                  mcDelta=mcDelta,
-                  subset=subset,
-                  ownerPre=ownerPre,
-                  ownerPost=ownerPost,
-                  nests=nests,
-                  normIndex=normIndex,
-                  parmsStart=c(demand.param$gamma,demand.param$sigma),
-                  priceStart=priceStart,
-                  constraint=constraint,
-                  shareInside=shareInside,labels=labels)
-
-  }
-
-  else if(demand == "LogitNests"){
-
-    result <- new(demand,prices=prices, shares=shares,margins=margins,
-                  mcDelta=mcDelta,
-                  subset=subset,
-                  ownerPre=ownerPre,
-                  ownerPost=ownerPost,
-                  nests=nests,
-                  normIndex=normIndex,
-                  parmsStart=c(demand.param$alpha,demand.param$sigma),
-                  priceStart=priceStart,
-                  constraint=constraint,
-                  shareInside=shareInside,labels=labels)
-
-  }
-
-
-  else if(demand == "LogitBLP") {
-    result <- new(demand, 
-                 prices=prices, 
-                 shares=shares,
-                 margins=margins,
-                 slopes=demand.param,
-                 normIndex=normIndex,
-                 mcDelta=mcDelta,
-                 insideSize=insideSize,
-                 subset=subset,
-                 ownerPre=ownerPre,
-                 ownerPost=ownerPost,
-                 priceStart=priceStart,
-                 priceOutside=priceOutside,
-                 shareInside=shareInside,
-                 output=outputFlag,
-                 nDraws=demand.param$nDraws,
-                 labels=labels)
-  }
-  else if( demand %in% c("Logit","CES")){
-
-
-   result <- switch(supply,
-                bertrand= new(demand,prices=prices, shares=shares,
-                  margins=margins,
-                  normIndex=normIndex,
-                  mcDelta=mcDelta,
-                  insideSize = insideSize,
-                  subset=subset,
-                  ownerPre=ownerPre,
-                  ownerPost=ownerPost,
-                  priceStart=priceStart,
-                  priceOutside=priceOutside,
-                  shareInside=shareInside,
-                  output=outputFlag,
-                  labels=labels),
-                  bargaining=new("BargainingLogit",prices=prices, shares=shares,
-                     margins=margins,
-                     normIndex=normIndex,
-                     ownerPre=ownerPre,
-                     ownerPost=ownerPost,
-                     bargpowerPre=bargpowerPre,
-                     bargpowerPost=bargpowerPost,
-                     insideSize = insideSize,
-                     mcDelta=mcDelta,
-                     subset=subset,
-                     priceOutside=priceOutside,
-                     shareInside=shareInside,
-                     priceStart=priceStart,
-                     output=outputFlag,
-                     labels=labels,
-                     cls = "BargainingLogit"),
-                auction=new("Auction2ndLogit",prices=prices, shares=shares,
-                                      margins=margins,
-                                      normIndex=normIndex,
-                                      ownerPre=ownerPre,
-                                      ownerPost=ownerPost,
-                                      insideSize = insideSize,
-                                      mcDelta=mcDelta,
-                                      subset=subset,
-                                      priceOutside=priceOutside,
-                                      shareInside=shareInside,
-                                      priceStart=priceStart,
-                                      output=outputFlag,
-                                      labels=labels,
-                                      cls = "Auction2ndLogit"),
-                bargaining2nd=new("Bargaining2ndLogit",prices=prices, shares=shares,
-                            margins=margins,
-                            normIndex=normIndex,
-                            ownerPre=ownerPre,
-                            ownerPost=ownerPost,
-                            bargpowerPre=bargpowerPre,
-                            bargpowerPost=bargpowerPost,
-                            insideSize = insideSize,
-                            mcDelta=mcDelta,
-                            subset=subset,
-                            priceOutside=priceOutside,
-                            shareInside=shareInside,
-                            priceStart=priceStart,
-                            output=outputFlag,
-                            labels=labels,
-                            cls = "Bargaining2ndLogit")
-                
-                  
-   )
-
-  }
-  
-  
-  else if(demand == "LogitCap"){
-
-    if(!("mktSize" %in% names(demand.param))){
-      if(!missing(capacities) ){
+  if (demand == "CESNests") {
+    result <- new(demand,
+      prices = prices, shares = shares, margins = margins,
+      mcDelta = mcDelta,
+      subset = subset,
+      ownerPre = ownerPre,
+      ownerPost = ownerPost,
+      nests = nests,
+      normIndex = normIndex,
+      parmsStart = c(demand.param$gamma, demand.param$sigma),
+      priceStart = priceStart,
+      constraint = constraint,
+      shareInside = shareInside, labels = labels
+    )
+  } else if (demand == "LogitNests") {
+    result <- new(demand,
+      prices = prices, shares = shares, margins = margins,
+      mcDelta = mcDelta,
+      subset = subset,
+      ownerPre = ownerPre,
+      ownerPost = ownerPost,
+      nests = nests,
+      normIndex = normIndex,
+      parmsStart = c(demand.param$alpha, demand.param$sigma),
+      priceStart = priceStart,
+      constraint = constraint,
+      shareInside = shareInside, labels = labels
+    )
+  } else if (demand == "BLP") {
+    # Determine class based on supply type
+    if (supply == "cournot") {
+      demandClass <- "CournotBLP"
+    } else {
+      demandClass <- "LogitBLP"
+    }
+    
+    result <- new(demandClass,
+      prices = prices,
+      shares = shares,
+      margins = margins,
+      slopes = demand.param,
+      normIndex = normIndex,
+      mcDelta = mcDelta,
+      insideSize = insideSize,
+      subset = subset,
+      ownerPre = ownerPre,
+      ownerPost = ownerPost,
+      priceStart = priceStart,
+      priceOutside = priceOutside,
+      shareInside = shareInside,
+      output = outputFlag,
+      nDraws = demand.param$nDraws,
+      labels = labels
+    )
+  } else if (demand %in% c("Logit", "CES")) {
+    result <- switch(supply,
+      bertrand = new(demand,
+        prices = prices, shares = shares,
+        margins = margins,
+        normIndex = normIndex,
+        mcDelta = mcDelta,
+        insideSize = insideSize,
+        subset = subset,
+        ownerPre = ownerPre,
+        ownerPost = ownerPost,
+        priceStart = priceStart,
+        priceOutside = priceOutside,
+        shareInside = shareInside,
+        output = outputFlag,
+        labels = labels
+      ),
+      bargaining = new("BargainingLogit",
+        prices = prices, shares = shares,
+        margins = margins,
+        normIndex = normIndex,
+        ownerPre = ownerPre,
+        ownerPost = ownerPost,
+        bargpowerPre = bargpowerPre,
+        bargpowerPost = bargpowerPost,
+        insideSize = insideSize,
+        mcDelta = mcDelta,
+        subset = subset,
+        priceOutside = priceOutside,
+        shareInside = shareInside,
+        priceStart = priceStart,
+        output = outputFlag,
+        labels = labels,
+        cls = "BargainingLogit"
+      ),
+      auction = new("Auction2ndLogit",
+        prices = prices, shares = shares,
+        margins = margins,
+        normIndex = normIndex,
+        ownerPre = ownerPre,
+        ownerPost = ownerPost,
+        insideSize = insideSize,
+        mcDelta = mcDelta,
+        subset = subset,
+        priceOutside = priceOutside,
+        shareInside = shareInside,
+        priceStart = priceStart,
+        output = outputFlag,
+        labels = labels,
+        cls = "Auction2ndLogit"
+      ),
+      bargaining2nd = new("Bargaining2ndLogit",
+        prices = prices, shares = shares,
+        margins = margins,
+        normIndex = normIndex,
+        ownerPre = ownerPre,
+        ownerPost = ownerPost,
+        bargpowerPre = bargpowerPre,
+        bargpowerPost = bargpowerPost,
+        insideSize = insideSize,
+        mcDelta = mcDelta,
+        subset = subset,
+        priceOutside = priceOutside,
+        shareInside = shareInside,
+        priceStart = priceStart,
+        output = outputFlag,
+        labels = labels,
+        cls = "Bargaining2ndLogit"
+      )
+    )
+  } else if (demand == "LogitCap") {
+    if (!("mktSize" %in% names(demand.param))) {
+      if (!missing(capacities)) {
         warning("'demand.param' does not contain 'mktSize'. Setting 'mktSize' equal to the sum of 'capacities'.")
         mktSize <- sum(capacities)
+      } else {
+        stop("'demand.param' does not contain 'mktSize'")
       }
-      else{stop("'demand.param' does not contain 'mktSize'")}
+    } else {
+      mktSize <- demand.param$mktSize
     }
-    else{mktSize <- demand.param$mktSize}
 
 
-    shares <- capacities/mktSize
-    shares <- shares/sum(shares)
+    shares <- capacities / mktSize
+    shares <- shares / sum(shares)
 
-    result <- new(demand, prices=prices, shares=shares,
-                  margins=margins,capacities=capacities, mktSize=mktSize,
-                  normIndex=normIndex,
-                  ownerPre=ownerPre,
-                  ownerPost=ownerPost,
-                  mcDelta=mcDelta,
-                  subset=subset,
-                  priceStart=priceStart,shareInside=shareInside,
-                  output=outputFlag,
-                  labels=labels)
-  }
-
-
-  else if(demand == "Linear"){
-
-
-
-    result <- new(demand,prices=prices, quantities=shares,margins=margins,
-                  shares=shares,mcDelta=mcDelta,  subset=subset,
-                  ownerPre=ownerPre,diversion=-diag(nprods),
-                  symmetry=identical(demand.param$slopes,t(demand.param$slopes)),
-                  ownerPost=ownerPost, priceStart=priceStart,labels=labels)
-
-  }
-
-  else if(demand == "AIDS"){
-
+    result <- new(demand,
+      prices = prices, shares = shares,
+      margins = margins, capacities = capacities, mktSize = mktSize,
+      normIndex = normIndex,
+      ownerPre = ownerPre,
+      ownerPost = ownerPost,
+      mcDelta = mcDelta,
+      subset = subset,
+      priceStart = priceStart, shareInside = shareInside,
+      output = outputFlag,
+      labels = labels
+    )
+  } else if (demand == "Linear") {
+    result <- new(demand,
+      prices = prices, quantities = shares, margins = margins,
+      shares = shares, mcDelta = mcDelta, subset = subset,
+      ownerPre = ownerPre, diversion = -diag(nprods),
+      symmetry = identical(demand.param$slopes, t(demand.param$slopes)),
+      ownerPost = ownerPost, priceStart = priceStart, labels = labels
+    )
+  } else if (demand == "AIDS") {
     ## find the market elasticity that best explains user-supplied intercepts and prices
 
-    aidsShares    <- as.vector(demand.param$intercepts + demand.param$slopes %*% log(prices)) # AIDS needs actual shares for prediction
-    aidsDiv       <- tcrossprod(1/(1-aidsShares),aidsShares)
+    aidsShares <- as.vector(demand.param$intercepts + demand.param$slopes %*% log(prices)) # AIDS needs actual shares for prediction
+    aidsDiv <- tcrossprod(1 / (1 - aidsShares), aidsShares)
     diag(aidsDiv) <- -1
 
-    result <- new(demand,prices=prices, quantities=shares,margins=margins,
-                  shares=aidsShares,
-                  mcDelta=mcDelta,  subset=subset,mktElast=demand.param$mktElast,
-                  ownerPre=ownerPre,diversion=aidsDiv,
-                  priceStart=priceStart,
-                  ownerPost=ownerPost, labels=labels)
-
+    result <- new(demand,
+      prices = prices, quantities = shares, margins = margins,
+      shares = aidsShares,
+      mcDelta = mcDelta, subset = subset, mktElast = demand.param$mktElast,
+      ownerPre = ownerPre, diversion = aidsDiv,
+      priceStart = priceStart,
+      ownerPost = ownerPost, labels = labels
+    )
+  } else if (demand == "LogLin") {
+    result <- new(demand,
+      prices = prices, quantities = shares, margins = margins,
+      shares = shares, mcDelta = mcDelta, subset = subset, priceStart = priceStart,
+      ownerPre = ownerPre, diversion = -diag(nprods),
+      ownerPost = ownerPost, labels = labels
+    )
   }
 
 
-
-  else if(demand == "LogLin"){
-
-
-    result <- new(demand,prices=prices, quantities=shares,margins=margins,
-                  shares=shares,mcDelta=mcDelta, subset=subset, priceStart=priceStart,
-                  ownerPre=ownerPre,diversion=-diag(nprods),
-                  ownerPost=ownerPost, labels=labels)
-
-  }
-
-
-  if(demand %in% c("Linear","LogLin","AIDS")){
+  if (demand %in% c("Linear", "LogLin", "AIDS")) {
     result@slopes <- demand.param$slopes
     result@intercepts <- demand.param$intercepts
+  } else {
+    result@slopes <- demand.param
   }
-  else{result@slopes=demand.param}
 
-  ## For LogitBLP, recover delta and generate random coefficients via calcSlopes
-  if(demand == "LogitBLP"){
+  ## For BLP, recover delta and generate random coefficients via calcSlopes
+  if (demand == "BLP") {
     result <- calcSlopes(result)
   }
 
 
   ## Convert ownership vectors to ownership matrices
-  result@ownerPre  <- ownerToMatrix(result,TRUE)
-  result@ownerPost <- ownerToMatrix(result,FALSE)
+  result@ownerPre <- ownerToMatrix(result, TRUE)
+  result@ownerPost <- ownerToMatrix(result, FALSE)
 
   ## Calibrate marginal costs from observed prices and demand params
-  result@mcPre     <-  calcMC(result, TRUE)
-  result@mcPost    <-  calcMC(result, FALSE)
+  result@mcPre <- calcMC(result, TRUE)
+  result@mcPost <- calcMC(result, FALSE)
 
-  if(demand == "AIDS"){
+  if (demand == "AIDS") {
     ## Solve Non-Linear System for Price Changes
-    result@priceDelta <- calcPriceDelta(result,...)
+    result@priceDelta <- calcPriceDelta(result, ...)
   }
 
 
   ## Use observed prices as pre-merger equilibrium and only solve post-merger prices
   ## calcMC above already calibrated MCs using the supplied prices.
   result@pricePre <- prices
-  if(!supply %in% c("auction","bargaining2nd")) {
+  if (!supply %in% c("auction", "bargaining2nd")) {
     result@pricePost <- calcPrices(result, FALSE, subset = subset, ...)
   } else {
     result@pricePost <- calcPrices(result, FALSE, ...)
   }
 
-  if(any(grepl("logit",demand,ignore.case = TRUE),na.rm=TRUE)){result@mktSize <- insideSize/sum(calcShares(result))}
-  else if(any(grepl("ces",demand,ignore.case = TRUE),na.rm=TRUE)){result@mktSize <- insideSize*(1+result@slopes$alpha)}
-  
+  if (any(grepl("logit", demand, ignore.case = TRUE), na.rm = TRUE)) {
+    result@mktSize <- insideSize / sum(calcShares(result))
+  } else if (any(grepl("ces", demand, ignore.case = TRUE), na.rm = TRUE)) {
+    result@mktSize <- insideSize * (1 + result@slopes$alpha)
+  }
 
-return(result)
+
+  return(result)
 }

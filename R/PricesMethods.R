@@ -93,7 +93,7 @@ setMethod(
 setMethod(
   f = "calcPrices",
   signature = "Logit",
-  definition = function(object, preMerger = TRUE, isMax = FALSE, subset, ...) {
+  definition = function(object, preMerger = TRUE, isMax = FALSE, ...) {
     output <- object@output
     # Start from pre-merger prices when available; fall back to priceStart
     priceStart <- object@priceStart
@@ -112,19 +112,42 @@ setMethod(
       cand <- object@pricePre
       if (length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
     }
-    if (missing(subset)) {
+
+    if (preMerger) {
       subset <- rep(TRUE, nprods)
+    } else {
+      subset <- object@subset
     }
+
     if (!is.logical(subset) || length(subset) != nprods) {
       stop("'subset' must be a logical vector the same length as 'shares'")
     }
+    
+    # Save original subset for final price assignment
+    original_subset <- subset
+    original_labels <- object@labels  # Save original labels
+    
+    # For Logit models, excluded products are removed from the choice set
+    # Subset demand parameters (meanval) along with prices, mc, owner
     if (any(!subset)) {
+      # Subset the meanval to remove excluded products
+      object@slopes$meanval <- object@slopes$meanval[subset]
+      
+      # Subset labels temporarily
+      object@labels <- object@labels[subset]
+      
+      # Subset owner matrices in the object
+      object@ownerPre <- object@ownerPre[subset, subset]
+      object@ownerPost <- object@ownerPost[subset, subset]
+      
       owner <- owner[subset, subset]
       mc <- mc[subset]
       priceStart <- priceStart[subset]
+      
+      # Update subset to be all TRUE for the reduced product set
+      subset <- rep(TRUE, sum(subset))
     }
     priceEst <- rep(NA, nprods)
-    ## Define system of FOC as a function of prices
     FOC <- function(priceCand) {
       if (preMerger) {
         object@pricePre[subset] <- priceCand
@@ -136,7 +159,7 @@ setMethod(
       } else {
         margins <- mc - priceCand
       }
-      predMargin <- calcMargins(object, preMerger, level = TRUE)[subset]
+      predMargin <- calcMargins(object, preMerger, level = TRUE)
 
       thisFOC <- margins - predMargin
       return(thisFOC)
@@ -175,28 +198,13 @@ setMethod(
         warning("Hessian of first-order conditions is not positive definite. ", state, " price vector may not maximize profits. Consider rerunning 'calcPrices' using different starting values")
       }
     }
-    priceEst[subset] <- priceEst_solution
+    priceEst[original_subset] <- priceEst_solution
+    
+    # Restore original labels
+    object@labels <- original_labels
+    
     names(priceEst) <- object@labels
     return(priceEst)
-  }
-)
-#' @rdname Prices-Methods
-#' @export
-setMethod(
-  f = "calcPrices",
-  signature = "LogitBLP",
-  definition = function(object, preMerger = TRUE, isMax = FALSE, subset, ...) {
-    # 1 Set prices and ownership
-    output <- object@output
-    priceStart <- object@priceStart
-
-    if (preMerger) {
-      owner <- object@ownerPre
-      mc <- object@mcPre
-    } else {
-      owner <- object@ownerPost
-      mc <- object@mcPost
-    }
 
     nprods <- length(object@shares)
     if (!preMerger) {
@@ -1061,5 +1069,239 @@ setMethod(
     # minResultDown <- marginsDown  + minResultUp + mcDown
 
     return(list(up = minResultUp, down = minResultDown))
+  }
+)
+
+#' @rdname Prices-Methods
+#' @export
+setMethod(
+  f = "calcPrices",
+  signature = "LogitBLP",
+  definition = function(object, preMerger = TRUE, isMax = FALSE, ...) {
+    # 1 Set prices and ownership
+    output <- object@output
+    priceStart <- object@priceStart
+
+    if (preMerger) {
+      owner <- object@ownerPre
+      mc <- object@mcPre
+    } else {
+      owner <- object@ownerPost
+      mc <- object@mcPost
+    }
+
+    nprods <- length(object@shares)
+    if (!preMerger) {
+      cand <- object@pricePre
+      if (length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
+    }
+
+    if (preMerger) {
+      subset <- rep(TRUE, nprods)
+    } else {
+      subset <- object@subset
+    }
+
+    if (!is.logical(subset) || length(subset) != nprods) {
+      stop("'subset' must be a logical vector the same length as 'shares'")
+    }
+
+    # Save original subset for final price assignment
+    original_subset <- subset
+    original_labels <- object@labels  # Save original labels
+    
+    # For Logit models, excluded products are removed from the choice set
+    # Subset demand parameters (meanval, alphas) along with prices, mc, owner
+    if (any(!subset)) {
+      # Subset the meanval (delta) to remove excluded products
+      object@slopes$meanval <- object@slopes$meanval[subset]
+      
+      # Subset the alphas matrix (random coefficients) - rows are products
+      if (!is.null(object@slopes$alphas)) {
+        object@slopes$alphas <- object@slopes$alphas[subset]
+      }
+      
+      # Subset labels temporarily
+      object@labels <- object@labels[subset]
+      
+      # Subset owner matrices in the object
+      object@ownerPre <- object@ownerPre[subset, subset]
+      object@ownerPost <- object@ownerPost[subset, subset]
+      
+      owner <- owner[subset, subset]
+      mc <- mc[subset]
+      priceStart <- priceStart[subset]
+      
+      # Update subset to be all TRUE for the reduced product set
+      subset <- rep(TRUE, sum(subset))
+    }
+
+    # 2 Define FOCs function (Unified for Root-Finding and Fixed-Point)
+    FOC <- function(priceCand, as_fp = FALSE) {
+      if (preMerger) {
+        object@pricePre[subset] <- priceCand
+      } else {
+        object@pricePost[subset] <- priceCand
+      }
+
+      # Predicted Margins (Omega^-1 * S)
+      predMargin <- calcMargins(object, preMerger, level = TRUE)
+
+      if (as_fp) {
+        # Fixed Point Update: P = mc +/- Omega^-1 * S
+        if (output) {
+          return(mc + predMargin)
+        } else {
+          return(mc - predMargin)
+        }
+      } else {
+        # Residual: (Actual Margin) - (Predicted Margin)
+        margins <- if (output) priceCand - mc else mc - priceCand
+        return(margins - predMargin)
+      }
+    }
+
+    # 3 Define analytic Jacobian using individual shares
+    # Helper to compute Share Jacobian J_s
+    calc_Js <- function(priceCand) {
+      tmpObject <- object
+      if (preMerger) {
+        tmpObject@pricePre[subset] <- priceCand
+      } else {
+        tmpObject@pricePost[subset] <- priceCand
+      }
+
+      shares_draw <- calcShares(tmpObject, preMerger = preMerger, aggregate = FALSE)
+      shares_draw <- pmax(pmin(shares_draw, 1 - 1e-12), 1e-12)
+
+      alphas <- tmpObject@slopes$alphas
+      sigmaNest <- tmpObject@slopes$sigmaNest
+      if (is.null(sigmaNest)) sigmaNest <- 1
+      R <- length(alphas)
+
+      S_g <- colSums(shares_draw)
+      S_jg <- sweep(shares_draw, 2, S_g, "/")
+
+      A <- sweep(shares_draw, 2, alphas, "*")
+      invSigma <- 1 / sigmaNest
+      term_nest <- 1 - invSigma
+
+      part1 <- tcrossprod(A, S_jg) * (term_nest / R)
+      part2 <- tcrossprod(A, shares_draw) * (-1 / R)
+      diag_boost <- rowMeans(A) * invSigma
+
+      J_s <- part1 + part2
+      diag(J_s) <- diag(J_s) + diag_boost
+      return(J_s)
+    }
+
+    # 4 Solve FOCs
+
+    # Strategy 1: SQUAREM (Contraction Mapping)
+    sq_control <- list(tol = object@control.equ$tol, maxiter = 1500)
+    if (!is.null(object@control.equ$maxit) && !is.na(object@control.equ$maxit)) {
+      sq_control$maxiter <- object@control.equ$maxit
+    }
+
+    minResult <- tryCatch(
+      {
+        SQUAREM::squarem(par = priceStart, fixptfn = FOC, as_fp = TRUE, control = sq_control)
+      },
+      error = function(e) NULL
+    )
+
+    success <- FALSE
+    if (!is.null(minResult) && minResult$convergence) {
+      priceEst_solution <- minResult$par
+      success <- TRUE
+    }
+
+    # Strategy 2: nleqslv (Newton with Analytic Jacobian)
+    if (!success) {
+      # Define Share-based FOC and Jacobian for Newton
+      FOC_Newton <- function(priceCand) {
+        if (preMerger) {
+          object@pricePre[subset] <- priceCand
+        } else {
+          object@pricePost[subset] <- priceCand
+        }
+
+        S <- calcShares(object, preMerger, aggregate = TRUE)
+        J_s <- calc_Js(priceCand)
+
+        margins <- if (output) priceCand - mc else mc - priceCand
+
+        # FOC: S + (t(J_s) * owner) %*% margins = 0
+        return(S + as.vector((t(J_s) * owner) %*% margins))
+      }
+
+      JAC_Newton <- function(priceCand) {
+        J_s <- calc_Js(priceCand)
+        # Approx Jacobian: J_s + (t(J_s) * owner)
+        return(J_s + (t(J_s) * owner))
+      }
+
+      nleqslv_maxit <- as.integer(object@control.equ$maxit)
+      if (nprods <= 30 && (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1)) {
+        nleqslv_maxit <- 150L
+      }
+
+      minResult <- nleqslv::nleqslv(
+        x = priceStart, fn = FOC_Newton, jac = JAC_Newton,
+        method = "Newton",
+        control = list(ftol = object@control.equ$tol, maxit = nleqslv_maxit)
+      )
+
+      priceEst_solution <- minResult$x
+      if (minResult$termcd == 1) success <- TRUE
+    }
+
+    # Strategy 3: BBsolve (Fallback)
+    if (!success) {
+      # Fallback to original FOC (margin based) with BBsolve
+      minResult <- BB::BBsolve(
+        par = priceStart, fn = FOC,
+        control = list(tol = object@control.equ$tol, maxit = 1500),
+        quiet = TRUE
+      )
+      if (minResult$convergence == 0) {
+        priceEst_solution <- minResult$par
+        success <- TRUE
+      }
+    }
+
+    if (!success) {
+      warning("'calcPrices' solver hierarchy (SQUAREM -> BBsolve -> nleqslv) may not have fully converged.")
+    }
+
+    # 5 Optional Hessian check for maximization
+    if (isMax) {
+      hess <- numDeriv::jacobian(FOC, priceEst_solution)
+      hess <- hess * (owner > 0)
+      if (any(eigen(hess)$values > 0)) {
+        warning("Hessian not positive definite at solution.")
+      }
+    }
+
+    # 6 Return final prices
+    priceEst <- rep(NA, nprods)
+    priceEst[original_subset] <- priceEst_solution
+    
+    # Restore original labels
+    object@labels <- original_labels
+    
+    names(priceEst) <- object@labels
+    return(priceEst)
+  }
+)
+
+#' @rdname Prices-Methods
+#' @export
+setMethod(
+  f = "calcPrices",
+  signature = "CournotBLP",
+  definition = function(object, preMerger = TRUE, isMax = FALSE, ...) {
+    # Call the Logit method directly, bypassing LogitBLP
+    selectMethod("calcPrices", "Logit")(object, preMerger = preMerger, isMax = isMax, ...)
   }
 )
