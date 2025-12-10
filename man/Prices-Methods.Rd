@@ -23,9 +23,7 @@
 
 \S4method{calcPrices}{Auction2ndCap}(object, preMerger = TRUE, exAnte = TRUE)
 
-\S4method{calcPrices}{Logit}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
-
-\S4method{calcPrices}{LogitBLP}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
+\S4method{calcPrices}{Logit}(object, preMerger = TRUE, isMax = FALSE, ...)
 
 \S4method{calcPrices}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE)
 
@@ -42,6 +40,8 @@
 \S4method{calcPrices}{VertBargBertLogit}(object, preMerger = TRUE, ...)
 
 \S4method{calcPrices}{VertBarg2ndLogit}(object, preMerger = TRUE, ...)
+
+\S4method{calcPrices}{LogitBLP}(object, preMerger = TRUE, isMax = FALSE, ...)
 }
 \arguments{
 \item{object}{An instance of the respective class (see description for the classes)}
@@ -56,16 +56,16 @@ expected result conditional on each firm winning the auction. Default is FALSE.}
 \item{isMax}{If TRUE, a check is run to determine if the calculated equilibrium price vector locally maximizes profits.
 Default is FALSE.}
 
-\item{subset}{A vector of length k where each element equals TRUE if
-the product indexed by that element should be included in the
-post-merger simulation and FALSE if it should be excluded. Default is a
-length k vector of TRUE.}
-
 \item{...}{For Logit, additional values that may be used to change the
 default values of \code{\link[BB]{BBsolve}}, the non-linear equation solver.
 
 For others, additional values that may be used to change the default values of \code{\link{constrOptim}}, the non-linear
 equation solver used to enforce non-negative equilibrium quantities.}
+
+\item{subset}{A vector of length k where each element equals TRUE if
+the product indexed by that element should be included in the
+post-merger simulation and FALSE if it should be excluded. Default is a
+length k vector of TRUE.}
 }
 \description{
 For Auction2ndCap, the calcPrices method computes the expected price that the buyer pays,

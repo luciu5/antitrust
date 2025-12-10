@@ -17,6 +17,7 @@
 \alias{calcMargins,BargainingLogit-method}
 \alias{calcMargins,Bargaining2ndLogit-method}
 \alias{calcMargins,Auction2ndCap-method}
+\alias{calcMargins,CournotBLP-method}
 \title{Methods for Calculating Margins}
 \usage{
 \S4method{calcMargins}{Bertrand}(object, preMerger = TRUE, level = FALSE)
@@ -42,6 +43,8 @@
 \S4method{calcMargins}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE, level = TRUE)
 
 \S4method{calcMargins}{Auction2ndLogitNests}(object, preMerger = TRUE, exAnte = FALSE, level = FALSE)
+
+\S4method{calcMargins}{CournotBLP}(object, preMerger = TRUE, level = FALSE)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

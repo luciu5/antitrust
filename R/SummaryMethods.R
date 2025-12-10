@@ -111,7 +111,7 @@ setMethod(
 
       thiscmcr <- thiscv <- NA_real_
 
-      try(thiscmcr <- cmcr(object,levels=levels), silent=TRUE)
+      try(thiscmcr <- cmcr(object,levels=levels,market=TRUE), silent=TRUE)
 
       try(thiscv <- CV(object),silent = TRUE)
 
@@ -126,7 +126,7 @@ setMethod(
                         'HHI Change' = as.integer(HHI(outputPre/sum(outputPre),owner=object@ownerPost) - HHI(outputPre/sum(outputPre),owner=object@ownerPre)),
                         'Industry Price Change (%)' = calcPriceDelta(object,market=TRUE,levels=levels,index="paasche")*100,
                         'Merging Party Price Change (%)'=  calcPriceDelta(object,party=TRUE,levels=levels,index="paasche")*100,
-                        'Compensating Marginal Cost Reduction (%)' = sum(thiscmcr * outputPost[isparty]) / sum(outputPost[isparty], na.rm=TRUE),
+                        'Compensating Marginal Cost Reduction (%)' = thiscmcr,
                         'Consumer Harm ($)' = thiscv,
                         'Producer Benefit ($)' = thispsdelta,
                         'Difference ($)'= thiscv - thispsdelta,

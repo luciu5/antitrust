@@ -48,23 +48,26 @@ setMethod(
 
     output <- ifelse(object@output,-1,1)
 
+    nprods <- length(object@shares)
 
     if( preMerger) {
 
+      subset <- rep(TRUE, nprods)
       prices <- object@pricePre
       owner  <- object@ownerPre
-      
     }
 
     else{
-      prices <- object@pricePost
-      owner  <- object@ownerPost
-
+      subset <- object@subset
+      prices <- object@pricePost[subset]
+      owner  <- object@ownerPost[subset, subset]
+      
     }
 
-    revenue<- calcShares(object,preMerger,revenue=TRUE)
     
-    elast <-  elast(object,preMerger)
+    revenue<- calcShares(object,preMerger,revenue=TRUE)[subset]
+    
+    elast <-  elast(object,preMerger)[subset,subset]
     
     margins <-  try(output * as.vector(solve(t(elast)*owner) %*% (revenue * diag(owner))) / revenue,silent=TRUE)
     if(any(class(margins) == "try-error")){margins <- output * as.vector(MASS::ginv(t(elast)*owner) %*% (revenue * diag(owner))) / revenue}
@@ -73,9 +76,11 @@ setMethod(
     
     if(level) {margins <- margins * prices }
     
-    names(margins) <- object@labels
+    result <- rep(NA, nprods)
+    result[subset] <- as.vector(margins)
+    names(result) <- object@labels
 
-    return(as.vector(margins))
+    return(result)
   }
 
 )
@@ -95,15 +100,16 @@ setMethod(
     idx   <-  object@normIndex
     
     if( preMerger) {
-      
+      subset <- rep(TRUE, nprods)
       prices <- object@pricePre
       owner  <- object@ownerPre
       
     }
     
     else{
-      prices <- object@pricePost
-      owner  <- object@ownerPost
+      subset <- object@subset
+      prices <- object@pricePost[subset]
+      owner  <- object@ownerPost[subset, subset]
       
     }
     
@@ -116,6 +122,9 @@ setMethod(
       idxShare <- shares[idx]
      
     }
+    
+    shares <- shares[subset]
+    
     sharesFirm <- as.numeric(owner %*% shares) 
     
     
@@ -123,9 +132,11 @@ setMethod(
     
     if(!level) {margins <- margins/prices }
     
-    names(margins) <- object@labels
+    result <- rep(NA, nprods)
+    result[subset] <- as.vector(margins)
+    names(result) <- object@labels
     
-    return(as.vector(margins))
+    return(result)
   }
 )
 
@@ -772,22 +783,29 @@ setMethod(
   signature= "CournotBLP",
   definition=function(object,preMerger=TRUE, level=FALSE){
     
+    
+    output <- ifelse(object@output, -1, 1)
+    
     if(preMerger) {
+      nprods <- length(object@shares)
+      subset <- rep(TRUE,nprods)
       prices <- object@pricePre
       owner  <- object@ownerPre
     }
     else{
-      prices <- object@pricePost
-      owner  <- object@ownerPost
+      nprods <- sum(object@subset)
+      subset <- object@subset
+      prices <- object@pricePost[subset]
+      owner  <- object@ownerPost[subset, subset]
     }
     
-    shares <- calcShares(object, preMerger=preMerger, revenue=FALSE)
+    shares <- calcShares(object, preMerger=preMerger, revenue=FALSE)[subset]
     
     # Get elasticity matrix: E_ij = (p_j / s_i) * (d s_i / d p_j)
-    elast_mat <- elast(object, preMerger=preMerger)
+    elast_mat <- elast(object, preMerger=preMerger)[subset, subset]
     
     # Convert to Jacobian: J_ij = d s_i / d p_j = E_ij * (s_i / p_j)
-    nprods <- length(shares)
+  
     
     # Matrix of s_i / p_j
     scale_mat <- matrix(shares, nrow=nprods, ncol=nprods, byrow=FALSE) /
@@ -807,7 +825,6 @@ setMethod(
     # Apply ownership: P - MC = - (Omega .* (dP/dq)') * q
     # Margins = - (Omega * t(J_inv)) %*% s
     
-    output <- ifelse(object@output, -1, 1)
     
     # Note: owner matrix is 1s and 0s (or shares). Element-wise multiplication applies the mask.
     margins <- output * as.vector((owner * t(J_inv)) %*% shares)
@@ -816,7 +833,7 @@ setMethod(
       margins <- margins / prices
     }
     
-    names(margins) <- object@labels
+    names(margins) <- object@labels[subset]
     return(margins)
   }
 )

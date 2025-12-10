@@ -87,7 +87,7 @@ setMethod(
       sharePost <- calcShares(object, preMerger=FALSE, revenue =FALSE)
       if(all(is.na(sharePost))) sharePost <- calcShares(object, preMerger=FALSE, revenue = TRUE)
       sharePost <- sharePost[isParty]
-      sharePost <- sharePost/sum(sharePost)
+      sharePost <- sharePost/sum(sharePost,na.rm=TRUE)
 
       cmcr <- sum( cmcr * sharePost, na.rm = TRUE )
     }

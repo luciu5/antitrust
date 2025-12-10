@@ -8,9 +8,9 @@
 sim(
   prices,
   shares,
-  supply = c("bertrand", "auction", "bargaining", "bargaining2nd"),
+  supply = c("bertrand", "cournot", "auction", "bargaining", "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
-    "LogitCap", "LogitBLP"),
+    "LogitCap", "BLP"),
   demand.param,
   ownerPre,
   ownerPost,
@@ -30,7 +30,7 @@ sim(
 \arguments{
 \item{prices}{A length k vector of product prices.}
 
-\item{shares}{A length k vector of product shares. Only used for \sQuote{LogitBLP} demand. See Details.}
+\item{shares}{A length k vector of product shares. Only used for \sQuote{BLP} demand. See Details.}
 
 \item{supply}{A character string indicating how firms compete with one another. Valid
 values are "bertrand" (Nash Bertrand),  "auction2nd"
@@ -137,7 +137,7 @@ If \sQuote{demand} equals \sQuote{Logit} or \sQuote{LogitNests}, then
   values of \sQuote{meanval} are zero, an outside good is assumed to exist.}
 }
 
-If \sQuote{demand} equals \sQuote{LogitBLP}, then
+If \sQuote{demand} equals \sQuote{BLP}, then
 \sQuote{demand.param} must equal a list containing:
 \describe{
   \item{alpha}{The mean price coefficient (or use alphaMean).}
@@ -145,21 +145,21 @@ If \sQuote{demand} equals \sQuote{LogitBLP}, then
   values of \sQuote{meanval} are zero, an outside good is assumed to exist.
   If \sQuote{meanval} is not provided, then \sQuote{shares} must be supplied
   so that mean valuations can be recovered via BLP contraction mapping.}
-  \item{sigma}{The standard deviation of the random coefficient on price, 
+  \item{sigma}{The standard deviation of the random coefficient on price,
   representing consumer heterogeneity in price sensitivity.}
-  \item{sigmaNest}{Optional nesting parameter for the outside good: sigmaNest in (0,1] 
-  where sigmaNest=1 is flat logit (no nesting) and sigmaNest->0 means products are 
+  \item{sigmaNest}{Optional nesting parameter for the outside good: sigmaNest in (0,1]
+  where sigmaNest=1 is flat logit (no nesting) and sigmaNest->0 means products are
   perfect substitutes within the nest. Default is 1.}
-  \item{piDemog}{Optional vector of demographic coefficients for the price coefficient. 
+  \item{piDemog}{Optional vector of demographic coefficients for the price coefficient.
   Each element represents the interaction effect of a demographic variable with price.}
   \item{nDemog}{Number of demographic variables. Required if piDemog is provided. Default is 0.}
   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
 }
 
-Note: The \sQuote{shares} argument is only used with \sQuote{LogitBLP} demand. 
+Note: The \sQuote{shares} argument is only used with \sQuote{BLP} demand.
 If supplied for any other demand system, a warning will be issued but the function will proceed
-(shares will be ignored). For \sQuote{LogitBLP},
-either \sQuote{meanval} must be provided in \sQuote{demand.param} OR \sQuote{shares} 
+(shares will be ignored). For \sQuote{BLP},
+either \sQuote{meanval} must be provided in \sQuote{demand.param} OR \sQuote{shares}
 must be supplied to the \code{sim} function to perform BLP contraction mapping.
 
 If \sQuote{demand} equals \sQuote{CES} or \sQuote{CESNests}, then
@@ -183,36 +183,39 @@ If \sQuote{demand} equals \sQuote{CES} or \sQuote{CESNests}, then
 ## Source: Epstein/Rubenfeld 2004, pg 80
 
 
-prodNames <- c("BUD","OLD STYLE","MILLER","MILLER-LITE","OTHER-LITE","OTHER-REG")
-ownerPre <-c("BUD","OLD STYLE","MILLER","MILLER","OTHER-LITE","OTHER-REG")
-ownerPost <-c("BUD","BUD","MILLER","MILLER","OTHER-LITE","OTHER-REG")
-nests <- c("Reg","Reg","Reg","Light","Light","Reg")
+prodNames <- c("BUD", "OLD STYLE", "MILLER", "MILLER-LITE", "OTHER-LITE", "OTHER-REG")
+ownerPre <- c("BUD", "OLD STYLE", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
+ownerPost <- c("BUD", "BUD", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
+nests <- c("Reg", "Reg", "Reg", "Light", "Light", "Reg")
 
-price    <- c(.0441,.0328,.0409,.0396,.0387,.0497)
+price <- c(.0441, .0328, .0409, .0396, .0387, .0497)
 
-demand.param=list(alpha=-48.0457,
-                  meanval=c(0,0.4149233,1.1899885,0.8252482,0.1460183,1.4865730)
+demand.param <- list(
+  alpha = -48.0457,
+  meanval = c(0, 0.4149233, 1.1899885, 0.8252482, 0.1460183, 1.4865730)
 )
 
-sim.logit <- sim(price,supply="bertrand",demand="Logit",demand.param,
-                 ownerPre=ownerPre,ownerPost=ownerPost)
+sim.logit <- sim(price,
+  supply = "bertrand", demand = "Logit", demand.param,
+  ownerPre = ownerPre, ownerPost = ownerPost
+)
 
 
 
-print(sim.logit)           # return predicted price change
-summary(sim.logit)         # summarize merger simulation
+print(sim.logit) # return predicted price change
+summary(sim.logit) # summarize merger simulation
 
-elast(sim.logit,TRUE)      # returns premerger elasticities
-elast(sim.logit,FALSE)     # returns postmerger elasticities
+elast(sim.logit, TRUE) # returns premerger elasticities
+elast(sim.logit, FALSE) # returns postmerger elasticities
 
-diversion(sim.logit,TRUE)  # return premerger diversion ratios
-diversion(sim.logit,FALSE) # return postmerger diversion ratios
+diversion(sim.logit, TRUE) # return premerger diversion ratios
+diversion(sim.logit, FALSE) # return postmerger diversion ratios
 
 
-cmcr(sim.logit)            #calculate compensating marginal cost reduction
-upp(sim.logit)             #calculate Upwards Pricing Pressure Index
+cmcr(sim.logit) # calculate compensating marginal cost reduction
+upp(sim.logit) # calculate Upwards Pricing Pressure Index
 
-CV(sim.logit)              #calculate representative agent compensating variation
+CV(sim.logit) # calculate representative agent compensating variation
 
 }
 \seealso{

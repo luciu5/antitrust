@@ -85,8 +85,8 @@ setMethod(
         
       }
       
-      if(index=="paasche")  priceDelta <- sum(sharesPost*pricePost)/sum(sharesPost*pricePre) - 1
-      else if (index=="laspeyres")  priceDelta <- sum(sharesPre*pricePost)/sum(sharesPre*pricePre) - 1
+      if(index=="paasche")  priceDelta <- sum(sharesPost*pricePost,na.rm=TRUE)/sum(sharesPost*pricePre,na.rm=TRUE) - 1
+      else if (index=="laspeyres")  priceDelta <- sum(sharesPre*pricePost,na.rm=TRUE)/sum(sharesPre*pricePre,na.rm=TRUE) - 1
       
       
       

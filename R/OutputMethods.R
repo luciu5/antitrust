@@ -642,18 +642,25 @@ setMethod(
   signature= "Logit",
   definition=function(object,preMerger=TRUE,revenue=FALSE){
 
-
-    if(preMerger){ prices <- object@pricePre}
-    else{          prices <- object@pricePost}
-
-
     alpha    <- object@slopes$alpha
     meanval  <- object@slopes$meanval
+    nprod <- length(meanval)
+
+    if(preMerger){ 
+      prices <- object@pricePre
+      subset <- rep(TRUE,nprod)
+      }
+    else{prices <- object@pricePost
+         subset <- object@subset
+         }
+
+
+  
 
     #outVal <- ifelse(object@shareInside<1, 1, 0)
     outVal <- ifelse(is.na(object@normIndex), 1, 0)
 
-    shares <- exp(meanval + alpha*(prices - object@priceOutside))
+    shares <- exp(meanval + alpha*(prices - object@priceOutside)) * subset
     shares <- shares/(outVal + sum(shares,na.rm=TRUE))
 
     if(revenue){shares <- prices*shares/sum(prices*shares,object@priceOutside*(1-sum(shares,na.rm=TRUE)),na.rm=TRUE)}
@@ -672,39 +679,40 @@ setMethod(
     signature = "LogitBLP",
     definition = function(object, preMerger = TRUE, revenue = FALSE, aggregate = TRUE) {
       
-      # 1 Set prices
+      # 1 Retrieve mean utilities (delta) and random coefficients (alphas)
+      meanval <- object@slopes$meanval
+      alphas <- object@slopes$alphas       # vector length = number of draws
+      nDraws <- length(alphas)
+      nprods <- length(meanval)
+      nLabels <- length(object@labels)
+      
+      # 2 Set prices
       if (preMerger) { 
         prices <- object@pricePre
+        subset <- rep(TRUE, nprods)
       } else {
+        subset <- object@subset
         prices <- object@pricePost
       }
       
-      # 2 Retrieve mean utilities (delta) and random coefficients (alphas)
-      delta <- object@slopes$meanval
-      alphas <- object@slopes$alphas       # vector length = number of draws
-      nDraws <- length(alphas)
-      k <- length(delta)
-      nLabels <- length(object@labels)
       
-      if (k < 1 || nDraws < 1 || nLabels < 1) {
-        na_vec <- rep(NA_real_, nLabels)
-        names(na_vec) <- object@labels
-        return(na_vec)
-      }
+      prices[!subset] <- 0
+   
+      
       
       # 3 Nesting parameter
       sigmaNest <- object@slopes$sigmaNest
       if (is.null(sigmaNest)) sigmaNest <- 1
       
-      # 4 Compute utilities for each draw (k x nDraws)
-      delta_mat <- matrix(delta, nrow = k, ncol = nDraws)
+      # 4 Compute utilities for each draw (nprods x nDraws)
+      meanval_mat <- matrix(meanval , nrow = nprods, ncol = nDraws)
       price_term <- tcrossprod(prices - object@priceOutside, alphas)
-      util <- delta_mat + price_term
-      expUtil <- exp(util / sigmaNest)
+      util <- meanval_mat + price_term
+      expUtil <- t(t(exp(util / sigmaNest)) * subset)
       
       # 5 Inside (within-nest) shares
       sumExpUtil <- colSums(expUtil)                        # length nDraws
-      withinNest <- expUtil / matrix(sumExpUtil, nrow = k, ncol = nDraws, byrow = TRUE)
+      withinNest <- expUtil / matrix(sumExpUtil, nrow = nprods, ncol = nDraws, byrow = TRUE)
       
       # 6 Across-nest (inside vs outside)
       insideIV <- sumExpUtil^sigmaNest
@@ -714,19 +722,21 @@ setMethod(
         acrossNest <- rep(1, nDraws)
       }
       
-      shares_draw <- withinNest * matrix(acrossNest, nrow = k, ncol = nDraws, byrow = TRUE)
+      shares_draw <- withinNest * matrix(acrossNest, nrow = nprods, ncol = nDraws, byrow = TRUE)
       
       # 7 Aggregate or return full draws
       if (aggregate) {
         shares <- rowMeans(shares_draw)
+        shares[!subset] <- NA
       } else {
-        shares <- shares_draw    # returns k x nDraws matrix
-      }
+        shares <- shares_draw    # returns nprods x nDraws matrix
+        shares[!subset , ] <- NA
+        }
       
       # 8 Revenue shares (optional)
       if (revenue) {
         if (aggregate) {
-          total_rev_inside <- sum(prices * shares)
+          total_rev_inside <- sum(prices * shares, na.rm=TRUE)
           if (is.na(object@normIndex)) {
             share_outside <- 1 - sum(shares, na.rm = TRUE)
             total_rev <- total_rev_inside + object@priceOutside * share_outside
@@ -736,7 +746,7 @@ setMethod(
           shares <- prices * shares / total_rev
         } else {
           # For per-draw shares, divide by total revenue per draw
-          total_rev_inside <- colSums(prices * shares)
+          total_rev_inside <- colSums(prices * shares,na.rm=TRUE)
           if (is.na(object@normIndex)) {
             share_outside <- 1 - colSums(shares, na.rm = TRUE)
             total_rev <- total_rev_inside + object@priceOutside * share_outside
@@ -747,9 +757,9 @@ setMethod(
         }
       }
       
-      # 9 Names (only for aggregate)
+      # 9 Names
       if (aggregate) names(shares) <- object@labels
-      
+      else { rownames(shares) <- object@labels}
       return(shares)
     }
   )
