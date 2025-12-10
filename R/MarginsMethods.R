@@ -98,6 +98,7 @@ setMethod(
     output <- ifelse(object@output,-1,1)
     alpha <- object@slopes$alpha
     idx   <-  object@normIndex
+    nprods <- length(object@shares)
     
     if( preMerger) {
       subset <- rep(TRUE, nprods)
@@ -793,8 +794,8 @@ setMethod(
       owner  <- object@ownerPre
     }
     else{
-      nprods <- sum(object@subset)
       subset <- object@subset
+      nprods <- sum(subset)
       prices <- object@pricePost[subset]
       owner  <- object@ownerPost[subset, subset]
     }
@@ -833,7 +834,12 @@ setMethod(
       margins <- margins / prices
     }
     
-    names(margins) <- object@labels[subset]
-    return(margins)
+    
+    result <- rep(NA, length(object@shares))
+    result[subset] <- as.vector(margins)
+    names(result) <- object@labels
+    
+    return(result)
+    
   }
 )
