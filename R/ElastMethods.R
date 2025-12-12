@@ -22,6 +22,7 @@
 #' FALSE, calculates post-merger price elasticities. Default is TRUE.
 #' @param market If TRUE, calculates the market (aggregate) elasticity. If
 #' FALSE, calculates matrix of own- and cross-price elasticities. Default is FALSE.
+#' @param partial if TRUE returns the partial derivative rather than the elasticity. Default is FALSE
 #'
 #' @details When \sQuote{market} is FALSE, this method computes the matrix
 #' of own and cross-price elasticities. Element i,j of this matrix is
@@ -166,115 +167,122 @@ setMethod(
   }
 )
 
+
 #' @rdname Elast-Methods
 #' @export
 setMethod(
   f = "elast",
   signature = "LogitBLP",
-  definition = function(object, preMerger = TRUE, market = FALSE) {
+  definition = function(object, preMerger = TRUE, market = FALSE, partial = FALSE) {
+   
+    outSign <- ifelse(object@output, 1, -1)  # 1 for output, -1 for input 
+     # Get subsetting info and prices
     if (preMerger) {
+      subset <- rep(TRUE, length(object@labels))
       prices <- object@pricePre
     } else {
+      subset <- object@subset
       prices <- object@pricePost
     }
-
-    # Retrieve random coefficients on price created by calcSlopes(LogitBLP)
+    
+    # Get parameters
     alphas <- object@slopes$alphas
-    nDraws <- length(alphas)
-
-    # Outside-good nesting parameter: sigmaNest in (0,1]
-    # sigmaNest = 1 is flat logit
     sigmaNest <- object@slopes$sigmaNest
     if (is.null(sigmaNest)) sigmaNest <- 1
-
+    
+    # Get individual shares by draw (full size with NAs for excluded products)
+    shares_draw <- calcShares(object, preMerger = preMerger, aggregate = FALSE)
+    nDraws <- ncol(shares_draw)
+    nprods <- nrow(shares_draw)
+    
+    # Replace NAs with zeros for calculation purposes
+    shares_draw[is.na(shares_draw)] <- 0
+    
+    # Get aggregate shares
     shares <- calcShares(object, preMerger = preMerger)
-
+    shares[is.na(shares)] <- 0
+    
+    # Group shares for each draw (only include active products)
+    s_g <- colSums(shares_draw * matrix(subset, nrow=nprods, ncol=nDraws))
+    
+    # Conditional shares within group for each draw
+    s_jg <- sweep(shares_draw, 2, s_g, "/")
+    s_jg[is.na(s_jg) | is.infinite(s_jg)] <- 0  # Handle division by zero
+    
+    # Common terms for derivatives
+    inv_sigma <- 1/sigmaNest
+    term2 <- 1 - inv_sigma - s_g  # Length nDraws
+    term3 <- 1/s_g - 1 - inv_sigma/s_g  # Length nDraws
+    
+    # Replace infinities with zeros
+    term3[is.infinite(term3)] <- 0
+    
+    # Initialize partial derivatives matrix
+    partial_deriv <- matrix(0, nrow = nprods, ncol = nprods)
+    
+    # Calculate average partial derivatives across draws
+    for (r in 1:nDraws) {
+      # Only calculate for active products
+      active_r <- subset & (!is.na(shares_draw[,r]))
+      
+      if (sum(active_r) > 0) {  # Skip if no active products in this draw
+        # Outer product of shares for cross-derivatives
+        share_outer <- outer(shares_draw[,r], shares_draw[,r])
+        
+        # Cross-derivatives for this draw
+        cross_deriv <- -1 * outSign * alphas[r] * share_outer * term3[r]
+        
+        # Own-derivatives for this draw
+        own_deriv <-  -1 * outSign * shares_draw[,r] * (inv_sigma + s_jg[,r] * term2[r])
+        
+        # Combine into full matrix for this draw
+        deriv_r <- cross_deriv
+        diag(deriv_r) <- own_deriv
+        
+        # Mask out inactive products
+        deriv_r <- deriv_r * outer(active_r, active_r)
+        
+        # Add to average
+        partial_deriv <- partial_deriv + deriv_r / nDraws
+      }
+    }
+    
+    # If market elasticity is requested
     if (market) {
-      # Calculate market elasticity by aggregating the individual product elasticities
-      # This ensures consistency with the random coefficients and nesting structure
-
-      # Get the full elasticity matrix (recursive call with market=FALSE)
-      elast_mat <- elast(object, preMerger = preMerger, market = FALSE)
-
-      # Re-normalize to inside shares for weighting
-      inside_shares <- shares / sum(shares, na.rm = TRUE)
-
-      # Market Elasticity = sum( w_j * sum_k(epsilon_jk) )
-      mkt_elast <- sum(inside_shares * rowSums(elast_mat), na.rm = TRUE)
-
+      # Calculate elasticities from partials
+      shares_for_elast <- pmax(shares, 1e-10)  # Avoid division by zero
+      elast_mat <- partial_deriv * (outer(1/shares_for_elast, prices))
+      
+      # Mask out inactive products
+      elast_mat <- elast_mat * outer(subset, subset)
+      
+      # Calculate market elasticity as weighted average of row sums
+      active_shares <- shares[subset]
+      inside_shares <- active_shares / sum(active_shares)
+      active_elast <- elast_mat[subset, subset]
+      mkt_elast <- sum(inside_shares * rowSums(active_elast))
+      
       names(mkt_elast) <- NULL
       return(mkt_elast)
-    } else {
-      nprods <- length(shares)
-
-      # For individual elasticities, we need to account for the distribution of random coefficients
-      # Calculate the matrix of share derivatives for each consumer type and then average
-      # Elasticity = (P/S) * dS/dP
-      # dS/dP = mean( d s_r / d p )
-      
-      derivDraws <- array(0, dim = c(nprods, nprods, nDraws))
-      sharesDraws <- matrix(0, nrow = nprods, ncol = nDraws)
-
-      delta <- object@slopes$meanval
-
-      # Vectorized calculation over draws
-      for (r in 1:nDraws) {
-        # Utility: V_j = delta_j + alpha_r * (p_j - p_0)
-        util <- matrix(rep(delta, 1), ncol = 1) + outer(prices - object@priceOutside, alphas[r])
-
-        # Inclusive Value Calculation
-        # D_g = sum(exp(V_k / sigma))
-        expUtil_sigma <- exp(util / sigmaNest)
-        D_g <- sum(expUtil_sigma)
-
-        # Shares
-        # s_j|g = exp(V_j / sigma) / D_g
-        s_jg <- expUtil_sigma / D_g
-
-        # s_g = D_g^sigma / (1 + D_g^sigma)
-        D_g_sigma <- D_g^sigmaNest
-        s_g <- D_g_sigma / (1 + D_g_sigma)
-
-        # s_j = s_j|g * s_g
-        sInd <- s_jg * s_g
-        sharesDraws[, r] <- sInd
-
-        # Elasticities (Standard Nested Logit)
-        # Own-price: alpha * p_j * [ 1/sigma + s_jg * (1 - 1/sigma - s_g) ]
-        # Cross-price: alpha * p_k * s_k * [ 1/s_g - 1 - 1/(sigma * s_g) ]
-
-        # Pre-calculate common terms
-        inv_sigma <- 1 / sigmaNest
-        term2 <- 1 - inv_sigma - s_g
-        term3 <- term2 / s_g
-
-        # Vectorized Own-Price
-        diag_elast <- alphas[r] * prices * (inv_sigma + s_jg * term2)
-
-        # Vectorized Cross-Price
-        cross_elast_row <- alphas[r] * prices * sInd * term3
-        elast_matrix <- matrix(cross_elast_row, nrow = nprods, ncol = nprods, byrow = TRUE)
-        diag(elast_matrix) <- diag_elast
-
-        # Convert to derivatives: d s_r / d p = E_r * s_r / p
-        # Element (j,k): E_jkr * s_jr / p_k
-        deriv_matrix <- elast_matrix * (sInd %*% t(1/prices))
-        
-        derivDraws[, , r] <- deriv_matrix
-      }
-
-      # Average derivatives and shares across consumer types
-      avg_deriv <- apply(derivDraws, c(1, 2), mean)
-      avg_shares <- rowMeans(sharesDraws)
-      
-      # Compute Aggregate Elasticity
-      # E_jk = (p_k / S_j) * (dS_j / dP_k)
-      elast <- avg_deriv * ( (1/avg_shares) %*% t(prices) )
-      
-      dimnames(elast) <- list(object@labels, object@labels)
-
-      return(elast)
     }
+    
+    # Return partials if requested
+    if (partial) {
+      # Zero out entries for inactive products
+      partial_deriv <- partial_deriv * outer(subset, subset)
+      dimnames(partial_deriv) <- list(object@labels, object@labels)
+      return(partial_deriv)
+    }
+    
+    # Calculate elasticities
+    shares_for_elast <- pmax(shares, 1e-10)  # Avoid division by zero
+    elast <- partial_deriv * (outer(1/shares_for_elast, prices))
+    
+    # Zero out entries for inactive products
+    elast <- elast * outer(subset, subset)
+    
+    dimnames(elast) <- list(object@labels, object@labels)
+    return(elast)
   }
 )
 

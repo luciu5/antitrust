@@ -802,17 +802,9 @@ setMethod(
     
     shares <- calcShares(object, preMerger=preMerger, revenue=FALSE)[subset]
     
-    # Get elasticity matrix: E_ij = (p_j / s_i) * (d s_i / d p_j)
-    elast_mat <- elast(object, preMerger=preMerger)[subset, subset]
+   
     
-    # Convert to Jacobian: J_ij = d s_i / d p_j = E_ij * (s_i / p_j)
-  
-    
-    # Matrix of s_i / p_j
-    scale_mat <- matrix(shares, nrow=nprods, ncol=nprods, byrow=FALSE) /
-      matrix(prices, nrow=nprods, ncol=nprods, byrow=TRUE)
-    
-    J <- elast_mat * scale_mat
+    J <- elast(object, preMerger=preMerger, partial =TRUE)[subset, subset]
     
     # Invert Jacobian to get dP/dq (scaled by N)
     # dP/dq = (1/N) * J^-1

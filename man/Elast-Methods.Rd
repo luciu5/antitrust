@@ -24,7 +24,7 @@
 
 \S4method{elast}{Logit}(object, preMerger = TRUE, market = FALSE)
 
-\S4method{elast}{LogitBLP}(object, preMerger = TRUE, market = FALSE)
+\S4method{elast}{LogitBLP}(object, preMerger = TRUE, market = FALSE, partial = FALSE)
 
 \S4method{elast}{LogLin}(object, preMerger = TRUE, market = FALSE)
 
@@ -46,6 +46,8 @@ FALSE, calculates post-merger price elasticities. Default is TRUE.}
 
 \item{market}{If TRUE, calculates the market (aggregate) elasticity. If
 FALSE, calculates matrix of own- and cross-price elasticities. Default is FALSE.}
+
+\item{partial}{if TRUE returns the partial derivative rather than the elasticity. Default is FALSE}
 }
 \value{
 returns a k x k matrix of own- and cross-price elasticities,

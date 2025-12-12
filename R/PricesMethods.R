@@ -939,45 +939,7 @@ setMethod(
       }
     }
 
-    # 3 Define analytic Jacobian using individual shares
-    # Helper to compute Share Jacobian J_s
-    calc_Js <- function(priceCand) {
-      tmpObject <- object
-      
-      thisPrice <- rep(0,nprods)
-      thisPrice[subset] <- priceCand
-      
-      
-      if (preMerger) {
-        tmpObject@pricePre <- thisPrice
-      } else {
-        tmpObject@pricePost <- thisPrice
-      }
-
-      shares_draw <- calcShares(tmpObject, preMerger = preMerger, aggregate = FALSE)[subset,]
-      shares_draw <- pmax(pmin(shares_draw, 1 - 1e-12), 1e-12)
-
-      alphas <- tmpObject@slopes$alphas
-      sigmaNest <- tmpObject@slopes$sigmaNest
-      if (is.null(sigmaNest)) sigmaNest <- 1
-      R <- length(alphas)
-
-      S_g <- colSums(shares_draw)
-      S_jg <- sweep(shares_draw, 2, S_g, "/")
-
-      A <- sweep(shares_draw, 2, alphas, "*")
-      invSigma <- 1 / sigmaNest
-      term_nest <- 1 - invSigma
-
-      part1 <- tcrossprod(A, S_jg) * (term_nest / R)
-      part2 <- tcrossprod(A, shares_draw) * (-1 / R)
-      diag_boost <- rowMeans(A) * invSigma
-
-      J_s <- part1 + part2
-      diag(J_s) <- diag(J_s) + diag_boost
-      return(J_s)
-    }
-
+    
     # 4 Solve FOCs
 
     # Strategy 1: SQUAREM (Contraction Mapping)
@@ -999,54 +961,9 @@ setMethod(
       success <- TRUE
     }
 
-    # Strategy 2: nleqslv (Newton with Analytic Jacobian)
-    if (!success) {
-      # Define Share-based FOC and Jacobian for Newton
-      FOC_Newton <- function(priceCand) {
-        
-        thisobj <- object
-        thisPrice <- rep(0,nprods)
-        thisPrice[subset] <- priceCand
-        
-        if (preMerger) {
-          thisobj@pricePre <- thisPrice
-          
-        } else {
-          thisobj@pricePost <- thisPrice
-          owner <- owner[subset, subset]
-          }
+    
 
-        S <- calcShares(thisobj, preMerger, aggregate = TRUE)[subset]
-        J_s <- calc_Js(priceCand)
-
-        margins <- if (output) priceCand - mc else mc - priceCand
-
-        # FOC: S + (t(J_s) * owner) %*% margins = 0
-        return(S + as.vector((t(J_s) * owner) %*% margins))
-      }
-
-      JAC_Newton <- function(priceCand) {
-        J_s <- calc_Js(priceCand)
-        # Approx Jacobian: J_s + (t(J_s) * owner)
-        return(J_s + (t(J_s) * owner[subset,subset]))
-      }
-
-      nleqslv_maxit <- as.integer(object@control.equ$maxit)
-      if (nprods <= 30 && (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1)) {
-        nleqslv_maxit <- 150L
-      }
-
-      minResult <- nleqslv::nleqslv(
-        x = priceStart, fn = FOC_Newton, jac = JAC_Newton,
-        method = "Newton",
-        control = list(ftol = object@control.equ$tol, maxit = nleqslv_maxit)
-      )
-
-      priceEst_solution <- minResult$x
-      if (minResult$termcd == 1) success <- TRUE
-    }
-
-    # Strategy 3: BBsolve (Fallback)
+    # Strategy 2: BBsolve (Fallback)
     if (!success) {
       # Fallback to original FOC (margin based) with BBsolve
       minResult <- BB::BBsolve(
@@ -1058,6 +975,24 @@ setMethod(
         priceEst_solution <- minResult$par
         success <- TRUE
       }
+    }
+    
+    # Strategy 3: nleqslv (Newton with Analytic Jacobian)
+    if (!success) {
+      
+      nleqslv_maxit <- as.integer(object@control.equ$maxit)
+      if (nprods <= 30 && (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1)) {
+        nleqslv_maxit <- 150L
+      }
+
+      minResult <- nleqslv::nleqslv(
+        x = priceStart, fn = FOC
+        method = "Newton",
+        control = list(ftol = object@control.equ$tol, maxit = nleqslv_maxit)
+      )
+
+      priceEst_solution <- minResult$x
+      if (minResult$termcd == 1) success <- TRUE
     }
 
     if (!success) {

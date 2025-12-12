@@ -775,10 +775,10 @@ setMethod(
       # Enforce sign constraint by clipping
       if(output){
         # Output market: alphas must be negative
-        alphas[alphas >= 0] <- -1e-4
+        alphas[alphas >= 0] <- .01 * max(alphas[alphas < 0])
       } else {
         # Input market: alphas must be positive
-        alphas[alphas <= 0] <- 1e-4
+        alphas[alphas <= 0] <- .01 * min(alphas[alphas > 0])
       }
     }
     
