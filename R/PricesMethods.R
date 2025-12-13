@@ -986,7 +986,7 @@ setMethod(
       }
 
       minResult <- nleqslv::nleqslv(
-        x = priceStart, fn = FOC
+        x = priceStart, fn = FOC,
         method = "Newton",
         control = list(ftol = object@control.equ$tol, maxit = nleqslv_maxit)
       )
