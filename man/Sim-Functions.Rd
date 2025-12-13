@@ -217,6 +217,87 @@ upp(sim.logit) # calculate Upwards Pricing Pressure Index
 
 CV(sim.logit) # calculate representative agent compensating variation
 
+\dontrun{
+## Philadelphia National Bank Example: Comparing Four Model Types
+## Demonstrates Logit, Cournot, LogitBLP, and CournotBLP
+
+# Philadelphia National Bank data (38 products)
+prices <- c(
+  2.46, 2.21, 2.4, 2.29, 2.05, 2.45, 1.13, 2.39, 2.66, 2.73,
+  1.83, 1.84, 2.76, 2.46, 1.1, 2.53, 2.27, 2.31, 2.72, 1.96, 2.26,
+  2.63, 2.07, 2.31, 1.33, 2.67, 2.68, 2.59, 2.62, 1.85, 2.63, 1.51,
+  1.8, 2.66, 1.4, 2.39, 2.35, 1.82
+)
+
+shares <- c(
+  0.12499, 0.11462, 0.07748, 0.05231, 0.05168, 0.02918, 0.01622,
+  0.01245, 0.00992, 0.00578, 0.00461, 0.00417, 0.00415, 0.00275,
+  0.00271, 0.00214, 0.00206, 0.00184, 0.00176, 0.00155, 0.00151,
+  0.00146, 0.00146, 0.00103, 0.00101, 0.00095, 8e-04, 0.00066,
+  0.00062, 0.00061, 0.00057, 0.00053, 0.00053, 5e-04, 0.00049,
+  0.00048, 0.00041, 0.00039
+)
+
+ownerPre <- diag(38)
+ownerPost <- diag(38)
+ownerPost[2, 3] <- 1 # Products 2 and 3 merge
+ownerPost[3, 2] <- 1
+
+insideSize <- 4773473000
+
+# Logit parameters (from calibrated model)
+logit_params <- list(
+  alpha = 0.4296,
+  meanval = c(
+    -2.265, -2.206, -2.671, -2.972, -2.855, -3.596, -3.494, -4.344,
+    -4.709, -5.253, -4.966, -5.059, -5.572, -5.773, -5.128, -6.043,
+    -5.933, -6.057, -6.339, -6.027, -6.215, -6.46, -6.146, -6.597,
+    -6.131, -6.871, -7.035, -7.169, -7.237, -6.833, -7.318, -6.804,
+    -6.939, -7.457, -6.819, -7.328, -7.473, -7.227
+  )
+)
+
+# BLP parameters
+blp_params <- list(
+  alpha = -1.0,
+  sigma = 0.3,
+  sigmaNest = 0.9,
+  nDraws = 200
+)
+
+# MODEL 1: Logit (Bertrand)
+result_logit <- sim(prices,
+  supply = "bertrand", demand = "Logit",
+  demand.param = logit_params, ownerPre = ownerPre,
+  ownerPost = ownerPost, insideSize = insideSize
+)
+summary(result_logit)
+
+# MODEL 2: Logit (Cournot)
+result_cournot <- sim(prices,
+  supply = "cournot", demand = "Logit",
+  demand.param = logit_params, ownerPre = ownerPre,
+  ownerPost = ownerPost, insideSize = insideSize
+)
+summary(result_cournot)
+
+# MODEL 3: LogitBLP (Bertrand with random coefficients)
+result_logitblp <- sim(prices, shares,
+  supply = "bertrand", demand = "BLP",
+  demand.param = blp_params, ownerPre = ownerPre,
+  ownerPost = ownerPost, insideSize = insideSize
+)
+summary(result_logitblp)
+
+# MODEL 4: CournotBLP (Cournot with random coefficients)
+result_cournotblp <- sim(prices, shares,
+  supply = "cournot", demand = "BLP",
+  demand.param = blp_params, ownerPre = ownerPre,
+  ownerPost = ownerPost, insideSize = insideSize
+)
+summary(result_cournotblp)
+}
+
 }
 \seealso{
 The S4 class documentation for: \code{\linkS4class{Linear}},
