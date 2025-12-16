@@ -4,13 +4,14 @@
 #' @description Simulates the price effects of a merger between two firms
 #' with user-supplied demand parameters under the
 #' assumption that all firms in the market are playing either a
-#' differentiated products Bertrand pricing game, 2nd price (score) auction, or bargaining game.
+#' differentiated products Bertrand pricing game, Cournot quantity game,
+#' 2nd price (score) auction, or bargaining game.
 #' @description Let k denote the number of products produced by all firms below.
 #'
 #' @param prices A length k vector of product prices.
 #' @param shares A length k vector of product shares. Only used for \sQuote{BLP} demand. See Details.
 #' @param supply A character string indicating how firms compete with one another. Valid
-#' values are "bertrand" (Nash Bertrand),  "auction2nd"
+#' values are "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
 #' (2nd score auction), "bargaining", or "bargaining2nd".
 #' @param demand A character string indicating the type of demand system
 #'   to be used in the merger simulation. Supported demand systems are
@@ -60,6 +61,12 @@
 #' @details Using user-supplied demand parameters,
 #' \code{sim} simulates the effects of a merger in a market where
 #' firms are playing a differentiated products pricing game.
+#'
+#' The \sQuote{supply} parameter determines the type of competition.
+#' When \sQuote{supply} equals \sQuote{cournot}, firms compete on quantities
+#' rather than prices. Cournot competition is supported for \sQuote{Logit}
+#' and \sQuote{BLP} demand systems, creating \code{LogitCournot} and
+#' \code{CournotBLP} class objects respectively.
 #'
 #' If \sQuote{demand} equals \sQuote{Linear}, \sQuote{LogLin}, or
 #' \sQuote{AIDS}, then \sQuote{demand.param} must be a
@@ -153,7 +160,6 @@
 #'   supply = "bertrand", demand = "Logit", demand.param,
 #'   ownerPre = ownerPre, ownerPost = ownerPost
 #' )
-#'
 #'
 #'
 #' print(sim.logit) # return predicted price change
