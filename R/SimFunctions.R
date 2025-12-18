@@ -625,7 +625,7 @@ sim <- function(prices,
         priceStart = priceStart,
         priceOutside = priceOutside,
         shareInside = shareInside,
-        output = TRUE,
+        output = outputFlag,
         labels = labels
       ),
       bargaining = new("BargainingLogit",
