@@ -108,8 +108,8 @@ expected result conditional on each firm winning the auction. Default is FALSE.}
 \item{revenue}{If TRUE, returns revenues. If FALSE,
 returns quantities. Default is TRUE.}
 
-\item{aggregate}{If TRUE (default), returns the average product shares across all simulated draws. 
-If FALSE, returns a matrix of individual shares for each draw (products in rows, draws in columns). 
+\item{aggregate}{If TRUE (default), returns the average product shares across all simulated draws.
+If FALSE, returns a matrix of individual shares for each draw (products in rows, draws in columns).
 Only used for objects of class \code{LogitBLP}.}
 }
 \description{

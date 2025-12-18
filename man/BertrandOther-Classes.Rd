@@ -113,12 +113,12 @@ Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, di
 }
 
 \examples{
-showClass("Bertrand")           # get a detailed description of the class
-showClass("Linear")           # get a detailed description of the class
-showClass("LogLin")           # get a detailed description of the class
-showClass("AIDS")           # get a detailed description of the class
-showClass("PCAIDS")           # get a detailed description of the class
-showClass("PCAIDSNests")           # get a detailed description of the class
+showClass("Bertrand") # get a detailed description of the class
+showClass("Linear") # get a detailed description of the class
+showClass("LogLin") # get a detailed description of the class
+showClass("AIDS") # get a detailed description of the class
+showClass("PCAIDS") # get a detailed description of the class
+showClass("PCAIDSNests") # get a detailed description of the class
 }
 \author{
 Charles Taragin \email{ctaragin+antitrustr@gmail.com}

@@ -35,6 +35,8 @@
 #' the appropriate restrictions on the demand parameters have not been imposed.
 #'
 #' @param object An instance of one of the classes listed above.
+#' @param lim dQuote{LogitBLP} class only. A length 2 numeric vector equal to the 
+#' lower and upper quantiles of the price coefficient distribution over which to compute CV. Default c(0,1).
 #'
 #' @include CMCRMethods.R
 #' @keywords methods
@@ -120,58 +122,72 @@ setMethod(
 
   })
 
-#'@rdname CV-Methods
-#'@export
-setMethod(
-  f= "CV",
-  signature= "LogitBLP",
-  definition=function(object){
-    
+  setMethod(
+  f = "CV",
+  signature = "LogitBLP",
+  definition = function(object, lim=c(0,1)){
+
+    if(missing(lim)) lim <- c(0,1)
+    stopifnot(
+      length(lim) == 2, is.numeric(lim),lim[1] >= 0, lim[2] <= 1, lim[1] < lim[2]
+    )
+
     # Get parameters and data
-    meanval     <- object@slopes$meanval
-    alphas      <- object@slopes$alphas  # Individual-specific price coefficients
-    mktSize     <- object@mktSize
-    nDraws      <- length(alphas)
-    
-    # Outside-good nesting parameter: sigmaNest in (0,1]
+    meanval <- object@slopes$meanval
+    alphas  <- object@slopes$alphas
+    mktSize <- object@mktSize
+
+    # Quantile cutoffs
+    qlo <- quantile(alphas, lim[1], names = FALSE)
+    qhi <- quantile(alphas, lim[2], names = FALSE)
+
+    keep <- alphas >= qlo & alphas <= qhi
+    alphas <- alphas[keep]
+    nDraws <- length(alphas)
+
+    if(nDraws == 0)
+      stop("No alpha draws remain after quantile trimming")
+
+    # Outside-good nesting parameter
     sigmaNest <- object@slopes$sigmaNest
     if(is.null(sigmaNest)) sigmaNest <- 1
-    
+
     outVal <- ifelse(is.na(object@normIndex), 1, 0)
     output <- ifelse(object@output, 1, -1)
-    
-    # Calculate consumer surplus for each individual consumer type (vectorized)
-    # Utilities: nDraws x nProducts matrix
+
+    ## -------- Pre-merger utility --------
     utilPre <- outer(alphas, (object@pricePre - object@priceOutside))
-    utilPre[is.na(utilPre)] <- -Inf 
+    utilPre[is.na(utilPre)] <- -Inf
     utilPre <- sweep(utilPre, 2, meanval, "+")
+
     expUtilPre <- exp(utilPre / sigmaNest)
     sumExpUtilPre <- rowSums(expUtilPre)
     insideIVPre <- sumExpUtilPre^sigmaNest
     VPre <- log(1 + insideIVPre)
-    
+
+    ## -------- Post-merger utility --------
     utilPost <- outer(alphas, (object@pricePost - object@priceOutside))
-    utilPost[is.na(utilPost)] <- -Inf 
-    utilPost[ , !object@subset] <- -Inf 
+    utilPost[is.na(utilPost)] <- -Inf
+    utilPost[, !object@subset] <- -Inf
     utilPost <- sweep(utilPost, 2, meanval, "+")
+
     expUtilPost <- exp(utilPost / sigmaNest)
     sumExpUtilPost <- rowSums(expUtilPost)
     insideIVPost <- sumExpUtilPost^sigmaNest
     VPost <- log(1 + insideIVPost)
-    
-    # CV for each consumer type with nesting
-    # Formula: (1/alpha) * (VPost - VPre)
-    # V is log(1 + (sum exp(u/sigma))^sigma)
+
+    ## -------- Compensating Variation --------
     cvInd <- output * (VPost - VPre) / alphas
-    
-    # Average across consumer types
+
     result <- mean(cvInd)
-    
-    if(!is.na(mktSize)){ result <- result * mktSize}
-    
-    return(unname(result))
-    
-  })
+
+    if(!is.na(mktSize))
+      result <- result * mktSize
+
+    unname(result)
+  }
+)
+
 
 #'@rdname CV-Methods
 #'@export

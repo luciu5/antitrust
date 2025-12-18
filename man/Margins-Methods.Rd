@@ -52,7 +52,7 @@
 \item{preMerger}{If TRUE, returns pre-merger outcome. If
 FALSE, returns post-merger outcome.  Default is TRUE.}
 
-\item{level}{IF TRUE, return margins in dollars. If FALSE, returns 
+\item{level}{IF TRUE, return margins in dollars. If FALSE, returns
 margins in proportions. Default for most classes is FALSE.}
 
 \item{exAnte}{If \sQuote{exAnte} equals TRUE then the

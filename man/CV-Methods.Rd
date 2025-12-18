@@ -26,8 +26,6 @@
 
 \S4method{CV}{Logit}(object)
 
-\S4method{CV}{LogitBLP}(object)
-
 \S4method{CV}{LogLin}(object)
 
 \S4method{CV}{AIDS}(object)
@@ -46,6 +44,9 @@
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}
+
+\item{lim}{dQuote{LogitBLP} class only. A length 2 numeric vector equal to the 
+lower and upper quantiles of the price coefficient distribution over which to compute CV. Default c(0,1).}
 }
 \description{
 Calculate the amount of money a consumer would need to
