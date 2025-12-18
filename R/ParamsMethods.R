@@ -772,16 +772,17 @@ setMethod(
       warning(wrongSigns, ' out of ', length(alphas), ' individual price coefficients have wrong sign. ',
               'Clipping them to enforce correct sign (', ifelse(output, 'negative', 'positive'), ').')
       
-      # Enforce sign constraint by clipping
       if(output){
         # Output market: alphas must be negative
-        alphas[alphas >= 0] <- .01 * max(alphas[alphas < 0])
+        alphas <- pmin(alphas, -1e-2)              # floor magnitude for negative alphas
+        alphas[alphas >= 0] <- max(alphas[alphas < 0])  # wrong-sign -> smallest negative
       } else {
         # Input market: alphas must be positive
-        alphas[alphas <= 0] <- .01 * min(alphas[alphas > 0])
+        alphas <- pmax(alphas, 1e-2)               # floor magnitude for positive alphas
+        alphas[alphas <= 0] <- min(alphas[alphas > 0])  # wrong-sign -> smallest positive
       }
+      
     }
-    
     nprods <- length(shares)
     
     if(is.na(idx)){
