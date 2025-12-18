@@ -219,7 +219,7 @@
 #'
 #' # BLP parameters
 #' blp_params <- list(
-#'   alpha = -1.0,
+#'   alpha = 1.0,
 #'   sigma = 0.3,
 #'   sigmaNest = 0.9,
 #'   nDraws = 200
