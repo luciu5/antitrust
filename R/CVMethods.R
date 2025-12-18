@@ -130,7 +130,6 @@ setMethod(
     # Get parameters and data
     meanval     <- object@slopes$meanval
     alphas      <- object@slopes$alphas  # Individual-specific price coefficients
-    subset      <- object@subset
     mktSize     <- object@mktSize
     nDraws      <- length(alphas)
     
@@ -144,14 +143,17 @@ setMethod(
     # Calculate consumer surplus for each individual consumer type (vectorized)
     # Utilities: nDraws x nProducts matrix
     utilPre <- outer(alphas, (object@pricePre - object@priceOutside))
+    utilPre[is.na(utilPre)] <- -Inf 
     utilPre <- sweep(utilPre, 2, meanval, "+")
     expUtilPre <- exp(utilPre / sigmaNest)
     sumExpUtilPre <- rowSums(expUtilPre)
     insideIVPre <- sumExpUtilPre^sigmaNest
     VPre <- log(1 + insideIVPre)
     
-    utilPost <- outer(alphas, (object@pricePost - object@priceOutside)[subset])
-    utilPost <- sweep(utilPost, 2, meanval[subset], "+")
+    utilPost <- outer(alphas, (object@pricePost - object@priceOutside))
+    utilPost[is.na(utilPost)] <- -Inf 
+    utilPost[ , !object@subset] <- -Inf 
+    utilPost <- sweep(utilPost, 2, meanval, "+")
     expUtilPost <- exp(utilPost / sigmaNest)
     sumExpUtilPost <- rowSums(expUtilPost)
     insideIVPost <- sumExpUtilPost^sigmaNest
