@@ -5,6 +5,7 @@
 \alias{logit}
 \alias{logit.nests}
 \alias{logit.cournot}
+\alias{logit.cournot.alm}
 \alias{logit.nests.alm}
 \alias{logit.cap}
 \alias{logit.alm}
@@ -47,6 +48,27 @@ logit.cournot(
   priceOutside = 0,
   priceStart = prices,
   isMax = FALSE,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
+
+logit.cournot.alm(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
+  mktElast = NA_real_,
+  insideSize = NA_real_,
+  output = TRUE,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 0,
+  priceStart = prices,
+  isMax = FALSE,
+  parmsStart,
   control.slopes,
   control.equ,
   labels = paste("Prod", 1:length(prices), sep = ""),
@@ -226,13 +248,7 @@ passed to the non-linear equation solver (typically the \code{calcPrices} method
 \item{...}{Additional options to feed to the \code{\link[BB]{BBsolve}}
 optimizer used to solve for equilibrium prices.}
 
-\item{nests}{A length k vector identifying the nest that each
-product belongs to.}
-
-\item{constraint}{if TRUE, then the nesting parameters for all
-non-singleton nests are assumed equal. If FALSE, then each
-non-singleton nest is permitted to have its own value. Default is
-TRUE.}
+\item{mktElast}{a negative value indicating market elasticity. Default is NA.}
 
 \item{parmsStart}{For \code{logit.cap.alm}, a length-2 vector of starting values
 used to solve for the price coefficient and outside share (in that order). For
@@ -242,12 +258,18 @@ the nesting parameters. Theory requires the nesting parameters to be
 greater than the price coefficient. If missing then the random
 draws with the appropriate restrictions are employed.}
 
+\item{nests}{A length k vector identifying the nest that each
+product belongs to.}
+
+\item{constraint}{if TRUE, then the nesting parameters for all
+non-singleton nests are assumed equal. If FALSE, then each
+non-singleton nest is permitted to have its own value. Default is
+TRUE.}
+
 \item{capacitiesPre}{A length k vector of pre-merger product capacities. Capacities
 must be at least as great as shares * insideSize.}
 
 \item{capacitiesPost}{A length k vector of post-merger product capacities.}
-
-\item{mktElast}{a negative value indicating market elasticity. Default is NA.}
 }
 \value{
 \code{logit} returns an instance of class
@@ -324,14 +346,14 @@ to 0.
 ## Source: Epstein/Rubenfeld 2004, pg 80
 
 
-prodNames <- c("BUD","OLD STYLE","MILLER","MILLER-LITE","OTHER-LITE","OTHER-REG")
-ownerPre <-c("BUD","OLD STYLE","MILLER","MILLER","OTHER-LITE","OTHER-REG")
-ownerPost <-c("BUD","BUD","MILLER","MILLER","OTHER-LITE","OTHER-REG")
-nests <- c("Reg","Reg","Reg","Light","Light","Reg")
+prodNames <- c("BUD", "OLD STYLE", "MILLER", "MILLER-LITE", "OTHER-LITE", "OTHER-REG")
+ownerPre <- c("BUD", "OLD STYLE", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
+ownerPost <- c("BUD", "BUD", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
+nests <- c("Reg", "Reg", "Reg", "Light", "Light", "Reg")
 
-price    <- c(.0441,.0328,.0409,.0396,.0387,.0497)
-shares   <- c(.066,.172,.253,.187,.099,.223)
-margins <- c(.3830,.5515,.5421,.5557,.4453,.3769)
+price <- c(.0441, .0328, .0409, .0396, .0387, .0497)
+shares <- c(.066, .172, .253, .187, .099, .223)
+margins <- c(.3830, .5515, .5421, .5557, .4453, .3769)
 
 insideSize <- 1000
 
@@ -340,48 +362,46 @@ names(price) <-
   names(margins) <-
   prodNames
 
-result.logit <- logit(price,shares,margins,
-                      ownerPre=ownerPre,ownerPost=ownerPost,
-                      insideSize = insideSize,
-                      labels=prodNames)
+result.logit <- logit(price, shares, margins,
+  ownerPre = ownerPre, ownerPost = ownerPost,
+  insideSize = insideSize,
+  labels = prodNames
+)
 
 
+print(result.logit) # return predicted price change
+summary(result.logit) # summarize merger simulation
 
-print(result.logit)           # return predicted price change
-summary(result.logit)         # summarize merger simulation
+elast(result.logit, TRUE) # returns premerger elasticities
+elast(result.logit, FALSE) # returns postmerger elasticities
 
-elast(result.logit,TRUE)      # returns premerger elasticities
-elast(result.logit,FALSE)     # returns postmerger elasticities
-
-diversion(result.logit,TRUE)  # return premerger diversion ratios
-diversion(result.logit,FALSE) # return postmerger diversion ratios
+diversion(result.logit, TRUE) # return premerger diversion ratios
+diversion(result.logit, FALSE) # return postmerger diversion ratios
 
 
-cmcr(result.logit)            #calculate compensating marginal cost reduction
-upp(result.logit)            #calculate Upwards Pricing Pressure Index
+cmcr(result.logit) # calculate compensating marginal cost reduction
+upp(result.logit) # calculate Upwards Pricing Pressure Index
 
-CV(result.logit)              #calculate representative agent compensating variation
+CV(result.logit) # calculate representative agent compensating variation
 
 
 ## Implement the Hypothetical Monopolist Test
 ## for BUD and OLD STYLE using a 5\\% SSNIP
 
-HypoMonTest(result.logit,prodIndex=1:2)
-
+HypoMonTest(result.logit, prodIndex = 1:2)
 
 
 ## Get a detailed description of the 'Logit' class slots
 showClass("Logit")
 
 ## Show all methods attached to the 'Logit' Class
-showMethods(classes="Logit")
+showMethods(classes = "Logit")
 
 ## Show which classes have their own 'elast' method
 showMethods("elast")
 
 ## Show the method definition for 'elast' and Class 'Logit'
-getMethod("elast","Logit")
-
+getMethod("elast", "Logit")
 
 
 #
@@ -389,10 +409,12 @@ getMethod("elast","Logit")
 #
 
 
-cap     <- c(66,200,300,200,99,300) # BUD and OTHER-LITE are capacity constrained
-result.cap <- logit.cap(price,shares,margins,capacitiesPre=cap,
-                        insideSize=insideSize,ownerPre=ownerPre,
-                        ownerPost=ownerPost,labels=prodNames)
+cap <- c(66, 200, 300, 200, 99, 300) # BUD and OTHER-LITE are capacity constrained
+result.cap <- logit.cap(price, shares, margins,
+  capacitiesPre = cap,
+  insideSize = insideSize, ownerPre = ownerPre,
+  ownerPost = ownerPost, labels = prodNames
+)
 print(result.cap)
 
 }

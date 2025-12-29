@@ -385,7 +385,7 @@ logit.cournot.alm <- function(prices, shares, margins,
   if (missing(parmsStart)) {
     parmsStart <- rep(.1, 2)
     nm <- which(!is.na(margins))[1]
-    parmsStart[1] <- -1 / (margins[nm] * prices[nm] * (1 - shares[nm])) # ballpark alpha for starting values
+    parmsStart[1] <- (ifelse(output, -1, 1)) / (margins[nm] * prices[nm] * (1 - shares[nm])) # ballpark alpha for starting values
   }
 
 
@@ -560,7 +560,7 @@ logit.nests.alm <- function(prices, shares, margins,
   if (missing(parmsStart)) {
     nNests <- nlevels(nests)
     parmsStart <- runif(nNests + 2) # nesting parameter values are assumed to be between 0 and 1
-    parmsStart[1] <- -1 * parmsStart[1] # price coefficient is assumed to be negative
+    parmsStart[1] <- (ifelse(output, -1, 1)) * parmsStart[1] # price coefficient is assumed to be negative for output markets
 
     if (constraint) {
       parmsStart <- parmsStart[1:3]
@@ -704,7 +704,7 @@ logit.alm <- function(prices, shares, margins,
   if (missing(parmsStart)) {
     parmsStart <- rep(.1, 2)
     nm <- which(!is.na(margins))[1]
-    parmsStart[1] <- -1 / (margins[nm] * prices[nm] * (1 - shares[nm])) # ballpark alpha for starting values
+    parmsStart[1] <- (ifelse(output, -1, 1)) / (margins[nm] * prices[nm] * (1 - shares[nm])) # ballpark alpha for starting values
   }
 
 
@@ -775,7 +775,7 @@ logit.cap.alm <- function(prices, shares, margins,
   if (missing(parmsStart)) {
     parmsStart <- rep(.1, 2)
     nm <- which(!is.na(margins))[1]
-    parmsStart[1] <- -1 / (margins[nm] * prices[nm] * (1 - shares[nm])) # ballpark alpha for starting values
+    parmsStart[1] <- (ifelse(output, -1, 1)) / (margins[nm] * prices[nm] * (1 - shares[nm])) # ballpark alpha for starting values
   }
 
 

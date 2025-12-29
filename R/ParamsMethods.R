@@ -627,8 +627,8 @@ setMethod(
 
       m1 <- (margins - marginsCand)
       m2 <- log(predshares / probs)
-      m3 <- drop(diversion - preddiversion)
-      measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
+        m3 <- drop(diversion - preddiversion)
+        measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
 
       return(measure)
     }
@@ -1002,8 +1002,8 @@ setMethod(
 
       m1 <- (margins - marginsCand)
       m2 <- log(predshares / probs)
-      m3 <- drop(log(diversion / preddiversion))
-      measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
+        m3 <- drop(log(diversion / preddiversion))
+        measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
 
       return(measure)
     }
@@ -1761,6 +1761,8 @@ setMethod(
     capacities <- object@capacitiesPre / insideSize
     mktElast <- object@mktElast
     priceOutside <- object@priceOutside
+    output <- object@output
+    outSign <- ifelse(output, -1, 1)
 
     avgPrice <- sum(shares * prices)
 
@@ -1794,7 +1796,7 @@ setMethod(
         elastInv <- MASS::ginv(elast * ownerPre * notBinds)
       }
 
-      marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
+      marginsCand <- outSign * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
       m1 <- margins - marginsCand
       m1 <- m1[!singleConstrained]
@@ -1815,9 +1817,16 @@ setMethod(
       return(measure)
     }
 
-    ## Constrain optimizer to look  alpha <0,  0 < sOut < 1
-    lowerB <- c(-Inf, 0)
-    upperB <- c(-1e-10, .99999)
+    ## Constrain optimizer to look for alpha <0 (output) or >0 (input), and 0 < sOut < 1
+    if (output) {
+      # Output market: alpha < 0
+      lowerB <- c(-Inf, 0.001)
+      upperB <- c(-1e-10, 0.99)
+    } else {
+      # Input market: alpha > 0
+      lowerB <- c(1e-10, 0.001)
+      upperB <- c(Inf, 0.99)
+    }
 
 
     if (!is.na(mktElast)) {
@@ -1845,7 +1854,7 @@ setMethod(
     }
 
     if (isTRUE(all.equal(minTheta[2], upperB[2], check.names = FALSE))) {
-      stop("Estimated outside share is close to 1.")
+      warning("Estimated outside share is close to 1.")
     }
 
 
@@ -1883,6 +1892,7 @@ setMethod(
     nestCnt <- tapply(prices, nests, length)
     constraint <- object@constraint
     output <- object@output
+    outSign <- ifelse(output, -1, 1)
 
     isSingletonNest <- nestCnt == 1
 
@@ -1923,7 +1933,7 @@ setMethod(
 
 
       revenues <- probs * prices
-      marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
+      marginsCand <- outSign * as.vector(solve(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
 
       measure <- marginsCand - margins
       measure <- sum((measure)^2, na.rm = TRUE)
@@ -1934,12 +1944,14 @@ setMethod(
     ## Constrain optimizer to look  alpha <0, 0 < sOut < 1, sigma
 
     lowerB <- upperB <- rep(0, length(parmsStart))
-
     upperB[-1] <- 1
+    lowerB[2] <- 0.001
 
     if (output) {
       lowerB[1] <- -Inf
+      upperB[1] <- -1e-10
     } else {
+      lowerB[1] <- 1e-10
       upperB[1] <- Inf
     }
 
@@ -2062,52 +2074,44 @@ setMethod(
     ownerPre <- object@ownerPre
     shares <- object@shares
     margins <- object@margins
-    mktElast <- object@mktElast
     prices <- object@prices
+    mktElast <- object@mktElast
     output <- object@output
     outSign <- ifelse(output, 1, -1)
 
-    avgPrice <- sum(shares * prices, na.rm = TRUE) / sum(shares[!is.na(prices)])
+    avgPrice <- weighted.mean(prices, shares)
 
-
-    nprods <- length(object@shares)
-
-
+    ## Minimize the distance between observed and predicted margins
     minD <- function(theta) {
       alpha <- theta[1]
       sOut <- theta[2]
 
       probs <- shares * (1 - sOut)
+      firmProbs <- drop(ownerPre %*% probs)
 
-      firmShares <- drop(ownerPre %*% probs)
-
-
-      m1 <- 1 - outSign * (log((1 - firmShares)) / (alpha * firmShares)) / margins
-      m2 <- mktElast / (alpha * avgPrice) - sOut
+      m1 <- mktElast / (alpha * avgPrice) - sOut
+      m2 <- 1 - outSign * log(1 - firmProbs) / (alpha * firmProbs) / margins
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
 
       return(measure)
     }
 
-    ## Constrain optimizer to look  alpha <0,  0 < sOut < 1
-
-    lowerB <- c(-Inf, 1e-9)
-    upperB <- c(-1e-10, .9999999999)
-
-    if (!output) {
-      lowerB[1] <- 1e-10
-      upperB[1] <- Inf
+    ## Constrain optimizer to look for alpha <0 (output) or >0 (input), and 0 < sOut < 1
+    if (output) {
+      # Output market: alpha < 0
+      lowerB <- c(-Inf, 0.001)
+      upperB <- c(-1e-10, 0.99)
+    } else {
+      # Input market: alpha > 0
+      lowerB <- c(1e-10, 0.001)
+      upperB <- c(Inf, 0.99)
     }
+
     if (!is.na(mktElast)) {
       upperB[1] <- mktElast / avgPrice
     }
 
-    # minTheta <- optim(object@parmsStart,minD,
-    #                   method="L-BFGS-B",
-    #                   lower= lowerB,upper=upperB,
-    #                   control=object@control.slopes)
-    #
     minTheta <- BBoptim(object@parmsStart, minD,
       method = "L-BFGS-B",
       lower = lowerB, upper = upperB, quiet = TRUE,
@@ -2129,7 +2133,7 @@ setMethod(
       meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2])
     }
     if (isTRUE(all.equal(minTheta[2], upperB[2], check.names = FALSE))) {
-      stop("Estimated outside share is close to 1.")
+      warning("Estimated outside share is close to 1.")
     }
 
 
@@ -2190,19 +2194,12 @@ setMethod(
       }
 
       # marginsCand <- outSign/(alpha*(1-as.numeric(crossprod(ownerPre,predshares))))
-      marginsCand <- outSign * elastInv
+      marginsCand <- outSign * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
       m1 <- margins - marginsCand
       m2 <- mktElast / (avgPrice * alpha) - sOut
       measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
 
-      # elast      <-   elast[isMargin,isMargin]
-      # revenues   <-   revenues[isMargin]
-      # ownerPre   <-   ownerPre[isMargin,isMargin]
-      # margins    <-   margins[isMargin]
-
-      # marginsCand <- -1 * as.vector(MASS::ginv(elasticity * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
-      # measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
 
       # measure <- revenues * diag(ownerPre) + as.vector((elast * ownerPre) %*% (margins * revenues))
       # measure <- sum(measure^2,na.rm=TRUE)
@@ -2210,9 +2207,16 @@ setMethod(
       return(measure)
     }
 
-    ## Constrain optimizer to look  alpha <0,  0 < sOut < 1
-    lowerB <- c(-Inf, 0)
-    upperB <- c(-1e-10, .99999)
+    ## Constrain optimizer to look for alpha <0 (output) or >0 (input), and 0 < sOut < 1
+    if (output) {
+      # Output market: alpha < 0
+      lowerB <- c(-Inf, 0.001)
+      upperB <- c(-1e-10, 0.99)
+    } else {
+      # Input market: alpha > 0
+      lowerB <- c(1e-10, 0.001)
+      upperB <- c(Inf, 0.99)
+    }
 
 
     if (!is.na(mktElast)) {
@@ -2240,7 +2244,7 @@ setMethod(
     }
 
     if (isTRUE(all.equal(minTheta[2], upperB[2], check.names = FALSE))) {
-      stop("Estimated outside share is close to 1.")
+      warning("Estimated outside share is close to 1.")
     }
 
 
@@ -2404,6 +2408,8 @@ setMethod(
     prices <- object@prices
     mktElast <- object@mktElast
     priceOutside <- object@priceOutside
+    output <- object@output
+    outSign <- ifelse(output, -1, 1)
 
     avgPrice <- sum(prices * shares) / sum(shares)
 
@@ -2432,7 +2438,7 @@ setMethod(
       }
 
 
-      marginsCand <- -1 * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
+      marginsCand <- outSign * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
 
       m1 <- margins - marginsCand
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
@@ -2443,9 +2449,16 @@ setMethod(
       return(measure)
     }
 
-    ## Constrain optimizer to look  gamma > 1,  0 < sOut < 1
-    lowerB <- c(1, 0)
-    upperB <- c(Inf, .99999)
+    ## Constrain optimizer to look for gamma > 1 (output) or < 1 (input), and 0 < sOut < 1
+    if (output) {
+      # Output market: gamma > 1
+      lowerB <- c(1, 0.001)
+      upperB <- c(Inf, 0.99)
+    } else {
+      # Input market: gamma < 1
+      lowerB <- c(1e-10, 0.001)
+      upperB <- c(1, 0.99)
+    }
 
 
     minGamma <- optim(object@parmsStart, minD,
@@ -2467,7 +2480,7 @@ setMethod(
       meanval <- log(shares * (1 - minGamma[2])) - log(minGamma[2]) + (minGamma[1] - 1) * (log(prices) - log(object@priceOutside))
     }
     if (isTRUE(all.equal(minGamma[2], upperB[2], check.names = FALSE))) {
-      stop("Estimated outside share is close to 1.")
+      warning("Estimated outside share is close to 1.")
     }
 
 
@@ -3230,11 +3243,11 @@ setMethod(
     if (output) {
       # Output market: alpha < 0
       lowerB <- c(-Inf, 0.001) # sOut must be at least 0.1% to avoid numerical issues
-      upperB <- c(-1e-10, .99999)
+      upperB <- c(-1e-10, 0.99)
     } else {
       # Input market: alpha > 0
       lowerB <- c(1e-10, 0.001) # sOut must be at least 0.1% to avoid numerical issues
-      upperB <- c(Inf, .99999)
+      upperB <- c(Inf, 0.99)
     }
 
 
@@ -3263,7 +3276,7 @@ setMethod(
     }
 
     if (isTRUE(all.equal(minTheta[2], upperB[2], check.names = FALSE))) {
-      stop("Estimated outside share is close to 1.")
+      warning("Estimated outside share is close to 1.")
     }
 
 

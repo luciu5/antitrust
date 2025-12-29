@@ -35,6 +35,7 @@
 \alias{getNestsParms}
 \alias{getNestsParms,PCAIDSNests-method}
 \alias{calcSlopes,LogitCournot-method}
+\alias{calcSlopes,LogitCournotALM-method}
 \title{Methods for Calculating Demand Parameters}
 \usage{
 \S4method{calcSlopes}{Cournot}(object)
@@ -90,6 +91,8 @@
 \S4method{getParms}{VertBargBertLogit}(object, digits = 10)
 
 \S4method{getNestsParms}{PCAIDSNests}(object)
+
+\S4method{calcSlopes}{LogitCournotALM}(object)
 }
 \arguments{
 \item{object}{An instance of the respective class (see description for the classes)}

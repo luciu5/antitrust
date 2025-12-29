@@ -7,6 +7,7 @@
 \alias{LogitBLP-class}
 \alias{CournotBLP-class}
 \alias{LogitCournot-class}
+\alias{LogitCournotALM-class}
 \alias{LogitCap-class}
 \alias{LogitCapALM-class}
 \alias{LogitNests-class}
@@ -151,14 +152,14 @@ Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, di
 }
 
 \examples{
-showClass("Logit")           # get a detailed description of the class
-showClass("LogitCap")           # get a detailed description of the class
-showClass("LogitNests")           # get a detailed description of the class
-showClass("LogitNestsALM")           # get a detailed description of the class
-showClass("LogitALM")           # get a detailed description of the class
-showClass("CES")           # get a detailed description of the class
-showClass("CESALM")           # get a detailed description of the class
-showClass("CESNests")           # get a detailed description of the class
+showClass("Logit") # get a detailed description of the class
+showClass("LogitCap") # get a detailed description of the class
+showClass("LogitNests") # get a detailed description of the class
+showClass("LogitNestsALM") # get a detailed description of the class
+showClass("LogitALM") # get a detailed description of the class
+showClass("CES") # get a detailed description of the class
+showClass("CESALM") # get a detailed description of the class
+showClass("CESNests") # get a detailed description of the class
 }
 \author{
 Charles Taragin \email{ctaragin+antitrustr@gmail.com}
