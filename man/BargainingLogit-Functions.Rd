@@ -4,6 +4,7 @@
 \alias{BargainingLogit-Functions}
 \alias{bargaining.logit}
 \alias{bargaining2nd.logit}
+\alias{bargaining.logit.alm}
 \title{Nash Bargaining Model with Logit Demand}
 \usage{
 bargaining.logit(
@@ -40,6 +41,26 @@ bargaining2nd.logit(
   insideSize = NA_real_,
   mcDeltaOutside = 0,
   control.slopes,
+  labels = paste("Prod", 1:length(prices), sep = "")
+)
+
+bargaining.logit.alm(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
+  bargpowerPre = rep(0.5, length(prices)),
+  bargpowerPost = bargpowerPre,
+  output = TRUE,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceStart = prices,
+  insideSize = NA_real_,
+  priceOutside = 0,
+  parmsStart = c(NA_real_, NA_real_),
+  control.slopes,
+  control.equ,
   labels = paste("Prod", 1:length(prices), sep = "")
 )
 }
@@ -109,7 +130,7 @@ outside good. Default is 0.}
 }
 \value{
 \code{bargaining.logit} returns an instance of \code{\linkS4class{BargainingLogit}},
-a child class of \code{\linkS4class{Logit}}. 
+a child class of \code{\linkS4class{Logit}}.
 \code{bargaining2nd.logit} returns an instance of \code{\linkS4class{Bargaining2ndLogit}},
 a child class of \code{\linkS4class{Auction2ndLogit}}.
 }
@@ -127,7 +148,7 @@ Using product prices, quantity shares and all of the
 product margins from at least one firm, \code{auction2nd.logit} is able to
 recover the price coefficient and product mean valuations in a
 Logit demand model. \code{auction2nd.logit} then uses these
-calibrated parameters to simulate a merger between two firms, under the assumption that firms are participating in a A Nash Bargaining Game 
+calibrated parameters to simulate a merger between two firms, under the assumption that firms are participating in a A Nash Bargaining Game
 (bargaining.logit) or splitting the full surplus (bargaining2nd.logit).
 }
 \examples{
@@ -135,31 +156,33 @@ calibrated parameters to simulate a merger between two firms, under the assumpti
 ## of a 4-firm market
 ## Source: Miller 2014 backup materials http://www.nathanhmiller.org/research
 
-share = c(0.29,0.40,0.28,0.03)
-bargpower <- rep(0.6,4) # buyer has advantage
-price = c(35.53,  154, 84.08, 53.16)
-cost  =  c(NA, 101, NA, NA)
+share <- c(0.29, 0.40, 0.28, 0.03)
+bargpower <- rep(0.6, 4) # buyer has advantage
+price <- c(35.53, 154, 84.08, 53.16)
+cost <- c(NA, 101, NA, NA)
 
 ownerPre <- ownerPost <- diag(length(share))
 
-#Suppose products 2 and 3 merge
-ownerPost[2,3] <- ownerPost[3,2] <- 1
+# Suppose products 2 and 3 merge
+ownerPost[2, 3] <- ownerPost[3, 2] <- 1
 
-margin = (price - cost)/price
+margin <- (price - cost) / price
 
-result.barg <- bargaining.logit(price,share,margin,bargpowerPre=bargpower,
-                           ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
+result.barg <- bargaining.logit(price, share, margin,
+  bargpowerPre = bargpower,
+  ownerPre = ownerPre, ownerPost = ownerPost, normIndex = 2
+)
 
 
 print(result.barg)
-summary(result.barg,revenue=FALSE)
+summary(result.barg, revenue = FALSE)
 
 
 ## Get a detailed description of the 'BargainingLogit' class slots
 showClass("BargainingLogit")
 
 ## Show all methods attached to the 'BargainingLogit' Class
-showMethods(classes="BargainingLogit")
+showMethods(classes = "BargainingLogit")
 
 }
 \references{

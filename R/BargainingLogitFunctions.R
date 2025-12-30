@@ -1,6 +1,6 @@
 #' @title Nash Bargaining Model with Logit Demand
 #' @name BargainingLogit-Functions
-#' @aliases bargaining.logit bargaining2nd.logit 
+#' @aliases bargaining.logit bargaining2nd.logit
 #' @description Calibrates consumer demand using  Logit and then
 #' simulates the price effect of a merger between two firms
 #' under the assumption that firms and customers in the market are playing a
@@ -62,16 +62,16 @@
 #' product margins from at least one firm, \code{auction2nd.logit} is able to
 #' recover the price coefficient and product mean valuations in a
 #' Logit demand model. \code{auction2nd.logit} then uses these
-#' calibrated parameters to simulate a merger between two firms, under the assumption that firms are participating in a A Nash Bargaining Game 
+#' calibrated parameters to simulate a merger between two firms, under the assumption that firms are participating in a A Nash Bargaining Game
 #' (bargaining.logit) or splitting the full surplus (bargaining2nd.logit).
 #'
 #'
 #' @return \code{bargaining.logit} returns an instance of \code{\linkS4class{BargainingLogit}},
-#' a child class of \code{\linkS4class{Logit}}. 
+#' a child class of \code{\linkS4class{Logit}}.
 #' \code{bargaining2nd.logit} returns an instance of \code{\linkS4class{Bargaining2ndLogit}},
-#' a child class of \code{\linkS4class{Auction2ndLogit}}. 
+#' a child class of \code{\linkS4class{Auction2ndLogit}}.
 #' @seealso \code{\link{logit}} for simulating mergers under a Nash-Bertrand pricing game with Logit demand, and ,\code{\link{auction2nd.logit}}
-#' for simulating mergers under a 2nd score auction with Logit demand. 
+#' for simulating mergers under a 2nd score auction with Logit demand.
 #' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @references Miller, Nathan (2014). \dQuote{Modeling the effects of mergers in procurement}
 #' \emph{International Journal of Industrial Organization} , \bold{37}, pp. 201-208.
@@ -81,154 +81,233 @@
 #' ## of a 4-firm market
 #' ## Source: Miller 2014 backup materials http://www.nathanhmiller.org/research
 #'
-#' share = c(0.29,0.40,0.28,0.03)
-#' bargpower <- rep(0.6,4) # buyer has advantage
-#' price = c(35.53,  154, 84.08, 53.16)
-#' cost  =  c(NA, 101, NA, NA)
+#' share <- c(0.29, 0.40, 0.28, 0.03)
+#' bargpower <- rep(0.6, 4) # buyer has advantage
+#' price <- c(35.53, 154, 84.08, 53.16)
+#' cost <- c(NA, 101, NA, NA)
 #'
 #' ownerPre <- ownerPost <- diag(length(share))
 #'
-#' #Suppose products 2 and 3 merge
-#' ownerPost[2,3] <- ownerPost[3,2] <- 1
+#' # Suppose products 2 and 3 merge
+#' ownerPost[2, 3] <- ownerPost[3, 2] <- 1
 #'
-#' margin = (price - cost)/price
+#' margin <- (price - cost) / price
 #'
-#' result.barg <- bargaining.logit(price,share,margin,bargpowerPre=bargpower,
-#'                            ownerPre=ownerPre,ownerPost=ownerPost,normIndex=2)
+#' result.barg <- bargaining.logit(price, share, margin,
+#'   bargpowerPre = bargpower,
+#'   ownerPre = ownerPre, ownerPost = ownerPost, normIndex = 2
+#' )
 #'
 #'
 #' print(result.barg)
-#' summary(result.barg,revenue=FALSE)
+#' summary(result.barg, revenue = FALSE)
 #'
 #'
 #' ## Get a detailed description of the 'BargainingLogit' class slots
 #' showClass("BargainingLogit")
 #'
 #' ## Show all methods attached to the 'BargainingLogit' Class
-#' showMethods(classes="BargainingLogit")
+#' showMethods(classes = "BargainingLogit")
 #'
 
-#'@rdname BargainingLogit-Functions
-#'@export
-bargaining.logit <- function(prices,shares,margins,
-                             ownerPre,ownerPost,
-                             bargpowerPre=rep(0.5,length(prices)),
-                             bargpowerPost=bargpowerPre,
-                             output=TRUE,
-                             normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
-                             mcDelta=rep(0,length(prices)),
-                             subset=rep(TRUE,length(prices)),
-                             priceStart=prices,
+#' @rdname BargainingLogit-Functions
+#' @export
+bargaining.logit <- function(prices, shares, margins,
+                             ownerPre, ownerPost,
+                             bargpowerPre = rep(0.5, length(prices)),
+                             bargpowerPost = bargpowerPre,
+                             output = TRUE,
+                             normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
+                             mcDelta = rep(0, length(prices)),
+                             subset = rep(TRUE, length(prices)),
+                             priceStart = prices,
                              insideSize = NA_real_,
-                             priceOutside=0,
+                             priceOutside = 0,
                              control.slopes,
                              control.equ,
-                             labels=paste("Prod",1:length(prices),sep="")
-){
-
-  
-  
+                             labels = paste("Prod", 1:length(prices), sep = "")) {
   ## Create BargainingLogit  container to store relevant data
-  result <- new("BargainingLogit",prices=prices, shares=shares,
-                margins=margins,
-                normIndex=normIndex,
-                ownerPre=ownerPre,
-                ownerPost=ownerPost,
-                bargpowerPre=bargpowerPre,
-                bargpowerPost=bargpowerPost,
-                output=output,
-                insideSize = insideSize,
-                mcDelta=mcDelta,
-                subset=subset,
-                priceOutside=priceOutside,
-                shareInside=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1,sum(shares)),
-                priceStart=priceStart,
-                labels=labels,
-                cls = "BargainingLogit")
+  result <- new("BargainingLogit",
+    prices = prices, shares = shares,
+    margins = margins,
+    normIndex = normIndex,
+    ownerPre = ownerPre,
+    ownerPost = ownerPost,
+    bargpowerPre = bargpowerPre,
+    bargpowerPost = bargpowerPost,
+    output = output,
+    insideSize = insideSize,
+    mcDelta = mcDelta,
+    subset = subset,
+    priceOutside = priceOutside,
+    shareInside = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, sum(shares)),
+    priceStart = priceStart,
+    labels = labels,
+    cls = "BargainingLogit"
+  )
 
-  if(!missing(control.slopes)){
+  if (!missing(control.slopes)) {
     result@control.slopes <- control.slopes
   }
-  
-  if(!missing(control.equ)){
+
+  if (!missing(control.equ)) {
     result@control.equ <- control.equ
   }
-  
+
   ## Convert ownership vectors to ownership matrices
-  result@ownerPre  <- ownerToMatrix(result,TRUE)
-  result@ownerPost <- ownerToMatrix(result,FALSE)
+  result@ownerPre <- ownerToMatrix(result, TRUE)
+  result@ownerPost <- ownerToMatrix(result, FALSE)
 
 
   ## Calculate Demand Slope Coefficients
   result <- calcSlopes(result)
 
   ## Calculate marginal cost
-  result@mcPre <-  calcMC(result,TRUE)
-  result@mcPost <- calcMC(result,FALSE)
+  result@mcPre <- calcMC(result, TRUE)
+  result@mcPost <- calcMC(result, FALSE)
 
-  
+
   ## Solve Non-Linear System for Price Changes
-  result@pricePre  <- calcPrices(result,preMerger=TRUE)
-  result@pricePost <- calcPrices(result,preMerger=FALSE)
+  result@pricePre <- calcPrices(result, preMerger = TRUE)
+  result@pricePost <- calcPrices(result, preMerger = FALSE)
 
   return(result)
-
 }
 
 
-#'@rdname BargainingLogit-Functions
-#'@export
-bargaining2nd.logit <- function(prices,shares,margins,
-                             ownerPre,ownerPost,
-                             bargpowerPre=rep(0.5,length(prices)),
-                             bargpowerPost=bargpowerPre,
-                             normIndex=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1, NA),
-                             mcDelta=rep(0,length(prices)),
-                             subset=rep(TRUE,length(prices)),
-                             insideSize = NA_real_,
-                             mcDeltaOutside=0,
-                             control.slopes,
-                             labels=paste("Prod",1:length(prices),sep="")
-){
-  
-  if(missing(prices)){prices <- rep(NA_integer_, length(shares))}
+#' @rdname BargainingLogit-Functions
+#' @export
+bargaining2nd.logit <- function(prices, shares, margins,
+                                ownerPre, ownerPost,
+                                bargpowerPre = rep(0.5, length(prices)),
+                                bargpowerPost = bargpowerPre,
+                                normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
+                                mcDelta = rep(0, length(prices)),
+                                subset = rep(TRUE, length(prices)),
+                                insideSize = NA_real_,
+                                mcDeltaOutside = 0,
+                                control.slopes,
+                                labels = paste("Prod", 1:length(prices), sep = "")) {
+  if (missing(prices)) {
+    prices <- rep(NA_integer_, length(shares))
+  }
   ## Create Auction2ndLogit  container to store relevant data
-  result <- new("Bargaining2ndLogit",prices=prices, shares=shares,
-                margins=margins,
-                normIndex=normIndex,
-                ownerPre=ownerPre,
-                ownerPost=ownerPost,
-                bargpowerPre=bargpowerPre,
-                bargpowerPost=bargpowerPost,
-                insideSize = insideSize,
-                mcDelta=mcDelta,
-                subset=subset,
-                priceOutside=mcDeltaOutside,
-                shareInside=ifelse(isTRUE(all.equal(sum(shares),1,check.names=FALSE)),1,sum(shares)),
-                priceStart=rep(0,length(shares)),
-                labels=labels,
-                cls = "Bargaining2ndLogit")
-  
-  if(!missing(control.slopes)){
+  result <- new("Bargaining2ndLogit",
+    prices = prices, shares = shares,
+    margins = margins,
+    normIndex = normIndex,
+    ownerPre = ownerPre,
+    ownerPost = ownerPost,
+    bargpowerPre = bargpowerPre,
+    bargpowerPost = bargpowerPost,
+    insideSize = insideSize,
+    mcDelta = mcDelta,
+    subset = subset,
+    priceOutside = mcDeltaOutside,
+    shareInside = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, sum(shares)),
+    priceStart = rep(0, length(shares)),
+    labels = labels,
+    cls = "Bargaining2ndLogit"
+  )
+
+  if (!missing(control.slopes)) {
     result@control.slopes <- control.slopes
   }
-  
+
   ## Convert ownership vectors to ownership matrices
-  result@ownerPre  <- ownerToMatrix(result,TRUE)
-  result@ownerPost <- ownerToMatrix(result,FALSE)
-  
+  result@ownerPre <- ownerToMatrix(result, TRUE)
+  result@ownerPost <- ownerToMatrix(result, FALSE)
+
 
   ## Calculate Demand Slope Coefficients
   result <- calcSlopes(result)
-  
+
   ## Calculate marginal cost
-  result@mcPre <-  calcMC(result,TRUE)
-  result@mcPost <- calcMC(result,FALSE)
-  
+  result@mcPre <- calcMC(result, TRUE)
+  result@mcPost <- calcMC(result, FALSE)
+
   ## Solve Non-Linear System for Price Changes
-  result@pricePre  <- calcPrices(result,preMerger=TRUE)
-  result@pricePost <- calcPrices(result,preMerger=FALSE)
-  
+  result@pricePre <- calcPrices(result, preMerger = TRUE)
+  result@pricePost <- calcPrices(result, preMerger = FALSE)
+
   return(result)
-  
+}
+
+
+#' @rdname BargainingLogit-Functions
+#' @export
+bargaining.logit.alm <- function(prices, shares, margins,
+                                 ownerPre, ownerPost,
+                                 bargpowerPre = rep(0.5, length(prices)),
+                                 bargpowerPost = bargpowerPre,
+                                 output = TRUE,
+                                 mcDelta = rep(0, length(prices)),
+                                 subset = rep(TRUE, length(prices)),
+                                 priceStart = prices,
+                                 insideSize = NA_real_,
+                                 priceOutside = 0,
+                                 parmsStart = c(NA_real_, NA_real_),
+                                 control.slopes,
+                                 control.equ,
+                                 labels = paste("Prod", 1:length(prices), sep = "")) {
+  ## Create BargainingLogitALM  container to store relevant data
+  result <- new("BargainingLogitALM",
+    prices = prices, shares = shares,
+    margins = margins,
+    ownerPre = ownerPre,
+    ownerPost = ownerPost,
+    bargpowerPre = bargpowerPre,
+    bargpowerPost = bargpowerPost,
+    output = output,
+    insideSize = insideSize,
+    mcDelta = mcDelta,
+    subset = subset,
+    priceOutside = priceOutside,
+    shareInside = 1, # ALM calibrates this
+    priceStart = priceStart,
+    parmsStart = parmsStart,
+    labels = labels,
+    cls = "BargainingLogitALM"
+  )
+
+  ## Set ballpark alpha starting value
+  if (is.na(parmsStart[1])) {
+    if (output) {
+      result@parmsStart[1] <- -1 / (weighted.mean(prices, shares))
+    } else {
+      result@parmsStart[1] <- 1 / (weighted.mean(prices, shares))
+    }
+  }
+
+  ## Set ballpark outside share starting value
+  if (is.na(parmsStart[2])) {
+    result@parmsStart[2] <- 0.1
+  }
+
+  if (!missing(control.slopes)) {
+    result@control.slopes <- control.slopes
+  }
+
+  if (!missing(control.equ)) {
+    result@control.equ <- control.equ
+  }
+
+  ## Convert ownership vectors to ownership matrices
+  result@ownerPre <- ownerToMatrix(result, TRUE)
+  result@ownerPost <- ownerToMatrix(result, FALSE)
+
+
+  ## Calculate Demand Slope Coefficients
+  result <- calcSlopes(result)
+
+  ## Calculate marginal cost
+  result@mcPre <- calcMC(result, TRUE)
+  result@mcPost <- calcMC(result, FALSE)
+
+
+  ## Solve Non-Linear System for Price Changes
+  result@pricePre <- calcPrices(result, preMerger = TRUE)
+  result@pricePost <- calcPrices(result, preMerger = FALSE)
+
+  return(result)
 }

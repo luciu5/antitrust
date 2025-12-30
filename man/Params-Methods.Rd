@@ -35,6 +35,7 @@
 \alias{getNestsParms}
 \alias{getNestsParms,PCAIDSNests-method}
 \alias{calcSlopes,LogitCournot-method}
+\alias{calcSlopes,BargainingLogitALM-method}
 \alias{calcSlopes,LogitCournotALM-method}
 \title{Methods for Calculating Demand Parameters}
 \usage{
@@ -83,6 +84,8 @@
 \S4method{calcSlopes}{BargainingLogit}(object)
 
 \S4method{calcSlopes}{Bargaining2ndLogit}(object)
+
+\S4method{calcSlopes}{BargainingLogitALM}(object)
 
 \S4method{calcSlopes}{VertBargBertLogit}(object)
 

@@ -1,142 +1,162 @@
-#'@title \dQuote{Bargaining} Classes
-#'@name Bargaining-Classes
-#'@aliases Bargaining-class
-#'@include AuctionClasses.R
+#' @title \dQuote{Bargaining} Classes
+#' @name Bargaining-Classes
+#' @aliases Bargaining-class
+#' @include AuctionClasses.R
 #'
-#'@description Each class contains all the information needed to calibrate a specific type of demand system and
-#'perform a merger simulation analysis under the assumption that firms are playing a differentiated products Nash Bargaining  game.
+#' @description Each class contains all the information needed to calibrate a specific type of demand system and
+#' perform a merger simulation analysis under the assumption that firms are playing a differentiated products Nash Bargaining  game.
 #'
-#'@description The \dQuote{Bargaining} class is a building block used to create other classes
-#'in this package. As such, it is most likely to be useful for developers
-#'who wish to code their own calibration/simulation routines.
-#'@description The \dQuote{BargainingLogit} class has the information for a Nash Bargaining game with Logit demand.
-#'@description Let k denote the number of products produced by all firms below.
-#'@section Objects from the Class:
-#'Objects can be created by calls of the form \code{new("Bargaining", ...)}.
-#'@slot bargpowerPre A length k vector of pre-merger bargaining power parameters.
-#'@slot bargpowerPre A length k vector of post-merger bargaining power parameters.
-#'@slot prices A length k vector of of observes prices.
-#'@slot margins  A length k vector of of observes margins.
+#' @description The \dQuote{Bargaining} class is a building block used to create other classes
+#' in this package. As such, it is most likely to be useful for developers
+#' who wish to code their own calibration/simulation routines.
+#' @description The \dQuote{BargainingLogit} class has the information for a Nash Bargaining game with Logit demand.
+#' @description Let k denote the number of products produced by all firms below.
+#' @section Objects from the Class:
+#' Objects can be created by calls of the form \code{new("Bargaining", ...)}.
+#' @slot bargpowerPre A length k vector of pre-merger bargaining power parameters.
+#' @slot bargpowerPre A length k vector of post-merger bargaining power parameters.
+#' @slot prices A length k vector of of observes prices.
+#' @slot margins  A length k vector of of observes margins.
 
 
-#'@rdname Bargaining-Classes
-#'@export
+#' @rdname Bargaining-Classes
+#' @export
 setClass(
-  
   Class = "Bargaining",
-  contains="Bertrand",
-  representation=representation(
-    bargpowerPre       = "numeric",
-    bargpowerPost       = "numeric",
-    prices           = "numeric",
-    margins          = "numeric",
-    priceStart       = "numeric"
+  contains = "Bertrand",
+  representation = representation(
+    bargpowerPre = "numeric",
+    bargpowerPost = "numeric",
+    prices = "numeric",
+    margins = "numeric",
+    priceStart = "numeric"
   ),
-  prototype=prototype(
-    
-    bargpowerPre          = numeric(),
-    priceStart         = numeric()
-    
+  prototype = prototype(
+    bargpowerPre = numeric(),
+    priceStart = numeric()
   ),
-  validity=function(object){
-    
+  validity = function(object) {
     nprods <- length(object@prices)
-    
-    if(length(object@margins) != nprods){stop("'margins' and 'prices' must have the same length")}
-    
-    if(
-      !(all(object@margins >0,na.rm=TRUE) &&
-        all(object@margins <=1,na.rm=TRUE))
-    ){
+
+    if (length(object@margins) != nprods) {
+      stop("'margins' and 'prices' must have the same length")
+    }
+
+    if (
+      !(all(object@margins > 0, na.rm = TRUE) &&
+        all(object@margins <= 1, na.rm = TRUE))
+    ) {
       stop("elements of vector 'margins' must be between 0 and 1")
     }
-    
-    if(
-      !(all(object@bargpowerPre >=0,na.rm=TRUE) &&
-        all(object@bargpowerPre <=1,na.rm=TRUE))
-    ){
+
+    if (
+      !(all(object@bargpowerPre >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPre <= 1, na.rm = TRUE))
+    ) {
       stop("elements of vector 'bargpowerPre' must be between 0 and 1")
     }
-   
-    if(
-      !(all(object@bargpowerPost >=0,na.rm=TRUE) &&
-        all(object@bargpowerPost <=1,na.rm=TRUE))
-    ){
+
+    if (
+      !(all(object@bargpowerPost >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPost <= 1, na.rm = TRUE))
+    ) {
       stop("elements of vector 'bargpowerPost' must be between 0 and 1")
     }
-    
-    if(nprods != length(object@priceStart)){
-      stop("'priceStart' must have the same length as 'prices'")}
-    
-    
+
+    if (nprods != length(object@priceStart)) {
+      stop("'priceStart' must have the same length as 'prices'")
+    }
   }
 )
 
 
-#'@rdname Bargaining-Classes
-#'@export
+#' @rdname Bargaining-Classes
+#' @export
 setClass(
-  
   Class = "BargainingLogit",
-  contains="Logit",
-  representation=representation(
-    bargpowerPre       = "numeric",
-    bargpowerPost       = "numeric"
+  contains = "Logit",
+  representation = representation(
+    bargpowerPre = "numeric",
+    bargpowerPost = "numeric"
   ),
-  prototype=prototype(
-    
-    bargpowerPre          = numeric()
+  prototype = prototype(
+    bargpowerPre = numeric()
   ),
-  validity=function(object){
-    
-    if(
-      !(all(object@bargpowerPre >=0,na.rm = TRUE) &&
-        all(object@bargpowerPre <=1,na.rm=TRUE))
-    ){
+  validity = function(object) {
+    if (
+      !(all(object@bargpowerPre >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPre <= 1, na.rm = TRUE))
+    ) {
       stop("elements of vector 'bargpowerPre' must be between 0 and 1")
     }
-    
-    if(
-      !(all(object@bargpowerPost >=0,na.rm=TRUE) &&
-        all(object@bargpowerPost <=1,na.rm=TRUE))
-    ){
+
+    if (
+      !(all(object@bargpowerPost >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPost <= 1, na.rm = TRUE))
+    ) {
       stop("elements of vector 'bargpowerPost' must be between 0 and 1")
     }
-    
   }
-    
 )
 
-#'@rdname Bargaining-Classes
-#'@export
+#' @rdname Bargaining-Classes
+#' @export
 setClass(
-  
   Class = "Bargaining2ndLogit",
-  contains="Auction2ndLogit",
-  representation=representation(
-    bargpowerPre       = "numeric",
-    bargpowerPost       = "numeric"
+  contains = "Auction2ndLogit",
+  representation = representation(
+    bargpowerPre = "numeric",
+    bargpowerPost = "numeric"
   ),
-  prototype=prototype(
-    
-    bargpowerPre          = numeric()
+  prototype = prototype(
+    bargpowerPre = numeric()
   ),
-  validity=function(object){
-    
-    if(
-      !(all(object@bargpowerPre >=0,na.rm = TRUE) &&
-        all(object@bargpowerPre <=1,na.rm=TRUE))
-    ){
+  validity = function(object) {
+    if (
+      !(all(object@bargpowerPre >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPre <= 1, na.rm = TRUE))
+    ) {
       stop("elements of vector 'bargpowerPre' must be between 0 and 1")
     }
-    
-    if(
-      !(all(object@bargpowerPost >=0,na.rm=TRUE) &&
-        all(object@bargpowerPost <=1,na.rm=TRUE))
-    ){
+
+    if (
+      !(all(object@bargpowerPost >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPost <= 1, na.rm = TRUE))
+    ) {
       stop("elements of vector 'bargpowerPost' must be between 0 and 1")
     }
-    
   }
-  
+)
+
+
+#' @rdname Bargaining-Classes
+#' @export
+setClass(
+  Class = "BargainingLogitALM",
+  contains = "BargainingLogit",
+  representation = representation(
+    parmsStart = "numeric"
+  ),
+  prototype = prototype(
+    normIndex = NA,
+    control.slopes = list(
+      factr = 1e7
+    )
+  ),
+  validity = function(object) {
+    nMargins <- length(object@margins[!is.na(object@margins)])
+
+    if (nMargins < 2 && is.na(object@mktElast)) {
+      stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
+    }
+
+    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+      stop("sum of 'shares' must equal 1")
+    }
+
+    if (length(object@parmsStart) != 2) {
+      stop("'parmsStart' must a vector of length 2")
+    }
+    return(TRUE)
+  }
 )

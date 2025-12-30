@@ -627,8 +627,8 @@ setMethod(
 
       m1 <- (margins - marginsCand)
       m2 <- log(predshares / probs)
-        m3 <- drop(diversion - preddiversion)
-        measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
+      m3 <- drop(diversion - preddiversion)
+      measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
 
       return(measure)
     }
@@ -1002,8 +1002,8 @@ setMethod(
 
       m1 <- (margins - marginsCand)
       m2 <- log(predshares / probs)
-        m3 <- drop(log(diversion / preddiversion))
-        measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
+      m3 <- drop(log(diversion / preddiversion))
+      measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
 
       return(measure)
     }
@@ -2893,6 +2893,119 @@ setMethod(
     object@slopes <- list(alpha = minAlpha, meanval = meanval)
     object@mktSize <- object@insideSize / object@shareInside
 
+
+    return(object)
+  }
+)
+
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "calcSlopes",
+  signature = "BargainingLogitALM",
+  definition = function(object) {
+    ## Uncover Demand Coefficients for Bargaining Model with ALM
+
+    ownerPre <- object@ownerPre
+    shares <- object@shares
+    margins <- object@margins
+    prices <- object@prices
+    mktElast <- object@mktElast
+    priceOutside <- object@priceOutside
+    output <- object@output
+    outSign <- ifelse(output, -1, 1)
+    barg <- object@bargpowerPre
+
+    avgPrice <- sum(shares * prices)
+    nprods <- length(object@shares)
+
+    ## Transform bargaining power for use in margin formula
+    bargTransform <- barg / (1 - barg)
+
+    ## Objective function: minimize distance between observed and predicted margins
+    minD <- function(theta) {
+      alpha <- theta[1]
+      sOut <- theta[2]
+
+      probs <- shares * (1 - sOut)
+
+      ## Calculate predicted shares from mean valuations
+      predshares <- probs
+      preddiversion <- predshares / (1 - predshares)
+
+      ## Bargaining ownership matrix
+      ownerPreInv <- ownerPre
+      ownerPreInv <- -1 * t(ownerPreInv * predshares)
+      diag(ownerPreInv) <- diag(ownerPre) + diag(ownerPreInv)
+
+      tmp <- try(solve(ownerPreInv), silent = TRUE)
+      if (any(class(tmp) == "try-error")) {
+        ownerPreInv <- MASS::ginv(ownerPreInv)
+      } else {
+        ownerPreInv <- tmp
+      }
+
+      ## Bargaining margin formula
+      marginsCand <- ownerPreInv %*% ((log(1 - predshares) * diag(ownerPre)) /
+        (-1 * outSign * alpha * (bargTransform * predshares / (1 - predshares) -
+          log(1 - predshares))))
+      marginsCand <- as.vector(marginsCand) / prices
+
+      m1 <- margins - marginsCand
+      m2 <- mktElast / (avgPrice * alpha) - sOut
+      measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
+
+      return(measure)
+    }
+
+    ## Constrain optimizer: alpha < 0 (output) or > 0 (input), and 0 < sOut < 1
+    if (output) {
+      lowerB <- c(-Inf, 0.001)
+      upperB <- c(-1e-10, 0.99)
+    } else {
+      lowerB <- c(1e-10, 0.001)
+      upperB <- c(Inf, 0.99)
+    }
+
+    if (!is.na(mktElast)) {
+      upperB[1] <- mktElast / avgPrice
+    }
+
+    minTheta <- optim(object@parmsStart, minD,
+      method = "L-BFGS-B",
+      lower = lowerB, upper = upperB,
+      control = object@control.slopes
+    )
+
+    if (minTheta$convergence != 0) {
+      warning("'calcSlopes' nonlinear solver may not have successfully converged. Reason: '", minTheta$message, "'")
+    }
+
+    minTheta <- minTheta$par
+
+    # Handle edge cases
+    if (isTRUE(all.equal(minTheta[2], lowerB[2], check.names = FALSE))) {
+      warning("Estimated outside share is close to 0. Normalizing relative to largest good.")
+      idx <- which.max(shares)
+      priceOutside <- prices[idx]
+      minTheta[2] <- 0
+      object@normIndex <- idx
+      meanval <- log(shares) - log(shares[idx]) - minTheta[1] * (prices - priceOutside)
+    } else {
+      meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) - minTheta[1] * (prices - priceOutside)
+    }
+
+    if (isTRUE(all.equal(minTheta[2], upperB[2], check.names = FALSE))) {
+      warning("Estimated outside share is close to 1.")
+    }
+
+    names(meanval) <- object@labels
+
+    object@slopes <- list(alpha = minTheta[1], meanval = meanval)
+    object@shareInside <- 1 - minTheta[2]
+    object@priceOutside <- priceOutside
+    object@mktSize <- object@insideSize / object@shareInside
 
     return(object)
   }
