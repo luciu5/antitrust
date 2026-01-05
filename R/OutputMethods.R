@@ -721,6 +721,11 @@ setMethod(
     meanval_mat <- matrix(meanval, nrow = nprods, ncol = nDraws)
     price_term <- tcrossprod(prices - object@priceOutside, alphas)
     util <- meanval_mat + price_term
+    
+    # add in random shocks from non-price characteristics
+    if (!is.null(object@slopes$char_random)) {
+      util <- util + t(object@slopes$char_random)
+    }
     expUtil <- exp(util / sigmaNest)
     expUtil[!subset, ] <- 0
 

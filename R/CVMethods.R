@@ -135,6 +135,7 @@ setMethod(
     # Get parameters and data
     meanval <- object@slopes$meanval
     alphas  <- object@slopes$alphas
+    char_random <- object@slopes$char_random 
     mktSize <- object@mktSize
 
     # Quantile cutoffs
@@ -143,6 +144,11 @@ setMethod(
 
     keep <- alphas >= qlo & alphas <= qhi
     alphas <- alphas[keep]
+    
+    if (!is.null(char_random)) {
+      char_random <- char_random[keep, , drop = FALSE]
+    }
+    
     nDraws <- length(alphas)
 
     if(nDraws == 0)
@@ -160,6 +166,10 @@ setMethod(
     utilPre[is.na(utilPre)] <- -Inf
     utilPre <- sweep(utilPre, 2, meanval, "+")
 
+    if (!is.null(char_random)) {
+      utilPre <- utilPre + char_random
+    }
+    
     expUtilPre <- exp(utilPre / sigmaNest)
     sumExpUtilPre <- rowSums(expUtilPre)
     insideIVPre <- sumExpUtilPre^sigmaNest
@@ -171,6 +181,10 @@ setMethod(
     utilPost[, !object@subset] <- -Inf
     utilPost <- sweep(utilPost, 2, meanval, "+")
 
+    if (!is.null(char_random)) {
+      utilPost <- utilPost + char_random
+    }
+    
     expUtilPost <- exp(utilPost / sigmaNest)
     sumExpUtilPost <- rowSums(expUtilPost)
     insideIVPost <- sumExpUtilPost^sigmaNest

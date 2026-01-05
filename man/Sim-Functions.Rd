@@ -7,7 +7,7 @@
 \usage{
 sim(
   prices,
-  shares,
+  shares = NULL,
   supply = c("bertrand", "cournot", "auction", "bargaining", "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
     "LogitCap", "BLP"),
@@ -161,6 +161,10 @@ If \sQuote{demand} equals \sQuote{BLP}, then
   Each element represents the interaction effect of a demographic variable with price.}
   \item{nDemog}{Number of demographic variables. Required if piDemog is provided. Default is 0.}
   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
+  \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
+  \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
+  \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}
+  \item{pi}{Optional: nDemog x L matrix of demographic interactions with characteristics.}
 }
 
 Note: The \sQuote{shares} argument is only used with \sQuote{BLP} demand.
@@ -203,7 +207,7 @@ demand.param <- list(
 )
 
 sim.logit <- sim(price,
-  supply = "bertrand", demand = "Logit", demand.param,
+  supply = "bertrand", demand = "Logit", demand.param = demand.param,
   ownerPre = ownerPre, ownerPost = ownerPost
 )
 

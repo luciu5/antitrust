@@ -233,7 +233,7 @@ setMethod(
         cross_deriv <- -1 * outSign * alphas[r] * share_outer * term3[r]
         
         # Own-derivatives for this draw
-        own_deriv <-  -1 * outSign * shares_draw[,r] * (inv_sigma + s_jg[,r] * term2[r])
+        own_deriv <-  -1 * outSign *  alphas[r] * shares_draw[,r] * (inv_sigma + s_jg[,r] * term2[r])
         
         # Combine into full matrix for this draw
         deriv_r <- cross_deriv

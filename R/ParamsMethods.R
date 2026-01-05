@@ -711,177 +711,185 @@ setMethod(
   f = "calcSlopes",
   signature = "LogitBLP",
   definition = function(object) {
-    ## NOTE: This method differs from other calcSlopes implementations.
-    ## Unlike Logit, LogitNests, etc., this method does NOT calibrate parameters
-    ## from observed prices, shares, and margins. Instead, it assumes alphaMean
-    ## and sigma are already provided (via demand.param in sim()) and uses
-    ## BLP contraction mapping to recover mean utilities (delta) that rationalize
-    ## observed shares given the supplied random coefficient parameters.
-    ##
-    ## This is because the full BLP calibration routine with GMM/nested fixed point
-    ## estimation is not yet implemented. Users must supply alphaMean and sigma externally.
-
     shares <- object@shares
     prices <- object@prices
     idx <- object@normIndex
     shareInside <- object@shareInside
-
-    # Get parameters from object (accept aliases for alpha)
+    
+    # Get parameters from object
     alphaMean <- if (!is.null(object@slopes$alpha)) object@slopes$alpha else object@slopes$alphaMean
     if (is.null(alphaMean)) {
       stop("LogitBLP calcSlopes: missing 'alpha' (or 'alphaMean') in slopes.")
     }
-    sigma <- object@slopes$sigma # Std dev of price coefficient (random coefficient)
-    if (is.null(sigma)) {
-      stop("LogitBLP calcSlopes: missing 'sigma' in slopes.")
-    }
+    
+    # Random coefficient on price
+    sigma <- object@slopes$sigma 
+    if (is.null(sigma)) sigma <- 0
+    
+    # Get demographic parameters
     nDraws <- object@nDraws
-    piDemog <- object@slopes$piDemog # Demographic coefficients (if any)
+    piDemog <- object@slopes$piDemog 
     if (is.null(piDemog)) piDemog <- numeric(0)
-    nDemog <- object@slopes$nDemog # Number of demographics
+    nDemog <- object@slopes$nDemog 
     if (is.null(nDemog)) nDemog <- 0
-    sigmaNest <- object@slopes$sigmaNest # Nesting parameter for outside good: sigmaNest in (0,1]
-
-    # Check if meanval (delta) is already provided
+    sigmaNest <- object@slopes$sigmaNest 
+    if (is.null(sigmaNest)) sigmaNest <- 1
+    
+    # Get product characteristics
+    prodChar <- object@slopes$prodChar  # k x L matrix
+    beta <- object@slopes$beta          # length L vector (mean effects - absorbed in delta)
+    sigmaChar <- object@slopes$sigmaChar  # length L vector (random coeff std devs)
+    pi <- object@slopes$pi              # nDemog x L matrix (demog interactions)
+    
+    hasChar <- !is.null(prodChar) && !is.null(beta)
+    nChar <- if (hasChar) ncol(prodChar) else 0
+    
+    # Check if meanval is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
-
-    # Check if draws already exist (to ensure consistency across calls)
+    
+    # Check if draws already exist
     drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
-
+    
     if (drawsExist) {
-      # Reuse existing draws
       consDraws <- object@slopes$consDraws
       demogDraws <- object@slopes$demogDraws
-      if (!is.null(demogDraws) && ncol(demogDraws) > 0) {
-        demogEffect <- demogDraws %*% piDemog
-      } else {
-        demogEffect <- 0
-      }
     } else {
-      # Generate new consumer heterogeneity draws (unobserved)
+      # Generate consumer draws
       consDraws <- rnorm(nDraws)
-
-      # Generate demographic draws (observed heterogeneity)
-      if (!is.null(nDemog) && nDemog > 0) {
+      
+      # Generate demographic draws
+      if (nDemog > 0) {
         demogDraws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
-        demogEffect <- as.vector(demogDraws %*% piDemog)
       } else {
-        demogDraws <- rep(0, nDraws)
-        demogEffect <- 0
-        piDemog <- numeric(0)
-        nDemog <- 0
+        demogDraws <- matrix(0, nrow = nDraws, ncol = 0)
       }
     }
-
+    
     # Compute individual-specific price coefficients
-    # alpha_i = alphaMean + sigma * nu_i + pi * d_i
-    alphas <- alphaMean + sigma * consDraws + demogEffect
-
-    # Use output slot to verify sign consistency:
-    # output=TRUE (output market) requires alpha < 0 (higher prices reduce utility)
-    # output=FALSE (input market) requires alpha > 0 (higher prices increase utility)
+    alphas <- alphaMean + sigma * consDraws
+    if (nDemog > 0 && length(piDemog) > 0) {
+      # Use as.vector() to ensure alphas remains a vector
+      alphas <- alphas + as.vector(demogDraws %*% piDemog)
+    }
+    
+    # Ensure correct sign for alphas based on market type
     output <- object@output
     expectedSign <- ifelse(output, -1, 1)
-
-    # Ensure all individual alphas have the correct sign (some may cross zero due to random draws)
     wrongSigns <- if (expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
     if (wrongSigns > 0) {
       warning(
-        wrongSigns, " out of ", length(alphas), " individual price coefficients have wrong sign. ",
-        "Clipping them to enforce correct sign (", ifelse(output, "negative", "positive"), ")."
+        wrongSigns, " out of ", length(alphas), 
+        " individual price coefficients have wrong sign. ",
+        "Clipping them to enforce correct sign (", 
+        ifelse(output, "negative", "positive"), ")."
       )
-
+      
       if (output) {
-        # Output market: alphas must be negative
-        alphas <- pmin(alphas, -1e-2) # floor magnitude for negative alphas
-        alphas[alphas >= 0] <- max(alphas[alphas < 0]) # wrong-sign -> smallest negative
+        alphas <- pmin(alphas, -1e-2)
+        alphas[alphas >= 0] <- max(alphas[alphas < 0])
       } else {
-        # Input market: alphas must be positive
-        alphas <- pmax(alphas, 1e-2) # floor magnitude for positive alphas
-        alphas[alphas <= 0] <- min(alphas[alphas > 0]) # wrong-sign -> smallest positive
+        alphas <- pmax(alphas, 1e-2)
+        alphas[alphas <= 0] <- min(alphas[alphas > 0])
       }
     }
+    
     nprods <- length(shares)
-
     if (is.na(idx)) {
       idxPrice <- object@priceOutside
     } else {
       idxPrice <- prices[idx]
     }
-
-    # Set default sigmaNest if not provided: sigmaNest=1 is flat logit (no nesting)
-    if (is.null(sigmaNest)) sigmaNest <- 1
-
-
+    
+    # Generate random coefficients for characteristics (if any)
+    if (hasChar && !is.null(sigmaChar)) {
+      charDraws <- matrix(rnorm(nDraws * nChar), nrow = nDraws, ncol = nChar)
+    } else {
+      charDraws <- NULL
+    }
+    
+    # Compute RANDOM DEVIATIONS for characteristics (not mean effects!)
+    # Mean effects (? * X) will be absorbed in delta
+    if (hasChar && ((!is.null(sigmaChar) && !is.null(charDraws)) || (nDemog > 0 && !is.null(pi)))) {
+      # Individual-specific deviations from mean: (?_k * ?_ik + ?_k * D_i)
+      charCoeffs_deviations <- matrix(0, nrow = nDraws, ncol = nChar)
+      
+      # Add random coefficient component: ?_k * ?_ik
+      if (!is.null(sigmaChar) && !is.null(charDraws)) {
+        charCoeffs_deviations <- sweep(charDraws, 2, sigmaChar, "*")
+      }
+      
+      # Add demographic interactions: ?_k * D_i
+      if (nDemog > 0 && !is.null(pi)) {
+        charCoeffs_deviations <- charCoeffs_deviations + demogDraws %*% pi
+      }
+      
+      # Compute random utility deviations: (?_k * ?_ik + ?_k * D_i) * X_jk
+      char_random <- charCoeffs_deviations %*% t(prodChar)  # nDraws x k
+    } else {
+      char_random <- matrix(0, nrow = nDraws, ncol = nprods)
+    }
+    
     if (deltaProvided) {
       delta <- object@slopes$meanval
       message("Using provided meanval (delta) for LogitBLP - skipping contraction mapping")
     } else {
-      # Pre-compute constant price term for efficiency
+      # Pre-compute price differences
       price_diff <- prices - object@priceOutside
-
+      
       # Define the fixed point function
+      # delta implicitly contains ? * X (mean characteristic effects)
+      # We only add random deviations
       fpFunction <- function(delta) {
-        # Compute utilities: nDraws x nProducts matrix
-        # utilities[i,j] = delta[j] + alpha[i] * (price[j] - price0)
-        utilities <- outer(alphas, price_diff, "*")
-        utilities <- sweep(utilities, 2, delta, "+")
-
-        # Prevent numeric overflow
+        # Base utility: delta + individual price effects
+        utilities <- matrix(delta, nrow = nDraws, ncol = nprods, byrow = TRUE)
+        utilities <- utilities + outer(alphas, price_diff, "*")
+        
+        # Add ONLY random deviations from mean characteristics
+        # (mean effects already in delta)
+        if (hasChar) {
+          utilities <- utilities + char_random
+        }
+        
+        # Apply nesting parameter and prevent numeric overflow
         maxUtil <- 700
         utilities <- pmin(pmax(utilities / sigmaNest, -maxUtil), maxUtil)
         expUtil <- exp(utilities)
-
+        
+        # Calculate shares using nested logit formula
         sumExpUtil <- rowSums(expUtil)
         insideIV <- sumExpUtil^sigmaNest
-        if (is.na(idx)) {
-          denom <- 1 + insideIV
-        } else {
-          denom <- insideIV
-        }
-        # Compute shares using correct RCNL formula (matching calcShares)
-
-        # For each draw i: s_ij = (exp(V_ij/sigma) / D_gi) * (D_gi^sigma / (1 + D_gi^sigma))
-
-        # Market share: s_j = mean_i(s_ij)
-
-
+        
         withinNest <- expUtil / sumExpUtil
-
         acrossNest <- insideIV / (1 + insideIV)
-
         shares_draw <- withinNest * acrossNest
-
+        
         predShares <- colMeans(shares_draw)
-
+        
+        # BLP contraction mapping
         return(delta + sigmaNest * (log(shares) - log(predShares)))
       }
-
-      # Initial guess
-      delta <- log(shares)
-
-
+      
+      # Run contraction mapping
       tol <- ifelse(!is.null(object@slopes$contractionTol),
-        object@slopes$contractionTol, 1e-10
+                    object@slopes$contractionTol, 1e-10
       )
       maxIter <- ifelse(!is.null(object@slopes$contractionMaxIter),
-        object@slopes$contractionMaxIter, 1200
+                        object@slopes$contractionMaxIter, 1200
       )
-
+      
       message(
         "Running BLP contraction (tol=", sprintf("%.0e", tol),
         ", maxIter=", maxIter, ")..."
       )
-
-
+      
       dampFactor <- 0.5
       delta <- log(shares) + log(object@insideSize)
-
+      
       for (iter in 1:maxIter) {
         deltaNew <- fpFunction(delta)
         absDiff <- max(abs(deltaNew - delta))
         relDiff <- max(abs((deltaNew - delta) / (abs(delta) + 1e-8)))
-
+        
         if (relDiff < tol || absDiff < tol * 1e-2) {
           delta <- deltaNew
           message("BLP contraction converged in ", iter, " iterations")
@@ -893,28 +901,46 @@ setMethod(
         warning("BLP contraction mapping did not converge within ", maxIter, " iterations")
       }
     }
-
-
+    
     # Store results
     names(delta) <- object@labels
     names(alphaMean) <- "alphaMean"
-    names(sigma) <- "sigma"
-    names(sigmaNest) <- "sigmaNest"
+    if (!is.null(sigma)) names(sigma) <- "sigma"
+    if (!is.null(sigmaNest)) names(sigmaNest) <- "sigmaNest"
     if (length(piDemog) > 0) {
       names(piDemog) <- paste0("pi_", 1:length(piDemog))
     }
-
-    # Store both alpha and alphaMean for downstream compatibility
-    # Note: sigma is the random coefficient std dev, sigmaNest is the nesting parameter
-    object@slopes <- list(
-      alpha = as.numeric(alphaMean), alphaMean = alphaMean, meanval = delta, sigma = sigma, sigmaNest = sigmaNest,
-      piDemog = piDemog, nDemog = nDemog,
-      alphas = as.numeric(alphas), consDraws = consDraws, demogDraws = demogDraws
+    
+    # Create comprehensive slopes list with all parameters
+    slopes_list <- list(
+      alpha = as.numeric(alphaMean), 
+      alphaMean = alphaMean, 
+      meanval = delta, 
+      sigma = sigma, 
+      sigmaNest = sigmaNest,
+      piDemog = piDemog, 
+      nDemog = nDemog,
+      alphas = as.numeric(alphas), 
+      consDraws = consDraws, 
+      demogDraws = demogDraws
     )
+    
+    # Add characteristic parameters if they exist
+    # Only save char_random when we have characteristics to avoid dimension errors
+    if (hasChar) {
+      slopes_list$prodChar <- prodChar
+      slopes_list$beta <- beta
+      if (!is.null(sigmaChar)) slopes_list$sigmaChar <- sigmaChar
+      if (!is.null(charDraws)) slopes_list$charDraws <- charDraws
+      if (!is.null(pi)) slopes_list$pi <- pi
+      slopes_list$char_random <- char_random  # Only save when hasChar = TRUE
+    }
+    
+    object@slopes <- slopes_list
     object@priceOutside <- idxPrice
     object@pricePre <- object@prices
     object@mktSize <- object@insideSize / sum(calcShares(object, preMerger = TRUE))
-
+    
     return(object)
   }
 )
