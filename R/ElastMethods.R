@@ -174,9 +174,7 @@ setMethod(
   f = "elast",
   signature = "LogitBLP",
   definition = function(object, preMerger = TRUE, market = FALSE, partial = FALSE) {
-   
-    outSign <- ifelse(object@output, 1, -1)  # 1 for output, -1 for input 
-     # Get subsetting info and prices
+    # Get subsetting info and prices
     if (preMerger) {
       subset <- rep(TRUE, length(object@labels))
       prices <- object@pricePre
@@ -184,88 +182,88 @@ setMethod(
       subset <- object@subset
       prices <- object@pricePost
     }
-    
+
     # Get parameters
     alphas <- object@slopes$alphas
     sigmaNest <- object@slopes$sigmaNest
     if (is.null(sigmaNest)) sigmaNest <- 1
-    
+
     # Get individual shares by draw (full size with NAs for excluded products)
     shares_draw <- calcShares(object, preMerger = preMerger, aggregate = FALSE)
     nDraws <- ncol(shares_draw)
     nprods <- nrow(shares_draw)
-    
+
     # Replace NAs with zeros for calculation purposes
     shares_draw[is.na(shares_draw)] <- 0
-    
+
     # Get aggregate shares
     shares <- calcShares(object, preMerger = preMerger)
     shares[is.na(shares)] <- 0
-    
+
     # Group shares for each draw (only include active products)
-    s_g <- colSums(shares_draw * matrix(subset, nrow=nprods, ncol=nDraws))
-    
+    s_g <- colSums(shares_draw * matrix(subset, nrow = nprods, ncol = nDraws))
+
     # Conditional shares within group for each draw
     s_jg <- sweep(shares_draw, 2, s_g, "/")
-    s_jg[is.na(s_jg) | is.infinite(s_jg)] <- 0  # Handle division by zero
-    
+    s_jg[is.na(s_jg) | is.infinite(s_jg)] <- 0 # Handle division by zero
+
     # Common terms for derivatives
-    inv_sigma <- 1/sigmaNest
-    term2 <- 1 - inv_sigma - s_g  # Length nDraws
-    term3 <- 1/s_g - 1 - inv_sigma/s_g  # Length nDraws
-    
+    inv_sigma <- 1 / sigmaNest
+    term2 <- 1 - inv_sigma - s_g # Length nDraws
+    term3 <- 1 / s_g - 1 - inv_sigma / s_g # Length nDraws
+
     # Replace infinities with zeros
     term3[is.infinite(term3)] <- 0
-    
+
     # Initialize partial derivatives matrix
     partial_deriv <- matrix(0, nrow = nprods, ncol = nprods)
-    
+
     # Calculate average partial derivatives across draws
     for (r in 1:nDraws) {
       # Only calculate for active products
-      active_r <- subset & (!is.na(shares_draw[,r]))
-      
-      if (sum(active_r) > 0) {  # Skip if no active products in this draw
+      active_r <- subset & (!is.na(shares_draw[, r]))
+
+      if (sum(active_r) > 0) { # Skip if no active products in this draw
         # Outer product of shares for cross-derivatives
-        share_outer <- outer(shares_draw[,r], shares_draw[,r])
-        
+        share_outer <- outer(shares_draw[, r], shares_draw[, r])
+
         # Cross-derivatives for this draw
-        cross_deriv <- -1 * outSign * alphas[r] * share_outer * term3[r]
-        
+        cross_deriv <- alphas[r] * share_outer * term3[r]
+
         # Own-derivatives for this draw
-        own_deriv <-  -1 * outSign *  alphas[r] * shares_draw[,r] * (inv_sigma + s_jg[,r] * term2[r])
-        
+        own_deriv <- alphas[r] * shares_draw[, r] * (inv_sigma + s_jg[, r] * term2[r])
+
         # Combine into full matrix for this draw
         deriv_r <- cross_deriv
         diag(deriv_r) <- own_deriv
-        
+
         # Mask out inactive products
         deriv_r <- deriv_r * outer(active_r, active_r)
-        
+
         # Add to average
         partial_deriv <- partial_deriv + deriv_r / nDraws
       }
     }
-    
+
     # If market elasticity is requested
     if (market) {
       # Calculate elasticities from partials
-      shares_for_elast <- pmax(shares, 1e-10)  # Avoid division by zero
-      elast_mat <- partial_deriv * (outer(1/shares_for_elast, prices))
-      
+      shares_for_elast <- pmax(shares, 1e-10) # Avoid division by zero
+      elast_mat <- partial_deriv * (outer(1 / shares_for_elast, prices))
+
       # Mask out inactive products
       elast_mat <- elast_mat * outer(subset, subset)
-      
+
       # Calculate market elasticity as weighted average of row sums
       active_shares <- shares[subset]
       inside_shares <- active_shares / sum(active_shares)
       active_elast <- elast_mat[subset, subset]
       mkt_elast <- sum(inside_shares * rowSums(active_elast))
-      
+
       names(mkt_elast) <- NULL
       return(mkt_elast)
     }
-    
+
     # Return partials if requested
     if (partial) {
       # Zero out entries for inactive products
@@ -273,14 +271,14 @@ setMethod(
       dimnames(partial_deriv) <- list(object@labels, object@labels)
       return(partial_deriv)
     }
-    
+
     # Calculate elasticities
-    shares_for_elast <- pmax(shares, 1e-10)  # Avoid division by zero
-    elast <- partial_deriv * (outer(1/shares_for_elast, prices))
-    
+    shares_for_elast <- pmax(shares, 1e-10) # Avoid division by zero
+    elast <- partial_deriv * (outer(1 / shares_for_elast, prices))
+
     # Zero out entries for inactive products
     elast <- elast * outer(subset, subset)
-    
+
     dimnames(elast) <- list(object@labels, object@labels)
     return(elast)
   }
