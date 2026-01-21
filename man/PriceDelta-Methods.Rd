@@ -74,7 +74,7 @@
 \item{isMax}{If TRUE, uses numerical derivatives to determine if
 equilibrium price vector is a local maximum. Default is FALSE.}
 
-\item{index}{If "paasche",calculates market-wide price changes using post-merger predicted shares. If  "laspeyres", 
+\item{index}{If "paasche",calculates market-wide price changes using post-merger predicted shares. If  "laspeyres",
 calculates price index using pre-merger shares. Default is "paasche".}
 
 \item{...}{Additional values that may be used to change the default values of the non-linear

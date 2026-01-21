@@ -45,7 +45,7 @@
 \arguments{
 \item{object}{An instance of one of the classes listed above.}
 
-\item{lim}{dQuote{LogitBLP} class only. A length 2 numeric vector equal to the 
+\item{lim}{dQuote{LogitBLP} class only. A length 2 numeric vector equal to the
 lower and upper quantiles of the price coefficient distribution over which to compute CV. Default c(0,1).}
 }
 \description{
