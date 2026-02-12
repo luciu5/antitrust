@@ -10,3 +10,4 @@
 *.tex
 antitrust.Rproj
 .Rbuildignore
+ai/
