@@ -164,7 +164,7 @@ setMethod(
     if (is.null(sigmaNest)) sigmaNest <- 1
 
     outVal <- ifelse(is.na(object@normIndex), 1, 0)
-    output <- ifelse(object@output, -1, 1)
+    output <- ifelse(object@output, 1, -1)
 
     ## -------- Pre-merger utility --------
     utilPre <- outer(alphas, (object@pricePre - object@priceOutside))
