@@ -98,6 +98,7 @@ bertrand.alm <- function(
   priceOutside=ifelse(demand== "logit",0, 1),
   priceStart=prices,
   isMax=FALSE,
+  output=TRUE,
   parmStart,
   control.slopes,
   control.equ,
@@ -137,7 +138,7 @@ bertrand.alm <- function(
       parmStart <- rep(.1,2)
       nm <- which(!is.na(margins))[1]
       if(demand == "logit"){
-        parmStart[1] <- -1/(margins[nm]*prices[nm]*(1-shares_quantity[nm])) #ballpark alpha for starting values
+        parmStart[1] <- ifelse(output, -1, 1)/(margins[nm]*prices[nm]*(1-shares_quantity[nm])) #ballpark alpha for starting values
       }
       else{parmStart[1] <- 1/(margins[nm]*(1-shares_revenue[nm])) - shares_revenue[nm]/(1-shares_revenue[nm])} #ballpark gamma for starting values
     }
@@ -169,6 +170,7 @@ bertrand.alm <- function(
                                  shareInside= sum(shares_quantity),
                                  parmsStart=parmStart,
                                  insideSize = insideSize,
+                                 output=output,
                                  labels=labels),
 
                      ces = new("CESALM",prices=prices, shares=shares_revenue,
