@@ -108,7 +108,6 @@
 #'   perfect substitutes within the nest. Default is 1.}
 #'   \item{piDemog}{Optional vector of demographic coefficients for the price coefficient.
 #'   Each element represents the interaction effect of a demographic variable with price.}
-#'   \item{nDemog}{Number of demographic variables. Required if piDemog is provided. Default is 0.}
 #'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
 #'   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
 #'   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
@@ -378,21 +377,50 @@ sim <- function(prices,
           message("'nDraws' not provided for BLP. Defaulting to 500 draws.")
         }
         # Handle demographic parameters
-        if (!("nDemog" %in% names(demand.param))) {
-          demand.param$nDemog <- 0
-        }
+        # Infer nDemog from piDemog length (nDemog is redundant)
         if (!("piDemog" %in% names(demand.param))) {
           demand.param$piDemog <- numeric(0)
         }
-        # Validate consistency between nDemog and piDemog
-        if (demand.param$nDemog > 0 && length(demand.param$piDemog) != demand.param$nDemog) {
-          stop("'piDemog' must have length equal to 'nDemog'.")
+        
+        # Auto-detect nDemog from piDemog length (always inferred, never user-specified)
+        demand.param$nDemog <- length(demand.param$piDemog)
+        
+        # Set defaults for demogMean and demogCov if not provided
+        if (demand.param$nDemog > 0) {
+          if (!("demogMean" %in% names(demand.param))) {
+            demand.param$demogMean <- rep(0, demand.param$nDemog)  # Default: demeaned
+            message("demogMean not provided. Defaulting to 0 (demeaned demographic).")
+          }
+          if (!("demogCov" %in% names(demand.param))) {
+            demand.param$demogCov <- diag(demand.param$nDemog)  # Default: unit variance, independent
+            message("demogCov not provided. Defaulting to identity matrix (unit variance).")
+          }
         }
-        # Handle nesting parameter for outside good: sigmaNest in (0,1]
-        if (!("sigmaNest" %in% names(demand.param))) {
-          demand.param$sigmaNest <- 1 # Default: sigmaNest=1 is flat logit (no nesting)
+        
+        # Validate demographic parameters
+        if ("demogMean" %in% names(demand.param)) {
+          if (length(demand.param$demogMean) != demand.param$nDemog) {
+            stop("demogMean length (", length(demand.param$demogMean),
+                 ") does not match piDemog length (", demand.param$nDemog, ").")
+          }
         }
-        # Validate: scalar numeric in (0,1]. sigmaNest=1 is flat logit, sigmaNest->0 is perfect substitutes
+        if ("demogCov" %in% names(demand.param)) {
+          if (!is.matrix(demand.param$demogCov) || 
+              nrow(demand.param$demogCov) != demand.param$nDemog ||
+              ncol(demand.param$demogCov) != demand.param$nDemog) {
+          # Validate dimensions match
+          if (nrow(demand.param$demogCov) != ncol(demand.param$demogCov)) {
+            stop("demogCov must be a square matrix.")
+          }
+          # Check that demogMean and demogCov dimensions are consistent
+          if (length(demand.param$demogMean) != nrow(demand.param$demogCov)) {
+            stop("demogMean length (", length(demand.param$demogMean),
+                 ") must match demogCov dimensions (", nrow(demand.param$demogCov), "x",
+                 ncol(demand.param$demogCov), ").")
+          }
+            stop("demogCov must be a square matrix with dimensions equal to piDemog length.")
+          }
+        }
         if (!is.numeric(demand.param$sigmaNest) || length(demand.param$sigmaNest) != 1 ||
             is.na(demand.param$sigmaNest) || !is.finite(demand.param$sigmaNest) ||
             demand.param$sigmaNest <= 0 || demand.param$sigmaNest > 1) {

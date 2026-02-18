@@ -759,7 +759,33 @@ setMethod(
       
       # Generate demographic draws
       if (nDemog > 0) {
-        demogDraws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
+        # Check if market-specific demographic distribution is provided
+        demogMean <- object@slopes$demogMean
+        demogCov <- object@slopes$demogCov
+        
+        if (!is.null(demogMean) && !is.null(demogCov)) {
+          # Sample from actual market distribution using multivariate normal
+          # Sample from N(demogMean, demogCov) using Cholesky decomposition
+          # Avoid MASS dependency: X = mu + chol(Sigma) * Z where Z ~ N(0,I)
+          demogCov_chol <- tryCatch({
+            chol(demogCov)
+          }, error = function(e) {
+            stop("demogCov must be positive definite for sampling. Error: ", e$message)
+          })
+          
+          # Generate standard normal draws
+          z_draws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
+          
+          # Transform: X = mu + Z * chol(Sigma)^T
+          demogDraws <- sweep(z_draws %*% t(demogCov_chol), 2, demogMean, "+")
+          
+          if (nDemog == 1) {
+            demogDraws <- matrix(demogDraws, ncol = 1)
+          }
+        } else {
+          # Legacy behavior: sample from standard normal
+          demogDraws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
+        }
       } else {
         demogDraws <- matrix(0, nrow = nDraws, ncol = 0)
       }
@@ -768,15 +794,21 @@ setMethod(
     # Compute individual-specific price coefficients
     alphas <- alphaMean + sigma * consDraws
     if (nDemog > 0 && length(piDemog) > 0) {
-      # Use as.vector() to ensure alphas remains a vector
-      alphas <- alphas + as.vector(demogDraws %*% piDemog)
-    }
+      # Apply demographic coefficients
+      # If demogMean=0, data is demeaned; if demogMean!=0, data is raw
+      # Either way, piDemog is applied to (demogDraws - demogMean)
+      demogMean <- object@slopes$demogMean
+      if (is.null(demogMean)) demogMean <- rep(0, nDemog)
+      
+      demogDraws_centered <- sweep(demogDraws, 2, demogMean, "-")
+      alphas <- alphas + as.vector(demogDraws_centered %*% piDemog)
     
     # Ensure correct sign for alphas based on market type
     output <- object@output
     expectedSign <- ifelse(output, -1, 1)
     wrongSigns <- if (expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
     if (wrongSigns > 0) {
+    }
       warning(
         wrongSigns, " out of ", length(alphas), 
         " individual price coefficients have wrong sign. ",
