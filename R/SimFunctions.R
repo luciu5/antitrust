@@ -107,6 +107,13 @@
 #'   where sigmaNest=1 is flat logit (no nesting) and sigmaNest->0 means products are
 #'   perfect substitutes within the nest. Default is 1.}
 #'   \item{piDemog}{Optional vector of demographic coefficients for the price coefficient.
+#'   \item{demogMean}{Optional: Vector of length equal to piDemog length, containing the mean
+#'   of each demographic variable. Default is 0 (demeaned demographics). If demographics were
+#'   demeaned in estimation, use 0; otherwise provide the actual mean.}
+#'   \item{demogCov}{Optional: Covariance matrix (square, dimensions = length of piDemog)
+#'   for demographic variables. Default is identity matrix (unit variance, independent).
+#'   Should match the variance structure of demographics in your data. For a single
+#'   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
 #'   Each element represents the interaction effect of a demographic variable with price.}
 #'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
 #'   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
