@@ -393,7 +393,8 @@ sim <- function(prices,
           }
           if (!("demogCov" %in% names(demand.param))) {
             demand.param$demogCov <- diag(demand.param$nDemog)  # Default: unit variance, independent
-            message("demogCov not provided. Defaulting to identity matrix (unit variance).")
+            warning("demogCov not provided. Defaulting to identity matrix (unit variance). ",
+                    "Consider specifying demogCov based on your data's variance.")
           }
         }
         
