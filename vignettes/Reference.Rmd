@@ -1276,15 +1276,12 @@ Until now, most of the discussion has focused on how to recover demand
 parameters when users have information on shares, margins, and in
 most cases, prices. To accommodate known demand parameters (e.g. there
 is sufficient data to employ econometric methods to estimate demand
-parameters), antitrust contains the `sim` function. The `sim`
-function allows users to simulate price effects (or the output from
-any method listed in Table \@ref(tab:selectMethods)) from a merger under the
-assumption that firms are playing a Bertrand differentiated pricing
-game. `sim` requires users to specify a vector of market
-prices, demand form (either "Linear", "AIDS", "LogLin", "Logit",
-"CES", "LogitNests", "LogitCap", or "CESNests"), a list containing the known
-demand parameters, and pre- and post-merger ownership information. See
-the `sim` help page for further details.
+parameters), `antitrust` contains the `sim` function. The `sim` 
+function serves as a unified wrapper, allowing users to simulate price effects not only under Bertrand competition, but also Cournot and Auction environments, using advanced demand systems like CES and BLP.
+
+The `sim` function requires users to specify a vector of market prices, the strategic environment (`supply = c("bertrand", "cournot", "auction", "bargaining", "bargaining2nd")`), the demand form (`demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP")`), a list containing the known demand parameters (`demand.param`), and pre-/post-merger ownership matrices. 
+
+For instance, users can simulate a Cournot game with BLP demand by specifying `supply = "cournot"` and `demand = "BLP"`, or a second-score auction with CES demand by specifying `supply = "auction"` and `demand = "CES"`. See the `sim` help page for detailed examples and necessary parameter inputs.
 
 ## Gotchas
 This section alerts users to some instances where `antitrust` may produce
@@ -1400,6 +1397,17 @@ Currently, `cournot` allows users to specify that product demand is either linea
 ## Cournot with Logit Demand 
 A Cournot quantity setting game with constant marginal costs and Logit demand  may be implemented using the
 `logit.cournot` function. Except for a different equilibrium margin for product $k$, $m_k=-\alpha^{-1}(1+\frac{ \sum_{j\in J_k}s_j}{s_0})$, `logit.cournot` works the same as the other functions in the `logit.*` family. See Chapter \@ref(nblogit) for further details.
+
+## Cournot with CES Demand
+The `cournot` function may also be used to simulate a Cournot quantity game when demand is Constant Elasticity of Substitution (CES). As discussed in the section on CES demand, under CES the representative consumer spends a fixed proportion of their budget on one of the $n$ products. 
+
+The assumption of CES demand yields the following equilibrium margin equation for product $i$:
+
+\begin{align*}
+  m_i =& \frac{1}{\gamma} \left( 1 + (\gamma - 1)r_i \right),& \gamma > 1
+\end{align*}
+
+where $r_i$ is the revenue share of product $i$ and $\gamma$ is the CES price coefficient. Because revenue shares are a function of price, the Cournot CES model is calibrated using observed revenue shares and prices. Like the Logit-Cournot model, it does not calibrate plant-level cost parameters, and instead relies on the assumption of constant marginal costs ($\frac{\partial c^r}{\partial q_i^r}=\gamma_r$).
 
 
 ## Simulating Merger Effects
@@ -1811,6 +1819,16 @@ The `CV` method may be used to calculate compensating variation from a merger. T
 #### Calibrating Unobserved Outside Share {-}
 `auction2nd.logit.alm` uses the calibration strategy similar to the one discussed in the ["Nested Logit with Unobserved Outside Share"][(Nested) Logit With Unobserved Outside Share] section to calibrate the unobserved share of the outside good.
 
+## 2nd Score Auction with CES Demand
+The `auction2nd.ces` function extends the second-score auction framework to accommodate Constant Elasticity of Substitution (CES) demand. Under CES, the purchaser spends a fixed budget proportion across the available alternative suppliers, evaluating their quality-adjusted prices.
+
+The equilibrium margin for firm $i$ under a second-score auction with CES demand is given by:
+
+\begin{align*}
+  m_i =& 1 - (1 - r_i)^{\frac{1}{\gamma - 1}},& \gamma > 1
+\end{align*}
+
+where $r_i$ is firm $i$'s revenue share (probability of winning the auction) and $\gamma$ captures the elasticity of substitution. As before, calibration relies on observed margins or elasticities to uncover $\gamma$, after which pre-merger marginal costs are recovered.
 
 # The Nash Bargaining Game (experimental)
 Unlike 2nd-price procurement (score) auction models (chapter \@ref(auction-models)), where buyers pay the difference in surplus between their two to best options in order to entice sellers to reveal their costs (match values), Nash bargaining models assume that buyers and sellers bilaterally negotiate prices so as to maximize their joint surplus.  The Nash bargaining model described here allows buyers and sellers to vary in thre important ways. First, buyers maximize utility while sellers maximize profits. Second, buyers and sellers differ in their *disagreement payoffs*: if a bargain cannot be reached, buyers select their next best option, which may be owned by the same seller. Finally, buyers and sellers negotiate a linear price over a single unit sold.
