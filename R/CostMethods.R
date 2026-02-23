@@ -53,166 +53,165 @@
 #' @keywords methods
 NULL
 
-setGeneric (
-  name= "calcMC",
-  def=function(object,...){standardGeneric("calcMC")}
+setGeneric(
+  name = "calcMC",
+  def = function(object, ...) {
+    standardGeneric("calcMC")
+  }
 )
 
-setGeneric (
-  name= "calcdMC",
-  def=function(object,...){standardGeneric("calcdMC")}
+setGeneric(
+  name = "calcdMC",
+  def = function(object, ...) {
+    standardGeneric("calcdMC")
+  }
 )
 
-setGeneric (
-  name= "calcVC",
-  def=function(object,...){standardGeneric("calcVC")}
+setGeneric(
+  name = "calcVC",
+  def = function(object, ...) {
+    standardGeneric("calcVC")
+  }
 )
 
 ## Create a method to recover marginal cost using
 ## demand parameters and supplied prices
-#'@rdname Cost-Methods
-#'@export
+#' @rdname Cost-Methods
+#' @export
 setMethod(
-  f= "calcMC",
-  signature= "Bertrand",
-  definition= function(object,preMerger=TRUE){
-
+  f = "calcMC",
+  signature = "Bertrand",
+  definition = function(object, preMerger = TRUE) {
     output <- object@output
-    
+
     object@pricePre <- object@prices
 
 
-    marginPre <- calcMargins(object,preMerger = TRUE,level=FALSE)
+    marginPre <- calcMargins(object, preMerger = TRUE, level = FALSE)
 
-    if(output) {mc <- (1 - marginPre) * object@prices}
-    else{mc <- (1 + marginPre) * object@prices}
-
-    if(!preMerger){
-      mc <- mc*(1+object@mcDelta)
+    if (output) {
+      mc <- (1 - marginPre) * object@prices
+    } else {
+      mc <- (1 + marginPre) * object@prices
     }
 
-   # mc <- as.vector(mc)
+    if (!preMerger) {
+      mc <- mc * (1 + object@mcDelta)
+    }
+
+    # mc <- as.vector(mc)
 
     names(mc) <- object@labels
 
 
-
     isNegMC <- mc < 0
 
-    if( preMerger && any(isNegMC, na.rm = TRUE)){
-
-      warning(paste("Negative marginal costs were calibrated for the following firms:", paste(object@labels[isNegMC], collapse=",")))
+    if (preMerger && any(isNegMC, na.rm = TRUE)) {
+      warning(paste("Negative marginal costs were calibrated for the following firms:", paste(object@labels[isNegMC], collapse = ",")))
     }
 
     return(mc)
   }
 )
 
-#'@rdname Cost-Methods
-#'@export
+#' @rdname Cost-Methods
+#' @export
 setMethod(
-  f= "calcMC",
-  signature= "VertBargBertLogit",
-  definition= function(object,preMerger=TRUE){
-    
+  f = "calcMC",
+  signature = "VertBargBertLogit",
+  definition = function(object, preMerger = TRUE) {
     up <- object@up
     down <- object@down
-    
-  
-      if(length(up@pricePre) == 0 ){
-        priceUpPre <- up@prices
-        object@up@pricePre <- up@prices
-      }
-      else{priceUpPre <- up@pricePre}
-    
-      if(length(down@pricePre) == 0 ){
-        priceDownPre <- down@prices
-        object@down@pricePre <- priceDownPre
-      }
-      else{priceDownPre <- object@down@pricePre}
-    
-    
-    
-    marginsPre <- calcMargins(object,preMerger = TRUE, level=TRUE)
-    
-   
-    mcDown <- -(marginsPre$down - priceDownPre + priceUpPre)  
-    mcUp <- -(marginsPre$up  - priceUpPre)  
-    
-    
-    
-    
-    if(!preMerger){
-      mcUp <- mcUp*(1+up@mcDelta)
-      mcDown <- mcDown*(1+down@mcDelta)
+
+
+    if (length(up@pricePre) == 0) {
+      priceUpPre <- up@prices
+      object@up@pricePre <- up@prices
+    } else {
+      priceUpPre <- up@pricePre
     }
-    
+
+    if (length(down@pricePre) == 0) {
+      priceDownPre <- down@prices
+      object@down@pricePre <- priceDownPre
+    } else {
+      priceDownPre <- object@down@pricePre
+    }
+
+
+    marginsPre <- calcMargins(object, preMerger = TRUE, level = TRUE)
+
+
+    mcDown <- -(marginsPre$down - priceDownPre + priceUpPre)
+    mcUp <- -(marginsPre$up - priceUpPre)
+
+
+    if (!preMerger) {
+      mcUp <- mcUp * (1 + up@mcDelta)
+      mcDown <- mcDown * (1 + down@mcDelta)
+    }
+
     mcUp <- as.vector(mcUp)
     mcDown <- as.vector(mcDown)
-    
+
     names(mcUp) <- up@labels
     names(mcDown) <- down@labels
-    
-    
-    
+
+
     isNegUpMC <- mcUp < 0
     isNegDownMC <- mcDown < 0
-    
-    if( preMerger && any(isNegUpMC, na.rm = TRUE)){
-      
-      warning(paste("Negative upstream marginal costs were calibrated for the following firms:", paste(up@labels[isNegUpMC & !is.na(isNegUpMC)], collapse=",")))
+
+    if (preMerger && any(isNegUpMC, na.rm = TRUE)) {
+      warning(paste("Negative upstream marginal costs were calibrated for the following firms:", paste(up@labels[isNegUpMC & !is.na(isNegUpMC)], collapse = ",")))
     }
-    if( preMerger && any(isNegDownMC, na.rm = TRUE)){
-      
-      warning(paste("Negative downstream marginal costs were calibrated for the following firms:", paste(down@labels[isNegDownMC& !is.na(isNegDownMC)], collapse=",")))
+    if (preMerger && any(isNegDownMC, na.rm = TRUE)) {
+      warning(paste("Negative downstream marginal costs were calibrated for the following firms:", paste(down@labels[isNegDownMC & !is.na(isNegDownMC)], collapse = ",")))
     }
-    
-    return(list(up=mcUp,down=mcDown))
+
+    return(list(up = mcUp, down = mcDown))
   }
 )
 
 
-#'@rdname Cost-Methods
-#'@export
+#' @rdname Cost-Methods
+#' @export
 setMethod(
-  f= "calcMC",
-  signature= "Auction2ndCap",
-  definition=function(object,t,preMerger=TRUE,exAnte=TRUE){
-
-
+  f = "calcMC",
+  signature = "Auction2ndCap",
+  definition = function(object, t, preMerger = TRUE, exAnte = TRUE) {
     cdfF <- match.fun(object@sellerCostCDF)
     pdfF <- object@sellerCostPDF
-    sellerCostBounds <-object@sellerCostBounds
+    sellerCostBounds <- object@sellerCostBounds
 
 
-
-    if(preMerger) {
+    if (preMerger) {
       capacities <- object@capacities
-      r    <- object@reservePre
-    }
-    else {
-      capacities <- tapply(object@capacities*(1+object@mcDelta),object@ownerPost,sum)
-      r    <- object@reservePost
+      r <- object@reservePre
+    } else {
+      capacities <- tapply(object@capacities * (1 + object@mcDelta), object@ownerPost, sum)
+      r <- object@reservePost
     }
 
     totCap <- sum(capacities)
 
-    if(missing(t)){t <- capacities}
-
+    if (missing(t)) {
+      t <- capacities
+    }
 
 
     ## The expected production cost
-    ecIntegrand = function(c,t){
-      sellerCostParms <- c(list(c),as.list(object@sellerCostParms))
+    ecIntegrand <- function(c, t) {
+      sellerCostParms <- c(list(c), as.list(object@sellerCostParms))
 
-      fc = do.call(pdfF,sellerCostParms)
+      fc <- do.call(pdfF, sellerCostParms)
 
       sellerCostParms <- c(sellerCostParms,
-                           lower.tail=as.list(object@sellerCostCDFLowerTail))
-      Fc = do.call(cdfF,sellerCostParms)
+        lower.tail = as.list(object@sellerCostCDFLowerTail)
+      )
+      Fc <- do.call(cdfF, sellerCostParms)
 
-      retval = t*c*fc*(1-Fc)^(totCap-1)
-      retval = ifelse(is.finite(retval),retval,0)
+      retval <- t * c * fc * (1 - Fc)^(totCap - 1)
+      retval <- ifelse(is.finite(retval), retval, 0)
 
       return(retval)
     }
@@ -220,99 +219,100 @@ setMethod(
     result <- sapply(
       t,
       function(t.i) {
-        if( r < sellerCostBounds[2]) {
-          retval = integrate(ecIntegrand,lower=sellerCostBounds[1],upper=r, stop.on.error = FALSE,t=t.i)$value
-        }
-        else {
-          retval = integrate(ecIntegrand,lower=sellerCostBounds[1],upper=sellerCostBounds[2], stop.on.error = FALSE,t=t.i)$value
+        if (r < sellerCostBounds[2]) {
+          retval <- integrate(ecIntegrand, lower = sellerCostBounds[1], upper = r, stop.on.error = FALSE, t = t.i)$value
+        } else {
+          retval <- integrate(ecIntegrand, lower = sellerCostBounds[1], upper = sellerCostBounds[2], stop.on.error = FALSE, t = t.i)$value
         }
 
         return(retval)
-      })
+      }
+    )
 
 
-    if(!preMerger && length(t)>1){
-
+    if (!preMerger && length(t) > 1) {
       temp <- rep(NA, length(object@ownerPre))
       temp[object@ownerPre == object@ownerPost] <- result
       result <- temp
-
     }
 
-    if(!exAnte){result <- result/calcShares(object,preMerger=preMerger,exAnte=TRUE)}
+    if (!exAnte) {
+      result <- result / calcShares(object, preMerger = preMerger, exAnte = TRUE)
+    }
 
     return(result)
-
   }
 )
 
 
-#'@rdname Cost-Methods
-#'@export
+#' @rdname Cost-Methods
+#' @export
 setMethod(
-  f= "calcMC",
-  signature= "Cournot",
-  definition=function(object,preMerger=TRUE){
-
-    if(preMerger){
-
-      quantity  <- object@quantityPre
+  f = "calcMC",
+  signature = "Cournot",
+  definition = function(object, preMerger = TRUE) {
+    if (preMerger) {
+      quantity <- object@quantityPre
       mcfun <- object@mcfunPre
       cap <- object@capacitiesPre
-    }
-    else{
-
-      quantity  <- object@quantityPost
+    } else {
+      quantity <- object@quantityPost
       mcfun <- object@mcfunPost
       cap <- object@capacitiesPost
     }
 
-    plantQuant <- rowSums(quantity,na.rm=TRUE)
-
+    plantQuant <- rowSums(quantity, na.rm = TRUE)
 
 
     nplants <- nrow(quantity)
 
     mc <- rep(NA, nplants)
 
-    for(f in 1:nplants){
-      mc[f] <- mcfun[[f]](quantity[f,])
+    for (f in 1:nplants) {
+      mc[f] <- mcfun[[f]](quantity[f, ])
     }
 
-    if(!preMerger){mc <- mc*(1 + object@mcDelta)}
+    if (!preMerger) {
+      mc <- mc * (1 + object@mcDelta)
+    }
 
-    mc <- mc + 1/(100*(pmax(cap - plantQuant, 1e-16))) + 1/(100*(pmax(1e-16,plantQuant)))
-    #mc <- ifelse(plantQuant <= cap & plantQuant >= 0 , mc, max(mc,na.rm=TRUE) * 1e3)
+    mc <- mc + 1 / (100 * (pmax(cap - plantQuant, 1e-16))) + 1 / (100 * (pmax(1e-16, plantQuant)))
+    # mc <- ifelse(plantQuant <= cap & plantQuant >= 0 , mc, max(mc,na.rm=TRUE) * 1e3)
 
 
     names(mc) <- object@labels[[1]]
 
     return(mc)
-  })
+  }
+)
 
 
 ## Create a method to recover marginal cost using
 ## demand parameters and supplied prices
-#'@rdname Cost-Methods
-#'@export
+#' @rdname Cost-Methods
+#' @export
 setMethod(
-  f= "calcMC",
-  signature= "Auction2ndLogit",
-  definition= function(object,preMerger=TRUE,exAnte=FALSE){
-
+  f = "calcMC",
+  signature = "Auction2ndLogit",
+  definition = function(object, preMerger = TRUE, exAnte = FALSE) {
     prices <- object@prices
-    output <- object@output  
-    
+    output <- object@output
+
     marginPre <- calcMargins(object, preMerger = TRUE, level = TRUE)
 
-    if(output) {mc <-  prices - marginPre}
-    else{mc <- marginPre + prices}
+    if (output) {
+      mc <- prices - marginPre
+    } else {
+      mc <- marginPre + prices
+    }
 
-    if(!preMerger){
+    if (!preMerger) {
       mc <- mc + object@mcDelta
     }
 
-    if(exAnte){mc <- mc * calcShares(object,preMerger=preMerger)}
+    if (exAnte) {
+      mc <- mc * calcShares(object, preMerger = preMerger)
+    }
 
     names(mc) <- object@labels
 
@@ -320,86 +320,114 @@ setMethod(
 
     isNegMC <- mc < 0
 
-    if( preMerger && any(isNegMC, na.rm = TRUE)){
-
-      warning(paste("Negative marginal costs were calibrated for the following firms:", paste(object@labels[isNegMC], collapse=",")))
-
+    if (preMerger && any(isNegMC, na.rm = TRUE)) {
+      warning(paste("Negative marginal costs were calibrated for the following firms:", paste(object@labels[isNegMC], collapse = ",")))
     }
 
     return(mc)
   }
 )
 
-#'@rdname Cost-Methods
-#'@export
+#' @rdname Cost-Methods
+#' @export
 setMethod(
-  f= "calcdMC",
-  signature= "Stackelberg",
-  definition=function(object,preMerger=TRUE){
+  f = "calcMC",
+  signature = "Auction2ndCES",
+  definition = function(object, preMerger = TRUE) {
+    prices <- object@prices
+    output <- object@output
 
-    if(preMerger){
+    object@pricePre <- prices
 
-      quantity  <- object@quantityPre
-      dmcfun <- object@dmcfunPre
+    marginPre <- calcMargins(object, preMerger = TRUE, level = FALSE)
+
+    if (output) {
+      mc <- prices * (1 - marginPre)
+    } else {
+      mc <- prices * (1 + marginPre)
     }
-    else{
 
-      quantity  <- object@quantityPost
+    if (!preMerger) {
+      mc <- mc * (1 + object@mcDelta)
+    }
+
+    names(mc) <- object@labels
+
+    mc <- as.vector(mc)
+
+    isNegMC <- mc < 0
+
+    if (preMerger && any(isNegMC, na.rm = TRUE)) {
+      warning(paste("Negative marginal costs were calibrated for the following firms:", paste(object@labels[isNegMC], collapse = ",")))
+    }
+
+    return(mc)
+  }
+)
+
+#' @rdname Cost-Methods
+#' @export
+setMethod(
+  f = "calcdMC",
+  signature = "Stackelberg",
+  definition = function(object, preMerger = TRUE) {
+    if (preMerger) {
+      quantity <- object@quantityPre
+      dmcfun <- object@dmcfunPre
+    } else {
+      quantity <- object@quantityPost
       dmcfun <- object@dmcfunPost
     }
-
-
 
 
     nplants <- nrow(quantity)
 
     dmc <- rep(NA, nplants)
 
-    for(f in 1:nplants){
-      dmc[f] <- dmcfun[[f]](quantity[f,])
+    for (f in 1:nplants) {
+      dmc[f] <- dmcfun[[f]](quantity[f, ])
     }
 
-    if(!preMerger){dmc <- dmc*(1 + object@mcDelta)}
+    if (!preMerger) {
+      dmc <- dmc * (1 + object@mcDelta)
+    }
 
     names(dmc) <- object@labels[[1]]
 
     return(dmc)
-  })
+  }
+)
 
 
-#'@rdname Cost-Methods
-#'@export
+#' @rdname Cost-Methods
+#' @export
 setMethod(
-  f= "calcVC",
-  signature= "Cournot",
-  definition=function(object,preMerger=TRUE){
-
-    if(preMerger){
-
-      quantity  <- object@quantityPre
+  f = "calcVC",
+  signature = "Cournot",
+  definition = function(object, preMerger = TRUE) {
+    if (preMerger) {
+      quantity <- object@quantityPre
       vcfun <- object@vcfunPre
-    }
-    else{
-
-      quantity  <- object@quantityPost
+    } else {
+      quantity <- object@quantityPost
       vcfun <- object@vcfunPost
     }
-
-
 
 
     nplants <- nrow(quantity)
 
     vc <- rep(NA, nplants)
 
-    for(f in 1:nplants){
-      vc[f] <- vcfun[[f]](quantity[f,])
+    for (f in 1:nplants) {
+      vc[f] <- vcfun[[f]](quantity[f, ])
     }
 
-    if(!preMerger){vc <- vc*(1 + object@mcDelta)}
+    if (!preMerger) {
+      vc <- vc * (1 + object@mcDelta)
+    }
 
     names(vc) <- object@labels[[1]]
 
     return(vc)
-  })
-
+  }
+)

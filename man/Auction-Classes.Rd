@@ -7,6 +7,8 @@
 \alias{Auction2ndLogit-class}
 \alias{Auction2ndLogitNests-class}
 \alias{Auction2ndLogitALM-class}
+\alias{Auction2ndCES-class}
+\alias{Auction2ndCESALM-class}
 \title{Class \dQuote{Auction}}
 \description{
 The \dQuote{Auction2ndCap} class contains all the information needed to
@@ -28,6 +30,18 @@ demand system with unobserved outside share and perform a merger simulation anal
 firms are setting offers in a 2nd-score auction.
 
 Below, let k denote the number of firms.
+
+The \dQuote{Auction2ndCES} class contains all the information needed to
+calibrate a CES
+demand system and perform a merger simulation analysis under the assumption that
+firms are setting offers in a 2nd-score auction.
+
+The \dQuote{Auction2ndCESALM} class contains all the information needed to
+calibrate a CES
+demand system with unobserved outside share and perform a merger simulation analysis under the assumption that
+firms are setting offers in a 2nd-score auction.
+
+)
 }
 \section{Slots}{
 
@@ -81,6 +95,10 @@ Auction2ndLogit: Objects can be created by using the constructor function \code{
 Auction2ndLogitNests: Objects can be created by using the constructor function \code{\link{auction2nd.logit.nests}}.
 
 Auction2ndLogitALM: Objects can be created by using the constructor function \code{\link{auction2nd.logit.alm}}.
+
+Auction2ndCES: Objects can be created by using the constructor function \code{\link{auction2nd.ces}}.
+
+Auction2ndCESALM: Objects can be created by using the constructor function \code{\link{auction2nd.ces.alm}}.
 }
 
 \section{Extends}{
@@ -98,9 +116,9 @@ Class \code{\linkS4class{Antitrust}}, by class \code{\linkS4class{Bertrand}}, di
 }
 
 \examples{
-showClass("Auction2ndCap")           # get a detailed description of the class
-showClass("Auction2ndLogit")           # get a detailed description of the class
-showClass("Auction2ndLogitALM")           # get a detailed description of the class
+showClass("Auction2ndCap") # get a detailed description of the class
+showClass("Auction2ndLogit") # get a detailed description of the class
+showClass("Auction2ndLogitALM") # get a detailed description of the class
 }
 \author{
 Charles Taragin \email{ctaragin+antitrustr@gmail.com}

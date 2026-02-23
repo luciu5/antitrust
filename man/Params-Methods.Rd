@@ -37,6 +37,10 @@
 \alias{calcSlopes,LogitCournot-method}
 \alias{calcSlopes,BargainingLogitALM-method}
 \alias{calcSlopes,LogitCournotALM-method}
+\alias{calcSlopes,CESCournot-method}
+\alias{calcSlopes,CESCournotALM-method}
+\alias{calcSlopes,Auction2ndCES-method}
+\alias{calcSlopes,Auction2ndCESALM-method}
 \title{Methods for Calculating Demand Parameters}
 \usage{
 \S4method{calcSlopes}{Cournot}(object)
@@ -96,6 +100,14 @@
 \S4method{getNestsParms}{PCAIDSNests}(object)
 
 \S4method{calcSlopes}{LogitCournotALM}(object)
+
+\S4method{calcSlopes}{CESCournot}(object)
+
+\S4method{calcSlopes}{CESCournotALM}(object)
+
+\S4method{calcSlopes}{Auction2ndCES}(object)
+
+\S4method{calcSlopes}{Auction2ndCESALM}(object)
 }
 \arguments{
 \item{object}{An instance of the respective class (see description for the classes)}

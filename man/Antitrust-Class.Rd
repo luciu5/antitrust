@@ -49,7 +49,7 @@ virtual classes used for validity checking in the \sQuote{ownerPre} and
 }
 
 \examples{
-showClass("Antitrust")           # get a detailed description of the class
+showClass("Antitrust") # get a detailed description of the class
 }
 \author{
 Charles Taragin \email{ctaragin+antitrustr@gmail.com}

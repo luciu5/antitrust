@@ -23,6 +23,7 @@ bertrand.alm(
   priceOutside = ifelse(demand == "logit", 0, 1),
   priceStart = prices,
   isMax = FALSE,
+  output = TRUE,
   parmStart,
   control.slopes,
   control.equ,
@@ -81,6 +82,8 @@ a [0,1] uniform distribution. For ces and logit, the default is prices.}
 
 \item{isMax}{If TRUE, checks to see whether computed price equilibrium
 locally maximizes firm profits and returns a warning if not. Default is FALSE.}
+
+\item{output}{a length 1 logical vector equal to TRUE if merger simulation performed on output market, FALSE if it is an input market. Default TRUE.}
 
 \item{parmStart}{\code{aids} only. A vector of length 2 who elements equal to an
 initial guess for "known" element of the diagonal of the demand matrix and the market elasticity.}

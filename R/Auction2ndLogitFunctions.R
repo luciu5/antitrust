@@ -3,6 +3,8 @@
 #' @aliases auction2nd.logit
 #' auction2nd.logit.nests
 #' auction2nd.logit.alm
+#' auction2nd.ces
+#' auction2nd.ces.alm
 #'
 #' @description Calibrates consumer demand using (Nested) Logit and then
 #' simulates the price effect of a merger between two firms
@@ -44,6 +46,8 @@
 #' length k vector of TRUE.
 #' @param mcDeltaOutside A length 1 vector indicating the change in the marginal cost of the
 #' outside good. Default is 0.
+#' @param priceOutside A length 1 vector indicating the price of the outside good. Default is 1.
+#' @param priceStart A vector of length k of starting values for the non-linear equation solver.
 #' @param parmsStart For \code{auction2nd.logit.alm}, a length 2 vector of starting values used to solve for
 #' price coefficient and the share of the outside good. The first element should
 #' always be the price coefficient and the second should be

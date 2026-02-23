@@ -16,13 +16,17 @@
 \alias{calcMargins,Cournot-method}
 \alias{calcMargins,BargainingLogit-method}
 \alias{calcMargins,Bargaining2ndLogit-method}
+\alias{calcMargins,CESCournot-method}
 \alias{calcMargins,Auction2ndCap-method}
+\alias{calcMargins,Auction2ndCES-method}
 \alias{calcMargins,CournotBLP-method}
 \title{Methods for Calculating Margins}
 \usage{
 \S4method{calcMargins}{Bertrand}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{LogitCournot}(object, preMerger = TRUE, level = FALSE)
+
+\S4method{calcMargins}{CESCournot}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{Bargaining2ndLogit}(object, preMerger = TRUE, exAnte = FALSE, level = TRUE)
 
@@ -41,6 +45,8 @@
 \S4method{calcMargins}{LogitCap}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE, level = TRUE)
+
+\S4method{calcMargins}{Auction2ndCES}(object, preMerger = TRUE, exAnte = FALSE, level = FALSE)
 
 \S4method{calcMargins}{Auction2ndLogitNests}(object, preMerger = TRUE, exAnte = FALSE, level = FALSE)
 

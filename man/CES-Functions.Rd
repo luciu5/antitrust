@@ -5,6 +5,8 @@
 \alias{ces}
 \alias{ces.alm}
 \alias{ces.nests}
+\alias{ces.cournot}
+\alias{ces.cournot.alm}
 \title{(Nested) Constant Elasticity of Substitution Demand Calibration and Merger Simulation}
 \usage{
 ces(
@@ -65,6 +67,49 @@ ces.nests(
   priceStart = prices,
   isMax = FALSE,
   constraint = TRUE,
+  parmsStart,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
+
+ces.cournot(
+  prices,
+  shares,
+  margins,
+  diversions,
+  ownerPre,
+  ownerPost,
+  output = TRUE,
+  normIndex = ifelse(sum(shares) < 1, NA, 1),
+  mktElast = NA_real_,
+  insideSize = NA_real_,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 1,
+  priceStart = prices,
+  isMax = FALSE,
+  control.slopes,
+  control.equ,
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  ...
+)
+
+ces.cournot.alm(
+  prices,
+  shares,
+  margins,
+  ownerPre,
+  ownerPost,
+  mktElast = NA_real_,
+  insideSize = NA_real_,
+  output = TRUE,
+  mcDelta = rep(0, length(prices)),
+  subset = rep(TRUE, length(prices)),
+  priceOutside = 1,
+  priceStart = prices,
+  isMax = FALSE,
   parmsStart,
   control.slopes,
   control.equ,

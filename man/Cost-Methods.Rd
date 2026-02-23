@@ -16,6 +16,7 @@
 \alias{calcVC}
 \alias{calcVC,ANY-method}
 \alias{calcVC,Cournot-method}
+\alias{calcMC,Auction2ndCES-method}
 \title{Methods for Calculating marginal and Variable Costs}
 \usage{
 \S4method{calcMC}{Bertrand}(object, preMerger = TRUE)
@@ -27,6 +28,8 @@
 \S4method{calcMC}{Cournot}(object, preMerger = TRUE)
 
 \S4method{calcMC}{Auction2ndLogit}(object, preMerger = TRUE, exAnte = FALSE)
+
+\S4method{calcMC}{Auction2ndCES}(object, preMerger = TRUE)
 
 \S4method{calcdMC}{Stackelberg}(object, preMerger = TRUE)
 

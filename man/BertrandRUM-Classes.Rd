@@ -15,6 +15,8 @@
 \alias{LogitALM-class}
 \alias{CES-class}
 \alias{CESALM-class}
+\alias{CESCournot-class}
+\alias{CESCournotALM-class}
 \alias{CESNests-class}
 \title{\dQuote{Bertrand RUM} Classes}
 \description{
@@ -41,6 +43,12 @@ The \dQuote{CES} class has the information for a CES demand system
 
 The \dQuote{CESALM} class has the information for a CES demand system and
 assumes that firms are playing a differentiated products Bertrand pricing game with unknown market elasticity.
+
+The \dQuote{CESCournot} class has the information for a CES demand system
+under the assumption that firms are playing a differentiated products Cournot quantity game.
+
+The \dQuote{CESCournotALM} class has the information for a CES demand system
+under the assumption that firms are playing a differentiated products Cournot quantity game with unknown market elasticity.
 
 The \dQuote{CESNests} class has the information for a nested CES demand system.
 
@@ -108,6 +116,10 @@ For CES, objects can be created by using the constructor function \code{\link{ce
 For CESALM, objects can be created by using the constructor function \code{\link{ces.alm}}.
 
 For CESNests, objects can be created by using the constructor function \code{\link{ces.nests}}.
+
+For CESCournot, objects can be created by using the constructor function \code{\link{ces.cournot}}.
+
+For CESCournotALM, objects can be created by using the constructor function \code{\link{ces.cournot.alm}}.
 }
 
 \section{Extends}{

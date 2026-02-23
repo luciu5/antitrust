@@ -95,56 +95,52 @@ setMethod(
   signature = "Logit",
   definition = function(object, preMerger = TRUE, isMax = FALSE, ...) {
     output <- object@output
-    
-    
+
+
     priceStart <- object@priceStart
     outSign <- ifelse(output, -1, 1)
     nprods <- length(object@shares)
-    
+
     if (preMerger) {
       owner <- object@ownerPre
       mc <- object@mcPre
       subset <- rep(TRUE, nprods)
-    } 
-    
-    else {
+    } else {
       owner <- object@ownerPost
       mc <- object@mcPost
       subset <- object@subset
     }
-   
-    
+
+
     priceStart <- priceStart[subset]
 
-    
+
     priceEst <- rep(NA, nprods)
-    
+
     FOC <- function(priceCand) {
-      
       thisPrice <- priceEst
       thisPrice[subset] <- priceCand
       if (preMerger) {
         object@pricePre <- thisPrice
-        mc                <- object@mcPre[subset]
-        
+        mc <- object@mcPre[subset]
       } else {
-        object@pricePost  <- thisPrice
-        mc                <- object@mcPost[subset]
+        object@pricePost <- thisPrice
+        mc <- object@mcPost[subset]
       }
-      
+
       if (output) {
         margins <- priceCand - mc
       } else {
         margins <- mc - priceCand
       }
-      
+
       predMargin <- calcMargins(object, preMerger, level = TRUE)[subset]
 
       thisFOC <- margins - predMargin
       return(thisFOC)
     }
-    
-    
+
+
     ## Find price changes that set FOCs equal to 0
     ## Try nleqslv first (faster, more reliable for smooth FOCs)
     nleqslv_maxit <- as.integer(object@control.equ$maxit)
@@ -180,11 +176,9 @@ setMethod(
       }
     }
     priceEst[subset] <- priceEst_solution
-    
+
     names(priceEst) <- object@labels
     return(priceEst)
-
-    
   }
 )
 
@@ -212,6 +206,80 @@ setMethod(
     } else {
       prices <- mc - margins
     }
+
+    if (exAnte) {
+      prices <- prices * calcShares(object, preMerger = preMerger, revenue = FALSE)
+    }
+    names(prices) <- object@labels
+    return(prices)
+  }
+)
+#' @rdname Prices-Methods
+#' @export
+setMethod(
+  f = "calcPrices",
+  signature = "Auction2ndCES",
+  definition = function(object, preMerger = TRUE, exAnte = FALSE) {
+    nprods <- length(object@shares)
+    output <- object@output
+
+    if (preMerger) {
+      owner <- object@ownerPre
+      mc <- object@mcPre
+      subset <- rep(TRUE, nprods)
+    } else {
+      owner <- object@ownerPost
+      mc <- object@mcPost
+      subset <- object@subset
+    }
+
+    priceStart <- object@priceStart
+    if (!preMerger) {
+      cand <- object@pricePre
+      if (length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
+    }
+    priceStart <- priceStart[subset]
+
+    FOC <- function(priceCand) {
+      if (preMerger) {
+        object@pricePre[subset] <- priceCand
+      } else {
+        object@pricePost[subset] <- priceCand
+      }
+      margins_prop <- calcMargins(object, preMerger, exAnte = FALSE, level = FALSE)[subset]
+
+      if (output) {
+        return(priceCand - mc[subset] / (1 - margins_prop))
+      } else {
+        return(priceCand - mc[subset] / (1 + margins_prop))
+      }
+    }
+
+    nleqslv_maxit <- as.integer(object@control.equ$maxit)
+    if (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
+    minResult <- nleqslv::nleqslv(priceStart, FOC,
+      method = "Broyden",
+      control = list(
+        ftol = object@control.equ$tol,
+        maxit = nleqslv_maxit
+      )
+    )
+
+    if (minResult$termcd > 2) {
+      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = object@control.equ)
+      priceEst_solution <- minResult$par
+      if (minResult$convergence != 0) {
+        warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '", minResult$message, "'")
+      }
+    } else {
+      priceEst_solution <- minResult$x
+      if (minResult$termcd > 1) {
+        warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ", minResult$termcd)
+      }
+    }
+
+    prices <- rep(NA, nprods)
+    prices[subset] <- priceEst_solution
 
     if (exAnte) {
       prices <- prices * calcShares(object, preMerger = preMerger, revenue = FALSE)
@@ -891,12 +959,11 @@ setMethod(
   f = "calcPrices",
   signature = "LogitBLP",
   definition = function(object, preMerger = TRUE, isMax = FALSE, ...) {
-    
     # 1 Set prices and ownership
     output <- object@output
     priceStart <- object@priceStart
     nprods <- length(object@shares)
-    
+
     if (preMerger) {
       subset <- rep(TRUE, nprods)
       owner <- object@ownerPre
@@ -913,9 +980,9 @@ setMethod(
     # 2 Define FOCs function (Unified for Root-Finding and Fixed-Point)
     FOC <- function(priceCand, as_fp = FALSE) {
       thisobj <- object
-      thisPrice <- rep(0,nprods)
+      thisPrice <- rep(0, nprods)
       thisPrice[subset] <- priceCand
-      
+
       if (preMerger) {
         thisobj@pricePre <- thisPrice
       } else {
@@ -939,7 +1006,7 @@ setMethod(
       }
     }
 
-    
+
     # 4 Solve FOCs
 
     # Strategy 1: SQUAREM (Contraction Mapping)
@@ -961,7 +1028,6 @@ setMethod(
       success <- TRUE
     }
 
-    
 
     # Strategy 2: BBsolve (Fallback)
     if (!success) {
@@ -976,10 +1042,9 @@ setMethod(
         success <- TRUE
       }
     }
-    
+
     # Strategy 3: nleqslv (Newton with Analytic Jacobian)
     if (!success) {
-      
       nleqslv_maxit <- as.integer(object@control.equ$maxit)
       if (nprods <= 30 && (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1)) {
         nleqslv_maxit <- 150L
@@ -1011,10 +1076,9 @@ setMethod(
     # 6 Return final prices
     result <- rep(NA, nprods)
     result[subset] <- priceEst_solution
-    
-    
+
+
     names(result) <- object@labels
     return(result)
   }
 )
-

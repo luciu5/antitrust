@@ -715,70 +715,73 @@ setMethod(
     prices <- object@prices
     idx <- object@normIndex
     shareInside <- object@shareInside
-    
+
     # Get parameters from object
     alphaMean <- if (!is.null(object@slopes$alpha)) object@slopes$alpha else object@slopes$alphaMean
     if (is.null(alphaMean)) {
       stop("LogitBLP calcSlopes: missing 'alpha' (or 'alphaMean') in slopes.")
     }
-    
+
     # Random coefficient on price
-    sigma <- object@slopes$sigma 
+    sigma <- object@slopes$sigma
     if (is.null(sigma)) sigma <- 0
-    
+
     # Get demographic parameters
     nDraws <- object@nDraws
-    piDemog <- object@slopes$piDemog 
+    piDemog <- object@slopes$piDemog
     if (is.null(piDemog)) piDemog <- numeric(0)
-    nDemog <- object@slopes$nDemog 
+    nDemog <- object@slopes$nDemog
     if (is.null(nDemog)) nDemog <- 0
-    sigmaNest <- object@slopes$sigmaNest 
+    sigmaNest <- object@slopes$sigmaNest
     if (is.null(sigmaNest)) sigmaNest <- 1
-    
+
     # Get product characteristics
-    prodChar <- object@slopes$prodChar  # k x L matrix
-    beta <- object@slopes$beta          # length L vector (mean effects - absorbed in delta)
-    sigmaChar <- object@slopes$sigmaChar  # length L vector (random coeff std devs)
-    pi <- object@slopes$pi              # nDemog x L matrix (demog interactions)
-    
+    prodChar <- object@slopes$prodChar # k x L matrix
+    beta <- object@slopes$beta # length L vector (mean effects - absorbed in delta)
+    sigmaChar <- object@slopes$sigmaChar # length L vector (random coeff std devs)
+    pi <- object@slopes$pi # nDemog x L matrix (demog interactions)
+
     hasChar <- !is.null(prodChar) && !is.null(beta)
     nChar <- if (hasChar) ncol(prodChar) else 0
-    
+
     # Check if meanval is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
-    
+
     # Check if draws already exist
     drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
-    
+
     if (drawsExist) {
       consDraws <- object@slopes$consDraws
       demogDraws <- object@slopes$demogDraws
     } else {
       # Generate consumer draws
       consDraws <- rnorm(nDraws)
-      
+
       # Generate demographic draws
       if (nDemog > 0) {
         # Check if market-specific demographic distribution is provided
         demogMean <- object@slopes$demogMean
         demogCov <- object@slopes$demogCov
-        
+
         if (!is.null(demogMean) && !is.null(demogCov)) {
           # Sample from actual market distribution using multivariate normal
           # Sample from N(demogMean, demogCov) using Cholesky decomposition
           # Avoid MASS dependency: X = mu + chol(Sigma) * Z where Z ~ N(0,I)
-          demogCov_chol <- tryCatch({
-            chol(demogCov)
-          }, error = function(e) {
-            stop("demogCov must be positive definite for sampling. Error: ", e$message)
-          })
-          
+          demogCov_chol <- tryCatch(
+            {
+              chol(demogCov)
+            },
+            error = function(e) {
+              stop("demogCov must be positive definite for sampling. Error: ", e$message)
+            }
+          )
+
           # Generate standard normal draws
           z_draws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
-          
+
           # Transform: X = mu + Z * chol(Sigma)^T
           demogDraws <- sweep(z_draws %*% t(demogCov_chol), 2, demogMean, "+")
-          
+
           if (nDemog == 1) {
             demogDraws <- matrix(demogDraws, ncol = 1)
           }
@@ -790,7 +793,7 @@ setMethod(
         demogDraws <- matrix(0, nrow = nDraws, ncol = 0)
       }
     }
-    
+
     # Compute individual-specific price coefficients
     alphas <- alphaMean + sigma * consDraws
     if (nDemog > 0 && length(piDemog) > 0) {
@@ -799,75 +802,76 @@ setMethod(
       # Either way, piDemog is applied to (demogDraws - demogMean)
       demogMean <- object@slopes$demogMean
       if (is.null(demogMean)) demogMean <- rep(0, nDemog)
-      
+
       demogDraws_centered <- sweep(demogDraws, 2, demogMean, "-")
       alphas <- alphas + as.vector(demogDraws_centered %*% piDemog)
-    
+    }
+
     # Ensure correct sign for alphas based on market type
     output <- object@output
     expectedSign <- ifelse(output, -1, 1)
     wrongSigns <- if (expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
     if (wrongSigns > 0) {
-    }
       warning(
-        wrongSigns, " out of ", length(alphas), 
+        wrongSigns, " out of ", length(alphas),
         " individual price coefficients have wrong sign. ",
-        "Clipping them to enforce correct sign (", 
+        "Clipping them to enforce correct sign (",
         ifelse(output, "negative", "positive"), ")."
       )
-      
+
       if (output) {
         alphas <- pmin(alphas, -1e-2)
-        alphas[alphas >= 0] <- max(alphas[alphas < 0])
+        alphas[alphas <= 0] <- min(alphas[alphas > 0], na.rm = TRUE) # fallback
+        alphas <- pmax(alphas, min(alphas[alphas < 0]))
       } else {
         alphas <- pmax(alphas, 1e-2)
         alphas[alphas <= 0] <- min(alphas[alphas > 0])
       }
     }
-    
+
     nprods <- length(shares)
     if (is.na(idx)) {
       idxPrice <- object@priceOutside
     } else {
       idxPrice <- prices[idx]
     }
-    
+
     # Generate random coefficients for characteristics (if any)
     if (hasChar && !is.null(sigmaChar)) {
       charDraws <- matrix(rnorm(nDraws * nChar), nrow = nDraws, ncol = nChar)
     } else {
       charDraws <- NULL
     }
-    
+
     # Compute RANDOM DEVIATIONS for characteristics (not mean effects!)
     # Mean effects (? * X) will be absorbed in delta
     if (hasChar && ((!is.null(sigmaChar) && !is.null(charDraws)) || (nDemog > 0 && !is.null(pi)))) {
       # Individual-specific deviations from mean: (?_k * ?_ik + ?_k * D_i)
       charCoeffs_deviations <- matrix(0, nrow = nDraws, ncol = nChar)
-      
+
       # Add random coefficient component: ?_k * ?_ik
       if (!is.null(sigmaChar) && !is.null(charDraws)) {
         charCoeffs_deviations <- sweep(charDraws, 2, sigmaChar, "*")
       }
-      
+
       # Add demographic interactions: ?_k * D_i
       if (nDemog > 0 && !is.null(pi)) {
         charCoeffs_deviations <- charCoeffs_deviations + demogDraws %*% pi
       }
-      
+
       # Compute random utility deviations: (?_k * ?_ik + ?_k * D_i) * X_jk
-      char_random <- charCoeffs_deviations %*% t(prodChar)  # nDraws x k
+      char_random <- charCoeffs_deviations %*% t(prodChar) # nDraws x k
     } else {
       char_random <- matrix(0, nrow = nDraws, ncol = nprods)
     }
-    
+
     if (deltaProvided) {
       delta <- object@slopes$meanval
       message("Using provided meanval (delta) for LogitBLP - skipping contraction mapping")
     } else {
       # Pre-compute price differences
       price_diff <- prices - object@priceOutside
-      
+
       # Define the fixed point function
       # delta implicitly contains ? * X (mean characteristic effects)
       # We only add random deviations
@@ -875,53 +879,53 @@ setMethod(
         # Base utility: delta + individual price effects
         utilities <- matrix(delta, nrow = nDraws, ncol = nprods, byrow = TRUE)
         utilities <- utilities + outer(alphas, price_diff, "*")
-        
+
         # Add ONLY random deviations from mean characteristics
         # (mean effects already in delta)
         if (hasChar) {
           utilities <- utilities + char_random
         }
-        
+
         # Apply nesting parameter and prevent numeric overflow
         maxUtil <- 700
         utilities <- pmin(pmax(utilities / sigmaNest, -maxUtil), maxUtil)
         expUtil <- exp(utilities)
-        
+
         # Calculate shares using nested logit formula
         sumExpUtil <- rowSums(expUtil)
         insideIV <- sumExpUtil^sigmaNest
-        
+
         withinNest <- expUtil / sumExpUtil
         acrossNest <- insideIV / (1 + insideIV)
         shares_draw <- withinNest * acrossNest
-        
+
         predShares <- colMeans(shares_draw)
-        
+
         # BLP contraction mapping
         return(delta + sigmaNest * (log(shares) - log(predShares)))
       }
-      
+
       # Run contraction mapping
       tol <- ifelse(!is.null(object@slopes$contractionTol),
-                    object@slopes$contractionTol, 1e-10
+        object@slopes$contractionTol, 1e-10
       )
       maxIter <- ifelse(!is.null(object@slopes$contractionMaxIter),
-                        object@slopes$contractionMaxIter, 1200
+        object@slopes$contractionMaxIter, 1200
       )
-      
+
       message(
         "Running BLP contraction (tol=", sprintf("%.0e", tol),
         ", maxIter=", maxIter, ")..."
       )
-      
+
       dampFactor <- 0.5
       delta <- log(shares) + log(object@insideSize)
-      
+
       for (iter in 1:maxIter) {
         deltaNew <- fpFunction(delta)
         absDiff <- max(abs(deltaNew - delta))
         relDiff <- max(abs((deltaNew - delta) / (abs(delta) + 1e-8)))
-        
+
         if (relDiff < tol || absDiff < tol * 1e-2) {
           delta <- deltaNew
           message("BLP contraction converged in ", iter, " iterations")
@@ -933,7 +937,7 @@ setMethod(
         warning("BLP contraction mapping did not converge within ", maxIter, " iterations")
       }
     }
-    
+
     # Store results
     names(delta) <- object@labels
     names(alphaMean) <- "alphaMean"
@@ -942,21 +946,21 @@ setMethod(
     if (length(piDemog) > 0) {
       names(piDemog) <- paste0("pi_", 1:length(piDemog))
     }
-    
+
     # Create comprehensive slopes list with all parameters
     slopes_list <- list(
-      alpha = as.numeric(alphaMean), 
-      alphaMean = alphaMean, 
-      meanval = delta, 
-      sigma = sigma, 
+      alpha = as.numeric(alphaMean),
+      alphaMean = alphaMean,
+      meanval = delta,
+      sigma = sigma,
       sigmaNest = sigmaNest,
-      piDemog = piDemog, 
+      piDemog = piDemog,
       nDemog = nDemog,
-      alphas = as.numeric(alphas), 
-      consDraws = consDraws, 
+      alphas = as.numeric(alphas),
+      consDraws = consDraws,
       demogDraws = demogDraws
     )
-    
+
     # Add characteristic parameters if they exist
     # Only save char_random when we have characteristics to avoid dimension errors
     if (hasChar) {
@@ -965,14 +969,14 @@ setMethod(
       if (!is.null(sigmaChar)) slopes_list$sigmaChar <- sigmaChar
       if (!is.null(charDraws)) slopes_list$charDraws <- charDraws
       if (!is.null(pi)) slopes_list$pi <- pi
-      slopes_list$char_random <- char_random  # Only save when hasChar = TRUE
+      slopes_list$char_random <- char_random # Only save when hasChar = TRUE
     }
-    
+
     object@slopes <- slopes_list
     object@priceOutside <- idxPrice
     object@pricePre <- object@prices
     object@mktSize <- object@insideSize / sum(calcShares(object, preMerger = TRUE))
-    
+
     return(object)
   }
 )
@@ -3458,6 +3462,372 @@ setMethod(
     object@shareInside <- 1 - minTheta[2]
     object@priceOutside <- priceOutside
     object@mktSize <- object@insideSize / object@shareInside
+
+    return(object)
+  }
+)
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "calcSlopes",
+  signature = "CESCournot",
+  definition = function(object) {
+    ## Uncover Demand Coefficients
+
+    ownerPre <- object@ownerPre
+    shares <- object@shares
+    margins <- object@margins
+    prices <- object@prices
+    idx <- object@normIndex
+    shareInside <- object@shareInside
+    insideSize <- object@insideSize
+    diversion <- object@diversion
+    mktElast <- object@mktElast
+    output <- object@output
+
+    outSign <- ifelse(output, 1, -1)
+    shareOut <- 1 - shareInside
+
+    ## uncover Numeraire Coefficients
+    if (shareInside <= 1 && shareInside > 0) {
+      alpha <- 1 / shareInside - 1
+    } else {
+      alpha <- NULL
+    }
+
+    ## if sum of shares is less than 1, add numeraire
+    if (is.na(idx)) {
+      idxShare <- 1 - sum(shares)
+      idxPrice <- object@priceOutside
+    } else {
+      idxShare <- shares[idx]
+      idxPrice <- prices[idx]
+    }
+
+    ## Choose starting parameter values
+    notMissing <- which(!is.na(margins))[1]
+
+    ## For CES Cournot, margin = (1 + (gamma-1)*r_i) / gamma
+    ## Solve for gamma: gamma * margin = 1 + (gamma-1)*r_i
+    ##                  gamma*margin - gamma*r_i = 1 - r_i
+    ##                  gamma*(margin - r_i) = 1 - r_i
+    ##                  gamma = (1 - r_i) / (margin - r_i)
+    r_nm <- shares[notMissing]
+    parmStart_gamma <- (1 - r_nm) / (margins[notMissing] - r_nm)
+    if (is.na(parmStart_gamma) || !is.finite(parmStart_gamma)) parmStart_gamma <- 2
+    parmStart <- c(parmStart_gamma, exp(log(shares) - log(idxShare) - (parmStart_gamma - 1) * (log(prices) - log(idxPrice))))
+
+
+    ## Uncover price coefficient and mean valuation from margins and revenue shares
+    nprods <- length(shares)
+
+
+    ## Minimize the distance between observed and predicted margins
+    minD <- function(theta) {
+      gamma <- theta[1]
+      meanval <- theta[-1]
+
+      predshares <- meanval * (prices / idxPrice)^(1 - gamma)
+      predshares <- predshares / (is.na(idx) + sum(predshares))
+
+      preddiversion <- tcrossprod(1 / (1 - predshares), predshares)
+      diag(preddiversion) <- -1
+
+      ## CES Cournot margin: L_i = (1 + (gamma-1)*r_Fi) / gamma
+      firmShares <- as.numeric(ownerPre %*% predshares)
+      marginsCand <- (1 + (gamma - 1) * firmShares) / gamma
+
+      m1 <- margins - marginsCand
+      m2 <- predshares - shares
+      m3 <- drop(diversion - preddiversion)
+      m4 <- (mktElast + 1) / (1 - gamma) - shareOut
+      measure <- sum((c(m1, m2, m3, m4) * 100)^2, na.rm = TRUE)
+
+      return(measure)
+    }
+
+
+    ## Constrained optimizer to look for solutions where gamma>1 (output) or <1 (input)
+    lowerB <- upperB <- rep(Inf, length(parmStart))
+    lowerB <- lowerB * -1
+
+    if (output) {
+      lowerB[1] <- 1
+    } else {
+      upperB[1] <- 1
+    }
+
+    minTheta <- optim(parmStart, minD,
+      method = "L-BFGS-B",
+      lower = lowerB, upper = upperB,
+      control = object@control.slopes
+    )
+
+
+    if (minTheta$convergence != 0) {
+      warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '", minTheta$message, "'")
+    }
+
+
+    minGamma <- minTheta$par[1]
+    names(minGamma) <- "Gamma"
+
+    meanval <- minTheta$par[-1]
+
+    if (!is.na(idx)) meanval <- meanval / meanval[idx]
+
+    names(meanval) <- object@labels
+
+
+    object@slopes <- list(alpha = alpha, gamma = minGamma, meanval = meanval)
+    object@priceOutside <- idxPrice
+    object@mktSize <- insideSize * (1 + alpha)
+
+
+    return(object)
+  }
+)
+
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "calcSlopes",
+  signature = "CESCournotALM",
+  definition = function(object) {
+    ## Uncover Demand Coefficients
+
+    ownerPre <- object@ownerPre
+    shares <- object@shares
+    margins <- object@margins
+    prices <- object@prices
+    mktElast <- object@mktElast
+    priceOutside <- object@priceOutside
+    output <- object@output
+    outSign <- ifelse(output, 1, -1)
+
+    nprods <- length(object@shares)
+
+
+    minD <- function(theta) {
+      gamma <- theta[1]
+      sOut <- theta[2]
+
+
+      probs <- shares * (1 - sOut)
+
+      ## CES Cournot margin: L_i = (1 + (gamma-1)*r_Fi) / gamma
+      firmShares <- as.numeric(ownerPre %*% probs)
+      marginsCand <- (1 + (gamma - 1) * firmShares) / gamma
+
+      m1 <- margins - marginsCand
+      m2 <- (mktElast + 1) / (1 - gamma) - sOut
+
+      measure <- sum(c(m1, m2)^2, na.rm = TRUE)
+
+
+      return(measure)
+    }
+
+    ## Constrain optimizer to look for gamma > 1 (output) or < 1 (input), and 0 < sOut < 1
+    if (output) {
+      # Output market: gamma > 1
+      lowerB <- c(1, 0.001)
+      upperB <- c(Inf, 0.99)
+    } else {
+      # Input market: gamma < 1
+      lowerB <- c(1e-10, 0.001)
+      upperB <- c(1, 0.99)
+    }
+
+
+    minGamma <- optim(object@parmsStart, minD,
+      method = "L-BFGS-B",
+      lower = lowerB, upper = upperB,
+      control = object@control.slopes
+    )$par
+
+    if (isTRUE(all.equal(minGamma[2], lowerB[2], check.names = FALSE))) {
+      warning("Estimated outside share is close to 0. Normalizing relative to largest good.")
+
+      idx <- which.max(shares)
+      object@normIndex <- idx
+      priceOutside <- priceOutside[idx]
+      minGamma[2] <- 0
+
+      meanval <- log(shares) - log(shares[idx]) + (minGamma[1] - 1) * (log(prices) - log(priceOutside))
+    } else {
+      meanval <- log(shares * (1 - minGamma[2])) - log(minGamma[2]) + (minGamma[1] - 1) * (log(prices) - log(object@priceOutside))
+    }
+    if (isTRUE(all.equal(minGamma[2], upperB[2], check.names = FALSE))) {
+      warning("Estimated outside share is close to 1.")
+    }
+
+
+    meanval <- exp(meanval)
+
+
+    names(meanval) <- object@labels
+
+
+    object@slopes <- list(alpha = 1 / (1 - minGamma[2]) - 1, gamma = minGamma[1], meanval = meanval)
+    object@shareInside <- 1 - minGamma[2]
+    object@priceOutside <- priceOutside
+    object@mktSize <- object@insideSize * (1 + object@slopes$alpha)
+    return(object)
+  }
+)
+
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "calcSlopes",
+  signature = "Auction2ndCES",
+  definition = function(object) {
+    ## Uncover Demand Coefficients
+
+    ownerPre <- object@ownerPre
+    shares <- object@shares
+    margins <- object@margins
+    prices <- object@prices
+    idx <- object@normIndex
+    mktElast <- object@mktElast
+    output <- object@output
+
+    nprods <- length(shares)
+
+    firmShares <- drop(ownerPre %*% shares)
+
+    if (is.na(idx)) {
+      idxShare <- 1 - object@shareInside
+    } else {
+      idxShare <- shares[idx]
+    }
+
+    shareOut <- 1 - object@shareInside
+
+    ## Minimize the distance between observed and predicted margins
+    ## CES auction margin (proportional): L = 1 - (1-r_F)^(1/(gamma-1))
+    minD <- function(gamma) {
+      m1 <- (mktElast + 1) / (1 - gamma) - shareOut
+
+      marginsCand <- 1 - (1 - firmShares)^(1 / (gamma - 1))
+      m2 <- 1 - marginsCand / margins
+
+      measure <- sum(c(m1, m2)^2, na.rm = TRUE)
+
+      return(measure)
+    }
+
+    if (output) {
+      bounds <- c(1 + 1e-6, 100)
+    } else {
+      bounds <- c(1e-6, 1 - 1e-6)
+    }
+    minGamma <- optimize(minD, bounds,
+      tol = object@control.slopes$reltol
+    )$minimum
+
+    meanval <- shares / idxShare
+
+    names(meanval) <- object@labels
+
+    shareInside <- object@shareInside
+    if (shareInside <= 1 && shareInside > 0) {
+      alpha <- 1 / shareInside - 1
+    } else {
+      alpha <- NULL
+    }
+
+    object@slopes <- list(alpha = alpha, gamma = minGamma, meanval = meanval)
+    object@mktSize <- object@insideSize / object@shareInside
+
+
+    return(object)
+  }
+)
+
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "calcSlopes",
+  signature = "Auction2ndCESALM",
+  definition = function(object) {
+    ## Uncover Demand Coefficients
+
+    ownerPre <- object@ownerPre
+    shares <- object@shares
+    margins <- object@margins
+    prices <- object@prices
+    mktElast <- object@mktElast
+    output <- object@output
+    priceOutside <- object@priceOutside
+
+    nprods <- length(shares)
+
+    ## Minimize the distance between observed and predicted margins
+    minD <- function(theta) {
+      gamma <- theta[1]
+      sOut <- theta[2]
+
+      probs <- shares * (1 - sOut)
+      firmProbs <- drop(ownerPre %*% probs)
+
+      m1 <- (mktElast + 1) / (1 - gamma) - sOut
+
+      ## CES auction margin: L = 1 - (1-r_F)^(1/(gamma-1))
+      marginsCand <- 1 - (1 - firmProbs)^(1 / (gamma - 1))
+      m2 <- 1 - marginsCand / margins
+
+      measure <- sum(c(m1, m2)^2, na.rm = TRUE)
+
+      return(measure)
+    }
+
+    ## Constrain optimizer: gamma > 1 (output) or < 1 (input), and 0 < sOut < 1
+    if (output) {
+      lowerB <- c(1 + 1e-6, 0.001)
+      upperB <- c(100, 0.99)
+    } else {
+      lowerB <- c(1e-10, 0.001)
+      upperB <- c(1 - 1e-6, 0.99)
+    }
+
+    minTheta <- optim(object@parmsStart, minD,
+      method = "L-BFGS-B",
+      lower = lowerB, upper = upperB,
+      control = object@control.slopes
+    )$par
+
+    if (isTRUE(all.equal(minTheta[2], lowerB[2], check.names = FALSE))) {
+      warning("Estimated outside share is close to 0. Normalizing relative to largest good.")
+
+      idx <- which.max(shares)
+      object@normIndex <- idx
+      priceOutside <- priceOutside[idx]
+      minTheta[2] <- 0
+
+      meanval <- log(shares) - log(shares[idx]) + (minTheta[1] - 1) * (log(prices) - log(priceOutside))
+    } else {
+      meanval <- log(shares * (1 - minTheta[2])) - log(minTheta[2]) + (minTheta[1] - 1) * (log(prices) - log(object@priceOutside))
+    }
+    if (isTRUE(all.equal(minTheta[2], upperB[2], check.names = FALSE))) {
+      warning("Estimated outside share is close to 1.")
+    }
+
+
+    meanval <- exp(meanval)
+
+    names(meanval) <- object@labels
+
+
+    object@slopes <- list(alpha = 1 / (1 - minTheta[2]) - 1, gamma = minTheta[1], meanval = meanval)
+    object@shareInside <- 1 - minTheta[2]
+    object@priceOutside <- priceOutside
+    object@mktSize <- object@insideSize * (1 + object@slopes$alpha)
 
     return(object)
   }

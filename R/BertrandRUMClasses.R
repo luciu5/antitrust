@@ -19,6 +19,10 @@
 #' @description The \dQuote{CES} class has the information for a CES demand system
 #' @description The \dQuote{CESALM} class has the information for a CES demand system and
 #' assumes that firms are playing a differentiated products Bertrand pricing game with unknown market elasticity.
+#' @description The \dQuote{CESCournot} class has the information for a CES demand system
+#' under the assumption that firms are playing a differentiated products Cournot quantity game.
+#' @description The \dQuote{CESCournotALM} class has the information for a CES demand system
+#' under the assumption that firms are playing a differentiated products Cournot quantity game with unknown market elasticity.
 #' @description  The \dQuote{CESNests} class has the information for a nested CES demand system.
 #' @description Let k denote the number of products produced by all firms below.
 #'
@@ -38,6 +42,10 @@
 #' For CESALM, objects can be created by using the constructor function \code{\link{ces.alm}}.
 #'
 #' For CESNests, objects can be created by using the constructor function \code{\link{ces.nests}}.
+#'
+#' For CESCournot, objects can be created by using the constructor function \code{\link{ces.cournot}}.
+#'
+#' For CESCournotALM, objects can be created by using the constructor function \code{\link{ces.cournot.alm}}.
 #'
 #' @slot prices A length k vector of product prices.
 #' @slot margins A length k vector of product margins, some of which may equal NA.
@@ -562,6 +570,46 @@ setClass(
     if (length(object@parmsStart) != 2) {
       stop("'parmsStart' must a vector of length 2")
     }
+  }
+)
+
+
+#' @rdname BertrandRUM-Classes
+#' @export
+setClass(
+  Class = "CESCournot",
+  contains = "CES"
+)
+
+#' @rdname BertrandRUM-Classes
+#' @export
+setClass(
+  Class = "CESCournotALM",
+  contains = "CESCournot",
+  representation = representation(
+    parmsStart = "numeric"
+  ),
+  prototype = prototype(
+    normIndex = NA,
+    control.slopes = list(
+      factr = 1e7
+    )
+  ),
+  validity = function(object) {
+    nMargins <- length(object@margins[!is.na(object@margins)])
+
+    if (nMargins < 2 && is.na(object@mktElast)) {
+      stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
+    }
+
+    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+      stop("sum of 'shares' must equal 1")
+    }
+
+    if (length(object@parmsStart) != 2) {
+      stop("'parmsStart' must a vector of length 2")
+    }
+    return(TRUE)
   }
 )
 

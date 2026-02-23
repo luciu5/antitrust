@@ -65,4 +65,4 @@ Collate:
     'SimFunctions.R'
     'VerticalFunctions.R'
     'antitrust-deprecated.R'
-RoxygenNote: 7.3.3
+RoxygenNote: 7.3.2

@@ -35,13 +35,15 @@
 #' the appropriate restrictions on the demand parameters have not been imposed.
 #'
 #' @param object An instance of one of the classes listed above.
-#' @param lim dQuote{LogitBLP} class only. A length 2 numeric vector equal to the
-#' lower and upper quantiles of the price coefficient distribution over which to compute CV. Default c(0,1).
+#' @param ... Additional arguments to pass to the method.
+#' @param lim \dQuote{LogitBLP} class only. A length 2 numeric vector equal to the lower and upper quantiles of the price coefficient distribution over which to compute CV. Default c(0,1).
 #'
 #' @include CMCRMethods.R
 #' @keywords methods
 NULL
 
+#' @rdname CV-Methods
+#' @export
 setGeneric(
   name = "CV",
   def = function(object, ...) {
@@ -127,6 +129,8 @@ setMethod(
   }
 )
 
+#' @rdname CV-Methods
+#' @export
 setMethod(
   f = "CV",
   signature = "LogitBLP",

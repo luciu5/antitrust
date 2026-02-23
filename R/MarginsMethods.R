@@ -135,6 +135,47 @@ setMethod(
 )
 
 
+## compute CESCournot margins
+#' @rdname Margins-Methods
+#' @export
+setMethod(
+  f = "calcMargins",
+  signature = "CESCournot",
+  definition = function(object, preMerger = TRUE, level = FALSE) {
+    gamma <- object@slopes$gamma
+    nprods <- length(object@shares)
+
+    if (preMerger) {
+      subset <- rep(TRUE, nprods)
+      prices <- object@pricePre
+      owner <- object@ownerPre
+    } else {
+      subset <- object@subset
+      prices <- object@pricePost[subset]
+      owner <- object@ownerPost[subset, subset]
+    }
+
+    shares_r <- calcShares(object, preMerger = preMerger, revenue = TRUE)
+    shares_r <- shares_r[subset]
+
+    firmShares <- as.numeric(owner %*% shares_r)
+
+    ## CES Cournot Lerner index: L_i = (1 + (gamma - 1) * r_Fi) / gamma
+    margins <- (1 + (gamma - 1) * firmShares) / gamma
+
+    if (level) {
+      margins <- margins * prices
+    }
+
+    result <- rep(NA, nprods)
+    result[subset] <- as.vector(margins)
+    names(result) <- object@labels
+
+    return(result)
+  }
+)
+
+
 ## compute margins
 #' @rdname Margins-Methods
 #' @export
@@ -660,6 +701,53 @@ setMethod(
     }
     if (!level) {
       margins <- margins / prices
+    }
+    names(margins) <- object@labels
+
+    return(as.vector(margins))
+  }
+)
+
+
+## compute Auction2ndCES margins
+#' @rdname Margins-Methods
+#' @export
+setMethod(
+  f = "calcMargins",
+  signature = "Auction2ndCES",
+  definition = function(object, preMerger = TRUE, exAnte = FALSE, level = FALSE) {
+    gamma <- object@slopes$gamma
+    nprods <- length(object@shares)
+
+    margins <- rep(NA, nprods)
+
+    if (preMerger) {
+      owner <- object@ownerPre
+      subset <- rep(TRUE, nprods)
+      prices <- object@pricePre
+    } else {
+      subset <- object@subset
+      owner <- object@ownerPost
+      prices <- object@pricePost
+    }
+
+    owner <- owner[subset, subset]
+    shares_r <- calcShares(object, preMerger = preMerger, revenue = TRUE)
+    shares_r <- shares_r[subset]
+    firmShares <- drop(owner %*% shares_r)
+
+    ## CES 2nd-score auction margin (proportional):
+    ## ln(p/c) = ln(1 - r_F) / (1 - gamma)
+    ## => mc/p = exp(-ln(1-r_F) / (1-gamma))
+    ## => L = 1 - mc/p = 1 - exp(ln(1-r_F) / (gamma-1))
+    ##      = 1 - (1 - r_F)^(1/(gamma-1))
+    margins[subset] <- 1 - (1 - firmShares)^(1 / (gamma - 1))
+
+    if (exAnte) {
+      margins[subset] <- margins[subset] * shares_r
+    }
+    if (level) {
+      margins <- margins * prices
     }
     names(margins) <- object@labels
 

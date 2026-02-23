@@ -127,6 +127,8 @@ to the non-linear equation solver (typically the \code{calcPrices} method).}
 
 \item{mcDeltaOutside}{A length 1 vector indicating the change in the marginal cost of the
 outside good. Default is 0.}
+
+\item{parmsStart}{A vector of length 2 of starting values for the non-linear equation solver.}
 }
 \value{
 \code{bargaining.logit} returns an instance of \code{\linkS4class{BargainingLogit}},

@@ -3,6 +3,8 @@
 #' @aliases ces
 #' ces.alm
 #' ces.nests
+#' ces.cournot
+#' ces.cournot.alm
 #'
 #' @description Calibrates consumer demand using (Nested) Constant Elasticity of
 #' Substitution (CES) and then simulates the price effect of a merger between two firms
@@ -388,6 +390,267 @@ ces.nests <- function(prices, shares, margins,
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
   result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
 
+
+  return(result)
+}
+
+
+#' @rdname CES-Functions
+#' @export
+ces.cournot <- function(prices, shares, margins, diversions,
+                        ownerPre, ownerPost,
+                        output = TRUE,
+                        normIndex = ifelse(sum(shares) < 1, NA, 1),
+                        mktElast = NA_real_,
+                        insideSize = NA_real_,
+                        mcDelta = rep(0, length(prices)),
+                        subset = rep(TRUE, length(prices)),
+                        priceOutside = 1,
+                        priceStart = prices,
+                        isMax = FALSE,
+                        control.slopes,
+                        control.equ,
+                        labels = paste("Prod", 1:length(prices), sep = ""),
+                        ...) {
+  if (missing(diversions)) {
+    diversions <- matrix(NA, nrow = length(shares), ncol = length(shares))
+  }
+
+  ## Create CESCournot container to store relevant data
+  result <- new("CESCournot",
+    prices = prices, shares = shares, margins = margins,
+    diversion = diversions,
+    normIndex = normIndex,
+    mcDelta = mcDelta,
+    mktElast = mktElast,
+    insideSize = insideSize,
+    subset = subset,
+    priceOutside = priceOutside,
+    ownerPre = ownerPre,
+    ownerPost = ownerPost,
+    output = output,
+    priceStart = priceStart,
+    shareInside = sum(shares), labels = labels
+  )
+
+  if (!missing(control.slopes)) {
+    result@control.slopes <- control.slopes
+  }
+  if (!missing(control.equ)) {
+    result@control.equ <- control.equ
+  }
+
+  ## Convert ownership vectors to ownership matrices
+  result@ownerPre <- ownerToMatrix(result, TRUE)
+  result@ownerPost <- ownerToMatrix(result, FALSE)
+
+  ## Calculate Demand Slope Coefficients
+  result <- calcSlopes(result)
+
+  ## Calculate marginal cost
+  result@mcPre <- calcMC(result, TRUE)
+  result@mcPost <- calcMC(result, FALSE)
+
+  ## Solve Non-Linear System for Price Changes
+  result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+
+  return(result)
+}
+
+
+#' @rdname CES-Functions
+#' @export
+ces.cournot.alm <- function(prices, shares, margins,
+                            ownerPre, ownerPost,
+                            mktElast = NA_real_,
+                            insideSize = NA_real_,
+                            output = TRUE,
+                            mcDelta = rep(0, length(prices)),
+                            subset = rep(TRUE, length(prices)),
+                            priceOutside = 1,
+                            priceStart = prices,
+                            isMax = FALSE,
+                            parmsStart,
+                            control.slopes,
+                            control.equ,
+                            labels = paste("Prod", 1:length(prices), sep = ""),
+                            ...) {
+  if (missing(parmsStart)) {
+    parmsStart <- rep(.1, 2)
+    nm <- which(!is.na(margins))[1]
+    if (output) {
+      parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm]) # ballpark gamma for starting values
+    } else {
+      parmsStart[1] <- 1 / (1 + margins[nm] * (1 - shares[nm]) / shares[nm]) # ballpark gamma < 1 for input markets
+    }
+  }
+
+
+  ## Create CESCournotALM container to store relevant data
+  result <- new("CESCournotALM",
+    prices = prices, shares = shares,
+    margins = margins,
+    ownerPre = ownerPre,
+    ownerPost = ownerPost,
+    mktElast = mktElast,
+    insideSize = insideSize,
+    output = output,
+    mcDelta = mcDelta,
+    subset = subset,
+    priceOutside = priceOutside,
+    priceStart = priceStart,
+    shareInside = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE, tolerance = 1e-3)), 1, sum(shares)),
+    parmsStart = parmsStart,
+    labels = labels
+  )
+
+
+  if (!missing(control.slopes)) {
+    result@control.slopes <- control.slopes
+  }
+  if (!missing(control.equ)) {
+    result@control.equ <- control.equ
+  }
+
+  ## Convert ownership vectors to ownership matrices
+  result@ownerPre <- ownerToMatrix(result, TRUE)
+  result@ownerPost <- ownerToMatrix(result, FALSE)
+
+  ## Calculate Demand Slope Coefficients
+  result <- calcSlopes(result)
+
+  ## Calculate marginal cost
+  result@mcPre <- calcMC(result, TRUE)
+  result@mcPost <- calcMC(result, FALSE)
+
+  ## Solve Non-Linear System for Price Changes
+  result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+
+  return(result)
+}
+
+
+#' @rdname Auction2ndLogit-Functions
+#' @export
+auction2nd.ces <- function(prices, shares, margins,
+                           ownerPre, ownerPost,
+                           output = TRUE,
+                           normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
+                           mcDelta = rep(0, length(prices)),
+                           subset = rep(TRUE, length(prices)),
+                           insideSize = NA_real_,
+                           priceOutside = 1,
+                           priceStart = prices,
+                           control.slopes,
+                           labels = paste("Prod", 1:length(prices), sep = "")) {
+  ## Create Auction2ndCES container to store relevant data
+  result <- new("Auction2ndCES",
+    prices = prices, shares = shares,
+    margins = margins,
+    normIndex = normIndex,
+    ownerPre = ownerPre,
+    ownerPost = ownerPost,
+    insideSize = insideSize,
+    output = output,
+    mcDelta = mcDelta,
+    subset = subset,
+    priceOutside = priceOutside,
+    priceStart = priceStart,
+    shareInside = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE, tolerance = 1e-3)), 1, sum(shares)),
+    labels = labels
+  )
+
+  if (!missing(control.slopes)) {
+    result@control.slopes <- control.slopes
+  }
+
+  ## Convert ownership vectors to ownership matrices
+  result@ownerPre <- ownerToMatrix(result, TRUE)
+  result@ownerPost <- ownerToMatrix(result, FALSE)
+
+  ## Calculate Demand Slope Coefficients
+  result <- calcSlopes(result)
+
+  ## Calculate marginal cost
+  result@mcPre <- calcMC(result, TRUE)
+  result@mcPost <- calcMC(result, FALSE)
+
+  ## Solve Non-Linear System for Price Changes
+  result@pricePre <- calcPrices(result, preMerger = TRUE)
+  result@pricePost <- calcPrices(result, preMerger = FALSE)
+
+  return(result)
+}
+
+
+#' @rdname Auction2ndLogit-Functions
+#' @export
+auction2nd.ces.alm <- function(prices, shares, margins,
+                               ownerPre, ownerPost,
+                               mktElast = NA_real_,
+                               insideSize = NA_real_,
+                               output = TRUE,
+                               mcDelta = rep(0, length(prices)),
+                               subset = rep(TRUE, length(prices)),
+                               priceOutside = 1,
+                               priceStart = prices,
+                               parmsStart,
+                               control.slopes,
+                               labels = paste("Prod", 1:length(prices), sep = "")) {
+  if (missing(parmsStart)) {
+    parmsStart <- rep(.1, 2)
+    nm <- which(!is.na(margins))[1]
+    if (output) {
+      parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm])
+    } else {
+      parmsStart[1] <- 1 / (1 + margins[nm] * (1 - shares[nm]) / shares[nm])
+    }
+  }
+
+
+  if (missing(prices)) {
+    prices <- rep(NA_integer_, length(shares))
+  }
+
+
+  ## Create Auction2ndCESALM container to store relevant data
+  result <- new("Auction2ndCESALM",
+    prices = prices, shares = shares,
+    margins = margins,
+    ownerPre = ownerPre,
+    ownerPost = ownerPost,
+    mktElast = mktElast,
+    insideSize = insideSize,
+    mcDelta = mcDelta,
+    subset = subset,
+    priceOutside = priceOutside,
+    priceStart = priceStart,
+    output = output,
+    shareInside = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE, tolerance = 1e-3)), 1, sum(shares)),
+    parmsStart = parmsStart,
+    labels = labels
+  )
+
+  if (!missing(control.slopes)) {
+    result@control.slopes <- control.slopes
+  }
+
+  ## Convert ownership vectors to ownership matrices
+  result@ownerPre <- ownerToMatrix(result, TRUE)
+  result@ownerPost <- ownerToMatrix(result, FALSE)
+
+  ## Calculate Demand Slope Coefficients
+  result <- calcSlopes(result)
+
+  ## Calculate marginal cost
+  result@mcPre <- calcMC(result, TRUE)
+  result@mcPost <- calcMC(result, FALSE)
+
+  ## Solve Non-Linear System for Price Changes
+  result@pricePre <- calcPrices(result, preMerger = TRUE)
+  result@pricePost <- calcPrices(result, preMerger = FALSE)
 
   return(result)
 }
