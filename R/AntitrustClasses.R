@@ -1,9 +1,9 @@
-#' @import stats
-#' @import methods
-#' @import BB
-#' @import numDeriv
-#' @import nleqslv
-#' @import SQUAREM
+#' @importFrom stats constrOptim integrate model.matrix optim optimize quantile rnorm runif weighted.mean
+#' @importFrom methods .hasSlot callNextMethod new selectMethod show
+#' @importFrom BB BBoptim BBsolve
+#' @importFrom numDeriv genD
+#' @importFrom nleqslv nleqslv
+#' @importFrom SQUAREM squarem
 #' @title \dQuote{Antitrust} Classes
 #' @name Antitrust-Class
 #' @aliases Antitrust-class

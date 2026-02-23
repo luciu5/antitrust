@@ -2,7 +2,7 @@ Package: antitrust
 Type: Package
 Title: Tools for Antitrust Practitioners
 Version: 0.99.31
-Date: 2025-11-02
+Date: 2026-02-23
 Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com",
                   role = c("aut", "cre")),
              person("Michael", "Sandfort",
@@ -65,4 +65,4 @@ Collate:
     'SimFunctions.R'
     'VerticalFunctions.R'
     'antitrust-deprecated.R'
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3

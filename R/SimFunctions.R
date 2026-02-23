@@ -107,6 +107,7 @@
 #'   where sigmaNest=1 is flat logit (no nesting) and sigmaNest->0 means products are
 #'   perfect substitutes within the nest. Default is 1.}
 #'   \item{piDemog}{Optional vector of demographic coefficients for the price coefficient.
+#'   Each element represents the interaction effect of a demographic variable with price.}
 #'   \item{demogMean}{Optional: Vector of length equal to piDemog length, containing the mean
 #'   of each demographic variable. Default is 0 (demeaned demographics). If demographics were
 #'   demeaned in estimation, use 0; otherwise provide the actual mean.}
@@ -114,7 +115,6 @@
 #'   for demographic variables. Default is identity matrix (unit variance, independent).
 #'   Should match the variance structure of demographics in your data. For a single
 #'   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
-#'   Each element represents the interaction effect of a demographic variable with price.}
 #'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
 #'   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
 #'   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
@@ -388,44 +388,50 @@ sim <- function(prices,
         if (!("piDemog" %in% names(demand.param))) {
           demand.param$piDemog <- numeric(0)
         }
-        
+
         # Auto-detect nDemog from piDemog length (always inferred, never user-specified)
         demand.param$nDemog <- length(demand.param$piDemog)
-        
+
         # Set defaults for demogMean and demogCov if not provided
         if (demand.param$nDemog > 0) {
           if (!("demogMean" %in% names(demand.param))) {
-            demand.param$demogMean <- rep(0, demand.param$nDemog)  # Default: demeaned
+            demand.param$demogMean <- rep(0, demand.param$nDemog) # Default: demeaned
             message("demogMean not provided. Defaulting to 0 (demeaned demographic).")
           }
           if (!("demogCov" %in% names(demand.param))) {
-            demand.param$demogCov <- diag(demand.param$nDemog)  # Default: unit variance, independent
-            warning("demogCov not provided. Defaulting to identity matrix (unit variance). ",
-                    "Consider specifying demogCov based on your data's variance.")
+            demand.param$demogCov <- diag(demand.param$nDemog) # Default: unit variance, independent
+            warning(
+              "demogCov not provided. Defaulting to identity matrix (unit variance). ",
+              "Consider specifying demogCov based on your data's variance."
+            )
           }
         }
-        
+
         # Validate demographic parameters
         if ("demogMean" %in% names(demand.param)) {
           if (length(demand.param$demogMean) != demand.param$nDemog) {
-            stop("demogMean length (", length(demand.param$demogMean),
-                 ") does not match piDemog length (", demand.param$nDemog, ").")
+            stop(
+              "demogMean length (", length(demand.param$demogMean),
+              ") does not match piDemog length (", demand.param$nDemog, ")."
+            )
           }
         }
         if ("demogCov" %in% names(demand.param)) {
-          if (!is.matrix(demand.param$demogCov) || 
-              nrow(demand.param$demogCov) != demand.param$nDemog ||
-              ncol(demand.param$demogCov) != demand.param$nDemog) {
-          # Validate dimensions match
-          if (nrow(demand.param$demogCov) != ncol(demand.param$demogCov)) {
-            stop("demogCov must be a square matrix.")
-          }
-          # Check that demogMean and demogCov dimensions are consistent
-          if (length(demand.param$demogMean) != nrow(demand.param$demogCov)) {
-            stop("demogMean length (", length(demand.param$demogMean),
-                 ") must match demogCov dimensions (", nrow(demand.param$demogCov), "x",
-                 ncol(demand.param$demogCov), ").")
-          }
+          if (!is.matrix(demand.param$demogCov) ||
+            nrow(demand.param$demogCov) != demand.param$nDemog ||
+            ncol(demand.param$demogCov) != demand.param$nDemog) {
+            # Validate dimensions match
+            if (nrow(demand.param$demogCov) != ncol(demand.param$demogCov)) {
+              stop("demogCov must be a square matrix.")
+            }
+            # Check that demogMean and demogCov dimensions are consistent
+            if (length(demand.param$demogMean) != nrow(demand.param$demogCov)) {
+              stop(
+                "demogMean length (", length(demand.param$demogMean),
+                ") must match demogCov dimensions (", nrow(demand.param$demogCov), "x",
+                ncol(demand.param$demogCov), ")."
+              )
+            }
             stop("demogCov must be a square matrix with dimensions equal to piDemog length.")
           }
         }
