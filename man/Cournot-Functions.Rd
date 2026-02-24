@@ -3,9 +3,7 @@
 \name{Cournot-Functions}
 \alias{Cournot-Functions}
 \alias{cournot}
-\alias{Cournot}
 \alias{stackelberg}
-\alias{Stackelberg}
 \title{Multi-product Cournot/Stackelberg Calibration and Merger Simulation With Linear or Log-Linear Demand}
 \usage{
 cournot(

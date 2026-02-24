@@ -1,10 +1,6 @@
 #' @title (Nested) Constant Elasticity of Substitution Demand Calibration and Merger Simulation
 #' @name CES-Functions
-#' @aliases ces
-#' ces.alm
-#' ces.nests
-#' ces.cournot
-#' ces.cournot.alm
+#' @aliases ces ces.alm ces.nests ces.cournot ces.cournot.alm
 #'
 #' @description Calibrates consumer demand using (Nested) Constant Elasticity of
 #' Substitution (CES) and then simulates the price effect of a merger between two firms

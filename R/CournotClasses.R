@@ -1,7 +1,6 @@
 #'@title \dQuote{Cournot} Classes
 #'@name Cournot-classes
-#'@aliases Cournot-class
-#'Stackelberg-class
+#'@aliases Cournot-class Stackelberg-class
 #'@description The \dQuote{Cournot} and \dQuote{Stackelberg} classes are building blocks used to create other classes
 #'in this package. As such, they are most likely to be useful for developers
 #'who wish to code their own merger calibration/simulation routines.

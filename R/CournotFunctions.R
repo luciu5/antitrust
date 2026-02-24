@@ -1,9 +1,6 @@
 #' @title Multi-product Cournot/Stackelberg Calibration and Merger Simulation With Linear or Log-Linear Demand
 #' @name Cournot-Functions
-#' @aliases cournot
-#' Cournot
-#' stackelberg
-#' Stackelberg
+#' @aliases cournot stackelberg
 #' @description Calibrates consumer demand for multiple products using either a
 #' linear or log-linear demand system and then simulates the
 #' prices effect of a merger between two multi-plant firms

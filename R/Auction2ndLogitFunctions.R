@@ -1,10 +1,6 @@
 #' @title 2nd Score Procurement Auction Model with (Nested) Logit Demand
 #' @name Auction2ndLogit-Functions
-#' @aliases auction2nd.logit
-#' auction2nd.logit.nests
-#' auction2nd.logit.alm
-#' auction2nd.ces
-#' auction2nd.ces.alm
+#' @aliases auction2nd.logit auction2nd.logit.nests auction2nd.logit.alm auction2nd.ces auction2nd.ces.alm
 #'
 #' @description Calibrates consumer demand using (Nested) Logit and then
 #' simulates the price effect of a merger between two firms

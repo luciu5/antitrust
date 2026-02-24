@@ -1,6 +1,6 @@
 #' @title \dQuote{Bertrand RUM} Classes
 #' @name BertrandRUM-Classes
-#' @aliases Logit-class
+#' @aliases Logit-class LogitBLP-class CournotBLP-class LogitCournot-class LogitCournotALM-class LogitCap-class LogitCapALM-class LogitNests-class LogitNestsALM-class LogitALM-class CES-class CESALM-class CESCournot-class CESCournotALM-class CESNests-class
 
 #' @description Each class contains all the information needed to calibrate a specific type of demand system and
 #' perform a merger simulation analysis under the assumption that firms are playing a differentiated products Bertrand pricing game. Also included is \dQuote{LogitCournot}, for modelling firms playing a differentiated products Cournot quantity game.
