@@ -648,8 +648,10 @@ setMethod(
     #     }
 
 
-    ##  Constrained optimizer to look for solutions where alpha<0,
-    lowerB <- upperB <- c(1e6, rep(12, length(parmStart) - 1))
+    ##  Constrained optimizer to look for solutions where alpha<0 (output) or alpha>0 (input)
+    # Dynamically scale bounds relative to initial guess to prevent trapping valid inputs outside static +/- 12 bounds
+    mvalBounds <- pmax(20, abs(mvalStart) * 1.5)
+    lowerB <- upperB <- c(1e6, mvalBounds)
     lowerB <- lowerB * -1
 
     if (output) {
@@ -666,7 +668,9 @@ setMethod(
 
 
     if (minTheta$convergence != 0) {
-      warning("'calcSlopes' nonlinear solver may not have successfully converge. Reason: '", minTheta$message, "'")
+      if (!(grepl("ABNORMAL_TERMINATION_IN_LNSRCH", minTheta$message) && minTheta$value < 1e-6)) {
+        warning("'calcSlopes' nonlinear solver may not have successfully converge. Reason: '", minTheta$message, "'")
+      }
     }
 
 
@@ -2432,7 +2436,9 @@ setMethod(
 
 
     if (minTheta$convergence != 0) {
-      warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '", minTheta$message, "'")
+      if (!(grepl("ABNORMAL_TERMINATION_IN_LNSRCH", minTheta$message) && minTheta$value < 1e-6)) {
+        warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '", minTheta$message, "'")
+      }
     }
 
 
