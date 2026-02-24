@@ -2366,7 +2366,7 @@ setMethod(
     notMissing <- which(!is.na(margins))[1]
 
     parmStart <- (shares[notMissing] - outSign / margins[notMissing]) / (shares[notMissing] - 1)
-    parmStart <- c(parmStart, exp(log(shares) - log(idxShare) - (parmStart - 1) * (log(prices) - log(idxPrice))))
+    parmStart <- c(parmStart, exp(log(shares) - log(idxShare) + (parmStart - 1) * (log(prices) - log(idxPrice))))
 
 
     ## Uncover price coefficient and mean valuation from margins and revenue shares

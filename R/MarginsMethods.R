@@ -718,6 +718,7 @@ setMethod(
   definition = function(object, preMerger = TRUE, exAnte = FALSE, level = FALSE) {
     gamma <- object@slopes$gamma
     nprods <- length(object@shares)
+    output <- ifelse(object@output, 1, -1)
 
     margins <- rep(NA, nprods)
 
@@ -741,7 +742,7 @@ setMethod(
     ## => mc/p = exp(-ln(1-r_F) / (1-gamma))
     ## => L = 1 - mc/p = 1 - exp(ln(1-r_F) / (gamma-1))
     ##      = 1 - (1 - r_F)^(1/(gamma-1))
-    margins[subset] <- 1 - (1 - firmShares)^(1 / (gamma - 1))
+    margins[subset] <- output * (1 - (1 - firmShares)^(1 / (gamma - 1)))
 
     if (exAnte) {
       margins[subset] <- margins[subset] * shares_r

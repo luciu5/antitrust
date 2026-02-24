@@ -236,7 +236,7 @@ ces <- function(prices, shares, margins, diversions,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
   return(result)
 }
@@ -310,7 +310,7 @@ ces.alm <- function(prices, shares, margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
   return(result)
 }
@@ -384,7 +384,7 @@ ces.nests <- function(prices, shares, margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
 
   return(result)
@@ -449,7 +449,7 @@ ces.cournot <- function(prices, shares, margins, diversions,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
   return(result)
 }
@@ -522,7 +522,7 @@ ces.cournot.alm <- function(prices, shares, margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
   return(result)
 }
