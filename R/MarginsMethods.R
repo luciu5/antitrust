@@ -143,6 +143,7 @@ setMethod(
   signature = "CESCournot",
   definition = function(object, preMerger = TRUE, level = FALSE) {
     gamma <- object@slopes$gamma
+    outSign <- ifelse(object@output, 1, -1)
     nprods <- length(object@shares)
 
     if (preMerger) {
@@ -161,7 +162,8 @@ setMethod(
     firmShares <- as.numeric(owner %*% shares_r)
 
     ## CES Cournot Lerner index: L_i = (1 + (gamma - 1) * r_Fi) / gamma
-    margins <- (1 + (gamma - 1) * firmShares) / gamma
+    ## outSign flips sign for input markets (gamma < 0)
+    margins <- outSign * (1 + (gamma - 1) * firmShares) / gamma
 
     if (level) {
       margins <- margins * prices

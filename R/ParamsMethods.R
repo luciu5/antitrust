@@ -3514,13 +3514,12 @@ setMethod(
     ## Choose starting parameter values
     notMissing <- which(!is.na(margins))[1]
 
-    ## For CES Cournot, margin = (1 + (gamma-1)*r_i) / gamma
-    ## Solve for gamma: gamma * margin = 1 + (gamma-1)*r_i
-    ##                  gamma*margin - gamma*r_i = 1 - r_i
-    ##                  gamma*(margin - r_i) = 1 - r_i
-    ##                  gamma = (1 - r_i) / (margin - r_i)
+    ## For CES Cournot, margin = outSign * (1 + (gamma-1)*r_i) / gamma
+    ## Raw margin (without sign): margin_raw = outSign * margin
+    ## Solve: gamma * margin_raw = 1 + (gamma-1)*r_i  =>  gamma = (1-r_i) / (margin_raw - r_i)
     r_nm <- shares[notMissing]
-    parmStart_gamma <- (1 - r_nm) / (margins[notMissing] - r_nm)
+    margin_raw <- outSign * margins[notMissing]
+    parmStart_gamma <- (1 - r_nm) / (margin_raw - r_nm)
     if (is.na(parmStart_gamma) || !is.finite(parmStart_gamma)) parmStart_gamma <- 2
     parmStart <- c(parmStart_gamma, exp(log(shares) - log(idxShare) - (parmStart_gamma - 1) * (log(prices) - log(idxPrice))))
 
@@ -3540,9 +3539,9 @@ setMethod(
       preddiversion <- tcrossprod(1 / (1 - predshares), predshares)
       diag(preddiversion) <- -1
 
-      ## CES Cournot margin: L_i = (1 + (gamma-1)*r_Fi) / gamma
+      ## CES Cournot margin: L_i = outSign * (1 + (gamma-1)*r_Fi) / gamma
       firmShares <- as.numeric(ownerPre %*% predshares)
-      marginsCand <- (1 + (gamma - 1) * firmShares) / gamma
+      marginsCand <- outSign * (1 + (gamma - 1) * firmShares) / gamma
 
       m1 <- margins - marginsCand
       m2 <- predshares - shares
@@ -3623,9 +3622,9 @@ setMethod(
 
       probs <- shares * (1 - sOut)
 
-      ## CES Cournot margin: L_i = (1 + (gamma-1)*r_Fi) / gamma
+      ## CES Cournot margin: L_i = outSign * (1 + (gamma-1)*r_Fi) / gamma
       firmShares <- as.numeric(ownerPre %*% probs)
-      marginsCand <- (1 + (gamma - 1) * firmShares) / gamma
+      marginsCand <- outSign * (1 + (gamma - 1) * firmShares) / gamma
 
       m1 <- margins - marginsCand
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
