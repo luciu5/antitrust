@@ -265,7 +265,7 @@ ces.alm <- function(prices, shares, margins,
     if (output) {
       parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm]) # ballpark gamma for starting values
     } else {
-      parmsStart[1] <- 1 / (1 + margins[nm] * (1 - shares[nm]) / shares[nm]) # ballpark gamma < 1 for input markets
+      parmsStart[1] <- (shares[nm] + 1 / margins[nm]) / (shares[nm] - 1) # ballpark gamma for input markets (can be negative)
     }
   }
 
@@ -478,7 +478,7 @@ ces.cournot.alm <- function(prices, shares, margins,
     if (output) {
       parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm]) # ballpark gamma for starting values
     } else {
-      parmsStart[1] <- 1 / (1 + margins[nm] * (1 - shares[nm]) / shares[nm]) # ballpark gamma < 1 for input markets
+      parmsStart[1] <- (shares[nm] + 1 / margins[nm]) / (shares[nm] - 1) # ballpark gamma for input markets (can be negative)
     }
   }
 

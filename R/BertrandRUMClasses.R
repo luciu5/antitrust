@@ -216,7 +216,10 @@ setClass(
       stop("'priceOutside' must be a non-negative number")
     }
 
-    if (!is.na(object@mktElast) && object@mktElast > 0) stop("'mktElast' must be negative")
+    if (!is.na(object@mktElast)) {
+      if (object@output && object@mktElast > 0) stop("'mktElast' must be negative for output markets")
+      if (!object@output && object@mktElast < 0) stop("'mktElast' must be non-negative for input markets")
+    }
     # if(!is.na(object@mktElast) && !isTRUE(all.equal(sum(object@shares, na.rm=TRUE),1)) ) stop("`shares' must sum to 1 when 'mktElast' is supplied")
 
     if ( # length(object@mktSize)!=1 ||
@@ -535,8 +538,13 @@ setClass(
     priceOutside = 1
   ),
   validity = function(object) {
-    if (!is.na(object@mktElast) && object@mktElast > -1) {
-      stop("'mktElast' must be less than or equal to  -1")
+    if (!is.na(object@mktElast)) {
+      if (object@output && object@mktElast > -1) {
+        stop("'mktElast' must be less than or equal to -1 for output markets")
+      }
+      if (!object@output && object@mktElast < -1) {
+        stop("'mktElast' must be greater than or equal to -1 for input markets")
+      }
     }
   }
 )

@@ -2523,8 +2523,8 @@ setMethod(
       lowerB <- c(1, 0.001)
       upperB <- c(Inf, 0.99)
     } else {
-      # Input market: gamma < 1
-      lowerB <- c(1e-10, 0.001)
+      # Input market: gamma < 1 (can be negative)
+      lowerB <- c(-Inf, 0.001)
       upperB <- c(1, 0.99)
     }
 
@@ -3642,8 +3642,8 @@ setMethod(
       lowerB <- c(1, 0.001)
       upperB <- c(Inf, 0.99)
     } else {
-      # Input market: gamma < 1
-      lowerB <- c(1e-10, 0.001)
+      # Input market: gamma < 1 (can be negative)
+      lowerB <- c(-Inf, 0.001)
       upperB <- c(1, 0.99)
     }
 
