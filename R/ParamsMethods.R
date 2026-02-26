@@ -3539,9 +3539,10 @@ setMethod(
       preddiversion <- tcrossprod(1 / (1 - predshares), predshares)
       diag(preddiversion) <- -1
 
-      ## CES Cournot margin: L_i = outSign * (1 + (gamma-1)*r_Fi) / gamma
+      ## CES Cournot margin: 
       firmShares <- as.numeric(ownerPre %*% predshares)
-      marginsCand <- outSign * (1 + (gamma - 1) * firmShares) / gamma
+      safe_alpha <- if(is.null(alpha)) 0 else alpha
+      marginsCand <- outSign * (1/gamma + ((gamma - 1)*(1 + safe_alpha) / (gamma * (1 + gamma * safe_alpha))) * firmShares)
 
       m1 <- margins - marginsCand
       m2 <- predshares - shares
@@ -3622,9 +3623,10 @@ setMethod(
 
       probs <- shares * (1 - sOut)
 
-      ## CES Cournot margin: L_i = outSign * (1 + (gamma-1)*r_Fi) / gamma
+      ## CES Cournot margin: 
       firmShares <- as.numeric(ownerPre %*% probs)
-      marginsCand <- outSign * (1 + (gamma - 1) * firmShares) / gamma
+      alpha_cand <- sOut / (1 - sOut)
+      marginsCand <- outSign * (1/gamma + ((gamma - 1)*(1 + alpha_cand) / (gamma * (1 + gamma * alpha_cand))) * firmShares)
 
       m1 <- margins - marginsCand
       m2 <- (mktElast + 1) / (1 - gamma) - sOut

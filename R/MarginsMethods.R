@@ -159,11 +159,14 @@ setMethod(
     shares_r <- calcShares(object, preMerger = preMerger, revenue = TRUE)
     shares_r <- shares_r[subset]
 
+    alpha <- object@slopes$alpha
+    if(is.null(alpha)) alpha <- 0
+    
     firmShares <- as.numeric(owner %*% shares_r)
 
-    ## CES Cournot Lerner index: L_i = (1 + (gamma - 1) * r_Fi) / gamma
+    ## CES Cournot Lerner index: 
     ## outSign flips sign for input markets (gamma < 0)
-    margins <- outSign * (1 + (gamma - 1) * firmShares) / gamma
+    margins <- outSign * (1/gamma + ((gamma - 1)*(1 + alpha) / (gamma * (1 + gamma * alpha))) * firmShares)
 
     if (level) {
       margins <- margins * prices
