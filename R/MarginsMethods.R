@@ -166,7 +166,9 @@ setMethod(
 
     ## CES Cournot Lerner index: 
     ## outSign flips sign for input markets (gamma < 0)
-    margins <- outSign * (1/gamma + ((gamma - 1)*(1 + alpha) / (gamma * (1 + gamma * alpha))) * firmShares)
+    denom <- gamma * (1 + gamma * alpha)
+    if (denom == 0) denom <- 1e-10
+    margins <- outSign * (1/gamma + ((gamma - 1)*(1 + alpha) / denom) * firmShares)
 
     if (level) {
       margins <- margins * prices

@@ -3542,7 +3542,10 @@ setMethod(
       ## CES Cournot margin: 
       firmShares <- as.numeric(ownerPre %*% predshares)
       safe_alpha <- if(is.null(alpha)) 0 else alpha
-      marginsCand <- outSign * (1/gamma + ((gamma - 1)*(1 + safe_alpha) / (gamma * (1 + gamma * safe_alpha))) * firmShares)
+      denom <- gamma * (1 + gamma * safe_alpha)
+      # prevent divide by zero
+      if (denom == 0) denom <- 1e-10
+      marginsCand <- outSign * (1/gamma + ((gamma - 1)*(1 + safe_alpha) / denom) * firmShares)
 
       m1 <- margins - marginsCand
       m2 <- predshares - shares
@@ -3626,7 +3629,9 @@ setMethod(
       ## CES Cournot margin: 
       firmShares <- as.numeric(ownerPre %*% probs)
       alpha_cand <- sOut / (1 - sOut)
-      marginsCand <- outSign * (1/gamma + ((gamma - 1)*(1 + alpha_cand) / (gamma * (1 + gamma * alpha_cand))) * firmShares)
+      denom <- gamma * (1 + gamma * alpha_cand)
+      if (denom == 0) denom <- 1e-10
+      marginsCand <- outSign * (1/gamma + ((gamma - 1)*(1 + alpha_cand) / denom) * firmShares)
 
       m1 <- margins - marginsCand
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
