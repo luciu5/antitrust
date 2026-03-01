@@ -262,11 +262,9 @@ ces.alm <- function(prices, shares, margins,
   if (missing(parmsStart)) {
     parmsStart <- rep(.1, 2)
     nm <- which(!is.na(margins))[1]
-    if (output) {
-      parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm]) # ballpark gamma for starting values
-    } else {
-      parmsStart[1] <- (shares[nm] + 1 / margins[nm]) / (shares[nm] - 1) # ballpark gamma for input markets (can be negative)
-    }
+    ## CES Bertrand margin: m = 1/(gamma*(1-s) + s), so gamma = (1/m - s)/(1-s)
+    ## This formula is the same for both output and input markets
+    parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm])
   }
 
 
@@ -475,11 +473,8 @@ ces.cournot.alm <- function(prices, shares, margins,
   if (missing(parmsStart)) {
     parmsStart <- rep(.1, 2)
     nm <- which(!is.na(margins))[1]
-    if (output) {
-      parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm]) # ballpark gamma for starting values
-    } else {
-      parmsStart[1] <- (shares[nm] + 1 / margins[nm]) / (shares[nm] - 1) # ballpark gamma for input markets (can be negative)
-    }
+    ## CES Cournot margin starting value, same formula for output and input
+    parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm])
   }
 
 
