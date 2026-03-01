@@ -2347,7 +2347,6 @@ setMethod(
     mktElast <- object@mktElast
     output <- object@output
 
-    outSign <- ifelse(output, 1, -1)
     shareOut <- 1 - shareInside
 
     ## uncover Numeraire Coefficients
@@ -2369,8 +2368,21 @@ setMethod(
     ## Choose starting paramter values
     notMissing <- which(!is.na(margins))[1]
 
-    parmStart <- (shares[notMissing] - outSign / margins[notMissing]) / (shares[notMissing] - 1)
-    parmStart <- c(parmStart, exp(log(shares) - log(idxShare) + (parmStart - 1) * (log(prices) - log(idxPrice))))
+    ## CES Bertrand single-product margin: m = 1/(gamma - (gamma-1)*r)
+    ## Starting value for gamma derived from observed margin and share
+    parmStart <- (shares[notMissing] - 1 / margins[notMissing]) / (shares[notMissing] - 1)
+
+    ## For input markets, clamp gamma above singularity for all firms
+    if (!output) {
+      min_gamma <- max(-shares / (1 - shares)) + 0.01
+      parmStart <- max(parmStart, min_gamma)
+    }
+
+    meanval_start <- exp(log(shares) - log(idxShare) + (parmStart - 1) * (log(prices) - log(idxPrice)))
+    ## Clamp meanval to finite range
+    meanval_start[!is.finite(meanval_start)] <- 1
+    meanval_start <- pmin(pmax(meanval_start, 1e-10), 1e10)
+    parmStart <- c(parmStart, meanval_start)
 
 
     ## Uncover price coefficient and mean valuation from margins and revenue shares
@@ -2400,7 +2412,9 @@ setMethod(
       }
 
 
-      marginsCand <- -1 * outSign * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
+      ## CES elasticities are always negative, so always use -1 (output convention)
+      ## to get positive margins for both output and input markets
+      marginsCand <- -1 * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
       # measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
       # FOC <- (shares * diag(ownerPre)) + (elasticity * ownerPre) %*% (shares * margins)
 
@@ -2426,6 +2440,17 @@ setMethod(
       lowerB[1] <- 1
     } else {
       upperB[1] <- 1
+    }
+
+    ## Tighten gamma bound using market elasticity:
+    ## shareOut = (mktElast + 1) / (1 - gamma), and 0 < shareOut < 1
+    ## implies gamma > -mktElast (output) or gamma < -mktElast (input)
+    if (!is.na(mktElast)) {
+      if (output) {
+        lowerB[1] <- max(lowerB[1], -mktElast)
+      } else {
+        upperB[1] <- min(upperB[1], -mktElast)
+      }
     }
 
     minTheta <- optim(parmStart, minD,
@@ -2477,7 +2502,6 @@ setMethod(
     mktElast <- object@mktElast
     priceOutside <- object@priceOutside
     output <- object@output
-    outSign <- ifelse(output, -1, 1)
 
     avgPrice <- sum(prices * shares) / sum(shares)
 
@@ -2506,7 +2530,8 @@ setMethod(
       }
 
 
-      marginsCand <- outSign * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
+      ## CES elasticities are always negative, so always use -1 (output convention)
+      marginsCand <- -1 * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
 
       m1 <- margins - marginsCand
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
@@ -2528,6 +2553,13 @@ setMethod(
       upperB <- c(1, 0.99)
     }
 
+    if (!is.na(mktElast)) {
+      if (output) {
+        lowerB[1] <- max(lowerB[1], -mktElast)
+      } else {
+        upperB[1] <- min(upperB[1], -mktElast)
+      }
+    }
 
     minGamma <- optim(object@parmsStart, minD,
       method = "L-BFGS-B",
@@ -3492,7 +3524,6 @@ setMethod(
     mktElast <- object@mktElast
     output <- object@output
 
-    outSign <- ifelse(output, 1, -1)
     shareOut <- 1 - shareInside
 
     ## uncover Numeraire Coefficients
@@ -3514,12 +3545,12 @@ setMethod(
     ## Choose starting parameter values
     notMissing <- which(!is.na(margins))[1]
 
-    ## For CES Cournot, margin = outSign * (1 + (gamma-1)*r_i) / gamma
-    ## Raw margin (without sign): margin_raw = outSign * margin
-    ## Solve: gamma * margin_raw = 1 + (gamma-1)*r_i  =>  gamma = (1-r_i) / (margin_raw - r_i)
+    ## CES Cournot margin is naturally positive for both market types:
+    ## margin = 1/gamma + (gamma-1)*(1+alpha) / (gamma*(1+gamma*alpha)) * R_i
+    ## Simplified single-product: margin ~ (1 + (gamma-1)*r_i) / gamma
+    ## Solve: gamma * margin = 1 + (gamma-1)*r_i  =>  gamma = (1-r_i) / (margin - r_i)
     r_nm <- shares[notMissing]
-    margin_raw <- outSign * margins[notMissing]
-    parmStart_gamma <- (1 - r_nm) / (margin_raw - r_nm)
+    parmStart_gamma <- (1 - r_nm) / (margins[notMissing] - r_nm)
     if (is.na(parmStart_gamma) || !is.finite(parmStart_gamma)) parmStart_gamma <- 2
     parmStart <- c(parmStart_gamma, exp(log(shares) - log(idxShare) - (parmStart_gamma - 1) * (log(prices) - log(idxPrice))))
 
@@ -3539,13 +3570,13 @@ setMethod(
       preddiversion <- tcrossprod(1 / (1 - predshares), predshares)
       diag(preddiversion) <- -1
 
-      ## CES Cournot margin: 
+      ## CES Cournot margin (positive for both output and input markets):
       firmShares <- as.numeric(ownerPre %*% predshares)
-      safe_alpha <- if(is.null(alpha)) 0 else alpha
+      safe_alpha <- if (is.null(alpha)) 0 else alpha
       denom <- gamma * (1 + gamma * safe_alpha)
       # prevent divide by zero
       if (denom == 0) denom <- 1e-10
-      marginsCand <- outSign * (1/gamma + ((gamma - 1)*(1 + safe_alpha) / denom) * firmShares)
+      marginsCand <- 1 / gamma + ((gamma - 1) * (1 + safe_alpha) / denom) * firmShares
 
       m1 <- margins - marginsCand
       m2 <- predshares - shares
@@ -3565,6 +3596,14 @@ setMethod(
       lowerB[1] <- 1
     } else {
       upperB[1] <- 1
+    }
+
+    if (!is.na(mktElast)) {
+      if (output) {
+        lowerB[1] <- max(lowerB[1], -mktElast)
+      } else {
+        upperB[1] <- min(upperB[1], -mktElast)
+      }
     }
 
     minTheta <- optim(parmStart, minD,
@@ -3614,7 +3653,6 @@ setMethod(
     mktElast <- object@mktElast
     priceOutside <- object@priceOutside
     output <- object@output
-    outSign <- ifelse(output, 1, -1)
 
     nprods <- length(object@shares)
 
@@ -3626,12 +3664,12 @@ setMethod(
 
       probs <- shares * (1 - sOut)
 
-      ## CES Cournot margin: 
+      ## CES Cournot margin (positive for both output and input markets):
       firmShares <- as.numeric(ownerPre %*% probs)
       alpha_cand <- sOut / (1 - sOut)
       denom <- gamma * (1 + gamma * alpha_cand)
       if (denom == 0) denom <- 1e-10
-      marginsCand <- outSign * (1/gamma + ((gamma - 1)*(1 + alpha_cand) / denom) * firmShares)
+      marginsCand <- 1 / gamma + ((gamma - 1) * (1 + alpha_cand) / denom) * firmShares
 
       m1 <- margins - marginsCand
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
@@ -3653,6 +3691,13 @@ setMethod(
       upperB <- c(1, 0.99)
     }
 
+    if (!is.na(mktElast)) {
+      if (output) {
+        lowerB[1] <- max(lowerB[1], -mktElast)
+      } else {
+        upperB[1] <- min(upperB[1], -mktElast)
+      }
+    }
 
     minGamma <- optim(object@parmsStart, minD,
       method = "L-BFGS-B",
@@ -3722,10 +3767,14 @@ setMethod(
 
     ## Minimize the distance between observed and predicted margins
     ## CES auction margin (proportional): L = 1 - (1-r_F)^(1/(gamma-1))
+    ## For input markets (gamma < 1), the raw formula is negative;
+    ## outSign corrects this to match positive observed margins.
+    outSign <- ifelse(output, 1, -1)
+
     minD <- function(gamma) {
       m1 <- (mktElast + 1) / (1 - gamma) - shareOut
 
-      marginsCand <- 1 - (1 - firmShares)^(1 / (gamma - 1))
+      marginsCand <- outSign * (1 - (1 - firmShares)^(1 / (gamma - 1)))
       m2 <- 1 - marginsCand / margins
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
@@ -3738,6 +3787,15 @@ setMethod(
     } else {
       bounds <- c(1e-6, 1 - 1e-6)
     }
+
+    if (!is.na(mktElast)) {
+      if (output) {
+        bounds[1] <- max(bounds[1], -mktElast)
+      } else {
+        bounds[2] <- min(bounds[2], -mktElast)
+      }
+    }
+
     minGamma <- optimize(minD, bounds,
       tol = object@control.slopes$reltol
     )$minimum
@@ -3781,6 +3839,9 @@ setMethod(
     nprods <- length(shares)
 
     ## Minimize the distance between observed and predicted margins
+    ## For input markets (gamma < 1), raw formula is negative; outSign corrects this.
+    outSign <- ifelse(output, 1, -1)
+
     minD <- function(theta) {
       gamma <- theta[1]
       sOut <- theta[2]
@@ -3791,7 +3852,7 @@ setMethod(
       m1 <- (mktElast + 1) / (1 - gamma) - sOut
 
       ## CES auction margin: L = 1 - (1-r_F)^(1/(gamma-1))
-      marginsCand <- 1 - (1 - firmProbs)^(1 / (gamma - 1))
+      marginsCand <- outSign * (1 - (1 - firmProbs)^(1 / (gamma - 1)))
       m2 <- 1 - marginsCand / margins
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
@@ -3806,6 +3867,14 @@ setMethod(
     } else {
       lowerB <- c(1e-10, 0.001)
       upperB <- c(1 - 1e-6, 0.99)
+    }
+
+    if (!is.na(mktElast)) {
+      if (output) {
+        lowerB[1] <- max(lowerB[1], -mktElast)
+      } else {
+        upperB[1] <- min(upperB[1], -mktElast)
+      }
     }
 
     minTheta <- optim(object@parmsStart, minD,
