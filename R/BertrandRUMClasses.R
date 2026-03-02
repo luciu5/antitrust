@@ -538,8 +538,6 @@ setClass(
     priceOutside = 1
   ),
   validity = function(object) {
-    margins <- object@margins
-    if (object@output && any(margins > 1, na.rm = TRUE)) stop("'margins' values must be between 0 and 1")
     if (!is.na(object@mktElast)) {
       if (object@output && object@mktElast > -1) {
         stop("'mktElast' must be less than or equal to -1 for output markets")

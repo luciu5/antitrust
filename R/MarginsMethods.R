@@ -84,6 +84,19 @@ setMethod(
   }
 )
 
+## compute CES margins
+## CES elast() now correctly negates elasticities for input markets,
+## so no output override is needed — the parent Bertrand method works as-is.
+#' @rdname Margins-Methods
+#' @export
+setMethod(
+  f = "calcMargins",
+  signature = "CES",
+  definition = function(object, preMerger = TRUE, level = FALSE) {
+    callNextMethod(object, preMerger = preMerger, level = level)
+  }
+)
+
 
 ## compute margins
 #' @rdname Margins-Methods
@@ -143,7 +156,6 @@ setMethod(
   signature = "CESCournot",
   definition = function(object, preMerger = TRUE, level = FALSE) {
     gamma <- object@slopes$gamma
-    outSign <- ifelse(object@output, 1, -1)
     nprods <- length(object@shares)
 
     if (preMerger) {
@@ -161,14 +173,15 @@ setMethod(
 
     alpha <- object@slopes$alpha
     if(is.null(alpha)) alpha <- 0
-    
+
     firmShares <- as.numeric(owner %*% shares_r)
 
-    ## CES Cournot Lerner index: 
-    ## outSign flips sign for input markets (gamma < 0)
+    ## CES Cournot Lerner index (positive for both output and input markets):
+    ## For output: margin = (p - mc) / p
+    ## For input:  margin = (MRP - w) / w
     denom <- gamma * (1 + gamma * alpha)
     if (denom == 0) denom <- 1e-10
-    margins <- outSign * (1/gamma + ((gamma - 1)*(1 + alpha) / denom) * firmShares)
+    margins <- 1/gamma + ((gamma - 1)*(1 + alpha) / denom) * firmShares
 
     if (level) {
       margins <- margins * prices

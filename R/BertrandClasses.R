@@ -198,7 +198,7 @@ setClass(
 
     if (any(object@prices < 0, na.rm = TRUE)) stop("'prices' values must be positive")
     if (any(object@quantities < 0, na.rm = TRUE)) stop("'quantities' values must be positive")
-    if (any(object@margins < 0 | object@margins > 1, na.rm = TRUE)) stop("'margins' values must be between 0 and 1")
+    if (any(object@margins < 0 | (object@output & object@margins > 1), na.rm = TRUE)) stop(paste("'margins' values must be between 0 and", ifelse(object@output, "1", "Inf")))
 
 
     if (any(is.na(object@diversion))) {

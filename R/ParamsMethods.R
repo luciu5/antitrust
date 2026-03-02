@@ -463,8 +463,7 @@ setMethod(
 
         marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
 
-
-        m1 <- margins - marginsCand
+        m1 <- 1 - marginsCand / margins
         m2 <- as.vector(diversion + t(B) / diag(B)) # measure distance between observed and predicted diversion
 
 
@@ -1200,8 +1199,7 @@ setMethod(
 
       marginsCand <- -1 * as.vector(solve(elast * ownerPre) %*% (shares * diag(ownerPre))) / shares
 
-
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m2 <- diversion / t(diversion) - tcrossprod(1 / betas, betas)
       m2 <- m2[upper.tri(m2)]
       m2 <- m2[is.finite(m2) & m2 != 0]
@@ -1593,7 +1591,7 @@ setMethod(
 
 
       marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m2 <- predshares - shares
       m3 <- drop(diversion - preddiversion)
       measure <- sum((c(m1, m2, m3) * 100)^2, na.rm = TRUE)
@@ -1864,7 +1862,7 @@ setMethod(
 
       marginsCand <- outSign * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m1 <- m1[!singleConstrained]
       m2 <- mktElast / (avgPrice * alpha) - sOut
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
@@ -2262,7 +2260,7 @@ setMethod(
       # marginsCand <- outSign/(alpha*(1-as.numeric(crossprod(ownerPre,predshares))))
       marginsCand <- outSign * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m2 <- mktElast / (avgPrice * alpha) - sOut
       measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
 
@@ -2405,20 +2403,19 @@ setMethod(
 
       elasticity <- (gamma - 1) * matrix(predshares, ncol = nprods, nrow = nprods)
       diag(elasticity) <- -gamma + diag(elasticity)
+      ## Negate elasticity for input markets so slopes are increasing in r
+      if (!output) elasticity <- -1 * elasticity
 
       elastInv <- try(solve(elasticity * ownerPre), silent = TRUE)
       if (any(class(elastInv) == "try-error")) {
         elastInv <- MASS::ginv(elasticity * ownerPre)
       }
 
+      ## Bertrand FOC sign: -1 for output (downward demand), +1 for input (upward supply)
+      outSign <- ifelse(output, -1, 1)
+      marginsCand <- outSign * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
 
-      ## CES elasticities are always negative, so always use -1 (output convention)
-      ## to get positive margins for both output and input markets
-      marginsCand <- -1 * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
-      # measure <- sum((margins - marginsCand)^2,na.rm=TRUE)
-      # FOC <- (shares * diag(ownerPre)) + (elasticity * ownerPre) %*% (shares * margins)
-
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m2 <- predshares - shares
       m3 <- drop(diversion - preddiversion)
       m4 <- (mktElast + 1) / (1 - gamma) - shareOut
@@ -2522,18 +2519,19 @@ setMethod(
 
       elasticity <- (gamma - 1) * matrix(probs, ncol = nprods, nrow = nprods)
       diag(elasticity) <- -gamma + diag(elasticity)
-
+      ## Negate elasticity for input markets so slopes are increasing in r
+      if (!output) elasticity <- -1 * elasticity
 
       elastInv <- try(solve(elasticity * ownerPre), silent = TRUE)
       if (any(class(elastInv) == "try-error")) {
         elastInv <- MASS::ginv(elasticity * ownerPre)
       }
 
+      ## Bertrand FOC sign: -1 for output (downward demand), +1 for input (upward supply)
+      outSign <- ifelse(output, -1, 1)
+      marginsCand <- outSign * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
 
-      ## CES elasticities are always negative, so always use -1 (output convention)
-      marginsCand <- -1 * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
-
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
@@ -2857,7 +2855,7 @@ setMethod(
       marginsCand <- ownerPreInv %*% ((log(1 - predshares) * diag(ownerPre)) / (-1 * outSign * alpha * (barg * predshares / (1 - predshares) -
         log(1 - predshares))))
       marginsCand <- as.vector(marginsCand)
-      m1 <- margins - marginsCand / prices
+      m1 <- 1 - (marginsCand / prices) / margins
       m2 <- (predshares - probs)
       measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
 
@@ -3052,7 +3050,7 @@ setMethod(
           log(1 - predshares))))
       marginsCand <- as.vector(marginsCand) / prices
 
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m2 <- mktElast / (avgPrice * alpha) - sOut
       measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
 
@@ -3444,7 +3442,7 @@ setMethod(
       # Formula: margins = (1 + sharesFirm / outsideShare) / (alpha * price)
       marginsCand <- outSign * (1 + sharesFirm / sOut) / (alpha * prices)
 
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m2 <- mktElast / (alpha * avgPrice) - sOut
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
@@ -3578,7 +3576,7 @@ setMethod(
       if (denom == 0) denom <- 1e-10
       marginsCand <- 1 / gamma + ((gamma - 1) * (1 + safe_alpha) / denom) * firmShares
 
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m2 <- predshares - shares
       m3 <- drop(diversion - preddiversion)
       m4 <- (mktElast + 1) / (1 - gamma) - shareOut
@@ -3671,7 +3669,7 @@ setMethod(
       if (denom == 0) denom <- 1e-10
       marginsCand <- 1 / gamma + ((gamma - 1) * (1 + alpha_cand) / denom) * firmShares
 
-      m1 <- margins - marginsCand
+      m1 <- 1 - marginsCand / margins
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
@@ -3775,6 +3773,7 @@ setMethod(
       m1 <- (mktElast + 1) / (1 - gamma) - shareOut
 
       marginsCand <- outSign * (1 - (1 - firmShares)^(1 / (gamma - 1)))
+      if (any(!is.finite(marginsCand))) return(1e10)
       m2 <- 1 - marginsCand / margins
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
@@ -3853,6 +3852,7 @@ setMethod(
 
       ## CES auction margin: L = 1 - (1-r_F)^(1/(gamma-1))
       marginsCand <- outSign * (1 - (1 - firmProbs)^(1 / (gamma - 1)))
+      if (any(!is.finite(marginsCand))) return(1e10)
       m2 <- 1 - marginsCand / margins
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)

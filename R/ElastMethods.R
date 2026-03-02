@@ -371,6 +371,7 @@ setMethod(
   signature = "CES",
   definition = function(object, preMerger = TRUE, market = FALSE) {
     gamma <- object@slopes$gamma
+    output <- object@output
 
     shares_r <- calcShares(object, preMerger, revenue = TRUE)
     shares_q <- calcShares(object, preMerger, revenue = FALSE)
@@ -382,18 +383,21 @@ setMethod(
         prices <- object@pricePost
       }
 
-      # avgPrice <- sum(prices*shares_q)/sum(shares_q)
-
       elast <- (1 - gamma) * (1 - sum(shares_r)) - 1
 
-      # elast <- -1 * elast
-      # elast <- -gamma * ( 1 - sum(shares_r))*avgPrice
+      ## For input markets, negate so market elasticity is positive
+      ## (higher input price attracts more supply)
+      if (!output) elast <- -1 * elast
 
       names(elast) <- NULL
     } else {
       nprods <- length(shares_r)
       elast <- (gamma - 1) * matrix(shares_r, ncol = nprods, nrow = nprods, byrow = TRUE)
       diag(elast) <- -gamma + diag(elast)
+
+      ## For input markets, negate so own-price elasticity is positive
+      ## (unlike Logit, where alpha flips sign naturally)
+      if (!output) elast <- -1 * elast
 
       dimnames(elast) <- list(object@labels, object@labels)
     }
