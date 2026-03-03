@@ -55,8 +55,6 @@ setMethod(
     
     outPrice <- object@priceOutside
     
-    H0 <- is.na(idx)*exp(outPrice*alpha)
-    
     if( preMerger) {
       mc <- object@mcPre
       owner  <- object@ownerPre
@@ -67,8 +65,19 @@ setMethod(
       owner  <- object@ownerPost
     }
     
+    ## Use log-sum-exp rescaling to prevent exp() overflow
+    ## when alpha > 0 (input markets) and mc is large
+    log_type <- meanval + alpha*mc
+    log_H0 <- outPrice*alpha
     
-    type <-  exp(meanval + alpha*mc)
+    if (is.na(idx)) {
+      max_log <- max(c(log_type, log_H0))
+    } else {
+      max_log <- max(log_type)
+    }
+    
+    type <- exp(log_type - max_log)
+    H0 <- is.na(idx) * exp(log_H0 - max_log)
     
     typeFirm <- as.numeric(owner %*% type)
     
@@ -83,9 +92,9 @@ setMethod(
       
       mu <- BB::BBsolve(muStart,mufun,H=h,quiet=TRUE)
     
-      price <-  output*(mc - mu$par/alpha)
+      price <-  mc - mu$par/alpha
      
-      val <- exp(meanval + alpha*price)
+      val <- exp(meanval + alpha*price - max_log)
     
       omega <- sum(H0,val)/h
       
@@ -93,6 +102,11 @@ setMethod(
     }
     
     HStart <- H0+sum(type)/exp(1)
+    
+    if (!is.finite(HStart) || HStart <= 0) {
+      stop("calcMarginsAG (Logit): non-finite starting value for aggregative games optimizer. ",
+           "This typically occurs in input markets where alpha > 0 causes exp(alpha*mc) to overflow.")
+    }
     
     HBest <- optim(HStart,Hfun,method="Brent",lower=0,upper=1e6*HStart)
     
@@ -103,7 +117,7 @@ setMethod(
     margins <- output*margins/alpha
     
     if(!level) {
-      price <-  mc - margins
+      price <- mc - output * margins
       margins <- margins / price }
     
     names(margins) <- object@labels
@@ -146,7 +160,7 @@ setMethod(
     
     mufun <- function(m,H){
       
-      return(m*(1 - (gamma - 1)/gamma*(typeFirm/H)*(1 - m/gamma)^(gamma - 1)) - 1)
+      return(m*(1 - (gamma - 1)/gamma*(typeFirm/H)*abs(1 - m/gamma)^(gamma - 1)) - 1)
     }
     
     Hfun <- function(h){
@@ -164,7 +178,14 @@ setMethod(
       return((omega - 1)^2)
     }
     
-    HStart <- H0+sum(type)*(1 - 1/gamma)^(gamma - 1)
+    ## Use abs() to handle gamma < 1 where (1-1/gamma) is negative
+    ## and raising to fractional power (gamma-1) would produce NaN
+    HStart <- H0+sum(type)*abs(1 - 1/gamma)^(gamma - 1)
+    
+    if (!is.finite(HStart) || HStart <= 0) {
+      stop("calcMarginsAG (CES): non-finite starting value for aggregative games optimizer. ",
+           "This typically occurs in input markets where gamma < 1 causes (1-1/gamma)^(gamma-1) to overflow.")
+    }
     
     HBest <- optim(HStart,Hfun,method="Brent",lower=0,upper=1e6*HStart)
     
