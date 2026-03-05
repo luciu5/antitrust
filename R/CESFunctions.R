@@ -265,12 +265,12 @@ ces.alm <- function(prices, shares, margins,
     ## CES Bertrand margin: m = 1/(gamma*(1-s) + s), so gamma = (1/m - s)/(1-s)
     ## This formula is the same for both output and input markets
     parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm])
-    ## For input markets, clamp gamma above singularity for all firms
+    ## For input markets, clamp gamma below singularity for all firms
     ## Singularity at gamma = -s_eff/(1-s_eff) where s_eff = s*(1-sOut)
     if (!output) {
       s_eff <- shares * (1 - parmsStart[2])
-      min_gamma <- max(-s_eff / (1 - s_eff)) + 0.01
-      parmsStart[1] <- max(parmsStart[1], min_gamma)
+      min_gamma <- max(-s_eff / (1 - s_eff))
+      parmsStart[1] <- min(parmsStart[1], min_gamma - 0.01)
     }
   }
 
@@ -482,11 +482,11 @@ ces.cournot.alm <- function(prices, shares, margins,
     nm <- which(!is.na(margins))[1]
     ## CES Cournot margin starting value, same formula for output and input
     parmsStart[1] <- 1 / (margins[nm] * (1 - shares[nm])) - shares[nm] / (1 - shares[nm])
-    ## For input markets, clamp gamma above singularity for all firms
+    ## For input markets, clamp gamma below singularity for all firms
     if (!output) {
       s_eff <- shares * (1 - parmsStart[2])
-      min_gamma <- max(-s_eff / (1 - s_eff)) + 0.01
-      parmsStart[1] <- max(parmsStart[1], min_gamma)
+      min_gamma <- max(-s_eff / (1 - s_eff))
+      parmsStart[1] <- min(parmsStart[1], min_gamma - 0.01)
     }
   }
 

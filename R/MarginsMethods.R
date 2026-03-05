@@ -179,9 +179,10 @@ setMethod(
     ## CES Cournot Lerner index (positive for both output and input markets):
     ## For output: margin = (p - mc) / p
     ## For input:  margin = (MRP - w) / w
+    outSign <- ifelse(object@output, 1, -1)
     denom <- gamma * (1 + gamma * alpha)
     if (denom == 0) denom <- 1e-10
-    margins <- 1/gamma + ((gamma - 1)*(1 + alpha) / denom) * firmShares
+    margins <- outSign * (1 / gamma - ((gamma - 1) * (1 + alpha) / denom) * firmShares)
 
     if (level) {
       margins <- margins * prices

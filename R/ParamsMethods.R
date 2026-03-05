@@ -2363,112 +2363,71 @@ setMethod(
       idxPrice <- prices[idx]
     }
 
-    ## Choose starting paramter values
-    notMissing <- which(!is.na(margins))[1]
-
-    ## CES Bertrand single-product margin: m = 1/(gamma - (gamma-1)*r)
-    ## Starting value for gamma derived from observed margin and share
-    parmStart <- (shares[notMissing] - 1 / margins[notMissing]) / (shares[notMissing] - 1)
-
-    ## For input markets, clamp gamma above singularity for all firms
-    if (!output) {
-      min_gamma <- max(-shares / (1 - shares)) + 0.01
-      parmStart <- max(parmStart, min_gamma)
-    }
-
-    meanval_start <- exp(log(shares) - log(idxShare) + (parmStart - 1) * (log(prices) - log(idxPrice)))
-    ## Clamp meanval to finite range
-    meanval_start[!is.finite(meanval_start)] <- 1
-    meanval_start <- pmin(pmax(meanval_start, 1e-10), 1e10)
-    parmStart <- c(parmStart, meanval_start)
-
-
-    ## Uncover price coefficient and mean valuation from margins and revenue shares
-
-
     nprods <- length(shares)
 
+    ## Concentrated optimization: for any gamma, compute meanval analytically
+    ## such that predicted shares exactly match observed shares.
+    ## Then optimize over gamma alone to match margins.
 
-    ## Minimize the distance between observed and predicted margins
-    minD <- function(theta) {
-      gamma <- theta[1]
-      meanval <- theta[-1]
+    minD <- function(gamma) {
+      ## Analytically compute meanval to perfectly fit shares
+      meanval <- shares / (prices / idxPrice)^(1 - gamma)
 
       predshares <- meanval * (prices / idxPrice)^(1 - gamma)
       predshares <- predshares / (is.na(idx) + sum(predshares))
 
-      preddiversion <- tcrossprod(1 / (1 - predshares), predshares)
-      diag(preddiversion) <- -1
-
-
-      elasticity <- (gamma - 1) * matrix(predshares, ncol = nprods, nrow = nprods)
+      ## CES elasticity matrix: E[i,j] = (gamma-1)*s_j (off-diag), E[i,i] = -gamma + (gamma-1)*s_i
+      elasticity <- (gamma - 1) * matrix(predshares, ncol = nprods, nrow = nprods, byrow = TRUE)
       diag(elasticity) <- -gamma + diag(elasticity)
-      ## Negate elasticity for input markets so slopes are increasing in r
-      if (!output) elasticity <- -1 * elasticity
 
-      elastInv <- try(solve(elasticity * ownerPre), silent = TRUE)
+      elastInv <- try(solve(t(elasticity) * ownerPre), silent = TRUE)
       if (any(class(elastInv) == "try-error")) {
-        elastInv <- MASS::ginv(elasticity * ownerPre)
+        elastInv <- MASS::ginv(t(elasticity) * ownerPre)
       }
 
-      ## Bertrand FOC sign: -1 for output (downward demand), +1 for input (upward supply)
+      ## Bertrand FOC: margin = output * (E^T * O)^{-1} * (r * diag(O)) / r
       outSign <- ifelse(output, -1, 1)
       marginsCand <- outSign * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
 
       m1 <- 1 - marginsCand / margins
-      m2 <- predshares - shares
-      m3 <- drop(diversion - preddiversion)
-      m4 <- (mktElast + 1) / (1 - gamma) - shareOut
-      measure <- sum((c(m1, m2, m3, m4) * 100)^2, na.rm = TRUE)
-
-      # measure<-sum(FOC^2,na.rm=TRUE)
+      measure <- sum(m1^2, na.rm = TRUE)
 
       return(measure)
     }
 
 
-    ##  Constrained optimizer to look for solutions where gamma>1
-
-
-    lowerB <- upperB <- rep(Inf, length(parmStart))
-    lowerB <- lowerB * -1
-
+    ## Set gamma search bounds
     if (output) {
-      lowerB[1] <- 1
+      lowerG <- 1
+      upperG <- 100
     } else {
-      upperB[1] <- 1
+      lowerG <- -20
+      ## Elasticity matrix and margins are strictly positive only when gamma < -s_i/(1-s_i)
+      min_gamma <- max(-shares / (1 - shares))
+      upperG <- min_gamma - 0.01
     }
 
-    ## Tighten gamma bound using market elasticity:
-    ## shareOut = (mktElast + 1) / (1 - gamma), and 0 < shareOut < 1
-    ## implies gamma > -mktElast (output) or gamma < -mktElast (input)
+    ## Tighten gamma bound using market elasticity
     if (!is.na(mktElast)) {
       if (output) {
-        lowerB[1] <- max(lowerB[1], -mktElast)
+        lowerG <- max(lowerG, -mktElast)
       } else {
-        upperB[1] <- min(upperB[1], -mktElast)
+        upperG <- min(upperG, -mktElast)
       }
     }
 
-    minTheta <- optim(parmStart, minD,
-      method = "L-BFGS-B",
-      lower = lowerB, upper = upperB,
-      control = object@control.slopes
-    )
+    ## Use optimize() for 1D search over gamma
+    minTheta <- optimize(minD, interval = c(lowerG, upperG))
 
-
-    if (minTheta$convergence != 0) {
-      if (!(grepl("ABNORMAL_TERMINATION_IN_LNSRCH", minTheta$message) && minTheta$value < 1e-6)) {
-        warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '", minTheta$message, "'")
-      }
+    if (minTheta$objective > 1e-4) {
+      warning("'calcSlopes' optimizer may not have found a good solution. Objective: ", minTheta$objective)
     }
 
-
-    minGamma <- minTheta$par[1]
+    minGamma <- minTheta$minimum
     names(minGamma) <- "Gamma"
 
-    meanval <- minTheta$par[-1]
-
+    ## Recover meanval from optimal gamma
+    meanval <- shares / (prices / idxPrice)^(1 - minGamma)
     if (!is.na(idx)) meanval <- meanval / meanval[idx]
 
     names(meanval) <- object@labels
@@ -2504,51 +2463,48 @@ setMethod(
 
     nprods <- length(object@shares)
 
-    ## identify which products have enough margin information
-    ##  to impute Bertrand margins
-    # isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
-    # isMargin[ownerPre==0]=0
-    # isMargin    <- !is.na(rowSums(isMargin))
+    ## Concentrated optimization over (gamma, sOut):
+    ## For any (gamma, sOut), revenue shares inside are probs = shares * (1 - sOut)
+    ## and the margin is determined solely by these probs and gamma.
 
     minD <- function(theta) {
       gamma <- theta[1]
       sOut <- theta[2]
 
-
       probs <- shares * (1 - sOut)
 
-      elasticity <- (gamma - 1) * matrix(probs, ncol = nprods, nrow = nprods)
+      ## CES elasticity matrix: E[i,j] = (gamma-1)*s_j (off-diag), E[i,i] = -gamma + (gamma-1)*s_i
+      elasticity <- (gamma - 1) * matrix(probs, ncol = nprods, nrow = nprods, byrow = TRUE)
       diag(elasticity) <- -gamma + diag(elasticity)
-      ## Negate elasticity for input markets so slopes are increasing in r
-      if (!output) elasticity <- -1 * elasticity
 
-      elastInv <- try(solve(elasticity * ownerPre), silent = TRUE)
+      elastInv <- try(solve(t(elasticity) * ownerPre), silent = TRUE)
       if (any(class(elastInv) == "try-error")) {
-        elastInv <- MASS::ginv(elasticity * ownerPre)
+        elastInv <- MASS::ginv(t(elasticity) * ownerPre)
       }
 
-      ## Bertrand FOC sign: -1 for output (downward demand), +1 for input (upward supply)
+      ## Bertrand FOC: margin = output * (E^T * O)^{-1} * (r * diag(O)) / r
       outSign <- ifelse(output, -1, 1)
       marginsCand <- outSign * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
 
       m1 <- 1 - marginsCand / margins
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
 
-      measure <- sum(c(m1, m2)^2, na.rm = TRUE)
-
+      measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
 
       return(measure)
     }
 
-    ## Constrain optimizer to look for gamma > 1 (output) or < 1 (input), and 0 < sOut < 1
+    ## Constrain optimizer to look for gamma > 1 (output) or < 0 (input), and 0 < sOut < 1
     if (output) {
       # Output market: gamma > 1
       lowerB <- c(1, 0.001)
-      upperB <- c(Inf, 0.99)
+      upperB <- c(100, 0.99)
     } else {
-      # Input market: gamma < 1 (can be negative)
-      lowerB <- c(-Inf, 0.001)
-      upperB <- c(1, 0.99)
+      # Input market: gamma < 0
+      # Elasticity matrix and margins are strictly positive only when gamma < -s_i/(1-s_i)
+      min_gamma <- max(-shares / (1 - shares))
+      lowerB <- c(-20, 0.001)
+      upperB <- c(min_gamma - 0.01, 0.99)
     }
 
     if (!is.na(mktElast)) {
@@ -3540,87 +3496,66 @@ setMethod(
       idxPrice <- prices[idx]
     }
 
-    ## Choose starting parameter values
-    notMissing <- which(!is.na(margins))[1]
-
-    ## CES Cournot margin is naturally positive for both market types:
-    ## margin = 1/gamma + (gamma-1)*(1+alpha) / (gamma*(1+gamma*alpha)) * R_i
-    ## Simplified single-product: margin ~ (1 + (gamma-1)*r_i) / gamma
-    ## Solve: gamma * margin = 1 + (gamma-1)*r_i  =>  gamma = (1-r_i) / (margin - r_i)
-    r_nm <- shares[notMissing]
-    parmStart_gamma <- (1 - r_nm) / (margins[notMissing] - r_nm)
-    if (is.na(parmStart_gamma) || !is.finite(parmStart_gamma)) parmStart_gamma <- 2
-    parmStart <- c(parmStart_gamma, exp(log(shares) - log(idxShare) - (parmStart_gamma - 1) * (log(prices) - log(idxPrice))))
-
-
-    ## Uncover price coefficient and mean valuation from margins and revenue shares
     nprods <- length(shares)
+    outSign <- ifelse(output, -1, 1)
 
+    ## Concentrated optimization: for any gamma, compute meanval analytically
+    ## such that predicted shares exactly match observed shares.
+    ## Then optimize over gamma alone to match margins.
 
-    ## Minimize the distance between observed and predicted margins
-    minD <- function(theta) {
-      gamma <- theta[1]
-      meanval <- theta[-1]
+    minD <- function(gamma) {
+      ## Analytically compute meanval to perfectly fit shares
+      meanval <- shares / (prices / idxPrice)^(1 - gamma)
 
       predshares <- meanval * (prices / idxPrice)^(1 - gamma)
       predshares <- predshares / (is.na(idx) + sum(predshares))
 
-      preddiversion <- tcrossprod(1 / (1 - predshares), predshares)
-      diag(preddiversion) <- -1
-
-      ## CES Cournot margin (positive for both output and input markets):
+      ## CES Cournot margin:
       firmShares <- as.numeric(ownerPre %*% predshares)
       safe_alpha <- if (is.null(alpha)) 0 else alpha
       denom <- gamma * (1 + gamma * safe_alpha)
-      # prevent divide by zero
       if (denom == 0) denom <- 1e-10
-      marginsCand <- 1 / gamma + ((gamma - 1) * (1 + safe_alpha) / denom) * firmShares
+      outSign <- ifelse(output, 1, -1)
+      marginsCand <- outSign * (1 / gamma - ((gamma - 1) * (1 + safe_alpha) / denom) * firmShares)
 
       m1 <- 1 - marginsCand / margins
-      m2 <- predshares - shares
-      m3 <- drop(diversion - preddiversion)
-      m4 <- (mktElast + 1) / (1 - gamma) - shareOut
-      measure <- sum((c(m1, m2, m3, m4) * 100)^2, na.rm = TRUE)
+      measure <- sum(m1^2, na.rm = TRUE)
 
       return(measure)
     }
 
 
-    ## Constrained optimizer to look for solutions where gamma>1 (output) or <1 (input)
-    lowerB <- upperB <- rep(Inf, length(parmStart))
-    lowerB <- lowerB * -1
-
+    ## Set gamma search bounds
     if (output) {
-      lowerB[1] <- 1
+      lowerG <- 1
+      upperG <- 100
     } else {
-      upperB[1] <- 1
+      lowerG <- -20
+      ## Elasticity matrix and margins are strictly positive only when gamma < -s_i/(1-s_i)
+      min_gamma <- max(-shares / (1 - shares))
+      upperG <- min_gamma - 0.01
     }
 
     if (!is.na(mktElast)) {
       if (output) {
-        lowerB[1] <- max(lowerB[1], -mktElast)
+        lowerG <- max(lowerG, -mktElast)
       } else {
-        upperB[1] <- min(upperB[1], -mktElast)
+        upperG <- min(upperG, -mktElast)
       }
     }
 
-    minTheta <- optim(parmStart, minD,
-      method = "L-BFGS-B",
-      lower = lowerB, upper = upperB,
-      control = object@control.slopes
-    )
+    ## Use optimize() for 1D search over gamma
+    minTheta <- optimize(minD, interval = c(lowerG, upperG))
 
-
-    if (minTheta$convergence != 0) {
-      warning("'calcSlopes' nonlinear solver did not successfully converge. Reason: '", minTheta$message, "'")
+    if (minTheta$objective > 1e-4) {
+      warning("'calcSlopes' optimizer may not have found a good solution. Objective: ", minTheta$objective)
     }
 
-
-    minGamma <- minTheta$par[1]
+    minGamma <- minTheta$minimum
     names(minGamma) <- "Gamma"
 
-    meanval <- minTheta$par[-1]
-
+    ## Recover meanval from optimal gamma
+    meanval <- shares / (prices / idxPrice)^(1 - minGamma)
     if (!is.na(idx)) meanval <- meanval / meanval[idx]
 
     names(meanval) <- object@labels
@@ -3667,12 +3602,13 @@ setMethod(
       alpha_cand <- sOut / (1 - sOut)
       denom <- gamma * (1 + gamma * alpha_cand)
       if (denom == 0) denom <- 1e-10
-      marginsCand <- 1 / gamma + ((gamma - 1) * (1 + alpha_cand) / denom) * firmShares
+      outSign <- ifelse(output, 1, -1)
+      marginsCand <- outSign * (1 / gamma - ((gamma - 1) * (1 + alpha_cand) / denom) * firmShares)
 
       m1 <- 1 - marginsCand / margins
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
 
-      measure <- sum(c(m1, m2)^2, na.rm = TRUE)
+      measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
 
 
       return(measure)
@@ -3682,11 +3618,13 @@ setMethod(
     if (output) {
       # Output market: gamma > 1
       lowerB <- c(1, 0.001)
-      upperB <- c(Inf, 0.99)
+      upperB <- c(100, 0.99)
     } else {
-      # Input market: gamma < 1 (can be negative)
-      lowerB <- c(-Inf, 0.001)
-      upperB <- c(1, 0.99)
+      # Input market: gamma < 0
+      # Elasticity matrix and margins are strictly positive only when gamma < -s_i/(1-s_i)
+      min_gamma <- max(-shares / (1 - shares))
+      lowerB <- c(-20, 0.001)
+      upperB <- c(min_gamma - 0.01, 0.99)
     }
 
     if (!is.na(mktElast)) {
