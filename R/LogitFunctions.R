@@ -296,7 +296,7 @@ logit <- function(prices, shares, margins, diversions,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
   return(result)
 }
@@ -359,7 +359,7 @@ logit.cournot <- function(prices, shares, margins, diversions,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
   return(result)
 }
@@ -428,7 +428,7 @@ logit.cournot.alm <- function(prices, shares, margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
   return(result)
 }
@@ -525,7 +525,7 @@ logit.nests <- function(prices, shares, margins, diversions,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
 
   return(result)
@@ -614,7 +614,7 @@ logit.nests.alm <- function(prices, shares, margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
   return(result)
 }
@@ -677,7 +677,7 @@ logit.cap <- function(prices, shares, margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
 
   return(result)
@@ -747,7 +747,7 @@ logit.alm <- function(prices, shares, margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
   return(result)
 }
@@ -820,7 +820,7 @@ logit.cap.alm <- function(prices, shares, margins,
 
   ## Solve Non-Linear System for Price Changes
   result@pricePre <- calcPrices(result, preMerger = TRUE, isMax = isMax, ...)
-  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, subset = subset, ...)
+  result@pricePost <- calcPrices(result, preMerger = FALSE, isMax = isMax, ...)
 
 
   return(result)
