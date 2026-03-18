@@ -275,8 +275,8 @@ NULL
 #' @rdname Sim-Functions
 #' @export
 sim <- function(prices,
-                shares = NULL,
-                supply = c("bertrand", "cournot", "auction", "bargaining", "bargaining2nd"),
+shares = NULL,
+                supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
                 demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"), demand.param,
                 ownerPre, ownerPost, nests, capacities,
                 mcDelta = rep(0, length(prices)),
@@ -296,7 +296,7 @@ sim <- function(prices,
   valid_combinations <- list(
     bertrand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"),
     cournot = c("Logit", "CES", "BLP"),
-    auction = c("Logit", "CES"),
+    auction2nd = c("Logit", "CES"),
     bargaining = c("Logit"),
     bargaining2nd = c("Logit")
   )
@@ -731,7 +731,7 @@ sim <- function(prices,
         labels = labels,
         cls = "BargainingLogit"
       ),
-      auction = new(paste0("Auction2nd", demand),
+      auction2nd = new(paste0("Auction2nd", demand),
         prices = prices, shares = shares,
         margins = margins,
         normIndex = normIndex,
@@ -857,7 +857,7 @@ sim <- function(prices,
   ## Use observed prices as pre-merger equilibrium and only solve post-merger prices
   ## calcMC above already calibrated MCs using the supplied prices.
   result@pricePre <- prices
-  if (!supply %in% c("auction", "bargaining2nd")) {
+  if (!supply %in% c("auction2nd", "bargaining2nd")) {
     result@pricePost <- calcPrices(result, FALSE, subset = subset, ...)
   } else {
     result@pricePost <- calcPrices(result, FALSE, ...)

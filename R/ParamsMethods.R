@@ -547,11 +547,14 @@ setMethod(
 
 #' @rdname Params-Methods
 #' @export
+#' @rdname Params-Methods
+#' @export
 setMethod(
   f = "calcSlopes",
   signature = "Logit",
   definition = function(object) {
-    ## Uncover Demand Coefficents
+    ## Uncover Demand Coefficents using CONCENTRATED OPTIMIZATION
+    ## Only optimize alpha; analytically solve for meanval to match shares exactly
 
 
     ownerPre <- object@ownerPre
@@ -575,124 +578,59 @@ setMethod(
       idxPrice <- prices[idx]
     }
 
-    ## Choose starting parameter values
-    notMissing <- which(!is.na(margins))[1]
-
-    parmStart <- outSign / (margins[notMissing] * (1 - shares[notMissing]))
-    mvalStart <- log(shares) - log(idxShare) - parmStart * (prices - idxPrice)
-    if (!is.na(idx)) mvalStart <- mvalStart[-idx]
-    parmStart <- c(parmStart, mvalStart)
-
-    ## Uncover price coefficient and mean valuation from margins and revenue shares
-
-
     nprods <- length(shares)
-
     avgPrice <- sum(shares * prices, na.rm = TRUE) / sum(shares)
 
-    ## identify which products have enough margin information
-    ##  to impute Bertrand margins
-    # isMargin    <- matrix(margins,nrow=nprods,ncol=nprods,byrow=TRUE)
-    # isMargin[ownerPre==0]=0
-    # isMargin    <- !is.na(rowSums(isMargin))
 
-
-    ## Minimize the distance between observed and predicted margins
-    minD <- function(theta) {
-      alpha <- theta[1]
-
-      if (!is.na(idx)) {
-        meanval <- rep(0, nprods)
-        meanval[-idx] <- theta[-1]
-      } else {
-        meanval <- theta[-1]
-      }
-
-      probs <- shares
-
+    ## CONCENTRATED OPTIMIZATION: Minimize over alpha only
+    ## For any alpha, analytically compute meanval to match shares exactly
+    minD <- function(alpha) {
+      
+      # Analytically compute meanval to perfectly match observed shares
+      meanval <- log(shares) - log(idxShare) - alpha * (prices - idxPrice)
+      
+      # Compute predicted shares (equals observed by construction)
       predshares <- exp(meanval + alpha * (prices - idxPrice))
       predshares <- predshares / (is.na(idx) + sum(predshares))
 
+      # Compute predicted diversion ratios
       preddiversion <- tcrossprod(1 / (1 - predshares), predshares)
       diag(preddiversion) <- -1
 
-      if (!is.na(mktElast)) {
-        shareInside <- 1 - mktElast / (alpha * avgPrice)
-        probs <- probs / sum(probs, na.rm = TRUE) * shareInside
-      }
-
-
+      # Compute predicted margins using Bertrand FOC
       marginsCand <- outSign / (alpha * (1 - as.numeric(crossprod(ownerPre, predshares))))
 
+      # Objective: minimize distance between observed and predicted margins & diversions
       m1 <- (margins - marginsCand)
-      m2 <- log(predshares / probs)
       m3 <- drop(diversion - preddiversion)
-      measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
+      measure <- sum((c(m1, m3))^2, na.rm = TRUE)
 
       return(measure)
     }
-    #
-    #     alphaBounds <- c(-1e6,0)
-    #     if(!is.na(mktElast)){ alphaBounds[2] <- mktElast/ avgPrice}
-    #
-    #     minAlpha <- optimize(minD, alphaBounds,
-    #                          tol=object@control.slopes$reltol)$minimum
-    #
-    #     if(!is.na(mktElast)){
-    #
-    #
-    #       object@shareInside <-    1 - mktElast/(minAlpha * avgPrice )
-    #       idxShare <-  1 - object@shareInside
-    #
-    #     }
 
-
-    ##  Constrained optimizer to look for solutions where alpha<0 (output) or alpha>0 (input)
-    # Dynamically scale bounds relative to initial guess to prevent trapping valid inputs outside static +/- 12 bounds
-    mvalBounds <- pmax(20, abs(mvalStart) * 1.5)
-    lowerB <- upperB <- c(1e6, mvalBounds)
-    lowerB <- lowerB * -1
-
+    ##  Constrained 1-D optimizer: alpha < 0 for output, alpha > 0 for input
     if (output) {
-      upperB[1] <- -1e-5
+      alphaBounds <- c(-1e6, -1e-5)
     } else {
-      lowerB[1] <- 1e-5
+      alphaBounds <- c(1e-5, 1e6)
     }
 
-    minTheta <- optim(parmStart, minD,
-      method = "L-BFGS-B",
-      lower = lowerB, upper = upperB,
-      control = object@control.slopes
-    )
+    # Use optimize() for efficient 1-D constrained search
+    # Use reltol if available, otherwise use default for optimize()
+    optim_tol <- ifelse(is.null(object@control.slopes$reltol),
+                        .Machine$double.eps^0.25,
+                        object@control.slopes$reltol)
+    minResult <- optimize(minD, alphaBounds, tol = optim_tol)
 
-
-    if (minTheta$convergence != 0) {
-      if (!(grepl("ABNORMAL_TERMINATION_IN_LNSRCH", minTheta$message) && minTheta$value < 1e-6)) {
-        warning("'calcSlopes' nonlinear solver may not have successfully converge. Reason: '", minTheta$message, "'")
-      }
-    }
-
-
-    # ui=diag(length(parmStart))
-    # #ui[1,1] <- -1
-    # if(!is.na(idx)){ui[-1,1] <- prices[-idx] - idxPrice}
-    # else{ui[-1,1] <- prices - idxPrice}
-    # ci_hi=rep(log(.9999/(1-.9999)), length(mvalStart))
-    # ci_low=rep(log((1-.9999)/.9999), length(mvalStart))
-    #
-    # ui=rbind(-ui,ui[-1,])
-    # ci=c(0,-ci_hi,ci_low)
-    #
-    # minTheta <- constrOptim(parmStart,minD,grad=NULL,ui=ui,ci=ci)
-
-    minAlpha <- minTheta$par[1]
+    minAlpha <- minResult$minimum
     names(minAlpha) <- "alpha"
 
+    # Compute final meanval analytically to match shares exactly
     if (is.na(idx)) {
-      meanval <- minTheta$par[-1]
+      meanval <- log(shares) - log(idxShare) - minAlpha * (prices - idxPrice)
     } else {
       meanval <- rep(0, nprods)
-      meanval[-idx] <- minTheta$par[-1]
+      meanval[-idx] <- log(shares[-idx]) - log(idxShare) - minAlpha * (prices[-idx] - idxPrice)
     }
 
     names(meanval) <- object@labels
