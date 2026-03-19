@@ -524,11 +524,15 @@ shares = NULL,
       }
     } else if (demand %in% c("CESNests", "CES")) {
       if (!("gamma" %in% names(demand.param)) ||
-        length(demand.param$gamma) != 1 ||
-        isTRUE(demand.param$gamma < 0)) {
-        stop("'demand.param' does not contain 'gamma' or 'gamma' is not a positive number.")
+        length(demand.param$gamma) != 1) {
+        stop("'demand.param' must contain a scalar 'gamma'.")
       }
 
+      ## Infer market orientation from gamma sign
+      ## For output markets (e.g., goods): gamma > 1
+      ## For input markets (e.g., deposits, procurement): gamma < 0
+      ## This matches the convention used in calcSlopes("CES")
+      outputFlag <- demand.param$gamma > 0
 
       ## uncover Numeraire Coefficients
       if (!("alpha" %in% names(demand.param)) &&
@@ -548,8 +552,6 @@ shares = NULL,
       } else {
         shareInside <- 1 / (1 + demand.param$alpha)
       }
-
-      outputFlag <- TRUE
 
 
       ## An outside option is assumed to exist if all mean valuations are non-zero
