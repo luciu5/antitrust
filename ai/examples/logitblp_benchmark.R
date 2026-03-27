@@ -38,8 +38,7 @@ for (nprods in product_counts) {
   result <- sim(
     prices = prices,
     shares = shares,
-    margins = margins,
-    demand = "LogitBLP",
+    demand = "BLP",
     demand.param = demand.param,
     supply = "bertrand",
     ownerPre = ownerPre,

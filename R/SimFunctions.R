@@ -276,8 +276,9 @@ NULL
 #' @export
 sim <- function(prices,
 shares = NULL,
+                margins = NULL,
                 supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
-                demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"), demand.param,
+                demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP", "LogitBLP", "CournotBLP"), demand.param,
                 ownerPre, ownerPost, nests, capacities,
                 mcDelta = rep(0, length(prices)),
                 subset = rep(TRUE, length(prices)),
@@ -288,9 +289,24 @@ shares = NULL,
                 bargpowerPost = bargpowerPre,
                 labels = paste("Prod", 1:length(prices), sep = ""),
                 ...) {
+  supply_missing <- missing(supply)
   demand <- match.arg(demand)
   supply <- match.arg(supply)
   nprods <- length(prices)
+
+  if (identical(demand, "LogitBLP")) {
+    if (!supply_missing && !identical(supply, "bertrand")) {
+      stop("'demand = \"LogitBLP\"' is only compatible with 'supply = \"bertrand\"'. Use 'demand = \"BLP\"' for explicit supply control.")
+    }
+    demand <- "BLP"
+    supply <- "bertrand"
+  } else if (identical(demand, "CournotBLP")) {
+    if (!supply_missing && !identical(supply, "cournot")) {
+      stop("'demand = \"CournotBLP\"' is only compatible with 'supply = \"cournot\"'. Use 'demand = \"BLP\"' for explicit supply control.")
+    }
+    demand <- "BLP"
+    supply <- "cournot"
+  }
 
   # Validate supply/demand combinations
   valid_combinations <- list(
@@ -317,6 +333,7 @@ shares = NULL,
   ## Create placeholders values to fill required Class slots
 
   sharesProvided <- !is.null(shares) && !missing(shares)
+  marginsProvided <- !missing(margins) && !is.null(margins)
 
   if (is.null(shares) || missing(shares)) {
     shares <- rep(1 / nprods, nprods)
@@ -330,7 +347,13 @@ shares = NULL,
     }
   }
 
-  margins <- rep(1 / nprods, nprods)
+  if (is.null(margins) || missing(margins)) {
+    margins <- rep(1 / nprods, nprods)
+  } else {
+    if (length(margins) != nprods) {
+      stop("'margins' must have the same length as 'prices'")
+    }
+  }
 
 
   if (!missing(nests)) {
@@ -344,7 +367,7 @@ shares = NULL,
   }
 
   ## Checks for discrete choice models
-  if (demand %in% c("CESNests", "LogitNests", "CES", "Logit", "LogitCap", "BLP")) {
+  if (demand %in% c("CESNests", "LogitNests", "CES", "Logit", "BLP")) {
     # meanval is optional for BLP (recovered via contraction if not provided)
     if (demand != "BLP") {
       if (!("meanval" %in% names(demand.param))) {
@@ -362,7 +385,7 @@ shares = NULL,
       }
     }
 
-    if (demand %in% c("LogitNests", "Logit", "LogitCap", "BLP")) {
+    if (demand %in% c("LogitNests", "Logit", "BLP")) {
       if (demand == "BLP") {
         # Check if meanval is provided (optional for BLP)
         # If NOT provided, calcSlopes will recover it via BLP contraction from observed shares
@@ -380,8 +403,8 @@ shares = NULL,
         }
         # Set default nDraws if not provided
         if (!("nDraws" %in% names(demand.param))) {
-          demand.param$nDraws <- 500
-          message("'nDraws' not provided for BLP. Defaulting to 500 draws.")
+          demand.param$nDraws <- 1000
+          message("'nDraws' not provided for BLP. Defaulting to 1000 draws.")
         }
         # Handle demographic parameters
         # Infer nDemog from piDemog length (nDemog is redundant)
@@ -434,6 +457,10 @@ shares = NULL,
             }
             stop("demogCov must be a square matrix with dimensions equal to piDemog length.")
           }
+        }
+        if (!("sigmaNest" %in% names(demand.param))) {
+          demand.param$sigmaNest <- 1
+          message("'sigmaNest' not provided for BLP. Defaulting to 1 (flat logit).")
         }
         if (!is.numeric(demand.param$sigmaNest) || length(demand.param$sigmaNest) != 1 ||
           is.na(demand.param$sigmaNest) || !is.finite(demand.param$sigmaNest) ||
@@ -522,7 +549,48 @@ shares = NULL,
       if (missing(priceOutside)) {
         priceOutside <- 0
       }
-    } else if (demand %in% c("CESNests", "CES")) {
+    }
+  } else if (demand == "LogitCap") {
+    if (missing(capacities)) {
+      stop("'capacities' must be supplied when 'demand' equals 'LogitCap'.")
+    }
+    if (length(capacities) != nprods || any(is.na(capacities)) || any(capacities < 0)) {
+      stop("'capacities' must be a non-negative length-k vector.")
+    }
+
+    alphaVal <- ifelse("alpha" %in% names(demand.param), demand.param$alpha,
+      ifelse("alphaMean" %in% names(demand.param), demand.param$alphaMean,
+        ifelse("alpha_mean" %in% names(demand.param), demand.param$alpha_mean, NA)
+      )
+    )
+
+    if (length(alphaVal) != 1 || is.na(alphaVal)) {
+      stop("'demand.param' must include a scalar 'alpha' (or 'alphaMean'/'alpha_mean').")
+    }
+    demand.param$alpha <- alphaVal
+    outputFlag <- alphaVal < 0
+
+    if (!("mktSize" %in% names(demand.param))) {
+      mktSize <- sum(capacities)
+      warning("'demand.param' does not contain 'mktSize'. Setting 'mktSize' equal to the sum of 'capacities'.")
+      demand.param$mktSize <- mktSize
+    } else {
+      mktSize <- demand.param$mktSize
+    }
+    if (length(mktSize) != 1 || is.na(mktSize) || mktSize <= 0) {
+      stop("'demand.param$mktSize' must be a positive scalar.")
+    }
+    if (sum(capacities) > mktSize) {
+      stop("'sum(capacities)' cannot exceed 'demand.param$mktSize'.")
+    }
+
+    shares <- capacities / mktSize
+    shareInside <- sum(shares)
+    normIndex <- NA
+    if (missing(priceOutside)) {
+      priceOutside <- 0
+    }
+  } else if (demand %in% c("CESNests", "CES")) {
       if (!("gamma" %in% names(demand.param)) ||
         length(demand.param$gamma) != 1) {
         stop("'demand.param' must contain a scalar 'gamma'.")
@@ -595,6 +663,8 @@ shares = NULL,
         stop("The number of nests in 'nests' must either equal the number of nesting parameters in 'demand.param$sigma'.")
       }
     }
+  if (demand == "BLP" && marginsProvided) {
+    warning("'margins' supplied to 'sim()' are not used for BLP calibration; marginal costs are recovered from observed prices and the demand system.")
   }
 
 
@@ -780,19 +850,22 @@ shares = NULL,
       mktSize <- demand.param$mktSize
     }
 
-
     shares <- capacities / mktSize
-    shares <- shares / sum(shares)
+    insideSize <- sum(capacities)
 
     result <- new(demand,
       prices = prices, shares = shares,
-      margins = margins, capacities = capacities, mktSize = mktSize,
+      margins = margins,
+      capacitiesPre = capacities,
+      capacitiesPost = capacities,
+      insideSize = insideSize,
       normIndex = normIndex,
       ownerPre = ownerPre,
       ownerPost = ownerPost,
       mcDelta = mcDelta,
       subset = subset,
-      priceStart = priceStart, shareInside = shareInside,
+      priceOutside = priceOutside,
+      priceStart = priceStart, shareInside = sum(shares),
       output = outputFlag,
       labels = labels
     )
@@ -836,15 +909,17 @@ shares = NULL,
     result@slopes <- demand.param
   }
 
-  ## For BLP, recover delta and generate random coefficients via calcSlopes
-  if (demand == "BLP") {
+  ## Convert ownership vectors to ownership matrices before any calibration step
+  result@ownerPre <- ownerToMatrix(result, TRUE)
+  result@ownerPost <- ownerToMatrix(result, FALSE)
+
+  ## Recover any implied demand parameters needed before MC calibration
+  if (demand %in% c("BLP", "LogitCap")) {
     result <- calcSlopes(result)
   }
 
-
-  ## Convert ownership vectors to ownership matrices
-  result@ownerPre <- ownerToMatrix(result, TRUE)
-  result@ownerPost <- ownerToMatrix(result, FALSE)
+  ## Use observed prices as the pre-merger equilibrium throughout calibration
+  result@pricePre <- prices
 
   ## Calibrate marginal costs from observed prices and demand params
   result@mcPre <- calcMC(result, TRUE)
@@ -855,10 +930,8 @@ shares = NULL,
     result@priceDelta <- calcPriceDelta(result, ...)
   }
 
-
   ## Use observed prices as pre-merger equilibrium and only solve post-merger prices
   ## calcMC above already calibrated MCs using the supplied prices.
-  result@pricePre <- prices
   if (!supply %in% c("auction2nd", "bargaining2nd")) {
     result@pricePost <- calcPrices(result, FALSE, subset = subset, ...)
   } else {

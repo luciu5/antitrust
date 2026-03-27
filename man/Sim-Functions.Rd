@@ -8,9 +8,10 @@
 sim(
   prices,
   shares = NULL,
+  margins = NULL,
   supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
-    "LogitCap", "BLP"),
+    "LogitCap", "BLP", "LogitBLP", "CournotBLP"),
   demand.param,
   ownerPre,
   ownerPost,
@@ -31,6 +32,10 @@ sim(
 \item{prices}{A length k vector of product prices.}
 
 \item{shares}{A length k vector of product shares. Only used for \sQuote{BLP} demand. See Details.}
+
+\item{margins}{An optional length k vector of product margins. Required for demand systems that
+calibrate costs from observed margins. Ignored for \sQuote{BLP} demand, where marginal costs are
+recovered from observed prices and the estimated demand system.}
 
 \item{supply}{A character string indicating how firms compete with one another. Valid
 values are "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"

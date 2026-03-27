@@ -661,19 +661,22 @@ setMethod(
     if (preMerger) {
       capacities <- object@capacitiesPre
       prices <- object@pricePre
+      owner <- object@ownerPre
     } else {
       capacities <- object@capacitiesPost
       prices <- object@pricePost
+      owner <- object@ownerPost
     }
 
 
-    quantities <- calcQuantities(object, preMerger = TRUE)
+    quantities <- calcQuantities(object, preMerger = preMerger)
     constrained <- abs(capacities - quantities) < 1e-5
 
-    owner <- object@ownerPre
-    revenue <- calcShares(object, preMerger, revenue = TRUE)[!constrained]
-    elast <- elast(object, preMerger)
-    margins[!constrained] <- -1 * as.vector(MASS::ginv(t(elast * owner)[!constrained, !constrained]) %*% revenue) / revenue
+    if (any(!constrained)) {
+      revenue <- calcShares(object, preMerger, revenue = TRUE)[!constrained]
+      elast <- elast(object, preMerger)
+      margins[!constrained] <- -1 * as.vector(MASS::ginv(t(elast * owner)[!constrained, !constrained]) %*% revenue) / revenue
+    }
 
 
     names(margins) <- object@labels

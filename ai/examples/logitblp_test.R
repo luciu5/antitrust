@@ -67,8 +67,7 @@ cat("\n=== Running LogitBLP Merger Simulation ===\n\n")
 result <- sim(
   prices = prices,
   shares = shares,
-  margins = margins,
-  demand = "LogitBLP",
+  demand = "BLP",
   demand.param = demand.param,
   supply = "bertrand",
   ownerPre = ownerPre,
@@ -143,8 +142,7 @@ demand.param2 <- list(
 result2 <- sim(
   prices = prices,
   shares = shares,
-  margins = margins,
-  demand = "LogitBLP",
+  demand = "BLP",
   demand.param = demand.param2,
   supply = "bertrand",
   ownerPre = ownerPre,

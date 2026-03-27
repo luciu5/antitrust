@@ -346,6 +346,7 @@ setMethod(
       revenues <- calcShares(object, preMerger = preMerger, revenue = TRUE)
       quantities <- calcQuantities(object, preMerger = preMerger)
       revenues <- revenues[subset]
+      quantities <- quantities[subset]
       elasticities <- elast(object, preMerger)[subset, subset]
       thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
       constraint <- ifelse(is.finite(capacities), (quantities - capacities) / object@insideSize, 0)

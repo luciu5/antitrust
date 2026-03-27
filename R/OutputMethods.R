@@ -381,8 +381,9 @@ setMethod(
   definition = function(object, preMerger = TRUE, market = FALSE) {
     mktSizeRev <- object@mktSize
     quantOutPre <- mktSizeRev / object@priceOutside
+    prices <- if (preMerger) object@pricePre else object@pricePost
 
-    mktSizeQuant <- sum(calcShares(object, preMerger = FALSE, revenue = TRUE) * mktSizeRev / object@pricePre)
+    mktSizeQuant <- sum(calcShares(object, preMerger = preMerger, revenue = TRUE) * mktSizeRev / prices)
     mkSizeQuant <- sum(mktSizeQuant, quantOutPre)
 
 
@@ -824,8 +825,10 @@ setMethod(
   definition = function(object, preMerger = TRUE, revenue = FALSE) {
     if (preMerger) {
       prices <- object@pricePre
+      subset <- rep(TRUE, length(object@shares))
     } else {
       prices <- object@pricePost
+      subset <- object@subset
     }
 
     nests <- object@nests
@@ -836,6 +839,7 @@ setMethod(
     outVal <- ifelse(object@shareInside < 1, exp(alpha * object@priceOutside), 0)
 
     sharesIn <- exp((meanval + alpha * prices) / sigma[nests])
+    sharesIn[!subset] <- 0
 
     inclusiveValue <- log(tapply(sharesIn, nests, sum, na.rm = TRUE))
     sharesAcross <- exp(sigma * inclusiveValue)
@@ -984,8 +988,10 @@ setMethod(
   definition = function(object, preMerger = TRUE, revenue = FALSE) {
     if (preMerger) {
       prices <- object@pricePre
+      subset <- rep(TRUE, length(object@shares))
     } else {
       prices <- object@pricePost
+      subset <- object@subset
     }
 
 
@@ -997,6 +1003,7 @@ setMethod(
     outVal <- ifelse(is.na(object@normIndex), priceOutside^(1 - gamma), 0)
 
     shares <- meanval * prices^(1 - gamma)
+    shares[!subset] <- 0
     shares <- shares / (sum(shares, na.rm = TRUE) + outVal)
 
     ## transform revenue shares to quantity shares
@@ -1018,8 +1025,10 @@ setMethod(
   definition = function(object, preMerger = TRUE, revenue = FALSE) {
     if (preMerger) {
       prices <- object@pricePre
+      subset <- rep(TRUE, length(object@shares))
     } else {
       prices <- object@pricePost
+      subset <- object@subset
     }
 
 
@@ -1031,6 +1040,7 @@ setMethod(
     outVal <- ifelse(sum(object@shares) < 1, object@priceOutside^(1 - gamma), 0)
 
     sharesIn <- meanval * prices^(1 - sigma[nests])
+    sharesIn[!subset] <- 0
     sharesAcross <- tapply(sharesIn, nests, sum, na.rm = TRUE)
     sharesIn <- sharesIn / sharesAcross[nests]
     sharesAcross <- sharesAcross^((1 - gamma) / (1 - sigma))

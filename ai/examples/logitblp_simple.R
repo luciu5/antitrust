@@ -27,8 +27,7 @@ cat("Running BLP merger simulation...\n")
 result <- sim(
   prices = prices,
   shares = shares,
-  margins = margins,
-  demand = "LogitBLP",
+  demand = "BLP",
   demand.param = demand.param,
   ownerPre = ownerPre,
   ownerPost = ownerPost,

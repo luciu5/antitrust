@@ -372,24 +372,19 @@ setMethod(
   definition = function(object, preMerger = TRUE, market = FALSE) {
     gamma <- object@slopes$gamma
     output <- object@output
+    outSign <- ifelse(output, 1, -1)
 
     shares_r <- calcShares(object, preMerger, revenue = TRUE)
-    shares_q <- calcShares(object, preMerger, revenue = FALSE)
 
     if (market) {
-      if (preMerger) {
-        prices <- object@pricePre
-      } else {
-        prices <- object@pricePost
-      }
-
-      elast <- (1 - gamma) * (1 - sum(shares_r)) - 1
+      elast <- outSign * ((1 - gamma) * (1 - sum(shares_r)) - 1)
 
       names(elast) <- NULL
     } else {
       nprods <- length(shares_r)
       elast <- (gamma - 1) * matrix(shares_r, ncol = nprods, nrow = nprods, byrow = TRUE)
       diag(elast) <- -gamma + diag(elast)
+      elast <- outSign * elast
 
       dimnames(elast) <- list(object@labels, object@labels)
     }
@@ -406,7 +401,7 @@ setMethod(
     nests <- object@nests
     gamma <- object@slopes$gamma
     sigma <- object@slopes$sigma
-    meanval <- object@slopes$meanval
+    outSign <- ifelse(object@output, 1, -1)
 
     shares <- calcShares(object, preMerger, revenue = TRUE)
     sharesNests <- shares / tapply(shares, nests, sum, na.rm = TRUE)[nests]
@@ -416,7 +411,7 @@ setMethod(
       if (is.null(alpha)) {
         stop("'shareInside' must be between 0 and 1 to  calculate Market Elasticity")
       }
-      elast <- (1 + alpha) * (1 - gamma) * sum(shares) * (1 - sum(shares))
+      elast <- outSign * ((1 + alpha) * (1 - gamma) * sum(shares) * (1 - sum(shares)) - 1)
       names(elast) <- NULL
     } else {
       nprods <- length(shares)
@@ -426,6 +421,7 @@ setMethod(
       elast <- elast * matrix(sharesNests, ncol = nprods, nrow = nprods, byrow = TRUE)
       elast <- elast + (gamma - 1) * matrix(shares, ncol = nprods, nrow = nprods, byrow = TRUE)
       diag(elast) <- diag(elast) - sigma[nests]
+      elast <- outSign * elast
 
       dimnames(elast) <- list(object@labels, object@labels)
     }

@@ -762,11 +762,8 @@ setMethod(
 
       if (output) {
         alphas <- pmin(alphas, -1e-2)
-        alphas[alphas <= 0] <- min(alphas[alphas > 0], na.rm = TRUE) # fallback
-        alphas <- pmax(alphas, min(alphas[alphas < 0]))
       } else {
         alphas <- pmax(alphas, 1e-2)
-        alphas[alphas <= 0] <- min(alphas[alphas > 0])
       }
     }
 
@@ -979,32 +976,31 @@ setMethod(
         meanval <- theta[-1]
       }
 
-      probs <- shares
-
       predshares <- exp(meanval + alpha * (prices - idxPrice))
       predshares <- predshares / (is.na(idx) + sum(predshares))
-
-      preddiversion <- tcrossprod(1 / (1 - predshares), predshares)
-      diag(preddiversion) <- -1
+      probs <- predshares
 
       if (!is.na(mktElast)) {
         shareInside <- 1 - mktElast / (alpha * avgPrice)
         probs <- probs / sum(probs, na.rm = TRUE) * shareInside
       }
 
-      predsharesFirm <- as.numeric(ownerPre %*% predshares)
+      preddiversion <- tcrossprod(1 / (1 - probs), probs)
+      diag(preddiversion) <- -1
+
+      predsharesFirm <- as.numeric(ownerPre %*% probs)
 
       if (is.na(idx)) {
-        idxPredShare <- 1 - sum(predshares)
+        idxPredShare <- 1 - sum(probs)
       } else {
-        idxPredShare <- predshares[idx]
+        idxPredShare <- probs[idx]
       }
       marginsCand <- (1 + predsharesFirm / idxPredShare) / alpha
 
       marginsCand <- outSign * (marginsCand)
 
       m1 <- (margins - marginsCand)
-      m2 <- log(predshares / probs)
+      m2 <- log(probs / shares)
       m3 <- drop(log(diversion / preddiversion))
       measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
 
@@ -2328,7 +2324,13 @@ setMethod(
       marginsCand <- outSign * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
 
       m1 <- 1 - marginsCand / margins
-      measure <- sum(m1^2, na.rm = TRUE)
+      if (!is.na(mktElast)) {
+        mktElastCand <- ifelse(output, 1, -1) * ((1 - gamma) * (1 - sum(predshares)) - 1)
+        m2 <- mktElastCand - mktElast
+        measure <- sum(c(m1, m2)^2, na.rm = TRUE)
+      } else {
+        measure <- sum(m1^2, na.rm = TRUE)
+      }
 
       return(measure)
     }
@@ -2464,7 +2466,7 @@ setMethod(
 
       idx <- which.max(shares)
       object@normIndex <- idx
-      priceOutside <- priceOutside[idx]
+      priceOutside <- prices[idx]
       minGamma[2] <- 0
 
       meanval <- log(shares) - log(shares[idx]) + (minGamma[1] - 1) * (log(prices) - log(priceOutside))
@@ -3457,7 +3459,13 @@ setMethod(
       marginsCand <- outSign * (1 / gamma - ((gamma - 1) * (1 + safe_alpha) / denom) * firmShares)
 
       m1 <- 1 - marginsCand / margins
-      measure <- sum(m1^2, na.rm = TRUE)
+      if (!is.na(mktElast)) {
+        mktElastCand <- ifelse(output, 1, -1) * ((1 - gamma) * (1 - sum(predshares)) - 1)
+        m2 <- mktElastCand - mktElast
+        measure <- sum(c(m1, m2)^2, na.rm = TRUE)
+      } else {
+        measure <- sum(m1^2, na.rm = TRUE)
+      }
 
       return(measure)
     }
@@ -3584,7 +3592,7 @@ setMethod(
 
       idx <- which.max(shares)
       object@normIndex <- idx
-      priceOutside <- priceOutside[idx]
+      priceOutside <- prices[idx]
       minGamma[2] <- 0
 
       meanval <- log(shares) - log(shares[idx]) + (minGamma[1] - 1) * (log(prices) - log(priceOutside))
@@ -3764,7 +3772,7 @@ setMethod(
 
       idx <- which.max(shares)
       object@normIndex <- idx
-      priceOutside <- priceOutside[idx]
+      priceOutside <- prices[idx]
       minTheta[2] <- 0
 
       meanval <- log(shares) - log(shares[idx]) + (minTheta[1] - 1) * (log(prices) - log(priceOutside))

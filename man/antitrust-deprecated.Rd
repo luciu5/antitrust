@@ -15,7 +15,7 @@ The functions listed below are deprecated and will be defunct in
 }
 \section{\code{antitrust_shiny}}{
 
-For \code{antitrust_shiny}, use \code{\link[competitiontoolbox]{ct_shiny}}.
+For \code{antitrust_shiny}, use \code{ct_shiny()} from the \code{competitiontoolbox} package.
 }
 
 \keyword{internal}
