@@ -54,46 +54,75 @@ setGeneric(
 setMethod(
   f = "calcPriceDelta",
   signature = "Antitrust",
-  definition = function(object, levels = FALSE, market = FALSE, party = FALSE, index = c("paasche", "laspeyres"), ...) {
+  definition = function(object, levels = FALSE, market = FALSE, party = FALSE,
+                        index = c("paasche", "laspeyres"), ...) {
     index <- match.arg(index)
-
+    
     pricePre <- object@pricePre
     pricePost <- object@pricePost
-
-
+    
+    # Product-level changes
     if (levels) {
       priceDelta <- pricePost - pricePre
     } else {
-      priceDelta <- pricePost / pricePre - 1
+      priceDelta <- rep(NA_real_, length(pricePre))
+      valid <- !is.na(pricePre) & !is.na(pricePost) & pricePre > 0
+      priceDelta[valid] <- pricePost[valid] / pricePre[valid] - 1
+      
+      if (any(!is.na(pricePre) & pricePre <= 0)) {
+        warning("Non-positive pre-merger prices detected; returning NA for corresponding product-level percent changes")
+      }
     }
-    # names(priceDelta) <- object@labels
-
+    
+    # Aggregate market/party index
     if (market || party) {
       sharesPre <- calcShares(object, preMerger = TRUE, revenue = FALSE, ...)
       sharesPre <- sharesPre / sum(sharesPre, na.rm = TRUE)
-
+      
       sharesPost <- calcShares(object, preMerger = FALSE, revenue = FALSE, ...)
-      sharesPost <- sharesPost / sum(sharesPost, revenue = FALSE, na.rm = TRUE)
-
-
+      sharesPost <- sharesPost / sum(sharesPost, na.rm = TRUE)
+      
       if (party) {
         ownerPre <- ownerToMatrix(object, preMerger = TRUE)
         ownerPost <- ownerToMatrix(object, preMerger = FALSE)
-
+        
         isParty <- rowSums(abs(ownerPost - ownerPre)) > 0
         sharesPre <- sharesPre[isParty]
         sharesPost <- sharesPost[isParty]
         pricePre <- pricePre[isParty]
         pricePost <- pricePost[isParty]
       }
-
-      valid_post <- !is.na(pricePost)
-
-      if (index == "paasche") {
-        priceDelta <- sum(sharesPost[valid_post] * pricePost[valid_post], na.rm = TRUE) / sum(sharesPost[valid_post] * pricePre[valid_post], na.rm = TRUE) - 1
-      } else if (index == "laspeyres") priceDelta <- sum(sharesPre[valid_post] * pricePost[valid_post], na.rm = TRUE) / sum(sharesPre[valid_post] * pricePre[valid_post], na.rm = TRUE) - 1
+      
+      valid_idx <- !is.na(pricePre) & !is.na(pricePost)
+      
+      if (levels) {
+        if (index == "paasche") {
+          priceDelta <- sum(sharesPost[valid_idx] *
+                              (pricePost[valid_idx] - pricePre[valid_idx]),
+                            na.rm = TRUE)
+        } else {
+          priceDelta <- sum(sharesPre[valid_idx] *
+                              (pricePost[valid_idx] - pricePre[valid_idx]),
+                            na.rm = TRUE)
+        }
+      } else {
+        if (index == "paasche") {
+          num <- sum(sharesPost[valid_idx] * pricePost[valid_idx], na.rm = TRUE)
+          den <- sum(sharesPost[valid_idx] * pricePre[valid_idx], na.rm = TRUE)
+        } else {
+          num <- sum(sharesPre[valid_idx] * pricePost[valid_idx], na.rm = TRUE)
+          den <- sum(sharesPre[valid_idx] * pricePre[valid_idx], na.rm = TRUE)
+        }
+        
+        if (!is.finite(den) || abs(den) < sqrt(.Machine$double.eps)) {
+          warning("Aggregate pre-merger price index is zero or too close to zero; returning NA")
+          priceDelta <- NA_real_
+        } else {
+          priceDelta <- num / den - 1
+        }
+      }
     }
-
+    
     return(priceDelta)
   }
 )

@@ -8,7 +8,7 @@
 sim(
   prices,
   shares = NULL,
-  supply = c("bertrand", "cournot", "auction", "bargaining", "bargaining2nd"),
+  supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
     "LogitCap", "BLP"),
   demand.param,
