@@ -786,7 +786,7 @@ setMethod(
 setMethod(
   f = "calcMargins",
   signature = "Auction2ndLogitNests",
-  definition = function(object, preMerger = TRUE, exAnte = FALSE, level = FALSE) {
+  definition = function(object, preMerger = TRUE, exAnte = FALSE, level = TRUE) {
     output <- ifelse(object@output, 1, -1)
     nprods <- length(object@shares)
 
