@@ -293,6 +293,7 @@ shares = NULL,
   demand <- match.arg(demand)
   supply <- match.arg(supply)
   nprods <- length(prices)
+  sim_weights <- rep(1, nprods)
 
   if (identical(demand, "LogitBLP")) {
     if (!supply_missing && !identical(supply, "bertrand")) {
@@ -354,7 +355,6 @@ shares = NULL,
       stop("'margins' must have the same length as 'prices'")
     }
   }
-
 
   if (!missing(nests)) {
     nests <- factor(nests, levels = unique(nests))
@@ -702,6 +702,7 @@ shares = NULL,
   if (demand == "CESNests") {
     result <- new(demand,
       prices = prices, shares = shares, margins = margins,
+      weights = sim_weights,
       mcDelta = mcDelta,
       subset = subset,
       ownerPre = ownerPre,
@@ -716,6 +717,7 @@ shares = NULL,
   } else if (demand == "LogitNests") {
     result <- new(demand,
       prices = prices, shares = shares, margins = margins,
+      weights = sim_weights,
       mcDelta = mcDelta,
       subset = subset,
       ownerPre = ownerPre,
@@ -758,6 +760,7 @@ shares = NULL,
       bertrand = new(demand,
         prices = prices, shares = shares,
         margins = margins,
+        weights = sim_weights,
         normIndex = normIndex,
         mcDelta = mcDelta,
         insideSize = insideSize,
@@ -773,6 +776,7 @@ shares = NULL,
       cournot = new(paste0(demand, "Cournot"),
         prices = prices, shares = shares,
         margins = margins,
+        weights = sim_weights,
         normIndex = normIndex,
         mcDelta = mcDelta,
         insideSize = insideSize,
@@ -788,6 +792,7 @@ shares = NULL,
       bargaining = new("BargainingLogit",
         prices = prices, shares = shares,
         margins = margins,
+        weights = sim_weights,
         normIndex = normIndex,
         ownerPre = ownerPre,
         ownerPost = ownerPost,
@@ -806,6 +811,7 @@ shares = NULL,
       auction2nd = new(paste0("Auction2nd", demand),
         prices = prices, shares = shares,
         margins = margins,
+        weights = sim_weights,
         normIndex = normIndex,
         ownerPre = ownerPre,
         ownerPost = ownerPost,
@@ -822,6 +828,7 @@ shares = NULL,
       bargaining2nd = new("Bargaining2ndLogit",
         prices = prices, shares = shares,
         margins = margins,
+        weights = sim_weights,
         normIndex = normIndex,
         ownerPre = ownerPre,
         ownerPost = ownerPost,

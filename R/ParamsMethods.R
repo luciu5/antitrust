@@ -246,6 +246,15 @@ setMethod(
 )
 
 
+.product_weights <- function(object) {
+  sqrt(pmax(object@weights, 0))
+}
+
+.weighted_avg_price <- function(object, prices, shares) {
+  weighted.mean(prices, shares * object@weights)
+}
+
+
 #' @rdname Params-Methods
 #' @export
 setMethod(
@@ -561,6 +570,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     idx <- object@normIndex
     mktElast <- object@mktElast
     shareInside <- object@shareInside
@@ -579,7 +589,7 @@ setMethod(
     }
 
     nprods <- length(shares)
-    avgPrice <- sum(shares * prices, na.rm = TRUE) / sum(shares)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
 
     ## CONCENTRATED OPTIMIZATION: Minimize over alpha only
@@ -601,7 +611,7 @@ setMethod(
       marginsCand <- outSign / (alpha * (1 - as.numeric(crossprod(ownerPre, predshares))))
 
       # Objective: minimize distance between observed and predicted margins & diversions
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       m3 <- drop(diversion - preddiversion)
       measure <- sum((c(m1, m3))^2, na.rm = TRUE)
 
@@ -933,6 +943,7 @@ setMethod(
     margins <- object@margins
 
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     idx <- object@normIndex
     mktElast <- object@mktElast
     shareInside <- object@shareInside
@@ -962,7 +973,7 @@ setMethod(
 
     nprods <- length(shares)
 
-    avgPrice <- sum(shares * prices, na.rm = TRUE) / sum(shares)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
 
     ## Minimize the distance between observed and predicted margins
@@ -999,8 +1010,8 @@ setMethod(
 
       marginsCand <- outSign * (marginsCand)
 
-      m1 <- (margins - marginsCand)
-      m2 <- log(probs / shares)
+      m1 <- prod_weights * (margins - marginsCand)
+      m2 <- prod_weights * log(probs / shares)
       m3 <- drop(log(diversion / preddiversion))
       measure <- sum((c(m1, m2, m3))^2, na.rm = TRUE)
 
@@ -1344,6 +1355,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     capacities <- object@capacitiesPre / object@insideSize
     idx <- object@normIndex
     output <- object@output
@@ -1378,7 +1390,7 @@ setMethod(
       FOC <- revenues * diag(ownerPre) + (elast * ownerPre * notBinds) %*% (margins * revenues)
 
       ## omit the FOCs of single product, capacity constrained firms
-      measure <- sum(as.vector(FOC[!singleConstrained])^2, na.rm = TRUE)
+      measure <- sum((prod_weights[!singleConstrained] * as.vector(FOC[!singleConstrained]))^2, na.rm = TRUE)
 
       return(measure)
     }
@@ -1420,6 +1432,7 @@ setMethod(
     ownerPre <- object@ownerPre
     shares <- object@shares
     nprods <- length(shares)
+    prod_weights <- .product_weights(object)
 
     diversion <- object@diversion
     margins <- object@margins
@@ -1525,8 +1538,8 @@ setMethod(
 
 
       marginsCand <- -1 * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
-      m1 <- (marginsCand - margins) / prices
-      m2 <- predshares - shares
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
+      m2 <- prod_weights * (predshares - shares)
       m3 <- drop(diversion - preddiversion)
       measure <- sum((c(m1, m2, m3) * 100)^2, na.rm = TRUE)
 
@@ -1599,6 +1612,7 @@ setMethod(
     ownerPre <- object@ownerPre
     shares <- object@shares
     nprods <- length(shares)
+    prod_weights <- .product_weights(object)
 
     diversion <- object@diversion
     margins <- object@margins
@@ -1680,7 +1694,7 @@ setMethod(
       diag(preddiversion) <- -1
 
 
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       m3 <- drop(diversion - preddiversion)
       measure <- sum((c(m1, m3) * 100)^2, na.rm = TRUE)
 
@@ -1755,6 +1769,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     insideSize <- object@insideSize
     capacities <- object@capacitiesPre / insideSize
     mktElast <- object@mktElast
@@ -1762,7 +1777,7 @@ setMethod(
     output <- object@output
     outSign <- ifelse(output, -1, 1)
 
-    avgPrice <- sum(shares * prices)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
     nprods <- length(object@shares)
 
@@ -1796,7 +1811,7 @@ setMethod(
 
       marginsCand <- outSign * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       m1 <- m1[!singleConstrained]
       m2 <- mktElast / (avgPrice * alpha) - sOut
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
@@ -1879,6 +1894,7 @@ setMethod(
 
     ownerPre <- object@ownerPre
     shares <- object@shares
+    prod_weights <- .product_weights(object)
 
     margins <- object@margins
     prices <- object@prices
@@ -1933,7 +1949,7 @@ setMethod(
       revenues <- probs * prices
       marginsCand <- outSign * as.vector(solve(elast * ownerPre) %*% (revenues * diag(ownerPre))) / revenues
 
-      measure <- (marginsCand - margins) / prices
+      measure <- prod_weights * ((marginsCand - margins) / prices)
       measure <- sum((measure)^2, na.rm = TRUE)
 
       return(measure)
@@ -2005,12 +2021,13 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     idx <- object@normIndex
     mktElast <- object@mktElast
     output <- object@output
     outSign <- ifelse(output, 1, -1)
 
-    avgPrice <- weighted.mean(prices, shares)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
     ## Uncover price coefficient and mean valuation from margins and revenue shares
 
@@ -2032,7 +2049,7 @@ setMethod(
     minD <- function(alpha) {
       m1 <- mktElast / (alpha * avgPrice) - shareOut
 
-      m2 <- (outSign * log(1 - firmShares) / (alpha * firmShares) - margins) / prices
+      m2 <- prod_weights * ((outSign * log(1 - firmShares) / (alpha * firmShares) - margins) / prices)
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
 
@@ -2073,11 +2090,12 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     mktElast <- object@mktElast
     output <- object@output
     outSign <- ifelse(output, 1, -1)
 
-    avgPrice <- weighted.mean(prices, shares)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
     ## Minimize the distance between observed and predicted margins
     minD <- function(theta) {
@@ -2088,7 +2106,7 @@ setMethod(
       firmProbs <- drop(ownerPre %*% probs)
 
       m1 <- mktElast / (alpha * avgPrice) - sOut
-      m2 <- (outSign * log(1 - firmProbs) / (alpha * firmProbs) - margins) / prices
+      m2 <- prod_weights * ((outSign * log(1 - firmProbs) / (alpha * firmProbs) - margins) / prices)
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
 
@@ -2159,12 +2177,13 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     mktElast <- object@mktElast
     priceOutside <- object@priceOutside
     output <- object@output
     outSign <- ifelse(output, -1, 1)
 
-    avgPrice <- sum(shares * prices)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
     nprods <- length(object@shares)
 
@@ -2194,7 +2213,7 @@ setMethod(
       # marginsCand <- outSign/(alpha*(1-as.numeric(crossprod(ownerPre,predshares))))
       marginsCand <- outSign * as.vector(elastInv %*% (revenues * diag(ownerPre))) / revenues
 
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       m2 <- mktElast / (avgPrice * alpha) - sOut
       measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
 
@@ -2272,6 +2291,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     idx <- object@normIndex
     shareInside <- object@shareInside
     insideSize <- object@insideSize
@@ -2323,7 +2343,7 @@ setMethod(
       outSign <- ifelse(output, -1, 1)
       marginsCand <- outSign * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
 
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       if (!is.na(mktElast)) {
         mktElastCand <- ifelse(output, 1, -1) * ((1 - gamma) * (1 - sum(predshares)) - 1)
         m2 <- mktElastCand - mktElast
@@ -2395,11 +2415,12 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     mktElast <- object@mktElast
     priceOutside <- object@priceOutside
     output <- object@output
 
-    avgPrice <- sum(prices * shares) / sum(shares)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
     nprods <- length(object@shares)
 
@@ -2426,7 +2447,7 @@ setMethod(
       outSign <- ifelse(output, -1, 1)
       marginsCand <- outSign * as.vector(elastInv %*% (probs * diag(ownerPre))) / probs
 
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
 
       measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
@@ -2505,6 +2526,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     idx <- object@normIndex
     shareInside <- object@shareInside
     nests <- object@nests
@@ -2578,7 +2600,7 @@ setMethod(
       margins <- margins[isMargin]
 
       FOC <- (shares * diag(ownerPre)) + (elast * ownerPre) %*% (shares * margins)
-      measure <- sum(FOC^2, na.rm = TRUE)
+      measure <- sum((prod_weights[isMargin] * FOC)^2, na.rm = TRUE)
 
       return(measure)
     }
@@ -2658,6 +2680,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     idx <- object@normIndex
     mktElast <- object@mktElast
     shareInside <- object@shareInside
@@ -2693,7 +2716,7 @@ setMethod(
 
     nprods <- length(shares)
 
-    avgPrice <- sum(shares * prices, na.rm = TRUE) / sum(shares)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
 
     nParm <- length(parmStart)
@@ -2751,8 +2774,8 @@ setMethod(
       marginsCand <- ownerPreInv %*% ((log(1 - predshares) * diag(ownerPre)) / (-1 * outSign * alpha * (barg * predshares / (1 - predshares) -
         log(1 - predshares))))
       marginsCand <- as.vector(marginsCand)
-      m1 <- ((marginsCand / prices) - margins) / prices
-      m2 <- (predshares - probs)
+      m1 <- prod_weights * (((marginsCand / prices) - margins) / prices)
+      m2 <- prod_weights * (predshares - probs)
       measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
 
       return(measure)
@@ -2839,6 +2862,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     idx <- object@normIndex
     mktElast <- object@mktElast
     barg <- object@bargpowerPre
@@ -2846,7 +2870,7 @@ setMethod(
     outSign <- ifelse(output, -1, 1)
 
 
-    avgPrice <- weighted.mean(prices, shares)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
     ## Uncover price coefficient and mean valuation from margins and revenue shares
 
@@ -2868,7 +2892,7 @@ setMethod(
     minD <- function(alpha) {
       m1 <- mktElast / (alpha * avgPrice) - shareOut
 
-      m2 <- (((1 - barg) * (log(1 - firmShares) / (-1 * outSign * alpha * firmShares))) - margins) / prices
+      m2 <- prod_weights * ((((1 - barg) * (log(1 - firmShares) / (-1 * outSign * alpha * firmShares))) - margins) / prices)
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
 
@@ -2905,13 +2929,14 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     mktElast <- object@mktElast
     priceOutside <- object@priceOutside
     output <- object@output
     outSign <- ifelse(output, -1, 1)
     barg <- object@bargpowerPre
 
-    avgPrice <- sum(shares * prices)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
     nprods <- length(object@shares)
 
     ## Transform bargaining power for use in margin formula
@@ -2946,7 +2971,7 @@ setMethod(
           log(1 - predshares))))
       marginsCand <- as.vector(marginsCand) / prices
 
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       m2 <- mktElast / (avgPrice * alpha) - sOut
       measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
 
@@ -3312,12 +3337,13 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     mktElast <- object@mktElast
     priceOutside <- object@priceOutside
     output <- object@output
     outSign <- ifelse(output, -1, 1)
 
-    avgPrice <- sum(shares * prices)
+    avgPrice <- .weighted_avg_price(object, prices, shares)
 
     nprods <- length(object@shares)
 
@@ -3338,7 +3364,7 @@ setMethod(
       # Formula: margins = (1 + sharesFirm / outsideShare) / (alpha * price)
       marginsCand <- outSign * (1 + sharesFirm / sOut) / (alpha * prices)
 
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       m2 <- mktElast / (alpha * avgPrice) - sOut
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
@@ -3411,6 +3437,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     idx <- object@normIndex
     shareInside <- object@shareInside
     insideSize <- object@insideSize
@@ -3458,7 +3485,7 @@ setMethod(
       outSign <- ifelse(output, 1, -1)
       marginsCand <- outSign * (1 / gamma - ((gamma - 1) * (1 + safe_alpha) / denom) * firmShares)
 
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       if (!is.na(mktElast)) {
         mktElastCand <- ifelse(output, 1, -1) * ((1 - gamma) * (1 - sum(predshares)) - 1)
         m2 <- mktElastCand - mktElast
@@ -3529,6 +3556,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     mktElast <- object@mktElast
     priceOutside <- object@priceOutside
     output <- object@output
@@ -3551,7 +3579,7 @@ setMethod(
       outSign <- ifelse(output, 1, -1)
       marginsCand <- outSign * (1 / gamma - ((gamma - 1) * (1 + alpha_cand) / denom) * firmShares)
 
-      m1 <- (marginsCand - margins) / prices
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
       m2 <- (mktElast + 1) / (1 - gamma) - sOut
 
       measure <- sum((c(m1, m2) * 100)^2, na.rm = TRUE)
@@ -3631,6 +3659,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     idx <- object@normIndex
     mktElast <- object@mktElast
     output <- object@output
@@ -3658,7 +3687,7 @@ setMethod(
 
       marginsCand <- outSign * (1 - (1 - firmShares)^(1 / (gamma - 1)))
       if (any(!is.finite(marginsCand))) return(1e10)
-      m2 <- (marginsCand - margins) / prices
+      m2 <- prod_weights * ((marginsCand - margins) / prices)
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
 
@@ -3715,6 +3744,7 @@ setMethod(
     shares <- object@shares
     margins <- object@margins
     prices <- object@prices
+    prod_weights <- .product_weights(object)
     mktElast <- object@mktElast
     output <- object@output
     priceOutside <- object@priceOutside
@@ -3737,7 +3767,7 @@ setMethod(
       ## CES auction margin: L = 1 - (1-r_F)^(1/(gamma-1))
       marginsCand <- outSign * (1 - (1 - firmProbs)^(1 / (gamma - 1)))
       if (any(!is.finite(marginsCand))) return(1e10)
-      m2 <- (marginsCand - margins) / prices
+      m2 <- prod_weights * ((marginsCand - margins) / prices)
 
       measure <- sum(c(m1, m2)^2, na.rm = TRUE)
 

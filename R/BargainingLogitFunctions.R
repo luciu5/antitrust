@@ -53,6 +53,8 @@
 #' initial guess of equilibrium prices. default is \sQuote{prices}.
 #' @param control.slopes A list of  \code{\link{optim}}  control parameters passed
 #' to the calibration routine optimizer (typically the \code{calcSlopes} method).
+#' @param weights A length k vector of non-negative product weights used in
+#' minimum-distance calibration. Default is \code{rep(1, length(shares))}.
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed
 #' to the non-linear equation solver (typically the \code{calcPrices} method).
 #' @param parmsStart A vector of length 2 of starting values for the non-linear equation solver.
@@ -118,6 +120,7 @@ bargaining.logit <- function(prices, shares, margins,
                              bargpowerPre = rep(0.5, length(prices)),
                              bargpowerPost = bargpowerPre,
                              output = TRUE,
+                             weights = rep(1, length(shares)),
                              normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
                              mcDelta = rep(0, length(prices)),
                              subset = rep(TRUE, length(prices)),
@@ -140,6 +143,7 @@ bargaining.logit <- function(prices, shares, margins,
     insideSize = insideSize,
     mcDelta = mcDelta,
     subset = subset,
+    weights = weights,
     priceOutside = priceOutside,
     shareInside = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, sum(shares)),
     priceStart = priceStart,
@@ -182,6 +186,7 @@ bargaining2nd.logit <- function(prices, shares, margins,
                                 ownerPre, ownerPost,
                                 bargpowerPre = rep(0.5, length(prices)),
                                 bargpowerPost = bargpowerPre,
+                                weights = rep(1, length(shares)),
                                 normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
                                 mcDelta = rep(0, length(prices)),
                                 subset = rep(TRUE, length(prices)),
@@ -204,6 +209,7 @@ bargaining2nd.logit <- function(prices, shares, margins,
     insideSize = insideSize,
     mcDelta = mcDelta,
     subset = subset,
+    weights = weights,
     priceOutside = mcDeltaOutside,
     shareInside = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, sum(shares)),
     priceStart = rep(0, length(shares)),
@@ -242,6 +248,7 @@ bargaining.logit.alm <- function(prices, shares, margins,
                                  bargpowerPre = rep(0.5, length(prices)),
                                  bargpowerPost = bargpowerPre,
                                  output = TRUE,
+                                 weights = rep(1, length(shares)),
                                  mcDelta = rep(0, length(prices)),
                                  subset = rep(TRUE, length(prices)),
                                  priceStart = prices,
@@ -263,6 +270,7 @@ bargaining.logit.alm <- function(prices, shares, margins,
     insideSize = insideSize,
     mcDelta = mcDelta,
     subset = subset,
+    weights = weights,
     priceOutside = priceOutside,
     shareInside = 1, # ALM calibrates this
     priceStart = priceStart,
@@ -274,9 +282,9 @@ bargaining.logit.alm <- function(prices, shares, margins,
   ## Set ballpark alpha starting value
   if (is.na(parmsStart[1])) {
     if (output) {
-      result@parmsStart[1] <- -1 / (weighted.mean(prices, shares))
+      result@parmsStart[1] <- -1 / (weighted.mean(prices, shares * weights))
     } else {
-      result@parmsStart[1] <- 1 / (weighted.mean(prices, shares))
+      result@parmsStart[1] <- 1 / (weighted.mean(prices, shares * weights))
     }
   }
 

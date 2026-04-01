@@ -51,6 +51,7 @@
 #' @slot margins A length k vector of product margins, some of which may equal NA.
 #' @slot normIndex An integer specifying the product index against which the mean values of all other products are normalized.
 #' @slot shareInside The share of customers that purchase any of the products included in the `prices' vector.
+#' @slot weights A length k vector of non-negative product weights used in minimum-distance calibration.
 #' @slot priceOutside The price of the outside good. Default is 0.
 #' @slot slopes A list containing the coefficient on price (\sQuote{alpha}) and the vector of mean valuations (\sQuote{meanval}).
 #' @slot mktElast A length 1 vector of market elasticities.
@@ -133,6 +134,7 @@ setClass(
     priceStart = "numeric",
     normIndex = "vector",
     shareInside = "numeric",
+    weights = "numeric",
     priceOutside = "numeric",
     mktElast = "numeric",
     insideSize = "numeric",
@@ -145,6 +147,7 @@ setClass(
     priceStart = numeric(),
     normIndex = 1,
     shareInside = numeric(),
+    weights = numeric(),
     priceOutside = 0,
     control.slopes = list(
       factr = 1e7
@@ -194,6 +197,14 @@ setClass(
       # !isTRUE(all.equal(object@shareInside,1,check.names=FALSE, tolerance=1e-3))
     ) {
       stop("'shareInside' must be between 0 and 1")
+    }
+
+    if (length(object@weights) != nprods) {
+      stop("'weights' must have the same length as 'shares'")
+    }
+
+    if (any(!is.finite(object@weights)) || any(object@weights < 0)) {
+      stop("'weights' must be finite and non-negative")
     }
 
     if (
