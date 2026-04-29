@@ -17,6 +17,7 @@ ces(
   ownerPre,
   ownerPost,
   output = TRUE,
+  weights = rep(1, length(shares)),
   normIndex = ifelse(sum(shares) < 1, NA, 1),
   mktElast = NA_real_,
   insideSize = NA_real_,
@@ -40,6 +41,7 @@ ces.alm(
   mktElast = NA_real_,
   insideSize = NA_real_,
   output = TRUE,
+  weights = rep(1, length(shares)),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
   priceOutside = 1,
@@ -61,6 +63,7 @@ ces.nests(
   nests = rep(1, length(shares)),
   normIndex = ifelse(sum(shares) < 1, NA, 1),
   insideSize = NA_real_,
+  weights = rep(1, length(shares)),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
   priceOutside = 1,
@@ -82,6 +85,7 @@ ces.cournot(
   ownerPre,
   ownerPost,
   output = TRUE,
+  weights = rep(1, length(shares)),
   normIndex = ifelse(sum(shares) < 1, NA, 1),
   mktElast = NA_real_,
   insideSize = NA_real_,
@@ -105,6 +109,7 @@ ces.cournot.alm(
   mktElast = NA_real_,
   insideSize = NA_real_,
   output = TRUE,
+  weights = rep(1, length(shares)),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
   priceOutside = 1,
@@ -138,6 +143,9 @@ a k x k matrix of post-merger ownership shares.}
 
 \item{output}{a length 1 logical vector equal to TRUE if merger simulation performed
 on output market, FALSE if simulation performed on input market. Default TRUE.}
+
+\item{weights}{A length k vector of non-negative product weights used in
+minimum-distance calibration. Default is \code{rep(1, length(shares))}.}
 
 \item{normIndex}{An integer specifying the product index against which
 the mean values of all other products are normalized. Default is 1.}

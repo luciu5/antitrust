@@ -279,6 +279,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
                 mcDelta=mcDeltaDown,
                 subset=subset,
                 diversion=diversions,
+                weights=rep(1, length(sharesDown)),
                 priceOutside=priceOutside,
                 priceStart=priceStartDown,
                 shareInside=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE,tolerance=1e-3)),1,sum(sharesDown)),
@@ -296,6 +297,7 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
                 mcDelta=mcDeltaDown,
                 nests=nests,
                 subset=subset,
+                weights=rep(1, length(sharesDown)),
                 priceOutside=priceOutside,
                 priceStart=priceStartDown,
                 shareInside=ifelse(isTRUE(all.equal(sum(sharesDown),1,check.names=FALSE,tolerance=1e-3)),1,sum(sharesDown)),
@@ -366,5 +368,4 @@ vertical.barg <- function(supplyDown = c("bertrand","2nd"),
   return(result)
 
 }
-
 

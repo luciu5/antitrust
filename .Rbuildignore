@@ -3,3 +3,8 @@
 ^ai$
 ^artifacts$
 ^vignettes$
+^\.Rlib$
+^\.\.Rcheck$
+^\.codex$
+^\.Rhistory$
+^antitrust_.*[.]tar[.]gz$

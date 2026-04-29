@@ -597,6 +597,12 @@ setMethod(
 
 
       shares <- calcShares(object, preMerger = preMerger, revenue = FALSE)[subset]
+      levelMargin <- if (object@output) {
+        priceCand - mc
+      } else {
+        mc - priceCand
+      }
+      outSign <- ifelse(object@output, -1, 1)
 
       elastInv <- owner
       # diag(elastInv) <- -1*diag(elastInv)
@@ -610,7 +616,7 @@ setMethod(
         elastInv <- tmp
       }
 
-      thisFOC <- (priceCand - mc) - elastInv %*% ((log(1 - shares) * diag(owner)) / (alpha * (barg * shares / (1 - shares) -
+      thisFOC <- levelMargin - elastInv %*% ((log(1 - shares) * diag(owner)) / (-1 * outSign * alpha * (barg * shares / (1 - shares) -
         log(1 - shares))))
 
       return(as.vector(thisFOC))

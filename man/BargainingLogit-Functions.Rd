@@ -16,6 +16,7 @@ bargaining.logit(
   bargpowerPre = rep(0.5, length(prices)),
   bargpowerPost = bargpowerPre,
   output = TRUE,
+  weights = rep(1, length(shares)),
   normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
@@ -35,6 +36,8 @@ bargaining2nd.logit(
   ownerPost,
   bargpowerPre = rep(0.5, length(prices)),
   bargpowerPost = bargpowerPre,
+  output = TRUE,
+  weights = rep(1, length(shares)),
   normIndex = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, NA),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
@@ -53,6 +56,7 @@ bargaining.logit.alm(
   bargpowerPre = rep(0.5, length(prices)),
   bargpowerPost = bargpowerPre,
   output = TRUE,
+  weights = rep(1, length(shares)),
   mcDelta = rep(0, length(prices)),
   subset = rep(TRUE, length(prices)),
   priceStart = prices,
@@ -91,6 +95,9 @@ though must be calibrated from additional margin and share data. Default is \sQu
 
 \item{output}{a length 1 logical vector equal to TRUE if merger simulation performed
 on output market, FALSE if simulation performed on input market. Default TRUE.}
+
+\item{weights}{A length k vector of non-negative product weights used in
+minimum-distance calibration. Default is \code{rep(1, length(shares))}.}
 
 \item{normIndex}{An integer equalling the index (position) of the
 inside product whose mean valuation will be normalized to 1. Default

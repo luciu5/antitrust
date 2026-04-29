@@ -51,7 +51,7 @@
 
 \S4method{calcMargins}{Auction2ndCES}(object, preMerger = TRUE, exAnte = FALSE, level = FALSE)
 
-\S4method{calcMargins}{Auction2ndLogitNests}(object, preMerger = TRUE, exAnte = FALSE, level = FALSE)
+\S4method{calcMargins}{Auction2ndLogitNests}(object, preMerger = TRUE, exAnte = FALSE, level = TRUE)
 
 \S4method{calcMargins}{CournotBLP}(object, preMerger = TRUE, level = FALSE)
 }

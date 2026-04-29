@@ -2702,7 +2702,12 @@ setMethod(
     notMissing <- which(!is.na(margins))[1]
 
     ## Start at 50/50 Bargaining
-    parmStart <- -1 * outSign * log(1 - shares[notMissing]) / (margins[notMissing] * prices[notMissing] * (1 - shares[notMissing]) * (shares[notMissing] / (1 - shares[notMissing]) - log(1 - shares[notMissing])))
+    bargStart <- barg[notMissing]
+    if (is.na(bargStart)) {
+      bargStart <- 0.5
+    }
+    bargStart <- bargStart / (1 - bargStart)
+    parmStart <- log(1 - shares[notMissing]) / (-1 * outSign * margins[notMissing] * prices[notMissing] * (1 - shares[notMissing]) * (bargStart * shares[notMissing] / (1 - shares[notMissing]) - log(1 - shares[notMissing])))
 
     mvalStart <- log(shares) - log(idxShare) - parmStart * (prices - idxPrice)
     if (!is.na(idx)) mvalStart <- mvalStart[-idx]
@@ -2899,7 +2904,12 @@ setMethod(
       return(measure)
     }
 
-    minAlpha <- optimize(minD, c(-1e6, 0),
+    if (output) {
+      bounds <- c(-1e6, 0)
+    } else {
+      bounds <- c(0, 1e6)
+    }
+    minAlpha <- optimize(minD, bounds,
       tol = object@control.slopes$reltol
     )$minimum
 
