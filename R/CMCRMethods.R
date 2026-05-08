@@ -77,10 +77,10 @@ setMethod(
 
     if(levels){
       
-      if(rel=="cost") {cmcr <- cmcr*object@mcPre}
-      else{cmcr <- cmcr*object@pricePre}
+      if(rel=="cost") {cmcr <- cmcr*object@mcPre[isParty]}
+      else{cmcr <- cmcr*object@pricePre[isParty]}
       
-      cmcr[!isParty & is.na(cmcr)] <- 0}
+    }
     else{cmcr <- cmcr * 100}
     
     if(market){
