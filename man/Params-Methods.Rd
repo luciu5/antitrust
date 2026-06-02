@@ -34,6 +34,11 @@
 \alias{getParms,VertBargBertLogit-method}
 \alias{getNestsParms}
 \alias{getNestsParms,PCAIDSNests-method}
+\alias{getNestsParms,LogitNests-method}
+\alias{getNestsParms,Auction2ndLogitNests-method}
+\alias{getNestsParms,CESNests-method}
+\alias{getNestsParms,VertBargBertLogitNests-method}
+\alias{getNestsParms,VertBarg2ndLogitNests-method}
 \alias{calcSlopes,LogitCournot-method}
 \alias{calcSlopes,BargainingLogitALM-method}
 \alias{calcSlopes,LogitCournotALM-method}
@@ -98,6 +103,16 @@
 \S4method{getParms}{VertBargBertLogit}(object, digits = 10)
 
 \S4method{getNestsParms}{PCAIDSNests}(object)
+
+\S4method{getNestsParms}{LogitNests}(object)
+
+\S4method{getNestsParms}{Auction2ndLogitNests}(object)
+
+\S4method{getNestsParms}{CESNests}(object)
+
+\S4method{getNestsParms}{VertBargBertLogitNests}(object)
+
+\S4method{getNestsParms}{VertBarg2ndLogitNests}(object)
 
 \S4method{calcSlopes}{LogitCournotALM}(object)
 

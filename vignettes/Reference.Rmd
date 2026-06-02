@@ -330,8 +330,7 @@ d^r_{ij}=&-\frac{\frac{\partial p_jq_j}{\partial p_i}}{\frac{\partial
     (\#eq:divrev)
 \end{align*}
 
-Note that $d^q_{ij},d^r_{ij}$ are restricted to be between -1 and 1,
-and are positive if products $i$ and $j$ are substitutes and negative if they are complements. Additionally, conditional on customers switching from product $i$, they must switch to another product (i.e. $\sum_{j}d_{ij}\le 0$). For all the models included in `antitrust` , we assume that $i$ and $j$ are not complements ($d_{ij}\ge 0$) and for some demand models (i.e. AIDS) we will assume that   $\sum_{j}d_{ij} = 0$.
+In `antitrust`, diversion matrices use diagonal elements equal to -1. Off-diagonal elements are positive when products $i$ and $j$ are substitutes and negative when they are complements. Conditional on customers switching away from product $i$, the off-diagonal diversions to modeled inside products sum to at most 1 when some substitution may go outside the modeled products, and to 1 when all substitution remains inside the modeled products. Equivalently, including the -1 diagonal, $\sum_j d_{ij}\le 0$, with equality for demand models such as AIDS that require all diversion to remain inside the modeled products. For all the demand models included in `antitrust`, the calibrated diversion inputs assume no complements among modeled products ($d_{ij}\ge 0$ for $i\ne j$).
 
 Although diversion ratios are not present in either equation
 \@ref(eq:FOC1) or \@ref(eq:FOC3), these definitions indicate that diversion ratios may
@@ -432,15 +431,15 @@ a symmetric matrix and satisfies homogeneity of degree 0 in prices.^[See @Haefen
 of unknown parameters to $\frac{n(n+3)}{2}$ ($\frac{n(n+1)}{2}$ elements of $B$ and $n$ intercepts), which means that the system is
 over-identified.^[In fact, it turns out that only one element of $B$ must be estimated.To see why, note that under symmetry, $\beta_{jj}=\frac{d_{ij}}{d_{ji}}\beta_{ii}$. Hence, if $\beta_{ii}$ is known, then the preceding equation indicates that all the $\beta_{jj}$s may be recovered. From here, the definition of diversion may be used to recover all the $\beta_{ij}s$.]
 
-The linear demand system can be modified to allow for substitution to an outside (numeraire) good. To accomplish this, assume that the price of the outside product is not set strategically (i.e. not set as part of the Nash-Bertrand game played by the manufacturers of the $n$ products included in the simulation). It can be shown that if $B$ is symmetric and satisfies homogeneity of degree 0 in prices when the outside good is included, then $\sum_{j\in n}d_{ij}<0$.^[To see this, note:
+The linear demand system can be modified to allow for substitution to an outside (numeraire) good. To accomplish this, assume that the price of the outside product is not set strategically (i.e. not set as part of the Nash-Bertrand game played by the manufacturers of the $n$ products included in the simulation). It can be shown that if $B$ is symmetric and satisfies homogeneity of degree 0 in prices when the outside good is included, then $\sum_{j\ne i, j\in n}d_{ij}<1$.^[To see this, note:
 \begin{align*}
-&\sum_{i \in n } \beta_{ij} <0 & \text{(homogeneity of degree 0 with outside good)} \\
+&\sum_{k \in n } \beta_{ki} <0 & \text{(homogeneity of degree 0 with outside good)} \\
 \Leftrightarrow& \beta_{ii}+\sum_{j\ne i}\beta_{ji} < 0 & \text{(symmetry)}\\
 \Leftrightarrow& \beta_{ii}-\sum_{j\ne i}d_{ij}\beta_{ii}<0 \\
 \Leftrightarrow& \beta_{ii}(1-\sum_{j\ne i}d_{ij})<0 \\
-\Rightarrow & \sum_{j \in n } d_{ij} <0\\
+\Rightarrow & \sum_{j\ne i, j\in n } d_{ij} <1\\
 \end{align*}
-where the last line follows since $\beta_{ii}<0\Rightarrow 1-\sum_{j\ne i}d_{ij}>0$.] In other words, under symmetry and homogeneity of degree 0, users may include a non-strategically priced outside good by simply allowing the rows of the diversion matrix to sum to less than zero. The extent to which consumers substitute from product $i$ to the outside good may be controlled by increasing the magnitude of $\sum_{j \in n } d_{ij}$. 
+where the last line follows since $\beta_{ii}<0\Rightarrow 1-\sum_{j\ne i}d_{ij}>0$.] In other words, under symmetry and homogeneity of degree 0, users may include a non-strategically priced outside good by allowing the rows of the full diversion matrix, including the -1 diagonal, to sum to less than zero. The extent to which consumers substitute from product $i$ to the outside good may be controlled by increasing the magnitude of $\sum_{j \in n } d_{ij}$.
 
 By default, the `calcSlopes`, called by the `linear`
 function to calibrate the linear demand parameters, assumes that the above
@@ -547,7 +546,7 @@ assumes that *revenue* diversion, rather than *quantity*
 diversion is observed.^[If the 'diversion' argument to `aids`
   is missing, `aids` assumes diversion according to revenue
   share.] Under these two assumptions, there are $\frac{n(n+3)}{2}$ unknown
-demand parameters ($\frac{n(n-1)}{2}$ diagonal elements in $B$, $n$ diagonal elements, and $n$ intercepts) and up to $n(n+1)$ equations ($n(n-1)$ diversion equations, $n$ FOCs and  $n$ demand equations),
+demand parameters ($\frac{n(n-1)}{2}$ off-diagonal elements in $B$, $n$ diagonal elements, and $n$ intercepts) and up to $n(n+1)$ equations ($n(n-1)$ diversion equations, $n$ FOCs and  $n$ demand equations),
 in which case the system is over-identified.^[In fact, it turns out that only one element of $B$ must be estimated.To see why, note that under symmetry, $\beta_{jj}=\frac{d_{ij}}{d_{ji}}\beta_{ii}$. Hence, if $\beta_{ii}$ is known, then the preceding equation indicates that all the $\beta_{jj}$s may be recovered. From here, the definition of diversion may be used to recover all the $\beta_{ij}s$.]
 
 One interesting feature of the LA-AIDS that distinguishes
@@ -563,7 +562,7 @@ equations than unknowns to identify both the unknown demand parameters
 described above as well as $\epsilon$. 
 
 The `calcSlopes` method, called by the `aids`
-function to calibrate the AIDS parameters uses a minimum distance algorithm to find the $\epsilon$ and a single diagonal element of $B$ that best satisfy i) all the FOCs for which there is sufficient information and ii) the diversion equations $d_{ij}=-\frac{\beta_{ji}}{\beta_{ii}}$, and iii) the market elasticity (if supplied using the 'mktElast' argument). The $\beta_{ii}$s are recovered from the fact that $\sum_{j}d_{ij}=0$; customers must switch to a product included in the model.
+function to calibrate the AIDS parameters, uses a minimum distance algorithm to find $\epsilon$ and the elements of $B$ that best satisfy i) all the FOCs for which there is sufficient information, ii) the revenue-diversion restrictions implied by the supplied diversion matrix, and iii) the market elasticity (if supplied using the 'mktElast' argument). The remaining elements of $B$ are recovered using symmetry, homogeneity, and the AIDS restriction that diversion rows including the -1 diagonal sum to zero; customers must switch to a product included in the model.
 
 If only a single product's own-price elasticity and $\epsilon$ is observed, then `pcaids` may be used in lieu of `aids` to calibrate
 the LA-AIDS parameters.^[The main difference between
@@ -764,12 +763,12 @@ users to specify whether or not consumers must purchase one of the $n$
 products sold in the market or whether consumers can choose to
 purchase an "outside" good. This works almost the same in
 `logit.nests` as `logit`, except that when the sum of market
-revenue shares is less than 1, the outside good is placed in its own nest with its nesting
+quantity shares is less than 1, the outside good is placed in its own nest with its nesting
 parameter normalized to 1.
 
 #### (Nested) Logit With Unobserved Outside Share {-} 
 The Bertrand model with (nested) Logit demand and unobserved outside share may be
-implemented using the (`logit.nests.alm`) `logit.alm` function.
+implemented using the `logit.alm` and `logit.nests.alm` functions.
 
 The Bertrand model with Logit demand described above assumes that when
 an outside good is included, its share is known. In some instances,
@@ -830,9 +829,9 @@ values for $\alpha$ and $s_0$ that best satisfy all the FOCs for which there
 
  where $s_{i|h}$ and $s_h$ are defined in the section on Nested Logit
  demand, and $s_I$ is the unobserved probability that an inside good is
- selected. This version of the nested Logit model  has $n+h+2$ parameters to estimate ($n$ $\delta$s,
- $h$ nesting parameters, $\alpha$, and $s_0$) and up to $2n$ equations with which to estimate them (up to
- $n$ complete FOCs and $n$ choice probabilities).
+ selected. This version of the nested Logit model has $n+H+2$ parameters to estimate ($n$ $\delta$s,
+ $H$ nesting parameters, $\alpha$, and $s_0$) when separate nesting parameters are estimated, and up to $2n$ equations with which to estimate them (up to
+ $n$ complete FOCs and $n$ choice probabilities). As with `logit.nests`, setting `constraint` equal to TRUE imposes a common nesting parameter across non-singleton nests, while setting it to FALSE estimates a separate parameter for each non-singleton nest.
 
 
 ### CES Demand
@@ -907,13 +906,12 @@ $\delta$ are normalized to 1, and whose share equals $r_0=1-\sum\limits_{i\in n}
 
 In addition to specifying an outside option, `ces` has the
 'shareInside' argument that may be used to specify the proportion of
-the representative consumer's budget that the consumer is willing to spend
-on the  $n + 1$ products that are within the
-market.^[1-'shareInside' equals the proportion of the
+the representative consumer's budget that the consumer is willing to allocate
+to the CES branch consisting of the inside products and, when present, the normalized outside alternative.^[1-'shareInside' equals the proportion of the
   representative consumer's income that is spent on all other products
-  (i.e. the numeraire).] By default,
+  outside the CES branch (i.e. the numeraire).] By default,
 'shareInside' equals 1, which indicates that the customer spends her
-entire budget on the $n+1$ products within the market.
+entire budget on the products within that CES branch.
 
 #### Nested CES {-}
 The Bertrand model with nested CES demand may be implemented using the
@@ -928,7 +926,7 @@ assumption is to group the $n$ products
 into $H\ge 2$ *nests*, with
 products in the same nest assumed to be closer substitutes than
 products in different nests.^[No function in `antitrust` currently permits
-  a hierarchy of nests.] `logit.nests`'s 'nests' argument may be used to specify a length-$n$ vector identifying which nest each
+  a hierarchy of nests.] `ces.nests`'s 'nests' argument may be used to specify a length-$n$ vector identifying which nest each
 product belongs to.
 
 The assumptions underlying
@@ -948,7 +946,7 @@ We assume that $V_i$ takes on the following form
 \end{align*}
 
 where $\sigma_h>\gamma>1$ for all nests $h\in H$.
-The Nested Logit demand system yields the following own- and cross-price elasticities:
+The Nested CES demand system yields the following own- and cross-price elasticities:
 \begin{align*}
   \epsilon_{ii}=&
   -\sigma_h + (\gamma-1)r_i + (\sigma_h-\gamma)r_{i|h}, \\
@@ -966,13 +964,12 @@ products sold in the market or whether consumers can choose to
 purchase an "outside" good. This works almost the same in
 `ces.nests` as `ces`, except that when the sum of market
 revenue shares is less than 1,
-the outside good is placed in its own nest with its nesting
-parameter normalized to 0.
+the outside good is handled as the normalized outside alternative rather than as a user-supplied product nest.
 
 By default, `calcSlopes` constrains all the nesting parameters to be equal
 to one another $\sigma_h=\sigma$ for all $h\in H$. This reduces the
 number of parameters that need to be estimated to $n+2$ ($n$
-$\delta$s, $\alpha,\sigma$) which means users must furnish enough
+$\delta$s, $\gamma,\sigma$) which means users must furnish enough
 margin information to complete at least two FOCs. Setting
 `ces.nests`'s 'constraint' argument to
 FALSE causes the `calcSlopes` method to relax the constraint and calibrate a separate
@@ -1817,7 +1814,7 @@ The `CV` method may be used to calculate compensating variation from a merger. T
 
 
 #### Calibrating Unobserved Outside Share {-}
-`auction2nd.logit.alm` uses the calibration strategy similar to the one discussed in the ["Nested Logit with Unobserved Outside Share"][(Nested) Logit With Unobserved Outside Share] section to calibrate the unobserved share of the outside good.
+`auction2nd.logit.alm` uses a calibration strategy similar to the one discussed in the section on (Nested) Logit with unobserved outside share to calibrate the unobserved share of the outside good.
 
 ## 2nd Score Auction with CES Demand
 The `auction2nd.ces` function extends the second-score auction framework to accommodate Constant Elasticity of Substitution (CES) demand. Under CES, the purchaser spends a fixed budget proportion across the available alternative suppliers, evaluating their quality-adjusted prices.
@@ -1831,14 +1828,14 @@ The equilibrium margin for firm $i$ under a second-score auction with CES demand
 where $r_i$ is firm $i$'s revenue share (probability of winning the auction) and $\gamma$ captures the elasticity of substitution. As before, calibration relies on observed margins or elasticities to uncover $\gamma$, after which pre-merger marginal costs are recovered.
 
 # The Nash Bargaining Game (experimental)
-Unlike 2nd-price procurement (score) auction models (chapter \@ref(auction-models)), where buyers pay the difference in surplus between their two to best options in order to entice sellers to reveal their costs (match values), Nash bargaining models assume that buyers and sellers bilaterally negotiate prices so as to maximize their joint surplus.  The Nash bargaining model described here allows buyers and sellers to vary in thre important ways. First, buyers maximize utility while sellers maximize profits. Second, buyers and sellers differ in their *disagreement payoffs*: if a bargain cannot be reached, buyers select their next best option, which may be owned by the same seller. Finally, buyers and sellers negotiate a linear price over a single unit sold.
+Unlike 2nd-price procurement (score) auction models (chapter \@ref(auction-models)), where buyers pay the difference in surplus between their two best options in order to induce sellers to reveal their costs (match values), Nash bargaining models assume that buyers and sellers bilaterally negotiate prices so as to maximize their joint surplus. The Nash bargaining model described here allows buyers and sellers to vary in three important ways. First, buyers maximize utility while sellers maximize profits. Second, buyers and sellers differ in their *disagreement payoffs*: if a bargain cannot be reached, buyers select their next best option, which may be owned by the same seller. Finally, buyers and sellers negotiate a linear price over a single unit sold.
 
- This bargaining model may be executed using `antitrust`'s `bargaining.logit` function.
+This bargaining model may be executed using `antitrust`'s `bargaining.logit` function. Related Logit-based bargaining variants are available through `bargaining.logit.alm` and `bargaining2nd.logit`.
 
 
 # The Bargaining Game
 
-*INCOMPLETE*
+The implemented bargaining constructors are experimental and currently focus on Logit demand.
 
 Suppose that there are $N$ products produced $J\le N$ firms. Let $W_j$ denote the set of products produced by firm $j\in J$. Each product is produced using constant marginal cost technology $c_n$. There are $M$ buyers, and each buyer ultimately selects a single product, with buyer $i\in M$ 
 valuing each product $n \in N$ as $V_{n}^i=\delta_n +\alpha p_n +\epsilon_{in},\alpha<0$, 
@@ -1848,9 +1845,9 @@ $$
 \max_{p_n} \left(E[\max_k V^i_{k} - \max_{h\ne n} V^i_h|\text{$n$ wins}]s_nM \right)^{\lambda_n} \left(\omega_{nj}(p_n-c_n)s_nM - \sum_{k\in \{W_j\setminus n\}}\omega_{kj}(p_k-c_k)\frac{s_ks_n}{1-s_n}M \right)^{1-\lambda_n}.
 $$
 
-Under Logit demand, it can be shown that the left hand side $E[\max_k V^i_{k} - \max_{h\ne n} V^i_h|\text{$n$ wins}]s_n=\frac{\ln({1-s_n})/\alpha$. 
+Under Logit demand, it can be shown that the left hand side $E[\max_k V^i_{k} - \max_{h\ne n} V^i_h|\text{$n$ wins}]s_n=\frac{\ln({1-s_n})}{\alpha}$.
 
-Taking the derivative w.r.t to $p_n$ , setting equal to 0 and rearranging yields:
+Taking the derivative with respect to $p_n$, setting it equal to 0, and rearranging yields:
 
 
 
@@ -1860,7 +1857,7 @@ $$
 
 # Vertical Supply (experimental)
 
-*INCOMPLETE*
+The vertical supply constructors are experimental and currently focus on Logit demand in the downstream market.
 
 The Bertrand, 2nd Score, and Bargaining models under Logit demand described above all focused on merger effects in a single market. Here, we extend the analysis to examine merger effects in a vertical supply chain. 
 
@@ -1921,7 +1918,7 @@ $CMCR_{Cournot}$,expressed relative to a share-weighted average of party pre-mer
 \end{align*}
 
 where $i$ and $j$ index the merging parties' products and $\epsilon$ is
-the equilibrium elasticity of industry demand.
+the absolute value of the equilibrium elasticity of industry demand.
 This function requires users to supply information on the
 merging parties' quantity shares as well as an estimate of the market
 elasticity. Under the assumption that each firm produces a single
@@ -1965,10 +1962,11 @@ described earlier. Like `cmcr.bertrand`, this function requires
 users to supply price and margin information for all of the merging parties' products, as well
 as diversion information between all of the merging parties'
 products. Users can also supply a vector of merger-specific
-efficiencies to `upp.bertrand`'s 'mcDelta' argument (default is
-0, which assumes no efficiencies). These
-efficiencies should be expressed as the percentage decrease in the
-merging parties' marginal costs.
+marginal cost changes to `upp.bertrand`'s 'mcDelta' argument (default is
+0, which assumes no cost changes). In the current implementation,
+positive values are proportional cost increases; negative cost changes
+are not accepted by `upp.bertrand`, although merger-simulation constructors
+use negative 'mcDelta' values to represent efficiencies.
 
 ## HHI
 The 2010 Horizontal Merger Guidelines state that
@@ -2217,12 +2215,11 @@ values. In addition to creating a new class instance, each constructor function 
     pre-merger  marginal costs multiplied by the user-supplied
     proportional change in marginal costs (1 + 'mcDelta'). The results from this call are
     assigned to the appropriate class slot,
-  4. Returns the class instance.
-  5. Calls `calcPrices` twice. The first call computes
+  4. Calls `calcPrices` twice. The first call computes
     pre-merger equilibrium prices and the second call calculates
     post-merger equilibrium prices. The results from this call are
     assigned to the appropriate class slot,
-  6. Returns the class instance.
+  5. Returns the class instance.
 
 Perhaps the easiest way to modify an existing class is to create a new
 child class of that class. That child will inherit all of the parent classes'
@@ -2231,9 +2228,9 @@ the behavior of existing methods may then be overridden.
 
 
 ## The Auction Models
-Currently, the two auction classes available in `antitrust` are *Auction2ndLogit* and *Auction2ndCap*. `Auction2ndLogit` is a child class of *Logit* and therefore follows the same pattern as the Bertrand Model described above. 
+Currently, the auction classes available in `antitrust` include *Auction2ndLogit*, *Auction2ndLogitNests*, *Auction2ndCES*, and *Auction2ndCap*. `Auction2ndLogit` and `Auction2ndCES` are children of demand classes used elsewhere in the package and therefore follow the same calibration pattern as the Bertrand model described above.
 
- In contrast, the constructor function for *Auction2ndLogit* is
+ In contrast, the constructor function for *Auction2ndCap* is
 `auction2nd.cap`, which initializes a class instance with
 sensible default values and then does the following:
 
@@ -2264,22 +2261,35 @@ sensible default values and then does the following:
 |--------------------|------------------------------------|-----------------|:------:|:---------:|:---------------:|:--------:|:------------------------------:|
 |  |  | **Bertrand** |  |  |  |  |  |
 | `linear` | Linear | A | 1+ | O | A |  | [@Haefen2002] |
-| `loglin` | Log-linear | A | A | O | A |  | [@Haefen2002] [@LaFrance2004] |
+| `loglinear` | Log-linear | A | A | O | A |  | [@Haefen2002] [@LaFrance2004] |
 | `aids` | AIDS | O | 2+ | O | A |  | [@Epstein2004] [@LaFrance2004] |
 | `pcaids` | PCAIDS | O | 1 | O | A |  | [@Epstein2004] [@LaFrance2004] |
 | `pcaids.nests` | Nested PCAIDS | O | 2+ | O | A |  | [@Epstein2004] |
 | `logit` | Logit | A | 1+ |  | A |  | [@Werden1994] |
 | `logit.alm` | Logit-Unobserved Outside Share | A | 2+ |  | A |  | [@Werden1994] |
 | `logit.nests` | Nested Logit | A | 2+ |  | A |  | [@Werden1994] |
+| `logit.nests.alm` | Nested Logit-Unobserved Outside Share | A | 3+ |  | A |  | [@Werden1994] |
 | `logit.cap` | Capacity-Constrained Logit | A | 2+ |  | A | A | [@Froeb2003] |
 | `ces` | Constant Elasticity | A | 1+ |  | A |  | [@Sheu2011] |
+| `ces.alm` | Constant Elasticity-Unobserved Outside Share | A | 2+ |  | A |  | [@Sheu2011] |
 | `ces.nests` | Nested Constant Elasticity | A | 2+ |  | A |  | [@Sheu2011] |
+| `ces.cournot` | Cournot Constant Elasticity | A | 1+ |  | A |  | [@Sheu2011] |
+| `ces.cournot.alm` | Cournot Constant Elasticity-Unobserved Outside Share | A | 2+ |  | A |  | [@Sheu2011] |
 | `sim` |  | A |  |  |  |  |  |
 |  |  | **Cournot** |  |  |  |  |  |
 | `cournot` | Linear, Log-Linear | A | 1+ |  | A |  |  |
 |  |  | **Auctions** |  |  |  |  |  |
 | `auction2nd.logit` | 2nd price, Logit | O | 1+ |  | A |  | [@miller2014] |
+| `auction2nd.logit.nests` | 2nd price, Nested Logit | O | 2+ |  | A |  | [@miller2014] |
+| `auction2nd.logit.alm` | 2nd price, Logit-Unobserved Outside Share | O | 2+ |  | A |  | [@miller2014] |
+| `auction2nd.ces` | 2nd price, CES | O | 1+ |  | A |  | [@miller2014] |
+| `auction2nd.ces.alm` | 2nd price, CES-Unobserved Outside Share | O | 2+ |  | A |  | [@miller2014] |
 | `auction2nd.cap` | 2nd price, homogeneous single unit | 1+ | 1+ |  |  | A | [@WaehrP2003] |
+|  |  | **Bargaining and Vertical Supply** |  |  |  |  |  |
+| `bargaining.logit` | Bargaining, Logit | A | 1+ |  | A |  |  |
+| `bargaining.logit.alm` | Bargaining, Logit-Unobserved Outside Share | A | 2+ |  | A |  |  |
+| `bargaining2nd.logit` | Bargaining with 2nd score disagreement, Logit | A | 1+ |  | A |  |  |
+| `vertical.barg` | Vertical bargaining, Logit | A | A | O | A |  |  |
 |  |  | **Other Tools** |  |  |  |  |  |
 | `cmcr.bertrand` | any | M | M | M |  |  | [@Werden1996] |
 | `cmcr.cournot` | any |  | 1 |  | M |  | [@Froeb1998] |
@@ -2320,15 +2330,15 @@ Table: (\#tab:selectMethods) Selected `antitrust` methods. While all of the abov
 
 | Demand | Formula | Reports |
 |-------------:|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------:|:----------:|
-| Linear | $\alpha'(p_{post}-p_{pre}) + .5p'_{post}Bp_{post} - .5p'_{pre}Bp_{pre}$ | level |
-| AIDS | $\alpha'(\log p_{post}-\log p_{pre}) + .5\log p'_{post}B\log p_{post} - .5\log p'_{pre}B\log p_{pre}$ | proportion |
-| CES | $\frac{1}{1+\alpha}\frac{1}{1-\gamma}\log\left(\frac{\sum\limits_{i\in n}     \delta_ip_{i,post}^{1-\gamma}}{\sum\limits_{i\in n}     \delta_ip_{i,pre}^{1-\gamma}}\right)$ | proportion |
-| Nested CES | $\frac{1}{1+\alpha}\frac{1}{1-\gamma}\log\left(\frac{\sum\limits_{h\in     H}\left(\sum\limits_{i\in h}\delta_i   p_{i,post}^{1-\sigma_h}\right)^\frac{1-\gamma}{1-\sigma_h}} {\sum\limits_{h\in     H}\left(\sum\limits_{i\in h}\delta_i   p_{i,pre}^{1-\sigma_h}\right)^\frac{1-\gamma}{1-\sigma_h}}\right)$ | proportion |
+| Linear | $a'(p_{post}-p_{pre}) + .5p'_{post}Bp_{post} - .5p'_{pre}Bp_{pre}$ | level |
+| AIDS | $a'(\log p_{post}-\log p_{pre}) + .5\log p'_{post}B\log p_{post} - .5\log p'_{pre}B\log p_{pre}$ | level or percent |
+| CES | $\exp\left\{\frac{1}{(1+\alpha)(1-\gamma)}\log\left(\frac{\sum\limits_{i\in n}\delta_i(p_{i,post}/p_0)^{1-\gamma}+I_0}{\sum\limits_{i\in n}\delta_i(p_{i,pre}/p_0)^{1-\gamma}+I_0}\right)\right\}-1$ | proportion |
+| Nested CES | $\exp\left\{\frac{1}{(1+\alpha)(1-\gamma)}\log\left(\frac{\sum\limits_{h\in H}\left(\sum\limits_{i\in h}\delta_i p_{i,post}^{1-\sigma_h}\right)^\frac{1-\gamma}{1-\sigma_h}}{\sum\limits_{h\in H}\left(\sum\limits_{i\in h}\delta_i p_{i,pre}^{1-\sigma_h}\right)^\frac{1-\gamma}{1-\sigma_h}}\right)\right\}-1$ | proportion |
 | Logit | $\frac{1}{\alpha}\log\left(\frac{\sum\limits_{i\in n}\exp(\delta_i+\alpha     p_{i,post})}{\sum\limits_{i\in n}\exp(\delta_i+\alpha     p_{i,pre})}\right)$ | level |
 | Nested Logit | $\frac{1}{\alpha}\log\left(\frac{\sum\limits_{h\in H}\left(\sum\limits_{i\in h}\exp(\frac{\delta_i+\alpha     p_{i,post}}{\sigma_h})\right)^{\sigma_h}}{\sum\limits_{h\in H}\left(\sum\limits_{i\in h}\exp(\frac{\delta_i+\alpha     p_{i,pre}}{\sigma_h})\right)^{\sigma_h}}\right)$ | level |
 Table: (\#tab:cvFormula) Compensating variation formulas. Note: The 'Reports' column indicates whether the compensating
 variation formula returns compensating variation in levels (e.g. dollar
-amounts) or as a proportion of aggregate income.
+amounts) or as a proportion of aggregate income. For CES, $p_0$ is the normalized outside price and $I_0$ equals 1 when an outside alternative is included and 0 otherwise.
 
 
 ```{r classdiagram, echo=FALSE, fig.cap="The relationship between Classes in the `antitrust` package", out.width = '60%', fig.align = 'center'}
@@ -2337,4 +2347,3 @@ knitr::include_graphics("ClassDiagram.png")
 ```
 
 `r if (knitr::is_html_output()) '# References {-}'`
-

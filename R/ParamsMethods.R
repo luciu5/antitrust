@@ -33,6 +33,11 @@
 #' getParms,VertBargBertLogit-method
 #' getNestsParms
 #' getNestsParms,PCAIDSNests-method
+#' getNestsParms,LogitNests-method
+#' getNestsParms,Auction2ndLogitNests-method
+#' getNestsParms,CESNests-method
+#' getNestsParms,VertBargBertLogitNests-method
+#' getNestsParms,VertBarg2ndLogitNests-method
 #'
 #' @description The calcSlopes methods calculate demand parameters assuming that firms are playing
 #' a differentitated product Nash-Bertrand pricing game or
@@ -1745,8 +1750,6 @@ setMethod(
     }
 
 
-    meanvalDown <- minSigma * (log(shares) - log(idxShare))
-
     names(meanval) <- object@labels
 
     object@slopes <- list(alpha = minAlpha, sigma = minSigma, meanval = meanval)
@@ -2660,7 +2663,7 @@ setMethod(
     names(meanval) <- object@labels
 
     object@slopes <- list(alpha = alpha, gamma = minGamma, sigma = minSigmaOut, meanval = meanval)
-    object@mktSize <- insideSize * (1 + alpha)
+    object@mktSize <- if (is.null(alpha)) insideSize else insideSize * (1 + alpha)
 
     return(object)
   }
@@ -3335,6 +3338,70 @@ setMethod(
     return(nestWeights)
   }
 )
+
+.getNestSigma <- function(object) {
+  sigma <- object@slopes$sigma
+  if (is.null(sigma)) {
+    stop("Nesting parameters have not been calibrated")
+  }
+
+  result <- matrix(sigma, ncol = 1)
+  colnames(result) <- "sigma"
+  rownames(result) <- names(sigma)
+
+  return(result)
+}
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "getNestsParms",
+  signature = "LogitNests",
+  definition = function(object) {
+    .getNestSigma(object)
+  }
+)
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "getNestsParms",
+  signature = "Auction2ndLogitNests",
+  definition = function(object) {
+    .getNestSigma(object)
+  }
+)
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "getNestsParms",
+  signature = "CESNests",
+  definition = function(object) {
+    .getNestSigma(object)
+  }
+)
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "getNestsParms",
+  signature = "VertBargBertLogitNests",
+  definition = function(object) {
+    getNestsParms(object@down)
+  }
+)
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "getNestsParms",
+  signature = "VertBarg2ndLogitNests",
+  definition = function(object) {
+    getNestsParms(object@down)
+  }
+)
+
 #' @rdname Params-Methods
 #' @export
 setMethod(

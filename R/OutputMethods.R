@@ -379,19 +379,12 @@ setMethod(
   f = "calcQuantities",
   signature = "CES",
   definition = function(object, preMerger = TRUE, market = FALSE) {
-    mktSizeRev <- object@mktSize
-    quantOutPre <- mktSizeRev / object@priceOutside
     prices <- if (preMerger) object@pricePre else object@pricePost
 
-    mktSizeQuant <- sum(calcShares(object, preMerger = preMerger, revenue = TRUE) * mktSizeRev / prices)
-    mkSizeQuant <- sum(mktSizeQuant, quantOutPre)
+    quantities <- calcRevenues(object, preMerger = preMerger) / prices
+    if (market) quantities <- sum(quantities, na.rm = TRUE)
 
-
-    shares <- calcShares(object, preMerger = preMerger, revenue = FALSE)
-
-    if (market) shares <- sum(shares, na.rm = TRUE)
-
-    return(mktSizeQuant * shares)
+    return(quantities)
   }
 )
 

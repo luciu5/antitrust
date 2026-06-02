@@ -673,9 +673,19 @@ setMethod(
     constrained <- abs(capacities - quantities) < 1e-5
 
     if (any(!constrained)) {
-      revenue <- calcShares(object, preMerger, revenue = TRUE)[!constrained]
+      unconstrained <- !constrained
+      revenue <- calcShares(object, preMerger, revenue = TRUE)[unconstrained]
       elast <- elast(object, preMerger)
-      margins[!constrained] <- -1 * as.vector(MASS::ginv(t(elast * owner)[!constrained, !constrained]) %*% revenue) / revenue
+      elast <- elast[unconstrained, unconstrained]
+      owner <- owner[unconstrained, unconstrained]
+
+      outSign <- ifelse(object@output, -1, 1)
+      marginCalc <- try(outSign * as.vector(solve(t(elast) * owner) %*% (revenue * diag(owner))) / revenue, silent = TRUE)
+      if (any(class(marginCalc) == "try-error")) {
+        marginCalc <- outSign * as.vector(MASS::ginv(t(elast) * owner) %*% (revenue * diag(owner))) / revenue
+      }
+
+      margins[unconstrained] <- marginCalc
     }
 
 

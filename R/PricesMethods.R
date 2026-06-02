@@ -399,7 +399,6 @@ setMethod(
   definition = function(object, preMerger = TRUE, subset, ...) {
     slopes <- object@slopes
     intercept <- object@intercepts
-    priceStart <- object@priceStart
     if (preMerger) {
       owner <- object@ownerPre
       mc <- object@mcPre
@@ -414,23 +413,24 @@ setMethod(
     if (!is.logical(subset) || length(subset) != nprods) {
       stop("'subset' must be a logical vector the same length as 'quantities'")
     }
-    ## first try the analytic solution
-    #      prices <-
-    #          solve((slopes*diag(owner)) + (t(slopes)*owner)) %*%
-    #              ((t(slopes)*owner) %*% mc - (intercept*diag(owner)))
-    #
-    #       prices <- as.vector(prices)
-    #       quantities <- as.vector(intercept + t(slopes) %*% prices)
-    #
-    #      ##use the numeric solution if analytic solution yields negative quantities
-    #      if(any(subset) || any(quantities<0)){
-    #
-    #          if(any(quantities<0)){
-    #           warning("Equilibrium prices yield negative equilibrium quantities. Recomputing equilibrium prices  under the restriction that equilbrium quantities must be non-negative")
-    #                               }
-    #          else if(any(subset)){
-    #            warning("Elements of 'subset' are  FALSE. Computing equilbrium under the restriction that these products have 0 sales")
-    #          }
+
+    ## First try the closed-form Bertrand FOC solution for linear demand.
+    analytic <- try(
+      solve((slopes * diag(owner)) + (t(slopes) * owner)) %*%
+        ((t(slopes) * owner) %*% mc - (intercept * diag(owner))),
+      silent = TRUE
+    )
+
+    if (!any(class(analytic) == "try-error")) {
+      prices <- as.vector(analytic)
+      quantities <- as.vector(intercept + slopes %*% prices)
+
+      if (all(subset) && all(is.finite(prices)) && all(quantities >= -1e-8, na.rm = TRUE)) {
+        names(prices) <- object@labels
+        return(prices)
+      }
+    }
+
     FOC <- function(priceCand) {
       if (preMerger) {
         object@pricePre <- priceCand
@@ -443,14 +443,33 @@ setMethod(
       thisFOC[!subset] <- quantities[!subset] # set quantity equal to 0 for firms not in subset
       return(as.vector(crossprod(thisFOC)))
     }
-    ## Find starting value that always meets boundary conditions
-    ## startParm <- as.vector(solve(slopes) %*% (-intercept + 1))
-    minResult <- constrOptim(object@priceStart, FOC, grad = NULL, ui = slopes, ci = -intercept, ...)
+
+    isInterior <- function(priceCand) {
+      all(is.finite(priceCand)) &&
+        all(as.vector(intercept + slopes %*% priceCand) > 1e-8, na.rm = TRUE)
+    }
+
+    candidates <- list(object@priceStart)
+    if (!any(class(analytic) == "try-error")) candidates <- c(candidates, list(as.vector(analytic)))
+    if (length(object@prices) == nprods) candidates <- c(candidates, list(object@prices))
+
+    targetQuantities <- pmax(as.vector(intercept + slopes %*% object@priceStart), 1e-4)
+    feasibleFromQuantities <- try(as.vector(solve(slopes, targetQuantities - intercept)), silent = TRUE)
+    if (any(class(feasibleFromQuantities) == "try-error")) {
+      feasibleFromQuantities <- as.vector(MASS::ginv(slopes) %*% (targetQuantities - intercept))
+    }
+    candidates <- c(candidates, list(feasibleFromQuantities))
+
+    startIndex <- which(vapply(candidates, isInterior, logical(1)))[1]
+    if (is.na(startIndex)) {
+      stop("Unable to find a feasible starting price vector for constrained linear equilibrium solve")
+    }
+
+    minResult <- constrOptim(candidates[[startIndex]], FOC, grad = NULL, ui = slopes, ci = -intercept, ...)
     if (!isTRUE(all.equal(minResult$convergence, 0, check.names = FALSE))) {
       warning("'calcPrices' solver may not have successfully converged.'constrOptim' reports: '", minResult$message, "'")
     }
     prices <- minResult$par
-    # }
     names(prices) <- object@labels
     return(prices)
   }

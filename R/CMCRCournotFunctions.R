@@ -175,10 +175,11 @@ upp.cournot <- function(prices, margins, ownerPre,
   
   prices <- rep(prices,2)
   
-  diversions <- rep(1,ncol=2,nrow=2); diag(diversions) <- -1
+  diversions <- matrix(1,ncol=2,nrow=2); diag(diversions) <- -1
 
   result <- upp.bertrand(prices, margins, diversions, ownerPre,
-                         ownerPost, mcDelta, labels)
+                         ownerPost = ownerPost, mcDelta = mcDelta,
+                         labels = labels)
 
   return(result)
 
