@@ -199,11 +199,11 @@ setClass(
       stop("'shareInside' must be between 0 and 1")
     }
 
-    if (length(object@weights) != nprods) {
+    if (length(object@weights) > 0 && length(object@weights) != nprods) {
       stop("'weights' must have the same length as 'shares'")
     }
 
-    if (any(!is.finite(object@weights)) || any(object@weights < 0)) {
+    if (length(object@weights) > 0 && (any(!is.finite(object@weights)) || any(object@weights < 0))) {
       stop("'weights' must be finite and non-negative")
     }
 

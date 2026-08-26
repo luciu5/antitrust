@@ -1,5 +1,5 @@
-## Submission Summary (v0.99.32)
-This is a patch release updating documentation anchors for R-devel compatibility (`\code{\link[stats]{optim}}`, `\code{\link[stats]{constrOptim}}`, `\code{\link{loglinear}}`) and updating submission metadata.
+## Submission Summary (v0.99.33)
+This patch release updates the validity method in `BertrandRUMClasses.R` to permit empty `weights` slots, ensuring 100% backward compatibility with reverse dependency `trade` (v0.8.3). It also includes R-devel documentation link anchor updates (`\code{\link[stats]{optim}}`, `\code{\link[stats]{constrOptim}}`).
 
 ## Test Environments
 * Local Ubuntu 22.04.5 LTS, R 4.6.1
@@ -12,4 +12,4 @@ There was 1 NOTE:
 * Standard local environment note regarding missing system 'tidy' utility.
 
 ## Downstream Dependencies
-None affected.
+Reverse dependency `trade` tested and verified compatible.
