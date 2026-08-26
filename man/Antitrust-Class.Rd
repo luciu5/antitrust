@@ -30,7 +30,7 @@ and FALSE if the merger simulates the effect in an input market. Default is TRUE
 
 \item{\code{labels}}{A length k vector of labels.}
 
-\item{\code{control.slopes}}{A list of \code{\link{optim}} control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
+\item{\code{control.slopes}}{A list of \code{\link[stats]{optim}} control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
 
 \item{\code{control.equ}}{A list of \code{\link[BB]{BBsolve}} control parameters passed to the non-linear equation solver (typically the \code{calcPrices} method).}
 }}

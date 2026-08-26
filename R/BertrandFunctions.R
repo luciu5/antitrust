@@ -51,7 +51,7 @@
 #' @param isMax If TRUE, checks to see whether computed price equilibrium
 #' locally maximizes firm profits and returns a warning if not. Default is FALSE.
 #' @param output a length 1 logical vector equal to TRUE if merger simulation performed on output market, FALSE if it is an input market. Default TRUE.
-#' @param control.slopes A list of  \code{\link{optim}}  control parameters passed
+#' @param control.slopes A list of  \code{\link[stats]{optim}}  control parameters passed
 #' to the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed
 #' to the non-linear equation solver (typically the \code{calcPrices} method).

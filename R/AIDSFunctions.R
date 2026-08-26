@@ -55,7 +55,7 @@
 #' @param nestsParmStart A vector of starting values used to solve for
 #' price coefficient and nest parameters. If missing then the random
 #' draws with the appropriate restrictions are employed.
-#' @param control.slopes A list of  \code{\link{optim}}  control parameters passed to
+#' @param control.slopes A list of  \code{\link[stats]{optim}}  control parameters passed to
 #' the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed to
 #' the non-linear equation solver (typically the \code{calcPrices} method).

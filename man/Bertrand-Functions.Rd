@@ -88,7 +88,7 @@ locally maximizes firm profits and returns a warning if not. Default is FALSE.}
 \item{parmStart}{\code{aids} only. A vector of length 2 who elements equal to an
 initial guess for "known" element of the diagonal of the demand matrix and the market elasticity.}
 
-\item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed
+\item{control.slopes}{A list of  \code{\link[stats]{optim}}  control parameters passed
 to the calibration routine optimizer (typically the \code{calcSlopes} method).}
 
 \item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters passed

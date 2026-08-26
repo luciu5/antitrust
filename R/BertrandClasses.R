@@ -19,7 +19,7 @@
 #'
 #' For Linear, objects can be created by using the constructor function \code{\link{linear}}.
 #'
-#' For LogLin, objects can be created by using the constructor function \code{\link{loglin}}.
+#' For LogLin, objects can be created by using the constructor function \code{\link{loglinear}}.
 #'
 #' For AIDS, objects can be created by using the constructor function \code{\link{aids}}.
 #'

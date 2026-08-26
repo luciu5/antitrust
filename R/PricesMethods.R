@@ -30,7 +30,7 @@
 #' @param ... For Logit, additional values that may be used to change the
 #' default values of \code{\link[BB]{BBsolve}}, the non-linear equation solver.
 #'
-#' For others, additional values that may be used to change the default values of \code{\link{constrOptim}}, the non-linear
+#' For others, additional values that may be used to change the default values of \code{\link[stats]{constrOptim}}, the non-linear
 #' equation solver used to enforce non-negative equilibrium quantities.
 #' @description For Auction2ndCap, the calcPrices method computes the expected price that the buyer pays,
 #' conditional on the buyer purchasing from a particular firm.

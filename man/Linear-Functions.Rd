@@ -75,30 +75,29 @@ length k vector of TRUE.}
 \item{priceStart}{A length k vector of prices used as the initial guess
 in the nonlinear equation solver. Default is \sQuote{prices}.}
 
-\item{control.slopes}{A list of  \code{\link{optim}}  control parameters
+\item{control.slopes}{A list of  \code{\link[stats]{optim}}  control parameters
 passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
+
+\item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters
+passed to the non-linear equation solver (typically the \code{calcPrices} method).}
 
 \item{labels}{A k-length vector of labels. Default is "Prod#", where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
 
 \item{...}{Additional options to feed to the solver. See below.}
-
-\item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters
-passed to the non-linear equation solver (typically the \code{calcPrices} method).}
 }
 \value{
 \code{linear} returns an instance of class \code{\linkS4class{Linear}}.
 \code{loglinear} returns an instance of \code{\linkS4class{LogLin}}, a
-child class of \code{\linkS4class{Linear}}.
+child of class \code{\linkS4class{Linear}}.
 }
 \description{
-Calibrates consumer demand using either a
-linear or log-linear demand system and then simulates
-the prices effect of a merger between two firms
-under the assumption that all firms in the market
-are playing a differentiated products Bertrand game.
+Calibrates consumer demand using Linear or Log-Linear
+and then simulates the price effect of a merger between two firms
+under the assumption that all firms in the market are playing a
+differentiated products Bertrand pricing game.
 
-Let k denote the number of products produced by all firms.
+Let k denote the number of products produced by all firms below.
 }
 \details{
 Using price, quantity, and diversion information for all products
@@ -134,9 +133,9 @@ account for partial ownership.
 Under linear demand, an analytic solution to the Bertrand pricing game
 exists. However, this solution can at times produce negative
 equilibrium quantities. To accommodate this issue, \code{linear}
-uses \code{\link{constrOptim}}  to
+uses \code{\link[stats]{constrOptim}}  to
 find equilibrium prices with non-negative quantities. \code{...} may
-be used to change the default options for \link{constrOptim}.
+be used to change the default options for \code{\link[stats]{constrOptim}}.
 
 \code{loglinear} uses the non-linear equation solver
 \code{\link[BB]{BBsolve}} to find equilibrium prices.  \code{...} may

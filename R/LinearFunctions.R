@@ -35,13 +35,14 @@
 #' length k vector of TRUE.
 #' @param priceStart A length k vector of prices used as the initial guess
 #' in the nonlinear equation solver. Default is \sQuote{prices}.
-#' @param control.slopes A list of  \code{\link{optim}}  control parameters
-#' passed to the calibration routine optimizer (typically the \code{calcSlopes} method).
+#' @param control.slopes A list of  \code{\link[stats]{optim}}  control parameters
+#'   passed to the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters
-#' passed to the non-linear equation solver (typically the \code{calcPrices} method).
+#'   passed to the non-linear equation solver (typically the \code{calcPrices} method).
 #' @param labels A k-length vector of labels. Default is "Prod#", where
-#' \sQuote{#} is a number between 1 and the length of \sQuote{prices}.
-#' @param ... Additional options to feed to the solver. See below.
+#'   \sQuote{#} is a number between 1 and the length of \sQuote{prices}.
+#' @param ... Additional options to feed to the optimizer used to solve for
+#'   equilibrium prices.
 #'
 #' @details Using price, quantity, and diversion information for all products
 #' in a market, as well as margin information for (at least) all the
@@ -76,9 +77,9 @@
 #' Under linear demand, an analytic solution to the Bertrand pricing game
 #' exists. However, this solution can at times produce negative
 #' equilibrium quantities. To accommodate this issue, \code{linear}
-#' uses \code{\link{constrOptim}}  to
+#' uses \code{\link[stats]{constrOptim}}  to
 #' find equilibrium prices with non-negative quantities. \code{...} may
-#' be used to change the default options for \link{constrOptim}.
+#' be used to change the default options for \code{\link[stats]{constrOptim}}.
 #'
 #' \code{loglinear} uses the non-linear equation solver
 #' \code{\link[BB]{BBsolve}} to find equilibrium prices.  \code{...} may

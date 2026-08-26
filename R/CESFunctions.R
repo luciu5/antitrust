@@ -55,7 +55,7 @@
 #' draws with the appropriate restrictions are employed.
 #' @param labels A k-length vector of labels. Default is "Prod#", where
 #' \sQuote{#} is a number between 1 and the length of \sQuote{prices}.
-#' @param control.slopes A list of  \code{\link{optim}}  control parameters passed to the
+#' @param control.slopes A list of  \code{\link[stats]{optim}}  control parameters passed to the
 #' calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param weights A length k vector of non-negative product weights used in
 #' minimum-distance calibration. Default is \code{rep(1, length(shares))}.

@@ -24,7 +24,7 @@
 #' @slot ownerPre  A k x k matrix of pre-merger ownership shares.
 #' @slot ownerPost  A k x k matrix of post-merger ownership shares.
 #' @slot labels A length k vector of labels.
-#' @slot control.slopes A list of \code{\link{optim}} control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).
+#' @slot control.slopes A list of \code{\link[stats]{optim}} control parameters passed to the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @slot control.equ A list of \code{\link[BB]{BBsolve}} control parameters passed to the non-linear equation solver (typically the \code{calcPrices} method).
 
 #' @section The \dQuote{matrixOrList}, \dQuote{matrixOrVector} and \dQuote{characterOrList} Classes:

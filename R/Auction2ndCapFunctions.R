@@ -35,11 +35,11 @@
 #' price post-merger.
 #' @param parmsStart A vector of starting values for calibrated parameters. See below
 #' for more details.
-#' @param control.slopes A list of  \code{\link{optim}}  control parameters passed to
+#' @param control.slopes A list of  \code{\link[stats]{optim}}  control parameters passed to
 #' the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param labels A k-length vector of labels. Default is "Firm", where
 #' \sQuote{#} is a number between 1 and the length of \sQuote{capacities}.
-#' @param ... Additional options to feed to either \code{\link{optim}} or \code{\link{constrOptim}}.
+#' @param ... Additional options to feed to either \code{\link[stats]{optim}} or \code{\link[stats]{constrOptim}}.
 #'
 #' @details \code{auction2nd.cap} examines how a merger affects equilbrium bidding
 #' behavior when a single buyer is running a 2nd price procurement

@@ -124,7 +124,7 @@ affect any products' marginal cost.}
 \item{quantityStart}{A length k vector of quantities used as the initial guess
 in the nonlinear equation solver. Default is \sQuote{quantities}.}
 
-\item{control.slopes}{A list of  \code{\link{optim}}  control parameters
+\item{control.slopes}{A list of  \code{\link[stats]{optim}}  control parameters
 passed to the calibration routine optimizer
 (typically the \code{calcSlopes} method).}
 

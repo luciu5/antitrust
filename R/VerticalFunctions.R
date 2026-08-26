@@ -56,7 +56,7 @@
 #' upstream equilibrium price. Default is the \sQuote{pricesUp} vector.
 #' @param isMax If TRUE, checks to see whether computed price equilibrium
 #' locally maximizes firm profits and returns a warning if not. Default is FALSE.
-#' @param control.slopes A list of  \code{\link{optim}}
+#' @param control.slopes A list of  \code{\link[stats]{optim}}
 #' control parameters passed to the calibration routine
 #' optimizer (typically the \code{calcSlopes} method).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters

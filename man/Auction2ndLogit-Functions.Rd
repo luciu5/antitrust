@@ -146,7 +146,7 @@ If shares sum to one, this also equals the size of the market.}
 \item{mcDeltaOutside}{A length 1 vector indicating the change in the marginal cost of the
 outside good. Default is 0.}
 
-\item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed
+\item{control.slopes}{A list of  \code{\link[stats]{optim}}  control parameters passed
 to the calibration routine optimizer (typically the \code{calcSlopes} method).}
 
 \item{labels}{A k-length vector of labels. Default is "Prod#", where

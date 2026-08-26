@@ -65,6 +65,8 @@ Let k denote the number of products produced by all firms below.
 
 \item{\code{shareInside}}{The share of customers that purchase any of the products included in the `prices' vector.}
 
+\item{\code{weights}}{A length k vector of non-negative product weights used in minimum-distance calibration.}
+
 \item{\code{priceOutside}}{The price of the outside good. Default is 0.}
 
 \item{\code{slopes}}{A list containing the coefficient on price (\sQuote{alpha}) and the vector of mean valuations (\sQuote{meanval}).}

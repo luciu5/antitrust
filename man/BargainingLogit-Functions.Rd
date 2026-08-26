@@ -123,7 +123,7 @@ If shares sum to one, this also equals the size of the market.}
 \item{priceOutside}{A positive real number equal to the price of the outside good.
 Default equals 0 for Logit demand.}
 
-\item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed
+\item{control.slopes}{A list of  \code{\link[stats]{optim}}  control parameters passed
 to the calibration routine optimizer (typically the \code{calcSlopes} method).}
 
 \item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters passed

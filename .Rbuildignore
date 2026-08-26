@@ -4,7 +4,11 @@
 ^artifacts$
 ^vignettes$
 ^\.Rlib$
+^\.Rlib-devel$
+^\.R-devel.*$
 ^\.\.Rcheck$
 ^\.codex$
+^AGENTS[.]md$
 ^\.Rhistory$
 ^antitrust_.*[.]tar[.]gz$
+^cran-comments\.md$

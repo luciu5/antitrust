@@ -118,7 +118,7 @@ retailer's parameter is identical across negotiations.}
 price effects holding retailer prices fixed at observed pre-merger levels. "retailer"
 solves for equilibrium retailer prices holding wholesaler prices fixed at observed pre-merger levels.}
 
-\item{control.slopes}{A list of  \code{\link{optim}}
+\item{control.slopes}{A list of  \code{\link[stats]{optim}}
 control parameters passed to the calibration routine
 optimizer (typically the \code{calcSlopes} method).}
 

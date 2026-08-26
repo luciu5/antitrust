@@ -68,7 +68,7 @@
 #' the nesting parameters. Theory requires the nesting parameters to be
 #' greater than the price coefficient. If missing then the random
 #' draws with the appropriate restrictions are employed.
-#' @param control.slopes A list of  \code{\link{optim}}
+#' @param control.slopes A list of  \code{\link[stats]{optim}}
 #' control parameters passed to the calibration routine
 #' optimizer (typically the \code{calcSlopes} method).
 #' @param weights A length k vector of non-negative product weights used in

@@ -61,13 +61,13 @@ price post-merger.}
 \item{parmsStart}{A vector of starting values for calibrated parameters. See below
 for more details.}
 
-\item{control.slopes}{A list of  \code{\link{optim}}  control parameters passed to
+\item{control.slopes}{A list of  \code{\link[stats]{optim}}  control parameters passed to
 the calibration routine optimizer (typically the \code{calcSlopes} method).}
 
 \item{labels}{A k-length vector of labels. Default is "Firm", where
 \sQuote{#} is a number between 1 and the length of \sQuote{capacities}.}
 
-\item{...}{Additional options to feed to either \code{\link{optim}} or \code{\link{constrOptim}}.}
+\item{...}{Additional options to feed to either \code{\link[stats]{optim}} or \code{\link[stats]{constrOptim}}.}
 }
 \value{
 \code{auction2nd.cap} returns an instance of class
