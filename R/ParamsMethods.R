@@ -3560,7 +3560,7 @@ setMethod(
       denom <- gamma * (1 + gamma * safe_alpha)
       if (denom == 0) denom <- 1e-10
       outSign <- ifelse(output, 1, -1)
-      marginsCand <- outSign * (1 / gamma - ((gamma - 1) * (1 + safe_alpha) / denom) * firmShares)
+      marginsCand <- outSign * (1 / gamma + ((gamma - 1) * (1 + safe_alpha) / denom) * firmShares)
 
       m1 <- prod_weights * ((marginsCand - margins) / prices)
       if (!is.na(mktElast)) {
@@ -3654,7 +3654,7 @@ setMethod(
       denom <- gamma * (1 + gamma * alpha_cand)
       if (denom == 0) denom <- 1e-10
       outSign <- ifelse(output, 1, -1)
-      marginsCand <- outSign * (1 / gamma - ((gamma - 1) * (1 + alpha_cand) / denom) * firmShares)
+      marginsCand <- outSign * (1 / gamma + ((gamma - 1) * (1 + alpha_cand) / denom) * firmShares)
 
       m1 <- prod_weights * ((marginsCand - margins) / prices)
       m2 <- (mktElast + 1) / (1 - gamma) - sOut

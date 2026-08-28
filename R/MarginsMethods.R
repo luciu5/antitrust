@@ -182,7 +182,7 @@ setMethod(
     outSign <- ifelse(object@output, 1, -1)
     denom <- gamma * (1 + gamma * alpha)
     if (denom == 0) denom <- 1e-10
-    margins <- outSign * (1 / gamma - ((gamma - 1) * (1 + alpha) / denom) * firmShares)
+    margins <- outSign * (1 / gamma + ((gamma - 1) * (1 + alpha) / denom) * firmShares)
 
     if (level) {
       margins <- margins * prices
