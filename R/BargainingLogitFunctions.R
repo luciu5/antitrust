@@ -55,6 +55,7 @@
 #' to the calibration routine optimizer (typically the \code{calcSlopes} method).
 #' @param weights A length k vector of non-negative product weights used in
 #' minimum-distance calibration. Default is \code{rep(1, length(shares))}.
+#' @param solver A length-1 character vector specifying the solver algorithm used to calculate pre- and post-merger price equilibria. Options are \code{"nleqslv"} (default) or \code{"ag"} (Aggregative Games).
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed
 #' to the non-linear equation solver (typically the \code{calcPrices} method).
 #' @param parmsStart A vector of length 2 of starting values for the non-linear equation solver.
@@ -129,7 +130,10 @@ bargaining.logit <- function(prices, shares, margins,
                              priceOutside = 0,
                              control.slopes,
                              control.equ,
+                             solver = c("nleqslv", "ag"),
                              labels = paste("Prod", 1:length(prices), sep = "")) {
+  solver <- match.arg(solver)
+
   ## Create BargainingLogit  container to store relevant data
   result <- new("BargainingLogit",
     prices = prices, shares = shares,
@@ -173,8 +177,13 @@ bargaining.logit <- function(prices, shares, margins,
 
 
   ## Solve Non-Linear System for Price Changes
-  result@pricePre <- calcPrices(result, preMerger = TRUE)
-  result@pricePost <- calcPrices(result, preMerger = FALSE)
+  if (solver == "ag") {
+    result@pricePre  <- calcPricesAG(result, preMerger = TRUE)
+    result@pricePost <- calcPricesAG(result, preMerger = FALSE)
+  } else {
+    result@pricePre  <- calcPrices(result, preMerger = TRUE)
+    result@pricePost <- calcPrices(result, preMerger = FALSE)
+  }
 
   return(result)
 }

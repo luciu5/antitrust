@@ -312,19 +312,6 @@ shares = NULL,
     supply <- "cournot"
   }
 
-  # Validate supply/demand combinations
-  valid_combinations <- list(
-    bertrand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"),
-    cournot = c("Logit", "CES", "BLP"),
-    auction2nd = c("Logit", "CES"),
-    bargaining = c("Logit"),
-    bargaining2nd = c("Logit")
-  )
-
-  if (!(demand %in% valid_combinations[[supply]])) {
-    stop(paste(supply, "/", demand, "currently not supported."))
-  }
-
 
   if (missing(priceStart)) {
     if (demand == "AIDS") {
@@ -379,6 +366,34 @@ shares = NULL,
       if (length(demand.param$meanval) != nprods || any(is.na(demand.param$meanval))) {
         stop("'meanval' must be a length-k vector of product mean valuations. NAs not allowed.")
       }
+    # meanval is optional for BLP (recovered via contraction if not provided)
+    if (demand != "BLP") {
+      if (!("meanval" %in% names(demand.param))) {
+        stop("'demand.param' does not contain 'meanval'.")
+      }
+      if (length(demand.param$meanval) != nprods || any(is.na(demand.param$meanval))) {
+        stop("'meanval' must be a length-k vector of product mean valuations. NAs not allowed.")
+      }
+
+      ## An outside option is assumed to exist if all mean valuations are non-zero
+      if ("meanval" %in% names(demand.param) && all(demand.param$meanval != 1)) {
+        normIndex <- NA
+        if (!sharesProvided) {
+          shares <- rep(1 / (nprods + 1), nprods)
+        }
+      } else {
+        if ("meanval" %in% names(demand.param)) {
+          normIndex <- which(demand.param$meanval == 1)
+          if (length(normIndex) > 1) normIndex <- normIndex[1]
+          if (length(normIndex) == 0) normIndex <- 1
+        } else {
+          normIndex <- 1
+        }
+      }
+
+      if (missing(priceOutside)) {
+        priceOutside <- 1
+      }
     } else {
       # For BLP, validate meanval only if provided
       if ("meanval" %in% names(demand.param)) {
@@ -388,9 +403,7 @@ shares = NULL,
       }
     }
 
-    if (demand %in% c("LogitNests", "Logit", "BLP")) {
-      if (demand == "BLP") {
-        # Check if meanval is provided (optional for BLP)
+    if (demand == "BLP") {
         # If NOT provided, calcSlopes will recover it via BLP contraction from observed shares
         if (!("meanval" %in% names(demand.param))) {
           # If meanval not provided, shares MUST be provided for BLP contraction
@@ -551,6 +564,24 @@ shares = NULL,
       shareInside <- sum(shares)
       if (missing(priceOutside)) {
         priceOutside <- 0
+      ## An outside option is assumed to exist if all mean valuations are non-zero
+      if ("meanval" %in% names(demand.param) && all(demand.param$meanval != 1)) {
+        normIndex <- NA
+        if (!sharesProvided) {
+          shares <- rep(1 / (nprods + 1), nprods)
+        }
+      } else {
+        if ("meanval" %in% names(demand.param)) {
+          normIndex <- which(demand.param$meanval == 1)
+          if (length(normIndex) > 1) normIndex <- normIndex[1]
+          if (length(normIndex) == 0) normIndex <- 1
+        } else {
+          normIndex <- 1
+        }
+      }
+
+      if (missing(priceOutside)) {
+        priceOutside <- 1
       }
     }
   } else if (demand == "LogitCap") {
@@ -625,22 +656,6 @@ shares = NULL,
       }
 
 
-      ## An outside option is assumed to exist if all mean valuations are non-zero
-      if (all(demand.param$meanval != 1)) {
-        normIndex <- NA
-        shares <- rep(1 / (nprods + 1), nprods)
-      } else {
-        normIndex <- which(demand.param$meanval == 1)
-
-        if (length(normIndex) > 1) {
-          warning("multiple values of meanval are equal to one. Normalizing with respect to the first product with  mean value equal to 1.")
-          normIndex <- normIndex[1]
-        }
-      }
-
-
-      if (missing(priceOutside)) {
-        priceOutside <- 1
       }
     }
 
@@ -788,12 +803,10 @@ shares = NULL,
         ownerPre = ownerPre,
         ownerPost = ownerPost,
         priceStart = priceStart,
-        priceOutside = priceOutside,
-        shareInside = shareInside,
-        output = outputFlag,
-        labels = labels
+        labels = labels,
+        cls = "BargainingLogit"
       ),
-      bargaining = new("BargainingLogit",
+      bargaining = new(paste0("Bargaining", demand),
         prices = prices, shares = shares,
         margins = margins,
         weights = sim_weights,
@@ -810,7 +823,7 @@ shares = NULL,
         priceStart = priceStart,
         output = outputFlag,
         labels = labels,
-        cls = "BargainingLogit"
+        cls = paste0("Bargaining", demand)
       ),
       auction2nd = new(paste0("Auction2nd", demand),
         prices = prices, shares = shares,
@@ -818,26 +831,6 @@ shares = NULL,
         weights = sim_weights,
         normIndex = normIndex,
         ownerPre = ownerPre,
-        ownerPost = ownerPost,
-        insideSize = insideSize,
-        mcDelta = mcDelta,
-        subset = subset,
-        priceOutside = priceOutside,
-        shareInside = shareInside,
-        priceStart = priceStart,
-        output = outputFlag,
-        labels = labels,
-        cls = paste0("Auction2nd", demand)
-      ),
-      bargaining2nd = new("Bargaining2ndLogit",
-        prices = prices, shares = shares,
-        margins = margins,
-        weights = sim_weights,
-        normIndex = normIndex,
-        ownerPre = ownerPre,
-        ownerPost = ownerPost,
-        bargpowerPre = bargpowerPre,
-        bargpowerPost = bargpowerPost,
         insideSize = insideSize,
         mcDelta = mcDelta,
         subset = subset,

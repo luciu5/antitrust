@@ -78,26 +78,28 @@ in the nonlinear equation solver. Default is \sQuote{prices}.}
 \item{control.slopes}{A list of  \code{\link[stats]{optim}}  control parameters
 passed to the calibration routine optimizer (typically the \code{calcSlopes} method).}
 
-\item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters
-passed to the non-linear equation solver (typically the \code{calcPrices} method).}
-
 \item{labels}{A k-length vector of labels. Default is "Prod#", where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
 
-\item{...}{Additional options to feed to the solver. See below.}
+\item{...}{Additional options to feed to the optimizer used to solve for
+equilibrium prices.}
+
+\item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters
+passed to the non-linear equation solver (typically the \code{calcPrices} method).}
 }
 \value{
 \code{linear} returns an instance of class \code{\linkS4class{Linear}}.
 \code{loglinear} returns an instance of \code{\linkS4class{LogLin}}, a
-child of class \code{\linkS4class{Linear}}.
+child class of \code{\linkS4class{Linear}}.
 }
 \description{
-Calibrates consumer demand using Linear or Log-Linear
-and then simulates the price effect of a merger between two firms
-under the assumption that all firms in the market are playing a
-differentiated products Bertrand pricing game.
+Calibrates consumer demand using either a
+linear or log-linear demand system and then simulates
+the prices effect of a merger between two firms
+under the assumption that all firms in the market
+are playing a differentiated products Bertrand game.
 
-Let k denote the number of products produced by all firms below.
+Let k denote the number of products produced by all firms.
 }
 \details{
 Using price, quantity, and diversion information for all products

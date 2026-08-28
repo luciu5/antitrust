@@ -28,6 +28,7 @@ ces(
   isMax = FALSE,
   control.slopes,
   control.equ,
+  solver = c("nleqslv", "ag"),
   labels = paste("Prod", 1:length(prices), sep = ""),
   ...
 )
@@ -178,6 +179,8 @@ calibration routine optimizer (typically the \code{calcSlopes} method).}
 
 \item{control.equ}{A list of  \code{\link[BB]{BBsolve}} control parameters passed
 to the non-linear equation solver (typically the \code{calcPrices} method).}
+
+\item{solver}{A length-1 character vector specifying the solver algorithm used to calculate pre- and post-merger price equilibria. Options are \code{"nleqslv"} (default) or \code{"ag"} (Aggregative Games).}
 
 \item{labels}{A k-length vector of labels. Default is "Prod#", where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}

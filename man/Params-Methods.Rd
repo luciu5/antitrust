@@ -40,6 +40,7 @@
 \alias{getNestsParms,VertBargBertLogitNests-method}
 \alias{getNestsParms,VertBarg2ndLogitNests-method}
 \alias{calcSlopes,LogitCournot-method}
+\alias{calcSlopes,BargainingCES-method}
 \alias{calcSlopes,BargainingLogitALM-method}
 \alias{calcSlopes,LogitCournotALM-method}
 \alias{calcSlopes,CESCournot-method}
@@ -85,6 +86,8 @@
 \S4method{calcSlopes}{LogitALM}(object)
 
 \S4method{calcSlopes}{CES}(object)
+
+\S4method{calcSlopes}{BargainingCES}(object)
 
 \S4method{calcSlopes}{CESALM}(object)
 

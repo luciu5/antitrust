@@ -9,7 +9,14 @@
 \alias{calcPricesAG,ANY-method}
 \alias{calcMarginsAG,Logit-method}
 \alias{calcMarginsAG,CES-method}
+\alias{calcMarginsAG,BargainingLogit-method}
+\alias{calcMarginsAG,BargainingCES-method}
+\alias{calcMarginsAG,Cournot-method}
 \alias{calcPricesAG,Logit-method}
+\alias{calcPricesAG,CES-method}
+\alias{calcPricesAG,BargainingLogit-method}
+\alias{calcPricesAG,BargainingCES-method}
+\alias{calcPricesAG,Cournot-method}
 \title{Methods for Calculating Prices and Margins Using Aggregative Games}
 \usage{
 \S4method{calcMarginsAG}{Logit}(object, preMerger = TRUE, level = FALSE)
@@ -17,6 +24,20 @@
 \S4method{calcMarginsAG}{CES}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcPricesAG}{Logit}(object, preMerger = TRUE, isMax = FALSE, subset)
+
+\S4method{calcPricesAG}{CES}(object, preMerger = TRUE, isMax = FALSE, subset)
+
+\S4method{calcMarginsAG}{BargainingLogit}(object, preMerger = TRUE, level = FALSE)
+
+\S4method{calcPricesAG}{BargainingLogit}(object, preMerger = TRUE, isMax = FALSE, subset)
+
+\S4method{calcMarginsAG}{BargainingCES}(object, preMerger = TRUE, level = FALSE)
+
+\S4method{calcPricesAG}{BargainingCES}(object, preMerger = TRUE, isMax = FALSE, subset)
+
+\S4method{calcMarginsAG}{Cournot}(object, preMerger = TRUE, level = FALSE)
+
+\S4method{calcPricesAG}{Cournot}(object, preMerger = TRUE, isMax = FALSE, subset)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

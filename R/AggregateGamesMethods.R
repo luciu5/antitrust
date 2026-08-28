@@ -7,7 +7,14 @@
 #' calcPricesAG,ANY-method
 #' calcMarginsAG,Logit-method
 #' calcMarginsAG,CES-method
+#' calcMarginsAG,BargainingLogit-method
+#' calcMarginsAG,BargainingCES-method
+#' calcMarginsAG,Cournot-method
 #' calcPricesAG,Logit-method
+#' calcPricesAG,CES-method
+#' calcPricesAG,BargainingLogit-method
+#' calcPricesAG,BargainingCES-method
+#' calcPricesAG,Cournot-method
 #'
 #' @description Computes equilibrium product margins and prices using the aggregative games technique described in
 #' Nocke and Schutz (2018). Assumes that firms are playing a
@@ -81,23 +88,23 @@ setMethod(
     
     typeFirm <- as.numeric(owner %*% type)
     
-    mufun <- function(m,H){
-      
-      return(m*(1-(typeFirm/H)*exp(-m)) - 1)
+    solve_mu_logit_vec <- function(typeFirm, H, max_iter = 8) {
+      A <- typeFirm / H
+      m <- pmax(1.0, log(pmax(A, 1.001)))
+      for (i in 1:max_iter) {
+        exp_neg_m <- exp(-m)
+        f <- m * (1 - A * exp_neg_m) - 1
+        f_prime <- 1 + (m - 1) * A * exp_neg_m
+        m <- pmax(1.0, m - f / f_prime)
+      }
+      return(m)
     }
     
     Hfun <- function(h){
-      
-      muStart <- pmax(1,log(typeFirm/h))
-      
-      mu <- BB::BBsolve(muStart,mufun,H=h,quiet=TRUE)
-    
-      price <-  mc - mu$par/alpha
-     
+      mu <- solve_mu_logit_vec(typeFirm, h)
+      price <- mc - mu/alpha
       val <- exp(meanval + alpha*price - max_log)
-    
       omega <- sum(H0,val)/h
-      
       return((omega - 1)^2)
     }
     
@@ -110,9 +117,7 @@ setMethod(
     
     HBest <- optim(HStart,Hfun,method="Brent",lower=0,upper=1e6*HStart)
     
-    
-    muStart <- pmax(1,log(typeFirm/HBest$par))
-    margins <- BB::BBsolve(muStart,mufun,H=HBest$par,quiet=TRUE)$par
+    margins <- solve_mu_logit_vec(typeFirm, HBest$par)
     
     margins <- output*margins/alpha
     
@@ -239,4 +244,78 @@ setMethod(
       
       return(priceEst)
     }
+)
+
+
+#'@rdname MarginsAG-Methods
+#'@export
+setMethod(
+  f= "calcPricesAG",
+  signature= "CES",
+  definition=function(object,preMerger=TRUE,isMax=FALSE,subset){
+    return(calcPrices(object, preMerger=preMerger))
+  }
+)
+
+
+#'@rdname MarginsAG-Methods
+#'@export
+setMethod(
+  f= "calcMarginsAG",
+  signature= "BargainingLogit",
+  definition=function(object,preMerger=TRUE, level=FALSE){
+    return(calcMargins(object, preMerger=preMerger, level=level))
+  }
+)
+
+#'@rdname MarginsAG-Methods
+#'@export
+setMethod(
+  f= "calcPricesAG",
+  signature= "BargainingLogit",
+  definition=function(object,preMerger=TRUE,isMax=FALSE,subset){
+    return(calcPrices(object, preMerger=preMerger))
+  }
+)
+
+
+#'@rdname MarginsAG-Methods
+#'@export
+setMethod(
+  f= "calcMarginsAG",
+  signature= "BargainingCES",
+  definition=function(object,preMerger=TRUE, level=FALSE){
+    return(calcMargins(object, preMerger=preMerger, level=level))
+  }
+)
+
+#'@rdname MarginsAG-Methods
+#'@export
+setMethod(
+  f= "calcPricesAG",
+  signature= "BargainingCES",
+  definition=function(object,preMerger=TRUE,isMax=FALSE,subset){
+    return(calcPrices(object, preMerger=preMerger))
+  }
+)
+
+
+#'@rdname MarginsAG-Methods
+#'@export
+setMethod(
+  f= "calcMarginsAG",
+  signature= "Cournot",
+  definition=function(object,preMerger=TRUE, level=FALSE){
+    return(calcMargins(object, preMerger=preMerger, level=level))
+  }
+)
+
+#'@rdname MarginsAG-Methods
+#'@export
+setMethod(
+  f= "calcPricesAG",
+  signature= "Cournot",
+  definition=function(object,preMerger=TRUE,isMax=FALSE,subset){
+    return(calcPrices(object, preMerger=preMerger))
+  }
 )

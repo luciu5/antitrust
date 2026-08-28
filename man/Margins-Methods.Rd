@@ -18,6 +18,8 @@
 \alias{calcMargins,Bargaining2ndLogit-method}
 \alias{calcMargins,CES-method}
 \alias{calcMargins,CESCournot-method}
+\alias{calcMargins,Bargaining2ndCES-method}
+\alias{calcMargins,BargainingCES-method}
 \alias{calcMargins,Auction2ndCap-method}
 \alias{calcMargins,Auction2ndCES-method}
 \alias{calcMargins,CournotBLP-method}
@@ -32,6 +34,10 @@
 \S4method{calcMargins}{CESCournot}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{Bargaining2ndLogit}(object, preMerger = TRUE, exAnte = FALSE, level = TRUE)
+
+\S4method{calcMargins}{Bargaining2ndCES}(object, preMerger = TRUE, exAnte = FALSE, level = FALSE)
+
+\S4method{calcMargins}{BargainingCES}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{BargainingLogit}(object, preMerger = TRUE, level = FALSE)
 

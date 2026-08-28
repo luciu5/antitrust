@@ -372,19 +372,17 @@ setMethod(
   definition = function(object, preMerger = TRUE, market = FALSE) {
     gamma <- object@slopes$gamma
     output <- object@output
-    outSign <- ifelse(output, 1, -1)
 
     shares_r <- calcShares(object, preMerger, revenue = TRUE)
 
     if (market) {
+      outSign <- ifelse(output, 1, -1)
       elast <- outSign * ((1 - gamma) * (1 - sum(shares_r)) - 1)
-
       names(elast) <- NULL
     } else {
       nprods <- length(shares_r)
       elast <- (gamma - 1) * matrix(shares_r, ncol = nprods, nrow = nprods, byrow = TRUE)
       diag(elast) <- -gamma + diag(elast)
-      elast <- outSign * elast
 
       dimnames(elast) <- list(object@labels, object@labels)
     }

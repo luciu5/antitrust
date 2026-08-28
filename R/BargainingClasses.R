@@ -160,3 +160,90 @@ setClass(
     return(TRUE)
   }
 )
+
+#' @rdname Bargaining-Classes
+#' @export
+setClass(
+  Class = "BargainingCES",
+  contains = "CES",
+  representation = representation(
+    bargpowerPre = "numeric",
+    bargpowerPost = "numeric"
+  ),
+  prototype = prototype(
+    bargpowerPre = numeric()
+  ),
+  validity = function(object) {
+    if (
+      !(all(object@bargpowerPre >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPre <= 1, na.rm = TRUE))
+    ) {
+      stop("elements of vector 'bargpowerPre' must be between 0 and 1")
+    }
+
+    if (
+      !(all(object@bargpowerPost >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPost <= 1, na.rm = TRUE))
+    ) {
+      stop("elements of vector 'bargpowerPost' must be between 0 and 1")
+    }
+  }
+)
+
+#' @rdname Bargaining-Classes
+#' @export
+setClass(
+  Class = "Bargaining2ndCES",
+  contains = "Auction2ndCES",
+  representation = representation(
+    bargpowerPre = "numeric",
+    bargpowerPost = "numeric"
+  ),
+  prototype = prototype(
+    bargpowerPre = numeric()
+  ),
+  validity = function(object) {
+    if (
+      !(all(object@bargpowerPre >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPre <= 1, na.rm = TRUE))
+    ) {
+      stop("elements of vector 'bargpowerPre' must be between 0 and 1")
+    }
+
+    if (
+      !(all(object@bargpowerPost >= 0, na.rm = TRUE) &&
+        all(object@bargpowerPost <= 1, na.rm = TRUE))
+    ) {
+      stop("elements of vector 'bargpowerPost' must be between 0 and 1")
+    }
+  }
+)
+
+#' @rdname Bargaining-Classes
+#' @export
+setClass(
+  Class = "BargainingCESALM",
+  contains = "BargainingCES",
+  representation = representation(
+    parmsStart = "numeric"
+  ),
+  prototype = prototype(
+    parmsStart = numeric()
+  ),
+  validity = function(object) {
+    nMargins <- length(object@margins[!is.na(object@margins)])
+
+    if (nMargins < 2 && is.na(object@mktElast)) {
+      stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
+    }
+
+    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+      stop("sum of 'shares' must equal 1")
+    }
+
+    if (length(object@parmsStart) != 2) {
+      stop("'parmsStart' must a vector of length 2")
+    }
+    return(TRUE)
+  }
+)

@@ -1059,16 +1059,13 @@ values. Moreover, many of these functions also include the
 candidate pre-merger and post-merger price equilibria identified by the
 non-linear solver are in fact (local) maxima.
 
-`antitrust` users can also test the robustness of the predicted prices by
-modifying how  the non-linear equation solver `BBsolve` used by
-most `antitrust` functions solves for the pre- and post-merger price equilibrium.
-Modifications to `BBsolve`'s default
-behavior may be accomplished by including `BBsolve`
-arguments in any of the `antitrust` functions described
-above.^[`linear`'s `calcPrices` method employs
-  `constrOptim` rather than `BBsolve`.] See
-`BBsolve`'s help page for more information on how to
-modify `BBsolve`'s behavior.
+Constructor functions (such as `logit`, `ces`, `bargaining.logit`, and `bargaining.ces`) also accept a `solver` argument to select the equilibrium solver algorithm:
+
+* `solver = "nleqslv"` (Default): Employs multi-dimensional non-linear equation solving via `nleqslv`.
+* `solver = "ag"`: Implements the Aggregative Games framework of @Nocke2018, which reduces multi-product oligopoly price equilibrium search to a 1-dimensional optimization over an aggregate market aggregator $H$. This option is particularly advantageous for large-scale multi-product portfolio simulations ($K \ge 50$), offering significant computational speedups while producing identical price predictions.
+
+The `control.equ` argument can be used to pass optional control parameters to the non-linear equation solver `nleqslv` used by
+most `antitrust` functions. See `nleqslv`'s help page for more information on how to modify its behavior.
 
 The FOCs for the capacity-constrained Bertrand game (equation
 \@ref(eq:FOC3)) suffer from an additional complication: the `max`

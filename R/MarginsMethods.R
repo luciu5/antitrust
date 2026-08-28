@@ -214,6 +214,38 @@ setMethod(
   }
 )
 
+#' @rdname Margins-Methods
+#' @export
+setMethod(
+  f = "calcMargins",
+  signature = "Bargaining2ndCES",
+  definition = function(object, preMerger = TRUE, exAnte = FALSE, level = FALSE) {
+    if (preMerger) {
+      barg <- object@bargpowerPre
+    } else {
+      barg <- object@bargpowerPost
+    }
+
+    (1 - barg) * callNextMethod()
+  }
+)
+
+#' @rdname Margins-Methods
+#' @export
+setMethod(
+  f = "calcMargins",
+  signature = "BargainingCES",
+  definition = function(object, preMerger = TRUE, level = FALSE) {
+    if (preMerger) {
+      barg <- object@bargpowerPre
+    } else {
+      barg <- object@bargpowerPost
+    }
+
+    (1 - barg) * callNextMethod(object, preMerger = preMerger, level = level)
+  }
+)
+
 ## compute margins
 #' @rdname Margins-Methods
 #' @export

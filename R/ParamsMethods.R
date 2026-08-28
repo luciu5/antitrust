@@ -2405,6 +2405,109 @@ setMethod(
   }
 )
 
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "calcSlopes",
+  signature = "BargainingCES",
+  definition = function(object) {
+    ownerPre <- object@ownerPre
+    shares <- object@shares
+    margins <- object@margins
+    prices <- object@prices
+    prod_weights <- .product_weights(object)
+    idx <- object@normIndex
+    shareInside <- object@shareInside
+    insideSize <- object@insideSize
+    diversion <- object@diversion
+    mktElast <- object@mktElast
+    output <- object@output
+    barg <- object@bargpowerPre
+
+    shareOut <- 1 - shareInside
+
+    if (shareInside <= 1 && shareInside > 0) {
+      alpha <- 1 / shareInside - 1
+    } else {
+      alpha <- NULL
+    }
+
+    if (is.na(idx)) {
+      idxShare <- 1 - sum(shares)
+      idxPrice <- object@priceOutside
+    } else {
+      idxShare <- shares[idx]
+      idxPrice <- prices[idx]
+    }
+
+    nprods <- length(shares)
+
+    minD <- function(gamma) {
+      meanval <- shares / (prices / idxPrice)^(1 - gamma)
+      predshares <- meanval * (prices / idxPrice)^(1 - gamma)
+      predshares <- predshares / (is.na(idx) + sum(predshares))
+
+      elasticity <- (gamma - 1) * matrix(predshares, ncol = nprods, nrow = nprods, byrow = TRUE)
+      diag(elasticity) <- -gamma + diag(elasticity)
+
+      elastInv <- try(solve(t(elasticity) * ownerPre), silent = TRUE)
+      if (any(class(elastInv) == "try-error")) {
+        elastInv <- MASS::ginv(t(elasticity) * ownerPre)
+      }
+
+      outSign <- ifelse(output, -1, 1)
+      marginsCand <- (1 - barg) * outSign * as.vector(elastInv %*% (predshares * diag(ownerPre))) / predshares
+
+      m1 <- prod_weights * ((marginsCand - margins) / prices)
+      if (!is.na(mktElast)) {
+        mktElastCand <- ifelse(output, 1, -1) * ((1 - gamma) * (1 - sum(predshares)) - 1)
+        m2 <- mktElastCand - mktElast
+        measure <- sum(c(m1, m2)^2, na.rm = TRUE)
+      } else {
+        measure <- sum(m1^2, na.rm = TRUE)
+      }
+
+      return(measure)
+    }
+
+    if (output) {
+      lowerG <- 1
+      upperG <- 100
+    } else {
+      min_gamma <- max(-shares / (1 - shares))
+      upperG <- min_gamma - 0.01
+      lowerG <- -20
+    }
+
+    if (!is.na(mktElast)) {
+      if (output) {
+        lowerG <- max(lowerG, -mktElast)
+      } else {
+        upperG <- min(upperG, -mktElast)
+      }
+    }
+
+    minTheta <- optimize(minD, interval = c(lowerG, upperG))
+
+    if (minTheta$objective > 1e-4) {
+      warning("'calcSlopes' optimizer may not have found a good solution. Objective: ", minTheta$objective)
+    }
+
+    minGamma <- minTheta$minimum
+    names(minGamma) <- "Gamma"
+
+    meanval <- shares / (prices / idxPrice)^(1 - minGamma)
+    if (!is.na(idx)) meanval <- meanval / meanval[idx]
+    names(meanval) <- object@labels
+
+    object@slopes <- list(alpha = alpha, gamma = minGamma, meanval = meanval)
+    object@priceOutside <- idxPrice
+    object@mktSize <- insideSize * (1 + alpha)
+
+    return(object)
+  }
+)
+
 
 #' @rdname Params-Methods
 #' @export
