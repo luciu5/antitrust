@@ -41,11 +41,13 @@
 \alias{getNestsParms,VertBarg2ndLogitNests-method}
 \alias{calcSlopes,LogitCournot-method}
 \alias{calcSlopes,BargainingCES-method}
+\alias{calcSlopes,BargainingCESALM-method}
 \alias{calcSlopes,BargainingLogitALM-method}
 \alias{calcSlopes,LogitCournotALM-method}
 \alias{calcSlopes,CESCournot-method}
 \alias{calcSlopes,CESCournotALM-method}
 \alias{calcSlopes,Auction2ndCES-method}
+\alias{calcSlopes,Bargaining2ndCES-method}
 \alias{calcSlopes,Auction2ndCESALM-method}
 \title{Methods for Calculating Demand Parameters}
 \usage{
@@ -91,6 +93,8 @@
 
 \S4method{calcSlopes}{CESALM}(object)
 
+\S4method{calcSlopes}{BargainingCESALM}(object)
+
 \S4method{calcSlopes}{CESNests}(object)
 
 \S4method{calcSlopes}{BargainingLogit}(object)
@@ -124,6 +128,8 @@
 \S4method{calcSlopes}{CESCournotALM}(object)
 
 \S4method{calcSlopes}{Auction2ndCES}(object)
+
+\S4method{calcSlopes}{Bargaining2ndCES}(object)
 
 \S4method{calcSlopes}{Auction2ndCESALM}(object)
 }

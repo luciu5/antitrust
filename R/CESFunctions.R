@@ -196,8 +196,8 @@ ces <- function(prices, shares, margins, diversions,
                 isMax = FALSE,
                 control.slopes,
                 control.equ,
-                solver = c("nleqslv", "ag"),
                 labels = paste("Prod", 1:length(prices), sep = ""),
+                solver = c("nleqslv", "ag"),
                 ...) {
   solver <- match.arg(solver)
 

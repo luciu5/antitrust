@@ -16,26 +16,50 @@
 \alias{calcPricesAG,CES-method}
 \alias{calcPricesAG,BargainingLogit-method}
 \alias{calcPricesAG,BargainingCES-method}
+\alias{calcMarginsAG,Auction2ndLogit-method}
+\alias{calcPricesAG,Auction2ndLogit-method}
+\alias{calcMarginsAG,Auction2ndCES-method}
+\alias{calcPricesAG,Auction2ndCES-method}
+\alias{calcMarginsAG,Bargaining2ndLogit-method}
+\alias{calcPricesAG,Bargaining2ndLogit-method}
+\alias{calcMarginsAG,Bargaining2ndCES-method}
+\alias{calcPricesAG,Bargaining2ndCES-method}
 \alias{calcPricesAG,Cournot-method}
 \title{Methods for Calculating Prices and Margins Using Aggregative Games}
 \usage{
-\S4method{calcMarginsAG}{Logit}(object, preMerger = TRUE, level = FALSE)
+\S4method{calcMarginsAG}{Logit}(object, preMerger = TRUE, level = FALSE, subset)
 
-\S4method{calcMarginsAG}{CES}(object, preMerger = TRUE, level = FALSE)
+\S4method{calcMarginsAG}{CES}(object, preMerger = TRUE, level = FALSE, subset)
 
 \S4method{calcPricesAG}{Logit}(object, preMerger = TRUE, isMax = FALSE, subset)
 
 \S4method{calcPricesAG}{CES}(object, preMerger = TRUE, isMax = FALSE, subset)
 
-\S4method{calcMarginsAG}{BargainingLogit}(object, preMerger = TRUE, level = FALSE)
+\S4method{calcMarginsAG}{BargainingLogit}(object, preMerger = TRUE, level = FALSE, subset)
 
 \S4method{calcPricesAG}{BargainingLogit}(object, preMerger = TRUE, isMax = FALSE, subset)
 
-\S4method{calcMarginsAG}{BargainingCES}(object, preMerger = TRUE, level = FALSE)
+\S4method{calcMarginsAG}{BargainingCES}(object, preMerger = TRUE, level = FALSE, subset)
 
 \S4method{calcPricesAG}{BargainingCES}(object, preMerger = TRUE, isMax = FALSE, subset)
 
-\S4method{calcMarginsAG}{Cournot}(object, preMerger = TRUE, level = FALSE)
+\S4method{calcMarginsAG}{Auction2ndLogit}(object, preMerger = TRUE, level = FALSE, subset)
+
+\S4method{calcPricesAG}{Auction2ndLogit}(object, preMerger = TRUE, isMax = FALSE, subset)
+
+\S4method{calcMarginsAG}{Auction2ndCES}(object, preMerger = TRUE, level = FALSE, subset)
+
+\S4method{calcPricesAG}{Auction2ndCES}(object, preMerger = TRUE, isMax = FALSE, subset)
+
+\S4method{calcMarginsAG}{Bargaining2ndLogit}(object, preMerger = TRUE, level = FALSE, subset)
+
+\S4method{calcPricesAG}{Bargaining2ndLogit}(object, preMerger = TRUE, isMax = FALSE, subset)
+
+\S4method{calcMarginsAG}{Bargaining2ndCES}(object, preMerger = TRUE, level = FALSE, subset)
+
+\S4method{calcPricesAG}{Bargaining2ndCES}(object, preMerger = TRUE, isMax = FALSE, subset)
+
+\S4method{calcMarginsAG}{Cournot}(object, preMerger = TRUE, level = FALSE, subset)
 
 \S4method{calcPricesAG}{Cournot}(object, preMerger = TRUE, isMax = FALSE, subset)
 }
@@ -48,18 +72,20 @@ FALSE, returns post-merger outcome.  Default is TRUE.}
 \item{level}{IF TRUE, return margins in dollars. If FALSE, returns 
 margins in proportions. Default for most classes is FALSE.}
 
-\item{isMax}{If TRUE, a check is run to determine if the calculated equilibrium price vector locally maximizes profits.
-Default is FALSE.}
-
 \item{subset}{A vector whose length equals the number  of products where each element equals TRUE if
 the product indexed by that element should be included in the
 post-merger simulation and FALSE if it should be excluded. Default is a
 length k vector of TRUE.}
+
+\item{isMax}{If TRUE, a check is run to determine if the calculated equilibrium price vector locally maximizes profits.
+Default is FALSE.}
 }
 \description{
 Computes equilibrium product margins and prices using the aggregative games technique described in
 Nocke and Schutz (2018). Assumes that firms are playing a
-Nash-Bertrand pricing game with either Logit or CES demand
+Nash-Bertrand pricing game with either Logit or CES demand; bargaining and
+second-score wrappers reuse the corresponding model-specific first-order
+conditions after obtaining an AG-compatible starting point.
 }
 \references{
 Nocke, V. and Schutz, N. (2018), Multiproduct-Firm Oligopoly: An Aggregative Games Approach. Econometrica, 86: 523-557.\doi{10.3982/ECTA14720}/

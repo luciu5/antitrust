@@ -130,8 +130,8 @@ bargaining.logit <- function(prices, shares, margins,
                              priceOutside = 0,
                              control.slopes,
                              control.equ,
-                             solver = c("nleqslv", "ag"),
-                             labels = paste("Prod", 1:length(prices), sep = "")) {
+                             labels = paste("Prod", 1:length(prices), sep = ""),
+                             solver = c("nleqslv", "ag")) {
   solver <- match.arg(solver)
 
   ## Create BargainingLogit  container to store relevant data

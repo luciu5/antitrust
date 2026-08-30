@@ -2623,6 +2623,29 @@ setMethod(
 #' @export
 setMethod(
   f = "calcSlopes",
+  signature = "BargainingCESALM",
+  definition = function(object) {
+    ## Calibrate the underlying CES demand after removing buyer bargaining power
+    ## from the observed margins.  Invoke the CESALM implementation directly so
+    ## that its two-parameter (gamma, outside-share) optimizer and parmsStart
+    ## handling are retained.
+    scale <- 1 - object@bargpowerPre
+    observed <- !is.na(object@margins)
+    if (any(scale[observed] <= 0)) {
+      stop("Observed margins cannot be calibrated when 'bargpowerPre' equals 1")
+    }
+    observed_margins <- object@margins
+    object@margins[observed] <- object@margins[observed] / scale[observed]
+    object <- methods::selectMethod("calcSlopes", "CESALM")(object)
+    object@margins <- observed_margins
+    object
+  }
+)
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "calcSlopes",
   signature = "CESNests",
   definition = function(object) {
     ## Uncover Demand Coefficents
@@ -3908,6 +3931,27 @@ setMethod(
 
 
     return(object)
+  }
+)
+
+#' @rdname Params-Methods
+#' @export
+setMethod(
+  f = "calcSlopes",
+  signature = "Bargaining2ndCES",
+  definition = function(object) {
+    ## Calibrate the underlying auction demand against margins net of bargaining
+    ## power, matching calcMargins,Bargaining2ndCES.
+    scale <- 1 - object@bargpowerPre
+    observed <- !is.na(object@margins)
+    if (any(scale[observed] <= 0)) {
+      stop("Observed margins cannot be calibrated when 'bargpowerPre' equals 1")
+    }
+    observed_margins <- object@margins
+    object@margins[observed] <- object@margins[observed] / scale[observed]
+    object <- methods::selectMethod("calcSlopes", "Auction2ndCES")(object)
+    object@margins <- observed_margins
+    object
   }
 )
 

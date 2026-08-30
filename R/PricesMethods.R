@@ -93,7 +93,7 @@ setMethod(
 setMethod(
   f = "calcPrices",
   signature = "Logit",
-  definition = function(object, preMerger = TRUE, isMax = FALSE, ...) {
+  definition = function(object, preMerger = TRUE, isMax = FALSE, subset, ...) {
     output <- object@output
 
 
@@ -104,11 +104,16 @@ setMethod(
     if (preMerger) {
       owner <- object@ownerPre
       mc <- object@mcPre
-      subset <- rep(TRUE, nprods)
     } else {
       owner <- object@ownerPost
       mc <- object@mcPost
-      subset <- object@subset
+    }
+
+    if (missing(subset)) {
+      subset <- if (preMerger) rep(TRUE, nprods) else object@subset
+    }
+    if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
+      stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
     }
 
 

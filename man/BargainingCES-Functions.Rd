@@ -25,8 +25,8 @@ bargaining.ces(
   priceOutside = 1,
   control.slopes,
   control.equ,
-  solver = c("nleqslv", "ag"),
-  labels = paste("Prod", 1:length(prices), sep = "")
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  solver = c("nleqslv", "ag")
 )
 
 bargaining2nd.ces(
@@ -126,9 +126,9 @@ Default is 1.}
 
 \item{control.equ}{A list of control parameters for non-linear equation solver routine.}
 
-\item{solver}{A length-1 character vector specifying the solver algorithm used to calculate pre- and post-merger price equilibria. Options are \code{"nleqslv"} (default) or \code{"ag"} (Aggregative Games).}
-
 \item{labels}{A length-k vector of product labels.}
+
+\item{solver}{A length-1 character vector specifying the solver algorithm used to calculate pre- and post-merger price equilibria. Options are \code{"nleqslv"} (default) or \code{"ag"} (Aggregative Games).}
 
 \item{mcDeltaOutside}{A length 1 vector indicating the change in the marginal cost of the
 outside good. Default is 0.}

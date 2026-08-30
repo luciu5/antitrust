@@ -88,11 +88,11 @@ demand except for \sQuote{AIDS}, which is set equal to a vector of 0s.}
 
 \item{bargpowerPre}{A length k vector of pre-merger bargaining power parameters. Values
 must be between 0 (sellers have the power) and 1 (buyers the power). Ignored if \sQuote{supply} not equal
-to "bargaining" or bargaining2nd.}
+to "bargaining" or "bargaining2nd".}
 
 \item{bargpowerPost}{A length k vector of post-merger bargaining power parameters. Values
 must be between 0 (sellers have the power) and 1 (buyers the power). Default is \sQuote{bargpowerPre}.
-Ignored if \sQuote{supply} not equal to "bargaining".}
+Ignored if \sQuote{supply} not equal to "bargaining" or "bargaining2nd".}
 
 \item{labels}{A k-length vector of labels. Default is \dQuote{Prod#}, where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
@@ -120,9 +120,9 @@ firms are playing a differentiated products pricing game.
 
 The \sQuote{supply} parameter determines the type of competition.
 When \sQuote{supply} equals \sQuote{cournot}, firms compete on quantities
-rather than prices. Cournot competition is supported for \sQuote{Logit}
-and \sQuote{BLP} demand systems, creating \code{LogitCournot} and
-\code{CournotBLP} class objects respectively.
+rather than prices. Cournot competition is supported for \sQuote{Logit},
+\sQuote{CES}, and \sQuote{BLP} demand systems. Second-score auction
+competition is supported for Logit and CES, as are both bargaining modes.
 
 If \sQuote{demand} equals \sQuote{Linear}, \sQuote{LogLin}, or
 \sQuote{AIDS}, then \sQuote{demand.param} must be a

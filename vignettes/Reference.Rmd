@@ -1062,7 +1062,7 @@ non-linear solver are in fact (local) maxima.
 Constructor functions (such as `logit`, `ces`, `bargaining.logit`, and `bargaining.ces`) also accept a `solver` argument to select the equilibrium solver algorithm:
 
 * `solver = "nleqslv"` (Default): Employs multi-dimensional non-linear equation solving via `nleqslv`.
-* `solver = "ag"`: Implements the Aggregative Games framework of @Nocke2018, which reduces multi-product oligopoly price equilibrium search to a 1-dimensional optimization over an aggregate market aggregator $H$. This option is particularly advantageous for large-scale multi-product portfolio simulations ($K \ge 50$), offering significant computational speedups while producing identical price predictions.
+* `solver = "ag"`: Uses the Aggregative Games framework of @Nocke2018 for Logit and output-market CES Bertrand equilibria, reducing the equilibrium search to a 1-dimensional optimization over an aggregate market aggregator $H$. Input-market CES uses the sign-safe standard FOC solver. For Nash Bargaining models, the AG equilibrium is used as a starting point before solving the bargaining-specific first-order conditions. In all cases, the returned prices satisfy the same model-specific equilibrium equations as the default solver.
 
 The `control.equ` argument can be used to pass optional control parameters to the non-linear equation solver `nleqslv` used by
 most `antitrust` functions. See `nleqslv`'s help page for more information on how to modify its behavior.

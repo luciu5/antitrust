@@ -82,8 +82,8 @@ bargaining.ces <- function(prices, shares, margins,
                            priceOutside = 1,
                            control.slopes,
                            control.equ,
-                           solver = c("nleqslv", "ag"),
-                           labels = paste("Prod", 1:length(prices), sep = "")) {
+                           labels = paste("Prod", 1:length(prices), sep = ""),
+                           solver = c("nleqslv", "ag")) {
   solver <- match.arg(solver)
 
   ## Create BargainingCES container to store relevant data
@@ -171,7 +171,7 @@ bargaining2nd.ces <- function(prices, shares, margins,
     mcDelta = mcDelta,
     subset = subset,
     weights = weights,
-    priceOutside = 1,
+    priceOutside = mcDeltaOutside,
     priceStart = prices,
     shareInside = ifelse(isTRUE(all.equal(sum(shares), 1, check.names = FALSE)), 1, sum(shares)),
     labels = labels,
