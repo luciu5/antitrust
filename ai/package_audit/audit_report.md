@@ -5,8 +5,8 @@ Audit date: 2026-06-01
 ## Formal QA expansion (2026-08-30)
 
 The smoke harness has been supplemented with a reviewable `testthat` suite. The
-suite uses synthetic fixtures only and currently records 221 successful
-expectations in 41 tests. It covers every documented `sim()` demand/supply
+suite uses synthetic fixtures only and currently records 239 successful
+expectations in 44 tests. It covers every documented `sim()` demand/supply
 combination, core S4 output methods, Cournot/Stackelberg, capacity auctions,
 vertical bargaining, stochastic BLP paths, adversarial validation, and an
 explicit API matrix (`api_coverage.csv`). Every matrix row is either linked to
