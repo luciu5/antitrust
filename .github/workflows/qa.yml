@@ -1,0 +1,56 @@
+name: antitrust QA
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  formal-tests:
+    name: R ${{ matrix.r }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # oldrel-1 is the minimum compatibility line selected for this audit;
+        # release is the pinned canonical line and devel catches API drift.
+        r: [oldrel-1, release, devel]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.r }}
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM
+      - name: Run formal synthetic QA
+        run: Rscript ai/package_audit/run_qa.R . qa-output
+      - name: Upload QA evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-r-${{ matrix.r }}
+          path: qa-output
+
+  canonical-check:
+    name: Canonical R 4.6.1 check --as-cran
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: '4.6.1'
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM
+      - name: Run reproducibility runner
+        run: Rscript ai/package_audit/run_qa.R . qa-output
+      - name: Build package
+        run: R CMD build --no-build-vignettes --no-manual --no-resave-data .
+      - name: Check package
+        run: R CMD check --as-cran antitrust_*.tar.gz
+      - name: Upload canonical evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-canonical-r-4.6.1
+          path: qa-output

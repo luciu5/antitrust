@@ -856,10 +856,17 @@ shares = NULL,
       labels = labels
     )
   } else if (demand == "Linear") {
+    ## The Linear and LogLin classes validate diversion ratios while they are
+    ## initialized, before sim() installs the user-supplied slope matrix.  Use
+    ## the implied diversion matrix as the placeholder so valid parameterized
+    ## simulations are not rejected by the class validator.  This is the same
+    ## identity used by calcSlopes,Linear-method: D_ij = -B_ji / B_jj.
+    sim_diversion <- -t(demand.param$slopes) /
+      matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
     result <- new(demand,
       prices = prices, quantities = shares, margins = margins,
       shares = shares, mcDelta = mcDelta, subset = subset,
-      ownerPre = ownerPre, diversion = -diag(nprods),
+      ownerPre = ownerPre, diversion = sim_diversion,
       symmetry = identical(demand.param$slopes, t(demand.param$slopes)),
       ownerPost = ownerPost, priceStart = priceStart, labels = labels
     )
@@ -879,10 +886,12 @@ shares = NULL,
       ownerPost = ownerPost, labels = labels
     )
   } else if (demand == "LogLin") {
+    sim_diversion <- -t(demand.param$slopes) /
+      matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
     result <- new(demand,
       prices = prices, quantities = shares, margins = margins,
       shares = shares, mcDelta = mcDelta, subset = subset, priceStart = priceStart,
-      ownerPre = ownerPre, diversion = -diag(nprods),
+      ownerPre = ownerPre, diversion = sim_diversion,
       ownerPost = ownerPost, labels = labels
     )
   }

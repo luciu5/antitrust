@@ -1,0 +1,56 @@
+{
+  "R": {
+    "Version": "4.6.1",
+    "Repositories": [
+      {
+        "Name": "CRAN",
+        "URL": "https://cloud.r-project.org"
+      }
+    ]
+  },
+  "Packages": {
+    "antitrust": {
+      "Package": "antitrust",
+      "Version": "0.99.35",
+      "Source": "Local",
+      "RemoteType": "local",
+      "RemoteUrl": "."
+    },
+    "BB": {
+      "Package": "BB",
+      "Version": "2026.1.0",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "SQUAREM": {
+      "Package": "SQUAREM",
+      "Version": "2026.1",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "nleqslv": {
+      "Package": "nleqslv",
+      "Version": "3.3.7",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "numDeriv": {
+      "Package": "numDeriv",
+      "Version": "2016.8-1.1",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "testthat": {
+      "Package": "testthat",
+      "Version": "3.3.2",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    },
+    "pkgload": {
+      "Package": "pkgload",
+      "Version": "1.5.2",
+      "Source": "Repository",
+      "Repository": "CRAN"
+    }
+  }
+}

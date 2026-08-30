@@ -8,6 +8,7 @@
 ^\.R-devel.*$
 ^\.\.Rcheck$
 ^\.codex$
+^\.github$
 ^AGENTS[.]md$
 ^\.Rhistory$
 ^antitrust_.*[.]tar[.]gz$

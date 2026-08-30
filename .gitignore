@@ -11,3 +11,15 @@
 antitrust.Rproj
 .Rbuildignore
 ai/
+# The maintained synthetic QA plan and runner are versioned; their generated
+# run outputs are intentionally local.
+!ai/
+ai/*
+!ai/package_audit/
+ai/package_audit/*
+!ai/package_audit/api_coverage.csv
+!ai/package_audit/audit_report.md
+!ai/package_audit/generate_api_inventory.R
+!ai/package_audit/run_qa.R
+!ai/package_audit/warning_dispositions.csv
+ai/package_audit/latest/
