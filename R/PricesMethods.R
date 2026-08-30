@@ -116,6 +116,17 @@ setMethod(
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
     }
 
+    ## A homogeneous CES market with no outside good has constant total
+    ## revenue.  If one firm owns every product, its Bertrand profit is
+    ## unbounded above and there is no finite price equilibrium.  Returning a
+    ## very large stalled price vector is more dangerous than a clear error.
+    owner_check <- if (preMerger) object@ownerPre else object@ownerPost
+    plain_ces <- class(object)[1] %in% c("CES", "CESNests")
+    if (plain_ces && object@output && !is.na(object@normIndex) &&
+      nrow(owner_check) > 1 && all(owner_check == 1)) {
+      stop("CES demand without an outside good has no finite Bertrand equilibrium when one firm owns every product.")
+    }
+
 
     priceStart <- priceStart[subset]
 
@@ -355,7 +366,11 @@ setMethod(
       elasticities <- elast(object, preMerger)[subset, subset]
       thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
       constraint <- ifelse(is.finite(capacities), (quantities - capacities) / object@insideSize, 0)
-      measure <- ifelse(constraint != 0, thisFOC + constraint + sqrt(thisFOC^2 + constraint^2), thisFOC)
+      ## Fischer-Burmeister complementarity residual.  The previous exact-zero
+      ## branch returned `thisFOC`, which incorrectly required the unconstrained
+      ## FOC to vanish at a binding capacity.  At capacity, KKT permits a
+      ## non-zero (negative) FOC supported by the capacity multiplier.
+      measure <- thisFOC + constraint + sqrt(thisFOC^2 + constraint^2)
       return(measure)
     }
     ## Find price changes that set FOCs equal to 0
@@ -381,6 +396,9 @@ setMethod(
       if (minResult$termcd > 1) {
         warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ", minResult$termcd)
       }
+    }
+    if (any(!is.finite(priceEst_solution) | priceEst_solution <= 0)) {
+      stop("'calcPrices' returned non-positive or non-finite LogitCap prices; no valid equilibrium was found.")
     }
     priceEst[subset] <- priceEst_solution
     names(priceEst) <- object@labels
@@ -504,6 +522,12 @@ setMethod(
     if (!preMerger) {
       cand <- object@pricePre
       if (length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
+    }
+    if (object@output && any(diag(object@slopes) >= -1)) {
+      stop("LogLin output demand requires every own-price slope to be strictly below -1 for a finite interior price equilibrium.")
+    }
+    if (object@output && any(!is.finite(mc) | mc <= 0)) {
+      stop("LogLin output demand requires strictly positive finite marginal costs for a finite interior price equilibrium.")
     }
     FOC <- function(priceCand) {
       if (preMerger) {

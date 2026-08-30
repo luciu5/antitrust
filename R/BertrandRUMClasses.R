@@ -353,6 +353,17 @@ setClass(
   validity = function(object) {
     nprods <- length(object@shares)
 
+    ## `shares` are market shares (including the outside good), while
+    ## `insideSize` is the total number of inside units.  Convert shares to
+    ## implied quantities before checking capacity utilization.
+    implied_quantities <- if (length(object@insideSize) == 1 &&
+      is.finite(object@insideSize) && length(object@shareInside) == 1 &&
+      is.finite(object@shareInside) && object@shareInside > 0) {
+      object@insideSize * object@shares / object@shareInside
+    } else {
+      rep(NA_real_, nprods)
+    }
+
 
     if (nprods != length(object@capacitiesPre)) {
       stop("'shares', 'capacitiesPre' must all be vectors with the same length")
@@ -362,32 +373,32 @@ setClass(
     }
 
 
-    if (any(is.na(object@capacitiesPre) |
-      # !is.finite(object@capacitiesPre) |
-      object@capacitiesPre < 0, na.rm = TRUE)) {
+    if (any(!is.finite(object@capacitiesPre) | object@capacitiesPre < 0)) {
       stop("'capacitiesPre' values must be positive numbers")
     }
 
 
-    if (any(is.na(object@capacitiesPost) |
-      # !is.finite(object@capacitiesPost) |
-      object@capacitiesPost < 0, na.rm = TRUE)) {
+    if (any(!is.finite(object@capacitiesPost) | object@capacitiesPost < 0)) {
       stop("'capacitiesPost' values must be positive numbers")
     }
 
-    if (is.na(object@insideSize)) {
-      stop("'insideSize' must equal the total pre-merger units sold in the market")
+    if (length(object@insideSize) != 1 || !is.finite(object@insideSize) ||
+      object@insideSize <= 0) {
+      stop("'insideSize' must be a positive finite total of pre-merger inside units")
     }
 
-    if (any(object@insideSize * object@shares > object@capacitiesPre)) {
+    if (any(implied_quantities > object@capacitiesPre, na.rm = TRUE)) {
       warning("utilization is greater than capacity")
     }
 
-    if (identical(object@insideSize * object@shares, object@capacitiesPre)) {
+    if (all(is.finite(implied_quantities) &
+      abs(implied_quantities - object@capacitiesPre) <= 1e-8)) {
       warning("utilization equal capacity for all products")
     }
 
-    if (any(is.na(object@margins[object@insideSize * object@shares == object@capacitiesPre]))) {
+    constrained <- is.finite(implied_quantities) &
+      abs(implied_quantities - object@capacitiesPre) <= 1e-8
+    if (any(is.na(object@margins[constrained]))) {
       stop("'margins' cannot equal NA for capacity constrained products")
     }
 

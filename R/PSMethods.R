@@ -86,7 +86,7 @@ setMethod(
     output <- calcQuantities(object,preMerger)
 
     if (all(is.na(output))){
-      warning("'calcQuantities' yielded all NAs. Using 'calcShares' instead")
+      warning("'insideSize' is missing; using normalized shares instead of quantities. Producer-surplus results are not in market units.")
       output <- calcShares(object,preMerger,revenue=FALSE)
     }
 
@@ -111,7 +111,7 @@ setMethod(
     output <- calcShares(object,preMerger)
     
     if (is.na(mktSize)){
-      warning("'calcQuantities' yielded all NAs. Using 'calcShares' instead")
+      warning("'insideSize' is missing; using normalized shares instead of quantities. Producer-surplus results are not in market units.")
       mktSize <- 1
     }
     

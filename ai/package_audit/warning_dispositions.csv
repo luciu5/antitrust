@@ -7,5 +7,6 @@ pattern,class,disposition
 "Defaulting to|Setting .* equal to|does not contain either",default-assumption,recorded-review
 "is only used for BLP|are not used for BLP|Ignoring",ignored-input,recorded-review
 "positive values of 'mcDelta'|Negative .*marginal costs|intercepts are negative|own-slope coefficients are positive|Matrix of demand slopes coefficients is not symmetric",economic-input,recorded-review
-"Reporting shares instead of quantities|Calculating CV as|calcQuantities.*yielded all NAs",diagnostic-fallback,recorded-review
+"utilization equal capacity|utilization is greater than capacity",capacity-boundary,recorded-review
+"Reporting shares instead of quantities|Calculating CV as|calcQuantities.*yielded all NAs|normalized shares instead of quantities",diagnostic-fallback,recorded-review
 "ownerPost.*ownerPre.*same",no-merger-identity,recorded-review

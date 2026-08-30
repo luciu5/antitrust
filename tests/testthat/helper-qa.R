@@ -23,7 +23,8 @@ qa_classify_warning <- function(message) {
         "default-assumption" = "Defaulting to|Setting .* equal to|does not contain either",
         "ignored-input" = "is only used for BLP|are not used for BLP|Ignoring",
         "economic-input" = "positive values of 'mcDelta'|Negative .*marginal costs|intercepts are negative|own-slope coefficients are positive|Matrix of demand slopes coefficients is not symmetric",
-        "diagnostic-fallback" = "Reporting shares instead of quantities|Calculating CV as|calcQuantities.*yielded all NAs",
+        "capacity-boundary" = "utilization equal capacity|utilization is greater than capacity",
+        "diagnostic-fallback" = "Reporting shares instead of quantities|Calculating CV as|calcQuantities.*yielded all NAs|normalized shares instead of quantities",
         "no-merger-identity" = "ownerPost.*ownerPre.*same"
     )
     hit <- names(patterns)[vapply(patterns, function(pattern) {

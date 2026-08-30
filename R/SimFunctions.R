@@ -143,11 +143,18 @@
 #'   market. Default is 1, meaning that all consumer wealth is spent on
 #'   products in the market. May instead be specified using \sQuote{alpha}.}
 #' }
+#' If \sQuote{demand} equals \sQuote{LogitCap}, \sQuote{demand.param} must
+#' contain \sQuote{alpha}, a finite length-k \sQuote{meanval} vector, and a
+#' positive \sQuote{mktSize}. Capacities are compared with quantities implied
+#' by those demand parameters; they are not used as demand shares. Margins
+#' must be supplied for products that are exactly at capacity because their
+#' marginal costs are not identified by an unconstrained first-order condition.
 #' @return \code{sim} returns an instance of the class specified by the
 #' \sQuote{demand} argument.
 #' @seealso The S4 class documentation for: \code{\linkS4class{Linear}},
 #' \code{\linkS4class{AIDS}}, \code{\linkS4class{LogLin}}, \code{\linkS4class{Logit}},
-#' \code{\linkS4class{LogitNests}}, \code{\linkS4class{CES}}, \code{\linkS4class{CESNests}}
+#' \code{\linkS4class{LogitNests}}, \code{\linkS4class{LogitCap}},
+#' \code{\linkS4class{CES}}, \code{\linkS4class{CESNests}}
 #' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #'
 #' @examples ## Calibration and simulation results from a merger between Budweiser and
@@ -610,7 +617,7 @@ shares = NULL,
     if (missing(capacities)) {
       stop("'capacities' must be supplied when 'demand' equals 'LogitCap'.")
     }
-    if (length(capacities) != nprods || any(is.na(capacities)) || any(capacities < 0)) {
+    if (length(capacities) != nprods || any(!is.finite(capacities)) || any(capacities < 0)) {
       stop("'capacities' must be a non-negative length-k vector.")
     }
     alphaVal <- if ("alpha" %in% names(demand.param)) {
@@ -625,6 +632,11 @@ shares = NULL,
     }
     demand.param$alpha <- alphaVal
     outputFlag <- alphaVal < 0
+    if (!("meanval" %in% names(demand.param)) ||
+      length(demand.param$meanval) != nprods ||
+      any(!is.finite(demand.param$meanval))) {
+      stop("For 'LogitCap' simulation, 'demand.param' must contain a finite length-k 'meanval' vector.")
+    }
     if (!("mktSize" %in% names(demand.param))) {
       mktSize <- sum(capacities)
       warning("'demand.param' does not contain 'mktSize'. Setting 'mktSize' equal to the sum of 'capacities'.")
@@ -632,17 +644,45 @@ shares = NULL,
     } else {
       mktSize <- demand.param$mktSize
     }
-    if (length(mktSize) != 1 || is.na(mktSize) || mktSize <= 0) {
+    if (length(mktSize) != 1 || !is.finite(mktSize) || mktSize <= 0) {
       stop("'demand.param$mktSize' must be a positive scalar.")
     }
     if (sum(capacities) > mktSize) {
       stop("'sum(capacities)' cannot exceed 'demand.param$mktSize'.")
     }
-    shares <- capacities / mktSize
-    shareInside <- sum(shares)
-    normIndex <- NA_integer_
     if (missing(priceOutside)) {
       priceOutside <- 0
+    }
+    ## Capacities are constraints, not demand shares.  Recover the observed
+    ## shares from the supplied structural Logit parameters at the supplied
+    ## prices, then compare the implied quantities with capacity below.
+    normIndex <- if (any(demand.param$meanval == 0)) {
+      which(demand.param$meanval == 0)[1]
+    } else {
+      NA_integer_
+    }
+    eta <- demand.param$meanval + alphaVal * (prices - priceOutside)
+    rawShares <- exp(eta)
+    if (is.na(normIndex)) {
+      shares <- rawShares / (1 + sum(rawShares))
+    } else {
+      shares <- rawShares / sum(rawShares)
+    }
+    shareInside <- sum(shares)
+    insideSize <- mktSize * shareInside
+    quantities <- mktSize * shares
+    if (any(!is.finite(quantities))) {
+      stop("'demand.param' implies non-finite quantities at the supplied prices.")
+    }
+    if (any(quantities > capacities + 1e-8)) {
+      stop("'demand.param' implies quantities above capacity at the supplied prices.")
+    }
+    constrained <- abs(quantities - capacities) <= 1e-8
+    if (any(constrained) && !marginsProvided) {
+      stop("'margins' must be supplied for products that are at capacity in a LogitCap simulation.")
+    }
+    if (any(constrained & !is.finite(margins))) {
+      stop("'margins' must be finite for products that are at capacity in a LogitCap simulation.")
     }
   }
 
@@ -825,20 +865,6 @@ shares = NULL,
       )
     )
   } else if (demand == "LogitCap") {
-    if (!("mktSize" %in% names(demand.param))) {
-      if (!missing(capacities)) {
-        warning("'demand.param' does not contain 'mktSize'. Setting 'mktSize' equal to the sum of 'capacities'.")
-        mktSize <- sum(capacities)
-      } else {
-        stop("'demand.param' does not contain 'mktSize'")
-      }
-    } else {
-      mktSize <- demand.param$mktSize
-    }
-
-    shares <- capacities / mktSize
-    insideSize <- sum(capacities)
-
     result <- new(demand,
       prices = prices, shares = shares,
       margins = margins,
@@ -908,8 +934,11 @@ shares = NULL,
   result@ownerPre <- ownerToMatrix(result, TRUE)
   result@ownerPost <- ownerToMatrix(result, FALSE)
 
-  ## Recover any implied demand parameters needed before MC calibration
-  if (demand %in% c("BLP", "LogitCap")) {
+  ## Recover any implied demand parameters needed before MC calibration.
+  ## LogitCap simulations already received structural alpha/meanval above;
+  ## recalibrating them from capacity-bound margins makes alpha unidentified
+  ## and silently discards the user's demand parameters.
+  if (demand == "BLP") {
     result <- calcSlopes(result)
   }
 
@@ -917,6 +946,9 @@ shares = NULL,
   result@pricePre <- prices
 
   ## Calibrate marginal costs from observed prices and demand params
+  if (demand == "LogitCap") {
+    result@mktSize <- mktSize
+  }
   result@mcPre <- calcMC(result, TRUE)
   result@mcPost <- calcMC(result, FALSE)
 

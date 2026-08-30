@@ -18,12 +18,12 @@ test_that("sim initializes BLP, CES, and bargaining2nd CES correctly", {
     prices = c(1.5, 1.8),
     margins = c(0.30, 0.25),
     demand = "CES",
-    demand.param = list(gamma = 2, meanval = c(1, 0.7)),
+    demand.param = list(gamma = 2, meanval = c(0.8, 0.6)),
     ownerPre = owners_pre,
     ownerPost = owners_post
   ), "sim CES initialization")
   expect_true(is(fit_ces, "CES"))
-  expect_equal(fit_ces@normIndex, 1)
+  expect_true(is.na(fit_ces@normIndex))
   expect_true(isTRUE(fit_ces@output))
   expect_true(is.finite(fit_ces@mktSize))
 
@@ -32,7 +32,7 @@ test_that("sim initializes BLP, CES, and bargaining2nd CES correctly", {
     margins = c(0.30, 0.25),
     demand = "CES",
     supply = "bargaining",
-    demand.param = list(gamma = 2, meanval = c(1, 0.7)),
+    demand.param = list(gamma = 2, meanval = c(0.8, 0.6)),
     ownerPre = owners_pre,
     ownerPost = owners_post
   ), "sim bargaining CES initialization")
@@ -43,7 +43,7 @@ test_that("sim initializes BLP, CES, and bargaining2nd CES correctly", {
     margins = c(0.30, 0.25),
     demand = "CES",
     supply = "bargaining2nd",
-    demand.param = list(gamma = 2, meanval = c(1, 0.7)),
+    demand.param = list(gamma = 2, meanval = c(0.8, 0.6)),
     ownerPre = owners_pre,
     ownerPost = owners_post
   ), "sim second-score CES initialization")
@@ -135,4 +135,25 @@ test_that("labels remain positional-compatible after solver addition", {
     list(reltol = 1e-6), list(tol = 1e-8), c("X", "Y")
   )), "positional logit arguments")
   expect_equal(fit@labels, c("X", "Y"))
+})
+
+test_that("symmetric linear calibration handles complete diversion matrices", {
+  ## A complete diversion matrix has rows summing to zero.  With an exact
+  ## -1 diagonal the old constrained optimizer start could remain on the
+  ## boundary indefinitely; this small fixture must return promptly.
+  fit <- qa_value(linear(
+    prices = c(1, 1.1, 1.25),
+    quantities = c(22, 18, 12),
+    margins = c(.35, .30, .28),
+    diversions = matrix(c(
+      -1, .55, .45,
+      .50, -1, .50,
+      .40, .60, -1
+    ), 3, byrow = TRUE),
+    ownerPre = c("A", "B", "C"),
+    ownerPost = c("A", "A", "C"),
+    control.slopes = list(maxit = 50)
+  ), "symmetric Linear complete-diversion calibration")
+  expect_true(is(fit, "Linear"))
+  expect_true(all(is.finite(fit@slopes)))
 })

@@ -81,6 +81,16 @@ test_that("all documented sim demand/supply combinations have formal coverage", 
         testthat::expect_true(is(results[[nm]], expected_classes[[nm]]), info = nm)
         qa_assert_finite(results[[nm]]@pricePost, paste(nm, "post prices"))
     }
+    ## Structural LogitCap parameters must survive simulation.  Previously
+    ## calcSlopes() recalibrated alpha from capacity-bound observations and
+    ## replaced the supplied demand system with an unidentified near-zero
+    ## coefficient.
+    testthat::expect_equal(unname(results$bertrand_logit_cap@slopes$alpha), -1,
+                           tolerance = 1e-12)
+    testthat::expect_equal(unname(results$bertrand_logit_cap@slopes$meanval),
+                           c(.4, .2, .1), tolerance = 1e-12)
+    testthat::expect_true(all(calcQuantities(results$bertrand_logit_cap, TRUE) <=
+                              results$bertrand_logit_cap@capacitiesPre + 1e-8))
 
     ## Nesting-parameter accessors are public methods and should preserve the
     ## one-column sigma representation for both nested demand families.
@@ -92,6 +102,26 @@ test_that("all documented sim demand/supply combinations have formal coverage", 
     testthat::expect_equal(ncol(ces_nest_parms), 1L)
     qa_assert_finite(logit_nest_parms, "LogitNests nesting parameters")
     qa_assert_finite(ces_nest_parms, "CESNests nesting parameters")
+})
+
+test_that("LogitCap solves binding-capacity KKT conditions", {
+    prices <- c(2, 2.2, 2.5)
+    capacities <- c(25, 20, 15)
+    shares <- capacities / 100
+    meanval <- prices + log(shares / (1 - sum(shares)))
+
+    captured <- qa_capture(sim(
+        prices, supply = "bertrand", demand = "LogitCap",
+        demand.param = list(alpha = -1, meanval = meanval, mktSize = 100),
+        capacities = capacities, margins = rep(.30, 3),
+        ownerPre = c("A", "B", "C"), ownerPost = c("A", "A", "C")
+    ), "LogitCap binding KKT", disposition = "capacity-boundary")
+    fit <- captured$value
+
+    testthat::expect_equal(unname(fit@slopes$alpha), -1, tolerance = 1e-12)
+    testthat::expect_true(all(fit@pricePost > fit@pricePre))
+    testthat::expect_true(all(calcQuantities(fit, FALSE) <= capacities + 1e-7))
+    testthat::expect_true(max(abs(calcQuantities(fit, FALSE) - capacities)) > 1e-3)
 })
 
 test_that("unsupported sim combinations fail explicitly", {

@@ -332,6 +332,14 @@ setMethod(
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
     }
+    ## A homogeneous CES output market without an outside good has constant
+    ## total revenue.  A single owner can therefore raise all prices without
+    ## bound; fail explicitly instead of returning a stalled AG iterate.
+    owner_check <- if (preMerger) object@ownerPre else object@ownerPost
+    if (object@output && !is.na(object@normIndex) && nrow(owner_check) > 1 &&
+      all(owner_check == 1)) {
+      stop("CES demand without an outside good has no finite Bertrand equilibrium when one firm owns every product.")
+    }
     ## Use the standard CES FOC solver for input markets.  The aggregation
     ## formula above is an output-market construction; the standard solver is
     ## the sign-safe implementation for gamma < 1.

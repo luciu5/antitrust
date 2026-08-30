@@ -196,6 +196,12 @@ If \sQuote{demand} equals \sQuote{CES} or \sQuote{CESNests}, then
   market. Default is 1, meaning that all consumer wealth is spent on
   products in the market. May instead be specified using \sQuote{alpha}.}
 }
+If \sQuote{demand} equals \sQuote{LogitCap}, \sQuote{demand.param} must
+contain \sQuote{alpha}, a finite length-k \sQuote{meanval} vector, and a
+positive \sQuote{mktSize}. Capacities are compared with quantities implied
+by those demand parameters; they are not used as demand shares. Margins
+must be supplied for products that are exactly at capacity because their
+marginal costs are not identified by an unconstrained first-order condition.
 }
 \examples{
 ## Calibration and simulation results from a merger between Budweiser and
@@ -323,7 +329,8 @@ summary(result_cournotblp)
 \seealso{
 The S4 class documentation for: \code{\linkS4class{Linear}},
 \code{\linkS4class{AIDS}}, \code{\linkS4class{LogLin}}, \code{\linkS4class{Logit}},
-\code{\linkS4class{LogitNests}}, \code{\linkS4class{CES}}, \code{\linkS4class{CESNests}}
+\code{\linkS4class{LogitNests}}, \code{\linkS4class{LogitCap}},
+\code{\linkS4class{CES}}, \code{\linkS4class{CESNests}}
 }
 \author{
 Charles Taragin \email{ctaragin+antitrustr@gmail.com}

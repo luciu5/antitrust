@@ -53,6 +53,8 @@ test_that("CES revenue and quantity shares satisfy the independent CES oracle", 
 
     qa_assert_close(calcShares(fit, TRUE, revenue = TRUE), expected_revenue,
                     1e-8, "CES revenue-share oracle")
+    qa_assert_close(expected_revenue, fit@shares, 1e-8,
+                    "CES calibration reproduces observed revenue shares")
     qa_assert_close(calcShares(fit, TRUE, revenue = FALSE), expected_quantity,
                     1e-8, "CES quantity-share oracle")
     qa_assert_close(calcQuantities(fit, TRUE),

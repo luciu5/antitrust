@@ -31,6 +31,35 @@ test_that("constructors reject malformed core inputs", {
         f$prices, demand = "Logit", demand.param = list(alpha = -1, meanval = c(1, 2)),
         ownerPre = f$ownerPre, ownerPost = f$ownerPost
     ), "length-k|length", "Logit meanval dimensions")
+    qa_expect_error(sim(
+        c(1.5, 1.8), demand = "CES",
+        demand.param = list(gamma = 2, meanval = c(1, .7)),
+        ownerPre = c("A", "B"), ownerPost = c("A", "A")
+    ), "no finite Bertrand equilibrium", "CES no-outside monopoly")
+    qa_expect_error(ces(
+        prices = c(1.5, 1.8), shares = c(.60, .40),
+        margins = c(.20, .20), ownerPre = c("A", "B"),
+        ownerPost = c("A", "A"), solver = "ag"
+    ), "no finite Bertrand equilibrium", "CES AG no-outside monopoly")
+    qa_expect_error(sim(
+        c(2, 2.2), demand = "LogLin",
+        demand.param = list(
+            slopes = matrix(c(-1.2, .1, .1, -1), 2, byrow = TRUE),
+            intercepts = c(3, 3)
+        ), ownerPre = c("A", "B"), ownerPost = c("A", "A")
+    ), "strictly below -1", "LogLin unit-elastic boundary")
+    qa_expect_error(sim(
+        c(2, 2.2), demand = "LogitCap",
+        demand.param = list(alpha = -1, mktSize = 100),
+        capacities = c(25, 20), margins = c(.3, .3),
+        ownerPre = c("A", "B"), ownerPost = c("A", "A")
+    ), "meanval", "LogitCap demand identification")
+    qa_expect_error(sim(
+        c(2, 2.2), demand = "LogitCap",
+        demand.param = list(alpha = -1, meanval = c(.2, .1), mktSize = 100),
+        capacities = c(Inf, 20), margins = c(.3, .3),
+        ownerPre = c("A", "B"), ownerPost = c("A", "A")
+    ), "non-negative|finite", "LogitCap capacity finiteness")
 })
 
 test_that("BLP dimensions, nesting, capacities, and stochastic controls are validated", {

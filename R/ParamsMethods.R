@@ -492,22 +492,43 @@ setMethod(
       bKnown <- -quantities[k] / (prices[k] * margins[k])
       bStart <- bKnown * diversion[k, ] / diversion[, k]
 
-      ## change starting guess to ensure that it satisfies constraints
-      mltplyr <- 1.01 # increase starting guess by 1%
-      isneg <- as.vector(t(diversion) %*% bStart < 0)
-
-      while (any(isneg)) {
-        bStart[!isneg] <- bStart[!isneg] * mltplyr
-        mltplyr <- mltplyr + .01 # decrement by 1%
-
-        isneg <- as.vector(t(diversion) %*% bStart < 0)
-
-        if (any(is.na(isneg))) {
-          stop("'calcSlopes' cannot find initial values that satisfy symmetry constraints using supplied data. Consider setting 'symmetry' equal to FALSE.")
+      ## `constrOptim()` requires a strictly interior starting point.  For a
+      ## complete diversion matrix the old component-wise repair loop could
+      ## never reach the interior (and could run forever): its updates moved
+      ## the already-violating components in the wrong direction.  Construct a
+      ## positive diagonal magnitude from a damped Perron system instead.  The
+      ## small diagonal slack below is only used for the numerical inequality;
+      ## the economic objective continues to use the supplied diversion data.
+      diversion.off <- diversion
+      diag(diversion.off) <- 0
+      damping <- 1e-6
+      bMagnitude <- try(
+        solve(diag(nprod) - (1 - damping) * t(diversion.off), rep(1, nprod)),
+        silent = TRUE
+      )
+      if (inherits(bMagnitude, "try-error") ||
+        any(!is.finite(bMagnitude)) || any(bMagnitude <= 0)) {
+        eig <- try(eigen(t(diversion.off), only.values = FALSE), silent = TRUE)
+        if (!inherits(eig, "try-error")) {
+          bMagnitude <- Re(eig$vectors[, which.max(Re(eig$values))])
+          bMagnitude <- abs(bMagnitude)
         }
       }
+      if (inherits(bMagnitude, "try-error") ||
+        any(!is.finite(bMagnitude)) || any(bMagnitude <= 0)) {
+        stop("'calcSlopes' cannot find a strictly feasible symmetric-demand starting point from the supplied diversions. Consider setting 'symmetry' equal to FALSE.")
+      }
 
-      bStart <- -diversion * bStart
+      bDiagStart <- -abs(bKnown) * bMagnitude / bMagnitude[k]
+      constraint.diversion <- diversion
+      diag(constraint.diversion) <- diag(constraint.diversion) - 1e-5
+      if (any(!is.finite(t(constraint.diversion) %*% bDiagStart) |
+        t(constraint.diversion) %*% bDiagStart <= 0)) {
+        stop("'calcSlopes' cannot find a strictly feasible symmetric-demand starting point from the supplied diversions. Consider setting 'symmetry' equal to FALSE.")
+      }
+
+      bStart <- -sweep(diversion, 2, bDiagStart, "*")
+      diag(bStart) <- bDiagStart
       parmStart <- c(diag(bStart), bStart[upper.tri(bStart, diag = FALSE)])
 
 
@@ -515,7 +536,7 @@ setMethod(
       ## constrain off-diagonal elements to be non-negative.
 
       ui <- diag(length(parmStart))
-      ui[1:nprod, 1:nprod] <- t(diversion)
+      ui[1:nprod, 1:nprod] <- t(constraint.diversion)
 
       ci <- rep(0, length(parmStart))
 
@@ -2329,6 +2350,7 @@ setMethod(
     minD <- function(gamma) {
       ## Analytically compute meanval to perfectly fit shares
       meanval <- shares / (prices / idxPrice)^(1 - gamma)
+      if (is.na(idx)) meanval <- meanval / idxShare
 
       predshares <- meanval * (prices / idxPrice)^(1 - gamma)
       predshares <- predshares / (is.na(idx) + sum(predshares))
@@ -2391,6 +2413,7 @@ setMethod(
 
     ## Recover meanval from optimal gamma
     meanval <- shares / (prices / idxPrice)^(1 - minGamma)
+    if (is.na(idx)) meanval <- meanval / idxShare
     if (!is.na(idx)) meanval <- meanval / meanval[idx]
 
     names(meanval) <- object@labels
@@ -2444,6 +2467,7 @@ setMethod(
 
     minD <- function(gamma) {
       meanval <- shares / (prices / idxPrice)^(1 - gamma)
+      if (is.na(idx)) meanval <- meanval / idxShare
       predshares <- meanval * (prices / idxPrice)^(1 - gamma)
       predshares <- predshares / (is.na(idx) + sum(predshares))
 
@@ -2497,6 +2521,7 @@ setMethod(
     names(minGamma) <- "Gamma"
 
     meanval <- shares / (prices / idxPrice)^(1 - minGamma)
+    if (is.na(idx)) meanval <- meanval / idxShare
     if (!is.na(idx)) meanval <- meanval / meanval[idx]
     names(meanval) <- object@labels
 
@@ -3676,6 +3701,7 @@ setMethod(
     minD <- function(gamma) {
       ## Analytically compute meanval to perfectly fit shares
       meanval <- shares / (prices / idxPrice)^(1 - gamma)
+      if (is.na(idx)) meanval <- meanval / idxShare
 
       predshares <- meanval * (prices / idxPrice)^(1 - gamma)
       predshares <- predshares / (is.na(idx) + sum(predshares))
@@ -3732,6 +3758,7 @@ setMethod(
 
     ## Recover meanval from optimal gamma
     meanval <- shares / (prices / idxPrice)^(1 - minGamma)
+    if (is.na(idx)) meanval <- meanval / idxShare
     if (!is.na(idx)) meanval <- meanval / meanval[idx]
 
     names(meanval) <- object@labels

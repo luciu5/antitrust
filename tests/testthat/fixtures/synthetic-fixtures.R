@@ -42,9 +42,9 @@ qa_fixture_blp_parameters <- function() {
 qa_fixture_linear_parameters <- function() {
     list(
         slopes = matrix(c(
-            -1.20, 0.10, 0.08,
+             -1.20, 0.10, 0.08,
              0.09, -1.10, 0.12,
-             0.07, 0.11, -1.00
+             0.07, 0.11, -1.20
         ), nrow = 3, byrow = TRUE),
         intercepts = c(3.0, 3.1, 3.2)
     )

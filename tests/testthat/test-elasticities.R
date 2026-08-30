@@ -18,7 +18,8 @@ test_that("Output market elasticities have negative own-price and positive cross
   expect_true(E_logit[2, 1] > 0)
 
   # CES Output Market (output = TRUE)
-  fit_ces <- ces(prices = prices, shares = c(0.60, 0.40), margins = margins,
+  fit_ces <- ces(prices = prices, shares = c(0.45, 0.30),
+                 margins = c(0.6451613, 0.5882353),
                  ownerPre = ownerPre, ownerPost = ownerPost, output = TRUE)
   E_ces <- elast(fit_ces)
 
@@ -47,7 +48,8 @@ test_that("Input market elasticities have positive own-price and negative cross-
   expect_true(E_logit_in[2, 1] < 0)
 
   # Bargaining CES Input Market (output = FALSE)
-  fit_ces_in <- bargaining.ces(prices = prices, shares = c(0.66, 0.34), margins = c(0.30, 0.20),
+  fit_ces_in <- bargaining.ces(prices = prices, shares = c(0.66, 0.34),
+                              margins = c(0.3623188, 0.1381224),
                               ownerPre = ownerPre, ownerPost = ownerPost, output = FALSE)
   E_ces_in <- elast(fit_ces_in)
 
