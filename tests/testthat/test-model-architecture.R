@@ -290,3 +290,54 @@ test_that("legacy sim routes nested Bertrand models through specify and simulate
         expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-8)
     }
 })
+
+test_that("LogitCap calibration and supplied parameters use the shared simulation boundary", {
+    prices <- c(2, 2.2, 2.5)
+    shares <- c(.25, .20, .15)
+    margins <- c(.30, .28, .25)
+    capacities <- c(25, 20, 15)
+    ownerPre <- c("A", "B", "C")
+    ownerPost <- c("A", "A", "C")
+
+    old <- qa_value(logit.cap(
+        prices = prices, shares = shares, margins = margins,
+        capacitiesPre = capacities, capacitiesPost = capacities,
+        insideSize = 100, ownerPre = ownerPre, ownerPost = ownerPost
+    ), "legacy LogitCap")
+    fit <- qa_value(calibrate(
+        demand = "logit_cap", conduct = "bertrand",
+        prices = prices, shares = shares, margins = margins,
+        ownerPre = ownerPre, capacitiesPre = capacities,
+        capacitiesPost = capacities, insideSize = 100
+    ), "calibrate LogitCap")
+    actual <- qa_value(simulate(
+        fit, ownerPost = ownerPost, capacitiesPost = capacities
+    ), "simulate LogitCap")
+
+    expect_s4_class(actual, "LogitCap")
+    expect_equal(actual@slopes, old@slopes, tolerance = 1e-8)
+    expect_equal(actual@mcPre, old@mcPre, tolerance = 1e-8)
+    expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-8)
+    expect_equal(actual@pricePre, old@pricePre, tolerance = 1e-8)
+    expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
+    expect_equal(calcQuantities(actual, FALSE), calcQuantities(old, FALSE), tolerance = 1e-8)
+
+    parameters <- list(
+        alpha = old@slopes$alpha,
+        meanval = old@slopes$meanval,
+        mktSize = 100
+    )
+    legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
+    supplied_old <- qa_value(legacy_sim(
+        prices = prices, demand = "LogitCap", supply = "bertrand",
+        demand.param = parameters, capacities = capacities, margins = margins,
+        ownerPre = ownerPre, ownerPost = ownerPost
+    ), "legacy supplied LogitCap")
+    supplied_actual <- qa_value(sim(
+        prices = prices, demand = "LogitCap", supply = "bertrand",
+        demand.param = parameters, capacities = capacities, margins = margins,
+        ownerPre = ownerPre, ownerPost = ownerPost
+    ), "compatibility supplied LogitCap")
+    expect_equal(supplied_actual@pricePost, supplied_old@pricePost, tolerance = 1e-8)
+    expect_equal(supplied_actual@mcPost, supplied_old@mcPost, tolerance = 1e-8)
+})

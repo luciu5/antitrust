@@ -62,9 +62,11 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
     calibratable <- (spec$demand %in% c("logit", "ces") &&
                      spec$conduct %in% c("bertrand", "cournot")) ||
         (spec$demand %in% c("logit_nests", "ces_nests") &&
+         identical(spec$conduct, "bertrand")) ||
+        (identical(spec$demand, "logit_cap") &&
          identical(spec$conduct, "bertrand"))
     if (!calibratable) {
-        stop("calibrate() currently supports Logit/CES Bertrand and Cournot models, and nested Logit/CES Bertrand models.")
+        stop("calibrate() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, and LogitCap-Bertrand.")
     }
 
     dots <- list(...)
@@ -154,9 +156,11 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     specifiable <- (spec$demand %in% c("logit", "ces") &&
                     spec$conduct %in% c("bertrand", "cournot")) ||
         (spec$demand %in% c("logit_nests", "ces_nests") &&
+         identical(spec$conduct, "bertrand")) ||
+        (identical(spec$demand, "logit_cap") &&
          identical(spec$conduct, "bertrand"))
     if (!specifiable) {
-        stop("specify() currently supports Logit/CES Bertrand and Cournot models, and nested Logit/CES Bertrand models.")
+        stop("specify() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, and LogitCap-Bertrand.")
     }
     if (!is.list(parameters)) {
         stop("'parameters' must be a list.")
@@ -176,7 +180,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                         logit = "Logit",
                         ces = "CES",
                         logit_nests = "LogitNests",
-                        ces_nests = "CESNests"),
+                        ces_nests = "CESNests",
+                        logit_cap = "LogitCap"),
         demand.param = parameters,
         ownerPre = ownerPre,
         ownerPost = ownerPre,
@@ -234,7 +239,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 simulate <- function(fit, ownerPost,
                      mcDelta = rep(0, length(fit@model@prices)),
                      subset = rep(TRUE, length(fit@model@prices)),
-                     priceStart, solver = NULL, isMax = FALSE, ...) {
+                     priceStart, capacitiesPost = NULL,
+                     solver = NULL, isMax = FALSE, ...) {
     if (!is(fit, "AntitrustFit")) {
         stop("'fit' must be an AntitrustFit returned by calibrate() or specify().")
     }
@@ -244,9 +250,11 @@ simulate <- function(fit, ownerPost,
     simulatable <- (fit@spec$demand %in% c("logit", "ces") &&
                     fit@spec$conduct %in% c("bertrand", "cournot")) ||
         (fit@spec$demand %in% c("logit_nests", "ces_nests") &&
+         identical(fit@spec$conduct, "bertrand")) ||
+        (identical(fit@spec$demand, "logit_cap") &&
          identical(fit@spec$conduct, "bertrand"))
     if (!simulatable) {
-        stop("simulate() currently supports Logit/CES Bertrand and Cournot models, and nested Logit/CES Bertrand models.")
+        stop("simulate() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, and LogitCap-Bertrand.")
     }
 
     model <- fit@model
@@ -265,6 +273,15 @@ simulate <- function(fit, ownerPost,
     model@ownerPost <- ownerToMatrix(model, preMerger = FALSE)
     model@mcDelta <- mcDelta
     model@subset <- subset
+    if (!is.null(capacitiesPost)) {
+        if (!is(model, "LogitCap")) {
+            stop("'capacitiesPost' is only supported for LogitCap fits.")
+        }
+        if (length(capacitiesPost) != nprods) {
+            stop("'capacitiesPost' must have the same length as the fitted prices.")
+        }
+        model@capacitiesPost <- capacitiesPost
+    }
     if (!missing(priceStart)) {
         model@priceStart <- priceStart
     }
