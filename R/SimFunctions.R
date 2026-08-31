@@ -1000,20 +1000,36 @@ sim <- function(prices,
                 labels = paste("Prod", 1:length(prices), sep = ""),
                 ...) {
     demand_name <- match.arg(demand)
+    supply_missing <- missing(supply)
     supply_name <- match.arg(supply)
 
+    ## Preserve the historical BLP aliases.  `CournotBLP` means BLP demand
+    ## with Cournot conduct when supply is omitted, while `LogitBLP` means
+    ## BLP demand with Bertrand conduct.  Incompatible explicit conduct must
+    ## continue through the legacy path so it retains the old error message.
+    registry_demand <- demand_name
+    alias_compatible <- TRUE
+    if (identical(demand_name, "LogitBLP")) {
+        alias_compatible <- identical(supply_name, "bertrand")
+        registry_demand <- "BLP"
+    } else if (identical(demand_name, "CournotBLP")) {
+        alias_compatible <- supply_missing || identical(supply_name, "cournot")
+        if (supply_missing) supply_name <- "cournot"
+        registry_demand <- "BLP"
+    }
+
     normalized_spec <- try(
-        model_spec(.normalize_demand_name(demand_name),
+        model_spec(.normalize_demand_name(registry_demand),
                    .normalize_conduct_name(supply_name)),
         silent = TRUE
     )
-    migrated <- !inherits(normalized_spec, "try-error") &&
+    migrated <- alias_compatible && !inherits(normalized_spec, "try-error") &&
         .model_registry_supports(normalized_spec, "specify") &&
         .model_registry_supports(normalized_spec, "simulate")
     if (migrated) {
         dots <- list(...)
         specify_args <- list(
-            demand = demand_name,
+            demand = registry_demand,
             conduct = supply_name,
             prices = prices,
             parameters = demand.param,

@@ -371,6 +371,29 @@ test_that("BLP supplied parameters reuse the existing Bertrand and Cournot solve
     }
 })
 
+test_that("legacy BLP aliases preserve their conduct mapping", {
+    parameters <- qa_fixture_blp_parameters()
+    common <- list(
+        prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
+        ownerPre = c("A", "B", "C"), ownerPost = c("A", "A", "C"),
+        insideSize = 100
+    )
+    explicit <- suppressWarnings(sim(
+        prices = common$prices, shares = common$shares,
+        demand = "BLP", demand.param = parameters, supply = "cournot",
+        ownerPre = common$ownerPre, ownerPost = common$ownerPost,
+        insideSize = common$insideSize
+    ))
+    alias <- suppressWarnings(sim(
+        prices = common$prices, shares = common$shares,
+        demand = "CournotBLP", demand.param = parameters,
+        ownerPre = common$ownerPre, ownerPost = common$ownerPost,
+        insideSize = common$insideSize
+    ))
+    expect_s4_class(alias, "CournotBLP")
+    expect_equal(alias@pricePost, explicit@pricePost, tolerance = 1e-8)
+})
+
 test_that("second-score auction calibration and simulation retain model-specific parity", {
     cases <- list(
         list(
