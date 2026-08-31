@@ -63,6 +63,7 @@ Collate:
     'HHIFunctions.R'
     'LinearFunctions.R'
     'LogitFunctions.R'
+    'ModelArchitecture.R'
     'ModelRegistry.R'
     'SimFunctions.R'
     'VerticalFunctions.R'

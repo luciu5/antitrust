@@ -28,7 +28,7 @@ model_spec <- function(demand, conduct) {
             conduct = conduct,
             id = entry$id
         ),
-        class = "antitrust_model_spec"
+        class = c("antitrust_model_spec", "list")
     )
 }
 
