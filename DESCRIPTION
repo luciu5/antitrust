@@ -63,6 +63,7 @@ Collate:
     'HHIFunctions.R'
     'LinearFunctions.R'
     'LogitFunctions.R'
+    'ModelRegistry.R'
     'SimFunctions.R'
     'VerticalFunctions.R'
     'antitrust-deprecated.R'
