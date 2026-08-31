@@ -115,3 +115,45 @@ test_that("Logit-Bertrand scenario controls and AG solver retain parity", {
 
     expect_logit_result_parity(actual, old)
 })
+
+test_that("specify loads supplied Logit parameters into the shared pipeline", {
+    parameters <- list(alpha = -1.2, meanval = c(.5, .3, .1))
+    common <- list(
+        prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .20),
+        margins = c(.40, .35, .30),
+        ownerPre = c("A", "B", "C"),
+        ownerPost = c("A", "A", "C"),
+        insideSize = 100
+    )
+    legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
+    old <- qa_value(do.call(legacy_sim, c(common, list(
+        supply = "bertrand", demand = "Logit", demand.param = parameters
+    ))), "legacy supplied-parameter Logit")
+    fit <- qa_value(do.call(specify, c(
+        list(demand = "logit", conduct = "bertrand", parameters = parameters),
+        common[names(common) %in% c("prices", "shares", "margins", "ownerPre", "insideSize")]
+    )), "specify Logit Bertrand")
+    actual <- qa_value(simulate(fit, ownerPost = common$ownerPost),
+                       "simulate specified Logit Bertrand")
+
+    expect_equal(fit@diagnostics$source, "specified")
+    expect_logit_result_parity(actual, old)
+})
+
+test_that("legacy sim remains a wrapper for migrated Logit combinations", {
+    common <- list(
+        prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
+        margins = c(.40, .35, .30), ownerPre = c("A", "B", "C"),
+        ownerPost = c("A", "A", "C"), insideSize = 100,
+        demand.param = list(alpha = -1.2, meanval = c(.5, .3, .1))
+    )
+    legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
+    old <- qa_value(do.call(legacy_sim, c(common, list(
+        supply = "bertrand", demand = "Logit"
+    ))), "legacy sim Bertrand")
+    actual <- qa_value(do.call(sim, c(common, list(
+        supply = "bertrand", demand = "Logit"
+    ))), "compatibility sim Bertrand")
+    expect_logit_result_parity(actual, old)
+})

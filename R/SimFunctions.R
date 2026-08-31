@@ -283,8 +283,8 @@ NULL
 
 
 #' @rdname Sim-Functions
-#' @export
-sim <- function(prices,
+#' @noRd
+.sim_legacy <- function(prices,
 shares = NULL,
                 margins = NULL,
                 supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
@@ -978,4 +978,75 @@ shares = NULL,
 
 
   return(result)
+}
+
+
+#' @rdname Sim-Functions
+#' @export
+sim <- function(prices,
+                shares = NULL,
+                margins = NULL,
+                supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+                demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP", "LogitBLP", "CournotBLP"),
+                demand.param,
+                ownerPre, ownerPost, nests, capacities,
+                mcDelta = rep(0, length(prices)),
+                subset = rep(TRUE, length(prices)),
+                insideSize = 1,
+                priceOutside,
+                priceStart,
+                bargpowerPre = rep(0.5, length(prices)),
+                bargpowerPost = bargpowerPre,
+                labels = paste("Prod", 1:length(prices), sep = ""),
+                ...) {
+    demand_name <- match.arg(demand)
+    supply_name <- match.arg(supply)
+
+    if (identical(demand_name, "Logit") &&
+        supply_name %in% c("bertrand", "cournot")) {
+        dots <- list(...)
+        specify_args <- list(
+            demand = demand_name,
+            conduct = supply_name,
+            prices = prices,
+            parameters = demand.param,
+            ownerPre = ownerPre,
+            shares = shares,
+            margins = margins,
+            insideSize = insideSize,
+            labels = labels
+        )
+        if (!missing(priceOutside)) specify_args$priceOutside <- priceOutside
+        if (!missing(priceStart)) specify_args$priceStart <- priceStart
+        fit <- do.call(specify, c(specify_args, dots))
+        simulate_args <- list(
+            fit = fit,
+            ownerPost = ownerPost,
+            mcDelta = mcDelta,
+            subset = subset
+        )
+        return(do.call(simulate, c(simulate_args, dots)))
+    }
+
+    legacy_args <- list(
+        prices = prices,
+        shares = shares,
+        margins = margins,
+        supply = supply,
+        demand = demand,
+        demand.param = demand.param,
+        ownerPre = ownerPre,
+        ownerPost = ownerPost,
+        mcDelta = mcDelta,
+        subset = subset,
+        insideSize = insideSize,
+        bargpowerPre = bargpowerPre,
+        bargpowerPost = bargpowerPost,
+        labels = labels
+    )
+    if (!missing(nests)) legacy_args$nests <- nests
+    if (!missing(capacities)) legacy_args$capacities <- capacities
+    if (!missing(priceOutside)) legacy_args$priceOutside <- priceOutside
+    if (!missing(priceStart)) legacy_args$priceStart <- priceStart
+    do.call(.sim_legacy, c(legacy_args, list(...)))
 }

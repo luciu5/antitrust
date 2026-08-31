@@ -77,6 +77,7 @@
 "export","show","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","sim","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","simulate","","formal-test","tests/testthat/test-model-architecture.R",""
+"export","specify","","formal-test","tests/testthat/test-model-architecture.R",""
 "export","stackelberg","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","summary","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","supportedModels","","formal-test","tests/testthat/test-model-registry.R",""
