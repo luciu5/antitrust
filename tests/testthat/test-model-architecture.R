@@ -157,3 +157,62 @@ test_that("legacy sim remains a wrapper for migrated Logit combinations", {
     ))), "compatibility sim Bertrand")
     expect_logit_result_parity(actual, old)
 })
+
+refactor_ces_result_parity <- function(actual, expected) {
+    expect_equal(class(actual), class(expected))
+    expect_equal(actual@slopes, expected@slopes, tolerance = 1e-8)
+    expect_equal(actual@mcPre, expected@mcPre, tolerance = 1e-8)
+    expect_equal(actual@mcPost, expected@mcPost, tolerance = 1e-8)
+    expect_equal(actual@pricePre, expected@pricePre, tolerance = 1e-8)
+    expect_equal(actual@pricePost, expected@pricePost, tolerance = 1e-8)
+    expect_equal(calcShares(actual, TRUE), calcShares(expected, TRUE), tolerance = 1e-8)
+    expect_equal(calcShares(actual, FALSE), calcShares(expected, FALSE), tolerance = 1e-8)
+    expect_equal(calcMargins(actual, TRUE), calcMargins(expected, TRUE), tolerance = 1e-8)
+    expect_equal(calcMargins(actual, FALSE), calcMargins(expected, FALSE), tolerance = 1e-8)
+    expect_equal(elast(actual, TRUE), elast(expected, TRUE), tolerance = 1e-8)
+    expect_equal(elast(actual, FALSE), elast(expected, FALSE), tolerance = 1e-8)
+    expect_equal(diversion(actual, TRUE), diversion(expected, TRUE), tolerance = 1e-8)
+    expect_equal(diversion(actual, FALSE), diversion(expected, FALSE), tolerance = 1e-8)
+    expect_equal(CV(actual), CV(expected), tolerance = 1e-8)
+    invisible(actual)
+}
+
+test_that("CES Bertrand and Cournot retain distinct model-specific parity", {
+    common <- list(
+        prices = c(1.5, 1.8, 2), shares = c(.30, .20, .10),
+        margins = c(.30, .25, .20), ownerPre = c("A", "B", "C"),
+        ownerPost = c("A", "A", "C"), insideSize = 100
+    )
+    for (conduct in c("bertrand", "cournot")) {
+        old <- qa_value(do.call(
+            if (conduct == "bertrand") ces else ces.cournot,
+            common
+        ), paste("legacy CES", conduct))
+        fit <- qa_value(do.call(calibrate, c(
+            list(demand = "ces", conduct = conduct),
+            common[names(common) != "ownerPost"]
+        )), paste("calibrate CES", conduct))
+        actual <- qa_value(simulate(fit, ownerPost = common$ownerPost),
+                           paste("simulate CES", conduct))
+        refactor_ces_result_parity(actual, old)
+    }
+})
+
+test_that("legacy sim routes CES Bertrand and Cournot through the fit pipeline", {
+    common <- list(
+        prices = c(1.5, 1.8, 2), shares = c(.30, .20, .10),
+        margins = c(.30, .25, .20), ownerPre = c("A", "B", "C"),
+        ownerPost = c("A", "A", "C"), insideSize = 100,
+        demand.param = list(gamma = 2, meanval = c(1, .8, .6), shareInside = .7)
+    )
+    legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
+    for (conduct in c("bertrand", "cournot")) {
+        old <- qa_value(do.call(legacy_sim, c(
+            common, list(supply = conduct, demand = "CES")
+        )), paste("legacy supplied CES", conduct))
+        actual <- qa_value(do.call(sim, c(
+            common, list(supply = conduct, demand = "CES")
+        )), paste("compatibility supplied CES", conduct))
+        refactor_ces_result_parity(actual, old)
+    }
+})

@@ -59,9 +59,9 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
         model_spec(demand = demand, conduct = conduct)
     }
 
-    if (!identical(spec$demand, "logit") ||
+    if (!spec$demand %in% c("logit", "ces") ||
         !spec$conduct %in% c("bertrand", "cournot")) {
-        stop("calibrate() currently supports Logit-Bertrand and Logit-Cournot.")
+        stop("calibrate() currently supports Logit/CES Bertrand and Cournot models.")
     }
 
     dots <- list(...)
@@ -148,9 +148,9 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         model_spec(demand = demand, conduct = conduct)
     }
 
-    if (!identical(spec$demand, "logit") ||
+    if (!spec$demand %in% c("logit", "ces") ||
         !spec$conduct %in% c("bertrand", "cournot")) {
-        stop("specify() currently supports Logit-Bertrand and Logit-Cournot.")
+        stop("specify() currently supports Logit/CES Bertrand and Cournot models.")
     }
     if (!is.list(parameters)) {
         stop("'parameters' must be a list.")
@@ -166,7 +166,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         shares = shares,
         margins = margins,
         supply = spec$conduct,
-        demand = "Logit",
+        demand = if (identical(spec$demand, "logit")) "Logit" else "CES",
         demand.param = parameters,
         ownerPre = ownerPre,
         ownerPost = ownerPre,
@@ -231,9 +231,9 @@ simulate <- function(fit, ownerPost,
     if (missing(ownerPost)) {
         stop("'ownerPost' must be supplied for simulate().")
     }
-    if (!identical(fit@spec$demand, "logit") ||
+    if (!fit@spec$demand %in% c("logit", "ces") ||
         !fit@spec$conduct %in% c("bertrand", "cournot")) {
-        stop("simulate() currently supports Logit-Bertrand and Logit-Cournot.")
+        stop("simulate() currently supports Logit/CES Bertrand and Cournot models.")
     }
 
     model <- fit@model

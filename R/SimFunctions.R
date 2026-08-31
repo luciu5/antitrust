@@ -1002,7 +1002,7 @@ sim <- function(prices,
     demand_name <- match.arg(demand)
     supply_name <- match.arg(supply)
 
-    if (identical(demand_name, "Logit") &&
+    if (demand_name %in% c("Logit", "CES") &&
         supply_name %in% c("bertrand", "cournot")) {
         dots <- list(...)
         specify_args <- list(
