@@ -341,3 +341,32 @@ test_that("LogitCap calibration and supplied parameters use the shared simulatio
     expect_equal(supplied_actual@pricePost, supplied_old@pricePost, tolerance = 1e-8)
     expect_equal(supplied_actual@mcPost, supplied_old@mcPost, tolerance = 1e-8)
 })
+
+test_that("BLP supplied parameters reuse the existing Bertrand and Cournot solvers", {
+    parameters <- qa_fixture_blp_parameters()
+    common <- list(
+        prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
+        ownerPre = c("A", "B", "C"), ownerPost = c("A", "A", "C"),
+        insideSize = 100
+    )
+    legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
+    for (conduct in c("bertrand", "cournot")) {
+        old <- qa_value(do.call(legacy_sim, c(
+            common, list(supply = conduct, demand = "BLP",
+                         demand.param = parameters)
+        )), paste("legacy BLP", conduct))
+        fit <- qa_value(do.call(specify, c(
+            list(demand = "blp", conduct = conduct,
+                 parameters = parameters),
+            common[names(common) != "ownerPost"]
+        )), paste("specify BLP", conduct))
+        actual <- qa_value(simulate(fit, ownerPost = common$ownerPost),
+                           paste("simulate BLP", conduct))
+        expect_equal(class(actual), class(old))
+        expect_equal(actual@slopes, old@slopes, tolerance = 1e-8)
+        expect_equal(actual@mcPre, old@mcPre, tolerance = 1e-8)
+        expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-8)
+        expect_equal(actual@pricePre, old@pricePre, tolerance = 1e-8)
+        expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
+    }
+})

@@ -158,9 +158,11 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         (spec$demand %in% c("logit_nests", "ces_nests") &&
          identical(spec$conduct, "bertrand")) ||
         (identical(spec$demand, "logit_cap") &&
-         identical(spec$conduct, "bertrand"))
+         identical(spec$conduct, "bertrand")) ||
+        (identical(spec$demand, "blp") &&
+         spec$conduct %in% c("bertrand", "cournot"))
     if (!specifiable) {
-        stop("specify() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, and LogitCap-Bertrand.")
+        stop("specify() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, LogitCap-Bertrand, and BLP parameter loading.")
     }
     if (!is.list(parameters)) {
         stop("'parameters' must be a list.")
@@ -181,7 +183,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                         ces = "CES",
                         logit_nests = "LogitNests",
                         ces_nests = "CESNests",
-                        logit_cap = "LogitCap"),
+                        logit_cap = "LogitCap",
+                        blp = "BLP"),
         demand.param = parameters,
         ownerPre = ownerPre,
         ownerPost = ownerPre,
@@ -252,9 +255,11 @@ simulate <- function(fit, ownerPost,
         (fit@spec$demand %in% c("logit_nests", "ces_nests") &&
          identical(fit@spec$conduct, "bertrand")) ||
         (identical(fit@spec$demand, "logit_cap") &&
-         identical(fit@spec$conduct, "bertrand"))
+         identical(fit@spec$conduct, "bertrand")) ||
+        (identical(fit@spec$demand, "blp") &&
+         fit@spec$conduct %in% c("bertrand", "cournot"))
     if (!simulatable) {
-        stop("simulate() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, and LogitCap-Bertrand.")
+        stop("simulate() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, LogitCap-Bertrand, and BLP simulations.")
     }
 
     model <- fit@model
@@ -290,6 +295,9 @@ simulate <- function(fit, ownerPost,
     if (identical(fit@spec$conduct, "bertrand")) {
         if (is.null(solver)) solver <- fit@diagnostics$solver
         solver <- match.arg(solver, c("nleqslv", "ag"))
+        if (identical(fit@spec$demand, "blp") && identical(solver, "ag")) {
+            stop("BLP uses its existing nonlinear price solver; 'solver = \"ag\"' is not supported.")
+        }
         if (identical(solver, "ag")) {
             model@pricePost <- calcPricesAG(model, preMerger = FALSE, isMax = isMax)
         } else {

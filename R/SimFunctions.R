@@ -1002,7 +1002,7 @@ sim <- function(prices,
     demand_name <- match.arg(demand)
     supply_name <- match.arg(supply)
 
-    migrated <- (demand_name %in% c("Logit", "CES", "LogitCap") &&
+    migrated <- (demand_name %in% c("Logit", "CES", "LogitCap", "BLP") &&
                  supply_name %in% c("bertrand", "cournot")) ||
         (demand_name %in% c("LogitNests", "CESNests") &&
          identical(supply_name, "bertrand"))
