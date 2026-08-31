@@ -370,3 +370,95 @@ test_that("BLP supplied parameters reuse the existing Bertrand and Cournot solve
         expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
     }
 })
+
+test_that("second-score auction calibration and simulation retain model-specific parity", {
+    cases <- list(
+        list(
+            demand = "logit",
+            constructor = auction2nd.logit,
+            prices = c(2, 2.2, 2.5),
+            shares = c(.35, .25, .20),
+            margins = c(.40, .35, .30)
+        ),
+        list(
+            demand = "ces",
+            constructor = auction2nd.ces,
+            prices = c(1.5, 1.5, 1.5),
+            shares = c(.50, .30, .20),
+            margins = c(.60, .40, .30)
+        )
+    )
+    owner_pre <- c("A", "B", "C")
+    owner_post <- c("A", "A", "C")
+
+    for (case in cases) {
+        common <- list(
+            prices = case$prices,
+            shares = case$shares,
+            margins = case$margins,
+            ownerPre = owner_pre,
+            ownerPost = owner_post
+        )
+        old <- qa_value(do.call(case$constructor, common),
+                        paste("legacy auction", case$demand))
+        fit <- qa_value(do.call(calibrate, c(
+            list(demand = case$demand, conduct = "auction2nd"),
+            common[names(common) != "ownerPost"]
+        )), paste("calibrate auction", case$demand))
+        actual <- qa_value(simulate(fit, ownerPost = owner_post),
+                           paste("simulate auction", case$demand))
+
+        expect_equal(fit@parameters, old@slopes, tolerance = 1e-8)
+        expect_equal(class(actual), class(old))
+        expect_equal(actual@mcPre, old@mcPre, tolerance = 1e-8)
+        expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-8)
+        expect_equal(actual@pricePre, old@pricePre, tolerance = 1e-8)
+        expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
+        expect_equal(calcShares(actual, TRUE), calcShares(old, TRUE), tolerance = 1e-8)
+        expect_equal(calcShares(actual, FALSE), calcShares(old, FALSE), tolerance = 1e-8)
+        expect_equal(calcMargins(actual, TRUE), calcMargins(old, TRUE), tolerance = 1e-8)
+        expect_equal(calcMargins(actual, FALSE), calcMargins(old, FALSE), tolerance = 1e-8)
+        expect_equal(elast(actual, TRUE), elast(old, TRUE), tolerance = 1e-8)
+        expect_equal(diversion(actual, TRUE), diversion(old, TRUE), tolerance = 1e-8)
+    }
+})
+
+test_that("legacy sim routes second-score auction models through specify and simulate", {
+    legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
+    cases <- list(
+        list(
+            demand = "Logit",
+            parameters = list(alpha = -1.2, meanval = c(.5, .3, .1)),
+            prices = c(2, 2.2, 2.5),
+            shares = c(.35, .25, .20),
+            margins = c(.40, .35, .30)
+        ),
+        list(
+            demand = "CES",
+            parameters = list(gamma = 2, meanval = c(1, .8, .6), shareInside = .7),
+            prices = c(1.5, 1.5, 1.5),
+            shares = c(.50, .30, .20),
+            margins = c(.60, .40, .30)
+        )
+    )
+    for (case in cases) {
+        common <- list(
+            prices = case$prices,
+            shares = case$shares,
+            margins = case$margins,
+            demand = case$demand,
+            demand.param = case$parameters,
+            supply = "auction2nd",
+            ownerPre = c("A", "B", "C"),
+            ownerPost = c("A", "A", "C")
+        )
+        old <- qa_value(do.call(legacy_sim, common),
+                        paste("legacy supplied auction", case$demand))
+        actual <- qa_value(do.call(sim, common),
+                           paste("compatibility supplied auction", case$demand))
+        expect_equal(class(actual), class(old))
+        expect_equal(actual@slopes, old@slopes, tolerance = 1e-8)
+        expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-8)
+        expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
+    }
+})

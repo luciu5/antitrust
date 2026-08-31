@@ -60,13 +60,14 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
     }
 
     calibratable <- (spec$demand %in% c("logit", "ces") &&
-                     spec$conduct %in% c("bertrand", "cournot")) ||
+                     spec$conduct %in% c("bertrand", "cournot", "auction2nd",
+                                          "bargaining", "bargaining2nd")) ||
         (spec$demand %in% c("logit_nests", "ces_nests") &&
          identical(spec$conduct, "bertrand")) ||
         (identical(spec$demand, "logit_cap") &&
          identical(spec$conduct, "bertrand"))
     if (!calibratable) {
-        stop("calibrate() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, and LogitCap-Bertrand.")
+        stop("calibrate() currently supports Logit/CES Bertrand, Cournot, auction, and bargaining models, nested Logit/CES Bertrand models, and LogitCap-Bertrand.")
     }
 
     dots <- list(...)
@@ -154,7 +155,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     }
 
     specifiable <- (spec$demand %in% c("logit", "ces") &&
-                    spec$conduct %in% c("bertrand", "cournot")) ||
+                    spec$conduct %in% c("bertrand", "cournot", "auction2nd",
+                                         "bargaining", "bargaining2nd")) ||
         (spec$demand %in% c("logit_nests", "ces_nests") &&
          identical(spec$conduct, "bertrand")) ||
         (identical(spec$demand, "logit_cap") &&
@@ -162,7 +164,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         (identical(spec$demand, "blp") &&
          spec$conduct %in% c("bertrand", "cournot"))
     if (!specifiable) {
-        stop("specify() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, LogitCap-Bertrand, and BLP parameter loading.")
+        stop("specify() currently supports Logit/CES Bertrand, Cournot, auction, and bargaining models, nested Logit/CES Bertrand models, LogitCap-Bertrand, and BLP parameter loading.")
     }
     if (!is.list(parameters)) {
         stop("'parameters' must be a list.")
@@ -243,6 +245,7 @@ simulate <- function(fit, ownerPost,
                      mcDelta = rep(0, length(fit@model@prices)),
                      subset = rep(TRUE, length(fit@model@prices)),
                      priceStart, capacitiesPost = NULL,
+                     bargpowerPost = NULL,
                      solver = NULL, isMax = FALSE, ...) {
     if (!is(fit, "AntitrustFit")) {
         stop("'fit' must be an AntitrustFit returned by calibrate() or specify().")
@@ -251,7 +254,8 @@ simulate <- function(fit, ownerPost,
         stop("'ownerPost' must be supplied for simulate().")
     }
     simulatable <- (fit@spec$demand %in% c("logit", "ces") &&
-                    fit@spec$conduct %in% c("bertrand", "cournot")) ||
+                    fit@spec$conduct %in% c("bertrand", "cournot", "auction2nd",
+                                             "bargaining", "bargaining2nd")) ||
         (fit@spec$demand %in% c("logit_nests", "ces_nests") &&
          identical(fit@spec$conduct, "bertrand")) ||
         (identical(fit@spec$demand, "logit_cap") &&
@@ -259,7 +263,7 @@ simulate <- function(fit, ownerPost,
         (identical(fit@spec$demand, "blp") &&
          fit@spec$conduct %in% c("bertrand", "cournot"))
     if (!simulatable) {
-        stop("simulate() currently supports Logit/CES Bertrand and Cournot models, nested Logit/CES Bertrand models, LogitCap-Bertrand, and BLP simulations.")
+        stop("simulate() currently supports Logit/CES Bertrand, Cournot, auction, and bargaining models, nested Logit/CES Bertrand models, LogitCap-Bertrand, and BLP simulations.")
     }
 
     model <- fit@model
@@ -287,6 +291,17 @@ simulate <- function(fit, ownerPost,
         }
         model@capacitiesPost <- capacitiesPost
     }
+    if (!is.null(bargpowerPost)) {
+        if (!(fit@spec$conduct %in% c("bargaining", "bargaining2nd"))) {
+            stop("'bargpowerPost' is only supported for bargaining fits.")
+        }
+        if (!is.numeric(bargpowerPost) || length(bargpowerPost) != nprods ||
+            any(!is.finite(bargpowerPost)) || any(bargpowerPost < 0) ||
+            any(bargpowerPost > 1)) {
+            stop("'bargpowerPost' must be a numeric vector of values in [0, 1] with the same length as the fitted prices.")
+        }
+        model@bargpowerPost <- bargpowerPost
+    }
     if (!missing(priceStart)) {
         model@priceStart <- priceStart
     }
@@ -304,10 +319,24 @@ simulate <- function(fit, ownerPost,
             model@pricePost <- calcPrices(model, preMerger = FALSE,
                                            isMax = isMax, ...)
         }
-    } else {
+    } else if (identical(fit@spec$conduct, "cournot")) {
         if (!is.null(solver) && !identical(solver, "nleqslv")) {
             stop("Logit-Cournot uses its existing nonlinear price solver; 'solver' cannot be overridden.")
         }
+        model@pricePost <- calcPrices(model, preMerger = FALSE)
+    } else if (identical(fit@spec$conduct, "bargaining")) {
+        if (!is.null(solver) && !identical(solver, "nleqslv")) {
+            stop("Bargaining models use their existing nonlinear price solver; 'solver' cannot be overridden.")
+        }
+        model@pricePost <- calcPrices(model, preMerger = FALSE,
+                                       subset = subset, isMax = isMax, ...)
+    } else {
+        if (!is.null(solver)) {
+            stop("This model uses its existing price solver; 'solver' cannot be overridden.")
+        }
+        ## Auction and second-score bargaining models retain their direct or
+        ## model-specific equilibrium methods.  The legacy second-score
+        ## methods intentionally do not receive a subset argument.
         model@pricePost <- calcPrices(model, preMerger = FALSE)
     }
 

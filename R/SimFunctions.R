@@ -1002,8 +1002,11 @@ sim <- function(prices,
     demand_name <- match.arg(demand)
     supply_name <- match.arg(supply)
 
-    migrated <- (demand_name %in% c("Logit", "CES", "LogitCap", "BLP") &&
-                 supply_name %in% c("bertrand", "cournot")) ||
+    migrated <- (demand_name %in% c("Logit", "CES", "BLP") &&
+                 supply_name %in% c("bertrand", "cournot", "auction2nd",
+                                    "bargaining", "bargaining2nd")) ||
+        (identical(demand_name, "LogitCap") &&
+         identical(supply_name, "bertrand")) ||
         (demand_name %in% c("LogitNests", "CESNests") &&
          identical(supply_name, "bertrand"))
     if (migrated) {
@@ -1023,6 +1026,10 @@ sim <- function(prices,
         if (!missing(capacities)) specify_args$capacities <- capacities
         if (!missing(priceOutside)) specify_args$priceOutside <- priceOutside
         if (!missing(priceStart)) specify_args$priceStart <- priceStart
+        if (supply_name %in% c("bargaining", "bargaining2nd")) {
+            specify_args$bargpowerPre <- bargpowerPre
+            specify_args$bargpowerPost <- bargpowerPost
+        }
         fit <- do.call(specify, c(specify_args, dots))
         simulate_args <- list(
             fit = fit,
@@ -1030,6 +1037,9 @@ sim <- function(prices,
             mcDelta = mcDelta,
             subset = subset
         )
+        if (supply_name %in% c("bargaining", "bargaining2nd")) {
+            simulate_args$bargpowerPost <- bargpowerPost
+        }
         return(do.call(simulate, c(simulate_args, dots)))
     }
 
