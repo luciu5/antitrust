@@ -10,13 +10,15 @@ simulate(
   mcDelta = rep(0, length(fit@model@prices)),
   subset = rep(TRUE, length(fit@model@prices)),
   priceStart,
+  capacitiesPost = NULL,
+  bargpowerPost = NULL,
   solver = NULL,
   isMax = FALSE,
   ...
 )
 }
 \arguments{
-\item{fit}{An code{AntitrustFit} returned by code{link{calibrate}}.}
+\item{fit}{An \code{AntitrustFit} returned by \code{\link{calibrate}}.}
 
 \item{ownerPost}{Post-counterfactual ownership vector or matrix.}
 
@@ -27,6 +29,11 @@ counterfactual equilibrium.}
 
 \item{priceStart}{Optional price starting values.}
 
+\item{capacitiesPost}{Optional post-counterfactual capacities for LogitCap.}
+
+\item{bargpowerPost}{Optional post-counterfactual bargaining powers for
+bargaining models.}
+
 \item{solver}{Optional solver override.  The calibration solver is reused
 by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.}
 
@@ -35,8 +42,8 @@ by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.}
 \item{...}{Additional arguments passed to the existing price solver.}
 }
 \value{
-An existing S4 simulation-result object, such as code{Logit} or
-  code{LogitCournot}.
+An existing S4 simulation-result object, such as \code{Logit} or
+  \code{LogitCournot}.
 }
 \description{
 Simulate a counterfactual from a calibrated structural model

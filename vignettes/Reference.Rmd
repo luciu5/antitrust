@@ -119,6 +119,44 @@ methods included in `antitrust`. In particular, note that the help pages for all
 functions listed in Table \@ref(tab:fxnSum) contain examples
 illustrating how to use the function.
 
+# Separating calibration from counterfactual simulation {-}
+
+On the `refactor` development branch, the package also exposes a two-stage
+workflow. `calibrate()` estimates a complete model-specific structural state
+and returns an `AntitrustFit` object. `simulate()` then applies a merger or
+other scenario to that fitted state. This makes repeated counterfactuals from
+one calibration explicit:
+
+```{r refactor-calibrate-simulate, eval=FALSE}
+fit <- calibrate(
+  demand = "logit", conduct = "cournot",
+  prices = prices, shares = shares, margins = margins,
+  ownerPre = ownerPre
+)
+
+r1 <- simulate(fit, ownerPost = mergerAB)
+r2 <- simulate(fit, ownerPost = mergerAC)
+```
+
+When structural parameters are already available, `specify()` loads them into
+the same fitted-state boundary:
+
+```{r refactor-specify, eval=FALSE}
+fit <- specify(
+  demand = "logit", conduct = "cournot",
+  prices = prices,
+  parameters = list(alpha = alpha, meanval = meanval),
+  ownerPre = ownerPre
+)
+result <- simulate(fit, ownerPost = ownerPost)
+```
+
+The established one-call constructors, including `logit()`, `ces()`, and
+`sim()`, remain available. The registry behind `model_spec()` and
+`supportedModels()` identifies complete demand/conduct model combinations; it
+does not mechanically combine arbitrary demand and supply modules. Existing
+S4 result classes and downstream methods remain unchanged.
+
 # Part 1: Unilateral Effects {-}
 
 # The Bertrand Pricing Game

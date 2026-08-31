@@ -12,7 +12,7 @@ while leaving simulation results as the package's existing S4 classes.
 \section{Slots}{
 
 \describe{
-\item{\code{spec}}{An code{antitrust_model_spec} object.}
+\item{\code{spec}}{An \code{antitrust_model_spec} object.}
 
 \item{\code{model}}{The calibrated existing S4 model state.}
 

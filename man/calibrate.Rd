@@ -4,32 +4,44 @@
 \alias{calibrate}
 \title{Calibrate a structural antitrust model}
 \usage{
-calibrate(demand, conduct = NULL, prices, shares, margins, ownerPre, ...)
+calibrate(
+  demand,
+  conduct = NULL,
+  prices,
+  shares = NULL,
+  margins,
+  ownerPre,
+  quantities = NULL,
+  ...
+)
 }
 \arguments{
 \item{demand}{A demand-system name or an object returned by
-code{link{model_spec}}.}
+\code{\link{model_spec}}.}
 
 \item{conduct}{A conduct name.  Omit it when `demand` is a model
 specification object.}
 
 \item{prices}{A length-k vector of observed product prices.}
 
-\item{shares}{A length-k vector of observed product shares.}
+\item{shares}{A length-k vector of observed product shares. Required by
+demand systems whose calibration uses shares.}
 
 \item{margins}{A length-k vector of observed product margins.}
 
 \item{ownerPre}{Pre-merger ownership vector or matrix.}
 
+\item{quantities}{A length-k vector of observed product quantities for
+Linear or LogLin calibration.}
+
 \item{...}{Additional options accepted by the model-specific legacy
 calibration constructor.}
 }
 \value{
-An code{AntitrustFit} object.
+An \code{AntitrustFit} object.
 }
 \description{
-The initial implementation supports Logit-Bertrand and Logit-Cournot.  It
-delegates calibration to the corresponding legacy constructor, so their
-model-specific equations, normalizations, solvers, and warnings remain the
-behavioral source of truth.
+It delegates calibration to the corresponding model-specific legacy
+constructor, so existing equations, normalizations, solvers, and warnings
+remain the behavioral source of truth.
 }

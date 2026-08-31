@@ -7,14 +7,14 @@
 model_spec(demand, conduct)
 }
 \arguments{
-\item{demand}{A human-readable demand-system name, such as code{"logit"}
-or code{"ces"}.}
+\item{demand}{A human-readable demand-system name, such as \code{"logit"}
+or \code{"ces"}.}
 
-\item{conduct}{A human-readable conduct name, such as code{"bertrand"}
-or code{"cournot"}.}
+\item{conduct}{A human-readable conduct name, such as \code{"bertrand"}
+or \code{"cournot"}.}
 }
 \value{
-A small object of class code{antitrust_model_spec} containing
+A small object of class \code{antitrust_model_spec} containing
   normalized model names.
 }
 \description{

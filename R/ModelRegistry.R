@@ -1,10 +1,10 @@
 #' Describe a demand/conduct model combination
 #'
-#' @param demand A human-readable demand-system name, such as code{"logit"}
-#'   or code{"ces"}.
-#' @param conduct A human-readable conduct name, such as code{"bertrand"}
-#'   or code{"cournot"}.
-#' @return A small object of class code{antitrust_model_spec} containing
+#' @param demand A human-readable demand-system name, such as \code{"logit"}
+#'   or \code{"ces"}.
+#' @param conduct A human-readable conduct name, such as \code{"bertrand"}
+#'   or \code{"cournot"}.
+#' @return A small object of class \code{antitrust_model_spec} containing
 #'   normalized model names.
 #' @export
 model_spec <- function(demand, conduct) {

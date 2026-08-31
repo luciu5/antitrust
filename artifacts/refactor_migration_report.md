@@ -1,0 +1,82 @@
+# `refactor` migration report
+
+## Branch and design
+
+The work is on branch `refactor`, with `master` treated as the behavioral
+oracle.  The new fitted-state representation is the `AntitrustFit` S4 wrapper
+around an existing calibrated S4 object.  Simulation results remain the
+existing S4 classes.
+
+## Registered generalized model combinations
+
+| Demand | Conduct | Existing class | `calibrate()` | `specify()` / `simulate()` | Legacy paths tested |
+|---|---|---|---:|---:|---|
+| Linear | Bertrand | `Linear` | yes | yes | `linear()`, `sim()` |
+| AIDS | Bertrand | `AIDS` | yes | yes | `aids()`, `sim()` |
+| LogLin | Bertrand | `LogLin` | yes | yes | `loglinear()`, `sim()` |
+| Logit | Bertrand | `Logit` | yes | yes | `logit()`, `sim()` |
+| Logit | Cournot | `LogitCournot` | yes | yes | `logit.cournot()`, `sim()` |
+| Logit | second-score auction | `Auction2ndLogit` | yes | yes | `auction2nd.logit()`, `sim()` |
+| Logit | bargaining | `BargainingLogit` | yes | yes | `bargaining.logit()`, `sim()` |
+| Logit | second-score bargaining | `Bargaining2ndLogit` | yes | yes | `bargaining2nd.logit()`, `sim()` |
+| CES | Bertrand | `CES` | yes | yes | `ces()`, `sim()` |
+| CES | Cournot | `CESCournot` | yes | yes | `ces.cournot()`, `sim()` |
+| CES | second-score auction | `Auction2ndCES` | yes | yes | `auction2nd.ces()`, `sim()` |
+| CES | bargaining | `BargainingCES` | yes | yes | `bargaining.ces()`, `sim()` |
+| CES | second-score bargaining | `Bargaining2ndCES` | yes | yes | `bargaining2nd.ces()`, `sim()` |
+| Nested Logit | Bertrand | `LogitNests` | yes | yes | `logit.nests()`, `sim()` |
+| Nested CES | Bertrand | `CESNests` | yes | yes | `ces.nests()`, `sim()` |
+| LogitCap | Bertrand | `LogitCap` | yes | yes | `logit.cap()`, `sim()` |
+| BLP | Bertrand | `LogitBLP` | no observed-data calibrator | yes | `sim()` |
+| BLP | Cournot | `CournotBLP` | no observed-data calibrator | yes | `sim()` |
+
+BLP is deliberately marked calibration-ineligible: the repository has a
+parameterized BLP construction path but no observed-data BLP estimator that
+belongs behind `calibrate()`.
+
+## Compatibility and parity coverage
+
+The test foundation includes hard-coded master-oracle values for representative
+Logit-Bertrand and Logit-Cournot cases, including demand parameters, recovered
+costs, pre/post prices, shares, margins, elasticities, diversion, UPP, CMCR,
+and CV.  The architecture tests then compare old and new paths for all
+registered families, including supplied-parameter construction and repeated
+counterfactuals where applicable.
+
+The existing full `devtools::test()` suite passes after each committed phase.
+The final suite retains only the repository's prior warnings: missing-data ALM
+boundary warnings, CES optimizer diagnostics, and the existing bargaining CES
+optimizer diagnostic.
+
+## Intentionally preserved behavior
+
+* Existing S4 classes, slots, methods, solvers, defaults, normalizations, and
+  fallback behavior remain the source of truth.
+* `calibrate()` captures the legacy same-ownership warning used by its
+  pre-merger placeholder and stores it in `AntitrustFit@diagnostics` rather
+  than printing it as a spurious user-facing merger warning.
+* `simulate()` keeps the existing model-specific `mcDelta` and outside-good
+  conventions.  It does not impose one supply formula on all demand systems.
+* BLP keeps its existing nonlinear price solver; AG is not silently substituted
+  for it.
+* `sim()` remains exported with its historical argument signature and falls
+  back to the original implementation for unsupported/non-registered paths.
+
+## Known discrepancies and suspected issues not changed
+
+No unexplained economic-output discrepancy remains in the migrated generalized
+combinations covered by the tests.  The following historical constraints or
+oddities were observed and intentionally left unchanged:
+
+* The legacy parameterized LogLin path can reject a supplied slope matrix when
+  the diversion matrix mechanically derived from it has rows above zero.  This
+  was observed while probing parameters recovered by a legacy `loglinear`
+  call; the validation and error behavior were not broadened.
+* BLP has no observed-data calibration function in the current repository, so
+  `calibrate(demand = "blp", ...)` remains unsupported rather than inventing a
+  new estimator.
+* Some specialized ALM, capacity-auction, vertical, Stackelberg, and general
+  quantity-game constructors are not generalized `sim()` demand/conduct
+  entries.  Their legacy functions were not removed or mechanically wrapped.
+
+These are migration notes, not economic corrections.

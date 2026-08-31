@@ -12,6 +12,7 @@ specify(
   ownerPre,
   shares = NULL,
   margins = NULL,
+  quantities = NULL,
   insideSize = 1,
   priceOutside,
   priceStart,
@@ -21,7 +22,7 @@ specify(
 }
 \arguments{
 \item{demand}{A demand-system name or an object returned by
-code{\link{model_spec}}.}
+\code{\link{model_spec}}.}
 
 \item{conduct}{A conduct name.  Omit it when `demand` is a model
 specification object.}
@@ -36,6 +37,8 @@ specification object.}
 
 \item{margins}{Optional observed margins retained as model metadata.}
 
+\item{quantities}{Observed quantities for Linear or LogLin demand.}
+
 \item{insideSize}{Market size passed to the existing `sim()` constructor.}
 
 \item{priceOutside}{Optional outside-good price.}
@@ -48,7 +51,7 @@ specification object.}
 constructor.}
 }
 \value{
-An code{AntitrustFit} object.
+An \code{AntitrustFit} object.
 }
 \description{
 Construct a fitted structural model from supplied parameters

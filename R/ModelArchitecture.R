@@ -281,7 +281,7 @@ simulate <- function(fit, ownerPost,
                      priceStart, capacitiesPost = NULL,
                      bargpowerPost = NULL,
                      solver = NULL, isMax = FALSE, ...) {
-    if (!is(fit, "AntitrustFit")) {
+    if (!methods::is(fit, "AntitrustFit")) {
         stop("'fit' must be an AntitrustFit returned by calibrate() or specify().")
     }
     if (missing(ownerPost)) {
@@ -308,7 +308,7 @@ simulate <- function(fit, ownerPost,
     model@mcDelta <- mcDelta
     model@subset <- subset
     if (!is.null(capacitiesPost)) {
-        if (!is(model, "LogitCap")) {
+        if (!methods::is(model, "LogitCap")) {
             stop("'capacitiesPost' is only supported for LogitCap fits.")
         }
         if (length(capacitiesPost) != nprods) {
@@ -401,16 +401,16 @@ simulate <- function(fit, ownerPost,
 
 
 .model_parameters <- function(model) {
-    if (is(model, "AIDS")) {
+    if (methods::is(model, "AIDS")) {
         list(slopes = model@slopes, intercepts = model@intercepts,
              mktElast = model@mktElast)
-    } else if (is(model, "LogLin")) {
+    } else if (methods::is(model, "LogLin")) {
         list(slopes = model@slopes, intercepts = model@intercepts)
-    } else if (is(model, "Linear")) {
+    } else if (methods::is(model, "Linear")) {
         list(slopes = model@slopes, intercepts = model@intercepts)
-    } else if (is(model, "Bertrand") && is.list(model@slopes)) {
+    } else if (methods::is(model, "Bertrand") && is.list(model@slopes)) {
         model@slopes
-    } else if (is(model, "Bertrand")) {
+    } else if (methods::is(model, "Bertrand")) {
         list(slopes = model@slopes)
     } else {
         list()
