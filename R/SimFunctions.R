@@ -1053,6 +1053,15 @@ sim <- function(prices,
             specify_args$bargpowerPost <- bargpowerPost
         }
         fit <- do.call(specify, c(specify_args, dots))
+        ## The parameterized construction path captures informational BLP
+        ## messages so that `specify()` remains quiet and diagnostics retain
+        ## them.  Re-emit them here for legacy `sim()` callers, whose public
+        ## output historically included these messages.
+        if (length(fit@diagnostics$messages)) {
+            for (message_text in fit@diagnostics$messages) {
+                message(message_text)
+            }
+        }
         simulate_args <- list(
             fit = fit,
             ownerPost = ownerPost,

@@ -48,6 +48,16 @@ The final suite retains only the repository's prior warnings: missing-data ALM
 boundary warnings, CES optimizer diagnostics, and the existing bargaining CES
 optimizer diagnostic.
 
+Direct branch comparison was also run from clean archives of `master` and
+`refactor`.  Both full test suites passed, and both built packages returned
+`Status: OK` from `R CMD check --no-manual --no-vignettes`.  The shared
+`ai/examples` scripts had matching exit status: the three BLP examples that
+complete produced matching numeric results, while the historical
+price-leadership examples failed on both branches because `ple` is not
+available in the package namespace.  The BLP informational messages emitted
+by legacy `sim()` are preserved by the compatibility wrapper; performance
+timings remain inherently variable.
+
 ## Intentionally preserved behavior
 
 * Existing S4 classes, slots, methods, solvers, defaults, normalizations, and
@@ -75,6 +85,9 @@ oddities were observed and intentionally left unchanged:
 * BLP has no observed-data calibration function in the current repository, so
   `calibrate(demand = "blp", ...)` remains unsupported rather than inventing a
   new estimator.
+* The regression example `ai/examples/test_sim_regressions.R` currently stops
+  at the historical LogitCap requirement for a finite `meanval`; this is
+  unchanged and is not treated as a refactor fix.
 * Some specialized ALM, capacity-auction, vertical, Stackelberg, and general
   quantity-game constructors are not generalized `sim()` demand/conduct
   entries.  Their legacy functions were not removed or mechanically wrapped.

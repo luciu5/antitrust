@@ -9,6 +9,10 @@
 .Rproj.user
 *.tex
 antitrust.Rproj
+.R-devel-*/
+.Rlib/
+*.Rcheck/
+antitrust_*.tar.gz
 .Rbuildignore
 ai/
 # The maintained synthetic QA plan and runner are versioned; their generated

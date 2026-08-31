@@ -394,6 +394,31 @@ test_that("legacy BLP aliases preserve their conduct mapping", {
     expect_equal(alias@pricePost, explicit@pricePost, tolerance = 1e-8)
 })
 
+test_that("legacy BLP simulation messages remain visible through sim", {
+    parameters <- qa_fixture_blp_parameters()
+    common <- list(
+        prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
+        ownerPre = c("A", "B", "C"), ownerPost = c("A", "A", "C"),
+        insideSize = 100
+    )
+    nonempty <- function(x) x[nzchar(trimws(x))]
+    legacy_messages <- capture.output(suppressWarnings(getFromNamespace(
+        ".sim_legacy", "antitrust")(
+            prices = common$prices, shares = common$shares,
+            demand = "BLP", demand.param = parameters,
+            supply = "bertrand", ownerPre = common$ownerPre,
+            ownerPost = common$ownerPost, insideSize = common$insideSize
+        )
+    ), type = "message")
+    wrapper_messages <- capture.output(suppressWarnings(sim(
+        prices = common$prices, shares = common$shares,
+        demand = "BLP", demand.param = parameters, supply = "bertrand",
+        ownerPre = common$ownerPre, ownerPost = common$ownerPost,
+        insideSize = common$insideSize
+    )), type = "message")
+    expect_equal(nonempty(wrapper_messages), nonempty(legacy_messages))
+})
+
 test_that("second-score auction calibration and simulation retain model-specific parity", {
     cases <- list(
         list(
