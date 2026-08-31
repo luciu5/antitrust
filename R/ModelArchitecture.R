@@ -97,7 +97,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
         do.call(.legacy_constructor(entry$calibrator), constructor_args)
     )
     model <- captured$value
-    solver <- if (identical(spec$conduct, "bertrand") &&
+    solver <- if (spec$conduct %in% c("bertrand", "bargaining") &&
                   !is.null(dots$solver)) dots$solver else "nleqslv"
 
     new(
@@ -219,6 +219,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
             status = "completed",
             source = "specified",
             model_class = class(model)[[1]],
+            solver = if (identical(spec$conduct, "bargaining") &&
+                        !is.null(dots$solver)) dots$solver else "nleqslv",
             warnings = captured$warnings,
             messages = captured$messages
         )
@@ -325,11 +327,15 @@ simulate <- function(fit, ownerPost,
         }
         model@pricePost <- calcPrices(model, preMerger = FALSE)
     } else if (identical(fit@spec$conduct, "bargaining")) {
-        if (!is.null(solver) && !identical(solver, "nleqslv")) {
-            stop("Bargaining models use their existing nonlinear price solver; 'solver' cannot be overridden.")
+        if (is.null(solver)) solver <- fit@diagnostics$solver
+        solver <- match.arg(solver, c("nleqslv", "ag"))
+        if (identical(solver, "ag")) {
+            model@pricePost <- calcPricesAG(model, preMerger = FALSE,
+                                             isMax = isMax, subset = subset)
+        } else {
+            model@pricePost <- calcPrices(model, preMerger = FALSE,
+                                           subset = subset, isMax = isMax, ...)
         }
-        model@pricePost <- calcPrices(model, preMerger = FALSE,
-                                       subset = subset, isMax = isMax, ...)
     } else {
         if (!is.null(solver)) {
             stop("This model uses its existing price solver; 'solver' cannot be overridden.")
