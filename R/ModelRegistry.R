@@ -46,6 +46,9 @@ supportedModels <- function() {
             conduct = entry$conduct,
             class = entry$class,
             calibrator = entry$calibrator,
+            calibrate = entry$calibrate,
+            specify = entry$specify,
+            simulate = entry$simulate,
             stringsAsFactors = FALSE,
             row.names = entry$id
         )
@@ -104,41 +107,59 @@ print.antitrust_model_spec <- function(x, ...) {
 .model_registry <- local({
     entries <- list(
         list(id = "linear::bertrand", demand = "linear", conduct = "bertrand",
-             class = "Linear", calibrator = "linear"),
+             class = "Linear", calibrator = "linear", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "aids::bertrand", demand = "aids", conduct = "bertrand",
-             class = "AIDS", calibrator = "aids"),
+             class = "AIDS", calibrator = "aids", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "loglin::bertrand", demand = "loglin", conduct = "bertrand",
-             class = "LogLin", calibrator = "loglinear"),
+             class = "LogLin", calibrator = "loglinear", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "logit::bertrand", demand = "logit", conduct = "bertrand",
-             class = "Logit", calibrator = "logit"),
+             class = "Logit", calibrator = "logit", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "logit::cournot", demand = "logit", conduct = "cournot",
-             class = "LogitCournot", calibrator = "logit.cournot"),
+             class = "LogitCournot", calibrator = "logit.cournot", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "logit::auction2nd", demand = "logit", conduct = "auction2nd",
-             class = "Auction2ndLogit", calibrator = "auction2nd.logit"),
+             class = "Auction2ndLogit", calibrator = "auction2nd.logit", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "logit::bargaining", demand = "logit", conduct = "bargaining",
-             class = "BargainingLogit", calibrator = "bargaining.logit"),
+             class = "BargainingLogit", calibrator = "bargaining.logit", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "logit::bargaining2nd", demand = "logit", conduct = "bargaining2nd",
-             class = "Bargaining2ndLogit", calibrator = "bargaining2nd.logit"),
+             class = "Bargaining2ndLogit", calibrator = "bargaining2nd.logit", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "ces::bertrand", demand = "ces", conduct = "bertrand",
-             class = "CES", calibrator = "ces"),
+             class = "CES", calibrator = "ces", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "ces::cournot", demand = "ces", conduct = "cournot",
-             class = "CESCournot", calibrator = "ces.cournot"),
+             class = "CESCournot", calibrator = "ces.cournot", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "ces::auction2nd", demand = "ces", conduct = "auction2nd",
-             class = "Auction2ndCES", calibrator = "auction2nd.ces"),
+             class = "Auction2ndCES", calibrator = "auction2nd.ces", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "ces::bargaining", demand = "ces", conduct = "bargaining",
-             class = "BargainingCES", calibrator = "bargaining.ces"),
+             class = "BargainingCES", calibrator = "bargaining.ces", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "ces::bargaining2nd", demand = "ces", conduct = "bargaining2nd",
-             class = "Bargaining2ndCES", calibrator = "bargaining2nd.ces"),
+             class = "Bargaining2ndCES", calibrator = "bargaining2nd.ces", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "logit_nests::bertrand", demand = "logit_nests", conduct = "bertrand",
-             class = "LogitNests", calibrator = "logit.nests"),
+             class = "LogitNests", calibrator = "logit.nests", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "ces_nests::bertrand", demand = "ces_nests", conduct = "bertrand",
-             class = "CESNests", calibrator = "ces.nests"),
+             class = "CESNests", calibrator = "ces.nests", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "logit_cap::bertrand", demand = "logit_cap", conduct = "bertrand",
-             class = "LogitCap", calibrator = "logit.cap"),
+             class = "LogitCap", calibrator = "logit.cap", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
         list(id = "blp::bertrand", demand = "blp", conduct = "bertrand",
-             class = "LogitBLP", calibrator = "sim"),
+             class = "LogitBLP", calibrator = "sim", calibrate = FALSE,
+             specify = TRUE, simulate = TRUE),
         list(id = "blp::cournot", demand = "blp", conduct = "cournot",
-             class = "CournotBLP", calibrator = "sim")
+             class = "CournotBLP", calibrator = "sim", calibrate = FALSE,
+             specify = TRUE, simulate = TRUE)
     )
     registry <- setNames(entries, vapply(entries, `[[`, character(1), "id"))
     function() registry
@@ -147,4 +168,10 @@ print.antitrust_model_spec <- function(x, ...) {
 
 .model_registry_entry <- function(demand, conduct) {
     .model_registry()[[.model_registry_key(demand, conduct)]]
+}
+
+
+.model_registry_supports <- function(spec, operation) {
+    entry <- .model_registry_entry(spec$demand, spec$conduct)
+    !is.null(entry) && isTRUE(entry[[operation]])
 }

@@ -26,6 +26,9 @@ test_that("the registry covers every currently supported sim combination", {
             "bargaining2nd.ces", "logit.nests", "ces.nests", "logit.cap",
             "sim", "sim"
         ),
+        calibrate = c(rep(TRUE, 16), FALSE, FALSE),
+        specify = rep(TRUE, 18),
+        simulate = rep(TRUE, 18),
         stringsAsFactors = FALSE,
         row.names = row.names(registry)
     )

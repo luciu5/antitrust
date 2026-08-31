@@ -61,16 +61,8 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL, margins,
         model_spec(demand = demand, conduct = conduct)
     }
 
-    calibratable <- (spec$demand %in% c("linear", "aids", "loglin") &&
-                     identical(spec$conduct, "bertrand")) ||
-        (spec$demand %in% c("logit", "ces") &&
-                     spec$conduct %in% c("bertrand", "cournot", "auction2nd",
-                                          "bargaining", "bargaining2nd")) ||
-        (spec$demand %in% c("logit_nests", "ces_nests") &&
-         identical(spec$conduct, "bertrand")) ||
-        (identical(spec$demand, "logit_cap") &&
-         identical(spec$conduct, "bertrand"))
-    if (!calibratable) {
+    entry <- .model_registry_entry(spec$demand, spec$conduct)
+    if (!.model_registry_supports(spec, "calibrate")) {
         stop("calibrate() currently supports Linear, LogLin, and AIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; and LogitCap-Bertrand.")
     }
 
@@ -80,7 +72,6 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL, margins,
         stop("'", forbidden[[1]], "' is a simulation scenario; supply it to simulate().")
     }
 
-    entry <- .model_registry_entry(spec$demand, spec$conduct)
     if (spec$demand %in% c("linear", "loglin")) {
         if (is.null(quantities)) {
             stop("'quantities' must be supplied when calibrating Linear or LogLin demand.")
@@ -176,18 +167,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         model_spec(demand = demand, conduct = conduct)
     }
 
-    specifiable <- (spec$demand %in% c("linear", "aids", "loglin") &&
-                    identical(spec$conduct, "bertrand")) ||
-        (spec$demand %in% c("logit", "ces") &&
-                    spec$conduct %in% c("bertrand", "cournot", "auction2nd",
-                                         "bargaining", "bargaining2nd")) ||
-        (spec$demand %in% c("logit_nests", "ces_nests") &&
-         identical(spec$conduct, "bertrand")) ||
-        (identical(spec$demand, "logit_cap") &&
-         identical(spec$conduct, "bertrand")) ||
-        (identical(spec$demand, "blp") &&
-         spec$conduct %in% c("bertrand", "cournot"))
-    if (!specifiable) {
+    if (!.model_registry_supports(spec, "specify")) {
         stop("specify() currently supports Linear, LogLin, and AIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP parameter loading.")
     }
     if (!is.list(parameters)) {
@@ -307,18 +287,7 @@ simulate <- function(fit, ownerPost,
     if (missing(ownerPost)) {
         stop("'ownerPost' must be supplied for simulate().")
     }
-    simulatable <- (fit@spec$demand %in% c("linear", "aids", "loglin") &&
-                    identical(fit@spec$conduct, "bertrand")) ||
-        (fit@spec$demand %in% c("logit", "ces") &&
-                    fit@spec$conduct %in% c("bertrand", "cournot", "auction2nd",
-                                             "bargaining", "bargaining2nd")) ||
-        (fit@spec$demand %in% c("logit_nests", "ces_nests") &&
-         identical(fit@spec$conduct, "bertrand")) ||
-        (identical(fit@spec$demand, "logit_cap") &&
-         identical(fit@spec$conduct, "bertrand")) ||
-        (identical(fit@spec$demand, "blp") &&
-         fit@spec$conduct %in% c("bertrand", "cournot"))
-    if (!simulatable) {
+    if (!.model_registry_supports(fit@spec, "simulate")) {
         stop("simulate() currently supports Linear, LogLin, and AIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
     }
 

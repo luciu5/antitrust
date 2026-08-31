@@ -1002,15 +1002,14 @@ sim <- function(prices,
     demand_name <- match.arg(demand)
     supply_name <- match.arg(supply)
 
-    migrated <- (demand_name %in% c("Linear", "LogLin", "AIDS") &&
-                 identical(supply_name, "bertrand")) ||
-        (demand_name %in% c("Logit", "CES", "BLP") &&
-                 supply_name %in% c("bertrand", "cournot", "auction2nd",
-                                    "bargaining", "bargaining2nd")) ||
-        (identical(demand_name, "LogitCap") &&
-         identical(supply_name, "bertrand")) ||
-        (demand_name %in% c("LogitNests", "CESNests") &&
-         identical(supply_name, "bertrand"))
+    normalized_spec <- try(
+        model_spec(.normalize_demand_name(demand_name),
+                   .normalize_conduct_name(supply_name)),
+        silent = TRUE
+    )
+    migrated <- !inherits(normalized_spec, "try-error") &&
+        .model_registry_supports(normalized_spec, "specify") &&
+        .model_registry_supports(normalized_spec, "simulate")
     if (migrated) {
         dots <- list(...)
         specify_args <- list(
