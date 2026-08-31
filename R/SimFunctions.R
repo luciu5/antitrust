@@ -1002,7 +1002,9 @@ sim <- function(prices,
     demand_name <- match.arg(demand)
     supply_name <- match.arg(supply)
 
-    migrated <- (demand_name %in% c("Logit", "CES", "BLP") &&
+    migrated <- (demand_name %in% c("Linear", "LogLin", "AIDS") &&
+                 identical(supply_name, "bertrand")) ||
+        (demand_name %in% c("Logit", "CES", "BLP") &&
                  supply_name %in% c("bertrand", "cournot", "auction2nd",
                                     "bargaining", "bargaining2nd")) ||
         (identical(demand_name, "LogitCap") &&
@@ -1019,6 +1021,11 @@ sim <- function(prices,
             ownerPre = ownerPre,
             shares = shares,
             margins = margins,
+            quantities = if (demand_name %in% c("Linear", "LogLin")) {
+                if (is.null(shares)) rep(1 / length(prices), length(prices)) else shares
+            } else {
+                NULL
+            },
             insideSize = insideSize,
             labels = labels
         )

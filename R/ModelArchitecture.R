@@ -4,7 +4,7 @@
 #' model.  It records the normalized model identity and calibration metadata
 #' while leaving simulation results as the package's existing S4 classes.
 #'
-#' @slot spec An code{antitrust_model_spec} object.
+#' @slot spec An \code{antitrust_model_spec} object.
 #' @slot model The calibrated existing S4 model state.
 #' @slot parameters Structural parameters recovered by calibration.
 #' @slot observed The observed pre-merger inputs.
@@ -31,25 +31,27 @@ setClass(
 
 #' Calibrate a structural antitrust model
 #'
-#' The initial implementation supports Logit-Bertrand and Logit-Cournot.  It
-#' delegates calibration to the corresponding legacy constructor, so their
-#' model-specific equations, normalizations, solvers, and warnings remain the
-#' behavioral source of truth.
+#' It delegates calibration to the corresponding model-specific legacy
+#' constructor, so existing equations, normalizations, solvers, and warnings
+#' remain the behavioral source of truth.
 #'
 #' @param demand A demand-system name or an object returned by
-#'   code{link{model_spec}}.
+#'   \code{\link{model_spec}}.
 #' @param conduct A conduct name.  Omit it when `demand` is a model
 #'   specification object.
 #' @param prices A length-k vector of observed product prices.
-#' @param shares A length-k vector of observed product shares.
+#' @param shares A length-k vector of observed product shares. Required by
+#'   demand systems whose calibration uses shares.
 #' @param margins A length-k vector of observed product margins.
 #' @param ownerPre Pre-merger ownership vector or matrix.
+#' @param quantities A length-k vector of observed product quantities for
+#'   Linear or LogLin calibration.
 #' @param ... Additional options accepted by the model-specific legacy
 #'   calibration constructor.
-#' @return An code{AntitrustFit} object.
+#' @return An \code{AntitrustFit} object.
 #' @export
-calibrate <- function(demand, conduct = NULL, prices, shares, margins,
-                      ownerPre, ...) {
+calibrate <- function(demand, conduct = NULL, prices, shares = NULL, margins,
+                      ownerPre, quantities = NULL, ...) {
     spec <- if (inherits(demand, "antitrust_model_spec")) {
         if (!is.null(conduct)) {
             stop("'conduct' must be omitted when 'demand' is a model specification.")
@@ -59,7 +61,9 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
         model_spec(demand = demand, conduct = conduct)
     }
 
-    calibratable <- (spec$demand %in% c("logit", "ces") &&
+    calibratable <- (spec$demand %in% c("linear", "aids", "loglin") &&
+                     identical(spec$conduct, "bertrand")) ||
+        (spec$demand %in% c("logit", "ces") &&
                      spec$conduct %in% c("bertrand", "cournot", "auction2nd",
                                           "bargaining", "bargaining2nd")) ||
         (spec$demand %in% c("logit_nests", "ces_nests") &&
@@ -67,7 +71,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
         (identical(spec$demand, "logit_cap") &&
          identical(spec$conduct, "bertrand"))
     if (!calibratable) {
-        stop("calibrate() currently supports Logit/CES Bertrand, Cournot, auction, and bargaining models, nested Logit/CES Bertrand models, and LogitCap-Bertrand.")
+        stop("calibrate() currently supports Linear, LogLin, and AIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; and LogitCap-Bertrand.")
     }
 
     dots <- list(...)
@@ -77,16 +81,32 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
     }
 
     entry <- .model_registry_entry(spec$demand, spec$conduct)
-    constructor_args <- list(
-        prices = prices,
-        shares = shares,
-        margins = margins,
-        ownerPre = ownerPre,
-        ## The legacy constructors require both ownership states.  Calibration
-        ## uses pre-merger ownership for this placeholder; simulate() replaces
-        ## it before recovering post-merger costs and solving the counterfactual.
-        ownerPost = ownerPre
-    )
+    if (spec$demand %in% c("linear", "loglin")) {
+        if (is.null(quantities)) {
+            stop("'quantities' must be supplied when calibrating Linear or LogLin demand.")
+        }
+        constructor_args <- list(
+            prices = prices,
+            quantities = quantities,
+            margins = margins,
+            ownerPre = ownerPre,
+            ## The legacy constructors require both ownership states.
+            ## Calibration uses pre-merger ownership for this placeholder;
+            ## simulate() replaces it for the counterfactual.
+            ownerPost = ownerPre
+        )
+    } else {
+        constructor_args <- list(
+            prices = prices,
+            shares = shares,
+            margins = margins,
+            ownerPre = ownerPre,
+            ## The legacy constructors require both ownership states.
+            ## Calibration uses pre-merger ownership for this placeholder;
+            ## simulate() replaces it for the counterfactual.
+            ownerPost = ownerPre
+        )
+    }
     duplicate_core <- intersect(names(dots), names(constructor_args))
     if (length(duplicate_core)) {
         stop("argument(s) supplied more than once: ", paste(duplicate_core, collapse = ", "))
@@ -105,12 +125,12 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
         spec = spec,
         model = model,
         parameters = .model_parameters(model),
-        observed = list(
+        observed = c(list(
             prices = prices,
             shares = shares,
             margins = margins,
             ownerPre = ownerPre
-        ),
+        ), if (!is.null(quantities)) list(quantities = quantities) else list()),
         diagnostics = list(
             status = "completed",
             model_class = class(model)[[1]],
@@ -125,7 +145,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
 #' Construct a fitted structural model from supplied parameters
 #'
 #' @param demand A demand-system name or an object returned by
-#'   code{\link{model_spec}}.
+#'   \code{\link{model_spec}}.
 #' @param conduct A conduct name.  Omit it when `demand` is a model
 #'   specification object.
 #' @param prices A length-k vector of observed product prices.
@@ -133,16 +153,18 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
 #' @param ownerPre Pre-merger ownership vector or matrix.
 #' @param shares Optional observed shares retained as model metadata.
 #' @param margins Optional observed margins retained as model metadata.
+#' @param quantities Observed quantities for Linear or LogLin demand.
 #' @param insideSize Market size passed to the existing `sim()` constructor.
 #' @param priceOutside Optional outside-good price.
 #' @param priceStart Optional equilibrium price starting values.
 #' @param labels Product labels.
 #' @param ... Additional options accepted by the legacy parameterized
 #'   constructor.
-#' @return An code{AntitrustFit} object.
+#' @return An \code{AntitrustFit} object.
 #' @export
 specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
-                    shares = NULL, margins = NULL, insideSize = 1,
+                    shares = NULL, margins = NULL, quantities = NULL,
+                    insideSize = 1,
                     priceOutside, priceStart,
                     labels = paste("Prod", 1:length(prices), sep = ""), ...) {
     spec <- if (inherits(demand, "antitrust_model_spec")) {
@@ -154,7 +176,9 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         model_spec(demand = demand, conduct = conduct)
     }
 
-    specifiable <- (spec$demand %in% c("logit", "ces") &&
+    specifiable <- (spec$demand %in% c("linear", "aids", "loglin") &&
+                    identical(spec$conduct, "bertrand")) ||
+        (spec$demand %in% c("logit", "ces") &&
                     spec$conduct %in% c("bertrand", "cournot", "auction2nd",
                                          "bargaining", "bargaining2nd")) ||
         (spec$demand %in% c("logit_nests", "ces_nests") &&
@@ -164,7 +188,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         (identical(spec$demand, "blp") &&
          spec$conduct %in% c("bertrand", "cournot"))
     if (!specifiable) {
-        stop("specify() currently supports Logit/CES Bertrand, Cournot, auction, and bargaining models, nested Logit/CES Bertrand models, LogitCap-Bertrand, and BLP parameter loading.")
+        stop("specify() currently supports Linear, LogLin, and AIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP parameter loading.")
     }
     if (!is.list(parameters)) {
         stop("'parameters' must be a list.")
@@ -175,12 +199,23 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     if (length(forbidden)) {
         stop("'", forbidden[[1]], "' is a simulation scenario; supply it to simulate().")
     }
+    if (spec$demand %in% c("linear", "loglin") && is.null(quantities)) {
+        stop("'quantities' must be supplied when specifying Linear or LogLin demand.")
+    }
+    sim_shares <- if (spec$demand %in% c("linear", "loglin")) {
+        quantities / sum(quantities)
+    } else {
+        shares
+    }
     constructor_args <- list(
         prices = prices,
-        shares = shares,
+        shares = sim_shares,
         margins = margins,
         supply = spec$conduct,
         demand = switch(spec$demand,
+                        linear = "Linear",
+                        aids = "AIDS",
+                        loglin = "LogLin",
                         logit = "Logit",
                         ces = "CES",
                         logit_nests = "LogitNests",
@@ -204,6 +239,19 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         do.call(.legacy_sim_constructor, c(constructor_args, dots))
     )
     model <- captured$value
+    if (spec$demand %in% c("linear", "loglin")) {
+        ## The legacy parameterized constructor exposes its quantity input
+        ## through the historical `shares` argument and validates that slot as
+        ## a share vector.  Restore the explicit quantity scale for the new
+        ## API, then refresh cost state using the supplied structural demand.
+        model@quantities <- quantities
+        model@shares <- quantities / sum(quantities)
+        model@pricePre <- prices
+        model@mcPre <- calcMC(model, preMerger = TRUE)
+        model@mcPost <- calcMC(model, preMerger = FALSE)
+        model@pricePost <- calcPrices(model, preMerger = FALSE,
+                                      subset = rep(TRUE, length(prices)))
+    }
     new(
         "AntitrustFit",
         spec = spec,
@@ -213,6 +261,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
             prices = prices,
             shares = shares,
             margins = margins,
+            quantities = quantities,
             ownerPre = ownerPre
         ),
         diagnostics = list(
@@ -230,18 +279,21 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 
 #' Simulate a counterfactual from a calibrated structural model
 #'
-#' @param fit An code{AntitrustFit} returned by code{link{calibrate}}.
+#' @param fit An \code{AntitrustFit} returned by \code{\link{calibrate}}.
 #' @param ownerPost Post-counterfactual ownership vector or matrix.
 #' @param mcDelta A length-k vector of proportional marginal-cost changes.
 #' @param subset A length-k logical vector selecting products in the
 #'   counterfactual equilibrium.
 #' @param priceStart Optional price starting values.
+#' @param capacitiesPost Optional post-counterfactual capacities for LogitCap.
+#' @param bargpowerPost Optional post-counterfactual bargaining powers for
+#'   bargaining models.
 #' @param solver Optional solver override.  The calibration solver is reused
 #'   by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.
 #' @param isMax Whether to run the existing local profit-maximum check.
 #' @param ... Additional arguments passed to the existing price solver.
-#' @return An existing S4 simulation-result object, such as code{Logit} or
-#'   code{LogitCournot}.
+#' @return An existing S4 simulation-result object, such as \code{Logit} or
+#'   \code{LogitCournot}.
 #' @export
 simulate <- function(fit, ownerPost,
                      mcDelta = rep(0, length(fit@model@prices)),
@@ -255,7 +307,9 @@ simulate <- function(fit, ownerPost,
     if (missing(ownerPost)) {
         stop("'ownerPost' must be supplied for simulate().")
     }
-    simulatable <- (fit@spec$demand %in% c("logit", "ces") &&
+    simulatable <- (fit@spec$demand %in% c("linear", "aids", "loglin") &&
+                    identical(fit@spec$conduct, "bertrand")) ||
+        (fit@spec$demand %in% c("logit", "ces") &&
                     fit@spec$conduct %in% c("bertrand", "cournot", "auction2nd",
                                              "bargaining", "bargaining2nd")) ||
         (fit@spec$demand %in% c("logit_nests", "ces_nests") &&
@@ -265,7 +319,7 @@ simulate <- function(fit, ownerPost,
         (identical(fit@spec$demand, "blp") &&
          fit@spec$conduct %in% c("bertrand", "cournot"))
     if (!simulatable) {
-        stop("simulate() currently supports Logit/CES Bertrand, Cournot, auction, and bargaining models, nested Logit/CES Bertrand models, LogitCap-Bertrand, and BLP simulations.")
+        stop("simulate() currently supports Linear, LogLin, and AIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
     }
 
     model <- fit@model
@@ -307,19 +361,36 @@ simulate <- function(fit, ownerPost,
     if (!missing(priceStart)) {
         model@priceStart <- priceStart
     }
+    if (identical(fit@spec$demand, "aids")) {
+        if (!is.null(solver) && !identical(solver, "nleqslv")) {
+            stop("AIDS uses its existing nonlinear price solver; 'solver' cannot be overridden.")
+        }
+        model@priceDelta <- calcPriceDelta(model, isMax = isMax,
+                                            subset = subset, ...)
+    }
     model@mcPost <- calcMC(model, preMerger = FALSE)
 
     if (identical(fit@spec$conduct, "bertrand")) {
         if (is.null(solver)) solver <- fit@diagnostics$solver
         solver <- match.arg(solver, c("nleqslv", "ag"))
+        if (!(fit@spec$demand %in% c("logit", "ces", "logit_nests",
+                                      "ces_nests", "logit_cap", "blp")) &&
+            identical(solver, "ag")) {
+            stop("This model uses its existing nonlinear price solver; 'solver = \"ag\"' is not supported.")
+        }
         if (identical(fit@spec$demand, "blp") && identical(solver, "ag")) {
             stop("BLP uses its existing nonlinear price solver; 'solver = \"ag\"' is not supported.")
         }
         if (identical(solver, "ag")) {
             model@pricePost <- calcPricesAG(model, preMerger = FALSE, isMax = isMax)
+        } else if (fit@spec$demand %in% c("linear", "loglin", "aids")) {
+            ## These legacy price methods do not expose `isMax`; passing it
+            ## through `...` would alter their optimizer call signature.
+            model@pricePost <- calcPrices(model, preMerger = FALSE,
+                                           subset = subset, ...)
         } else {
             model@pricePost <- calcPrices(model, preMerger = FALSE,
-                                           isMax = isMax, ...)
+                                           subset = subset, isMax = isMax, ...)
         }
     } else if (identical(fit@spec$conduct, "cournot")) {
         if (!is.null(solver) && !identical(solver, "nleqslv")) {
@@ -361,7 +432,14 @@ simulate <- function(fit, ownerPost,
 
 
 .model_parameters <- function(model) {
-    if (is(model, "Bertrand") && is.list(model@slopes)) {
+    if (is(model, "AIDS")) {
+        list(slopes = model@slopes, intercepts = model@intercepts,
+             mktElast = model@mktElast)
+    } else if (is(model, "LogLin")) {
+        list(slopes = model@slopes, intercepts = model@intercepts)
+    } else if (is(model, "Linear")) {
+        list(slopes = model@slopes, intercepts = model@intercepts)
+    } else if (is(model, "Bertrand") && is.list(model@slopes)) {
         model@slopes
     } else if (is(model, "Bertrand")) {
         list(slopes = model@slopes)

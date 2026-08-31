@@ -620,3 +620,140 @@ test_that("legacy sim routes bargaining models through specify and simulate", {
         expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
     }
 })
+
+test_that("Linear, LogLin, and AIDS calibration preserve their Bertrand equations", {
+    prices <- c(2, 2.2, 2.5)
+    quantities <- c(40, 35, 25)
+    shares <- quantities / sum(quantities)
+    margins <- c(.40, .35, .30)
+    owner_pre <- c("A", "B", "C")
+    owner_post <- c("A", "A", "C")
+    diversions <- matrix(c(
+        -1, .5, .5,
+        .5, -1, .5,
+        .5, .5, -1
+    ), 3, byrow = TRUE)
+
+    cases <- list(
+        list(
+            demand = "linear",
+            constructor = linear,
+            args = list(prices = prices, quantities = quantities,
+                        margins = margins, diversions = diversions),
+            calibration = list(shares = NULL, quantities = quantities,
+                               diversions = diversions)
+        ),
+        list(
+            demand = "loglin",
+            constructor = loglinear,
+            args = list(prices = prices, quantities = quantities,
+                        margins = margins, diversions = diversions),
+            calibration = list(shares = NULL, quantities = quantities,
+                               diversions = diversions)
+        ),
+        list(
+            demand = "aids",
+            constructor = aids,
+            args = list(shares = shares, prices = prices,
+                        margins = margins, diversions = diversions,
+                        mktElast = -1.2, priceStart = rep(.2, 3)),
+            calibration = list(shares = shares, diversions = diversions,
+                               mktElast = -1.2, priceStart = rep(.2, 3))
+        )
+    )
+
+    for (case in cases) {
+        old <- qa_value(do.call(case$constructor, c(
+            case$args, list(ownerPre = owner_pre, ownerPost = owner_post)
+        )), paste("legacy", case$demand, "calibration"))
+        fit <- qa_value(do.call(calibrate, c(
+            list(demand = case$demand, conduct = "bertrand",
+                 prices = prices, margins = margins,
+                 ownerPre = owner_pre),
+            case$calibration
+        )), paste("calibrate", case$demand))
+        actual <- qa_value(simulate(fit, ownerPost = owner_post),
+                           paste("simulate", case$demand))
+
+        expect_equal(class(actual), class(old))
+        expect_equal(fit@parameters,
+                     getFromNamespace(".model_parameters", "antitrust")(old),
+                     tolerance = 1e-8)
+        expect_equal(actual@mcPre, old@mcPre, tolerance = 1e-8)
+        expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-8)
+        expect_equal(actual@pricePre, old@pricePre, tolerance = 1e-8)
+        expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
+        expect_equal(calcShares(actual, TRUE), calcShares(old, TRUE), tolerance = 1e-8)
+        expect_equal(calcShares(actual, FALSE), calcShares(old, FALSE), tolerance = 1e-8)
+        expect_equal(calcMargins(actual, TRUE), calcMargins(old, TRUE), tolerance = 1e-8)
+        expect_equal(calcMargins(actual, FALSE), calcMargins(old, FALSE), tolerance = 1e-8)
+    }
+})
+
+test_that("supplied Linear, LogLin, and AIDS parameters use the shared simulation boundary", {
+    prices <- c(2, 2.2, 2.5)
+    quantities <- c(.40, .35, .25)
+    margins <- c(.40, .35, .30)
+    owner_pre <- c("A", "B", "C")
+    owner_post <- c("A", "A", "C")
+    legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
+
+    linear_parameters <- list(
+        slopes = {
+            value <- matrix(.1, 3, 3)
+            diag(value) <- -2
+            value
+        },
+        intercepts = c(5, 5, 5)
+    )
+    loglin_parameters <- linear_parameters
+    aids_fit <- qa_value(aids(
+        shares = quantities, prices = prices, margins = margins,
+        diversions = qa_fixture_diversions(), ownerPre = owner_pre,
+        ownerPost = owner_post, mktElast = -1.2, priceStart = rep(.2, 3)
+    ), "AIDS supplied-parameter source")
+    cases <- list(
+        list(demand = "Linear", parameters = linear_parameters,
+             quantities = quantities),
+        list(demand = "LogLin", parameters = loglin_parameters,
+             quantities = quantities),
+        list(demand = "AIDS", parameters = list(
+            slopes = aids_fit@slopes, intercepts = aids_fit@intercepts,
+            mktElast = aids_fit@mktElast
+        ), quantities = NULL)
+    )
+
+    for (case in cases) {
+        common <- list(
+            prices = prices,
+            shares = if (is.null(case$quantities)) quantities else case$quantities,
+            margins = margins,
+            demand = case$demand,
+            supply = "bertrand",
+            demand.param = case$parameters,
+            ownerPre = owner_pre,
+            ownerPost = owner_post,
+            priceStart = if (case$demand == "AIDS") rep(.2, 3) else prices
+        )
+        old <- qa_value(do.call(legacy_sim, common),
+                        paste("legacy supplied", case$demand))
+        specify_args <- list(
+            demand = tolower(case$demand), conduct = "bertrand",
+            prices = prices, parameters = case$parameters,
+            ownerPre = owner_pre, margins = margins
+        )
+        if (is.null(case$quantities)) {
+            specify_args$shares <- quantities
+            specify_args$priceStart <- rep(.2, 3)
+        } else {
+            specify_args$quantities <- case$quantities
+        }
+        fit <- qa_value(do.call(specify, specify_args),
+                        paste("specify", case$demand))
+        actual <- qa_value(simulate(fit, ownerPost = owner_post),
+                           paste("simulate specified", case$demand))
+        expect_equal(class(actual), class(old))
+        expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-8)
+        expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
+    }
+})
