@@ -216,3 +216,77 @@ test_that("legacy sim routes CES Bertrand and Cournot through the fit pipeline",
         refactor_ces_result_parity(actual, old)
     }
 })
+
+test_that("nested Logit and CES models retain model-specific calibration parity", {
+    common <- list(
+        prices = c(1.8, 2, 2.2, 2.5),
+        shares = c(.30, .20, .10, .05),
+        margins = c(.30, .25, .20, .15),
+        ownerPre = c("A", "B", "C", "D"),
+        ownerPost = c("A", "A", "C", "D"),
+        nests = c("N1", "N1", "N2", "N2"),
+        insideSize = 100
+    )
+    cases <- list(
+        list(demand = "logit_nests", constructor = logit.nests,
+             parameters = list(alpha = -1, meanval = c(.4, .2, .1, .05), sigma = .7),
+             parmsStart = c(-1, .7)),
+        list(demand = "ces_nests", constructor = ces.nests,
+             parameters = list(gamma = 2, meanval = c(1, .8, .6, .5), sigma = 2.5,
+                               shareInside = .7),
+             parmsStart = c(1.5, 2.5))
+    )
+    for (case in cases) {
+        old <- qa_value(do.call(case$constructor, c(
+            common, list(parmsStart = case$parmsStart)
+        )), paste("legacy", case$demand))
+        fit <- qa_value(do.call(calibrate, c(
+            list(demand = case$demand, conduct = "bertrand"),
+            common[names(common) != "ownerPost"],
+            list(parmsStart = case$parmsStart)
+        )), paste("calibrate", case$demand))
+        actual <- qa_value(simulate(fit, ownerPost = common$ownerPost),
+                           paste("simulate", case$demand))
+        expect_equal(class(actual), class(old))
+        expect_equal(actual@slopes, old@slopes, tolerance = 1e-8)
+        expect_equal(actual@mcPre, old@mcPre, tolerance = 1e-8)
+        expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-8)
+        expect_equal(actual@pricePre, old@pricePre, tolerance = 1e-8)
+        expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
+        expect_equal(calcShares(actual, FALSE), calcShares(old, FALSE), tolerance = 1e-8)
+        expect_equal(calcMargins(actual, FALSE), calcMargins(old, FALSE), tolerance = 1e-8)
+    }
+})
+
+test_that("legacy sim routes nested Bertrand models through specify and simulate", {
+    common <- list(
+        prices = c(1.8, 2, 2.2, 2.5),
+        shares = c(.30, .20, .10, .05),
+        margins = c(.30, .25, .20, .15),
+        ownerPre = c("A", "B", "C", "D"),
+        ownerPost = c("A", "A", "C", "D"),
+        nests = c("N1", "N1", "N2", "N2"),
+        insideSize = 100
+    )
+    cases <- list(
+        list(demand = "LogitNests", parameters = list(
+            alpha = -1, meanval = c(.4, .2, .1, .05), sigma = .7
+        ), parmsStart = c(-1, .7)),
+        list(demand = "CESNests", parameters = list(
+            gamma = 2, meanval = c(1, .8, .6, .5), sigma = c(.7, .8),
+            shareInside = .7
+        ))
+    )
+    legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
+    for (case in cases) {
+        args <- c(common, list(
+            supply = "bertrand", demand = case$demand,
+            demand.param = case$parameters
+        ))
+        old <- qa_value(do.call(legacy_sim, args), paste("legacy", case$demand))
+        actual <- qa_value(do.call(sim, args), paste("compatibility", case$demand))
+        expect_equal(class(actual), class(old))
+        expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
+        expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-8)
+    }
+})

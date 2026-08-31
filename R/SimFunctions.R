@@ -1002,8 +1002,11 @@ sim <- function(prices,
     demand_name <- match.arg(demand)
     supply_name <- match.arg(supply)
 
-    if (demand_name %in% c("Logit", "CES") &&
-        supply_name %in% c("bertrand", "cournot")) {
+    migrated <- (demand_name %in% c("Logit", "CES") &&
+                 supply_name %in% c("bertrand", "cournot")) ||
+        (demand_name %in% c("LogitNests", "CESNests") &&
+         identical(supply_name, "bertrand"))
+    if (migrated) {
         dots <- list(...)
         specify_args <- list(
             demand = demand_name,
@@ -1016,6 +1019,7 @@ sim <- function(prices,
             insideSize = insideSize,
             labels = labels
         )
+        if (!missing(nests)) specify_args$nests <- nests
         if (!missing(priceOutside)) specify_args$priceOutside <- priceOutside
         if (!missing(priceStart)) specify_args$priceStart <- priceStart
         fit <- do.call(specify, c(specify_args, dots))

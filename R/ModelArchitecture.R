@@ -59,9 +59,12 @@ calibrate <- function(demand, conduct = NULL, prices, shares, margins,
         model_spec(demand = demand, conduct = conduct)
     }
 
-    if (!spec$demand %in% c("logit", "ces") ||
-        !spec$conduct %in% c("bertrand", "cournot")) {
-        stop("calibrate() currently supports Logit/CES Bertrand and Cournot models.")
+    calibratable <- (spec$demand %in% c("logit", "ces") &&
+                     spec$conduct %in% c("bertrand", "cournot")) ||
+        (spec$demand %in% c("logit_nests", "ces_nests") &&
+         identical(spec$conduct, "bertrand"))
+    if (!calibratable) {
+        stop("calibrate() currently supports Logit/CES Bertrand and Cournot models, and nested Logit/CES Bertrand models.")
     }
 
     dots <- list(...)
@@ -148,9 +151,12 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         model_spec(demand = demand, conduct = conduct)
     }
 
-    if (!spec$demand %in% c("logit", "ces") ||
-        !spec$conduct %in% c("bertrand", "cournot")) {
-        stop("specify() currently supports Logit/CES Bertrand and Cournot models.")
+    specifiable <- (spec$demand %in% c("logit", "ces") &&
+                    spec$conduct %in% c("bertrand", "cournot")) ||
+        (spec$demand %in% c("logit_nests", "ces_nests") &&
+         identical(spec$conduct, "bertrand"))
+    if (!specifiable) {
+        stop("specify() currently supports Logit/CES Bertrand and Cournot models, and nested Logit/CES Bertrand models.")
     }
     if (!is.list(parameters)) {
         stop("'parameters' must be a list.")
@@ -166,7 +172,11 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         shares = shares,
         margins = margins,
         supply = spec$conduct,
-        demand = if (identical(spec$demand, "logit")) "Logit" else "CES",
+        demand = switch(spec$demand,
+                        logit = "Logit",
+                        ces = "CES",
+                        logit_nests = "LogitNests",
+                        ces_nests = "CESNests"),
         demand.param = parameters,
         ownerPre = ownerPre,
         ownerPost = ownerPre,
@@ -231,9 +241,12 @@ simulate <- function(fit, ownerPost,
     if (missing(ownerPost)) {
         stop("'ownerPost' must be supplied for simulate().")
     }
-    if (!fit@spec$demand %in% c("logit", "ces") ||
-        !fit@spec$conduct %in% c("bertrand", "cournot")) {
-        stop("simulate() currently supports Logit/CES Bertrand and Cournot models.")
+    simulatable <- (fit@spec$demand %in% c("logit", "ces") &&
+                    fit@spec$conduct %in% c("bertrand", "cournot")) ||
+        (fit@spec$demand %in% c("logit_nests", "ces_nests") &&
+         identical(fit@spec$conduct, "bertrand"))
+    if (!simulatable) {
+        stop("simulate() currently supports Logit/CES Bertrand and Cournot models, and nested Logit/CES Bertrand models.")
     }
 
     model <- fit@model

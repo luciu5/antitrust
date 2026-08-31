@@ -68,6 +68,7 @@ print.antitrust_model_spec <- function(x, ...) {
     aliases <- c(
         logitblp = "blp",
         cournotblp = "blp",
+        logitnests = "logit_nests",
         logit_nests = "logit_nests",
         cesnests = "ces_nests",
         ces_nests = "ces_nests",
