@@ -35,6 +35,7 @@ existing S4 classes.
 | Nested PCAIDS | Bertrand | `PCAIDSNests` | yes | simulate only | `pcaids.nests()` |
 | Capacity-constrained second-score auction | specialized auction | `Auction2ndCap` | yes | simulate only | `auction2nd.cap()` |
 | Logit | vertical bargaining | `VertBargBertLogit` | yes | simulate only | `vertical.barg()` |
+| Logit | vertical bargaining, downstream second-score | `VertBarg2ndLogit` | yes (`variant = "auction2nd"`) | simulate only | `vertical.barg()` |
 | BLP | Bertrand | `LogitBLP` | no observed-data calibrator | yes | `sim()` |
 | BLP | Cournot | `CournotBLP` | no observed-data calibrator | yes | `sim()` |
 | Logit | Bertrand | `LogitALM` | yes (`variant = "alm"`) | simulate only | `logit.alm()` |
@@ -76,14 +77,16 @@ then invokes the legacy Stackelberg quantity solver. Direct `specify()` is not
 exposed because the legacy constructor identifies plant cost parameters from
 margins.
 
-Standard Logit vertical bargaining is migrated as a complete two-sided model
-entry. `calibrate()` delegates downstream demand and upstream/downstream
-bargaining-power identification to `vertical.barg()` using pre-merger
-ownership on both sides. `simulate()` accepts upstream and downstream post
-ownership in a named list, updates integration-dependent bargaining power and
-both cost-delta vectors, and invokes the existing vertical price system.
-Nested and second-score vertical variants remain legacy-only because their
-scenario and equilibrium methods require a separate migration slice.
+Logit vertical bargaining is migrated as complete two-sided model entries.
+The default entry uses downstream Bertrand conduct; `variant = "auction2nd"`
+selects the separate downstream second-score implementation. `calibrate()`
+delegates downstream demand and upstream/downstream bargaining-power
+identification to `vertical.barg()` using pre-merger ownership on both sides.
+`simulate()` accepts upstream and downstream post ownership in a named list,
+updates integration-dependent bargaining power and both cost-delta vectors,
+and invokes the existing model-specific vertical price system. Nested vertical
+variants remain legacy-only because their scenario and equilibrium methods
+require a separate migration slice.
 
 BLP is deliberately marked calibration-ineligible: the repository has a
 parameterized BLP construction path but no observed-data BLP estimator that
@@ -156,10 +159,10 @@ oddities were observed and intentionally left unchanged:
 * The regression example `ai/examples/test_sim_regressions.R` currently stops
   at the historical LogitCap requirement for a finite `meanval`; this is
   unchanged and is not treated as a refactor fix.
-* Specialized ALM and nested/second-score vertical constructors are not
+* Specialized ALM and nested vertical constructors are not
   generalized `sim()` demand/conduct entries.  Their legacy functions were
   not removed or mechanically wrapped.  General linear and log-linear
-  Cournot/Stackelberg and standard Logit vertical bargaining are registered
+  Cournot/Stackelberg and Logit vertical bargaining are registered
   for the new fit pipeline, while the legacy `sim()` route remains unchanged.
 
 These are migration notes, not economic corrections.

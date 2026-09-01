@@ -48,7 +48,8 @@ setClass(
 #' @param quantities A length-k vector of observed product quantities for
 #'   Linear or LogLin calibration, or an n-by-k plant-quantity matrix for
 #'   general Cournot/Stackelberg calibration.
-#' @param variant A model-specific calibration variant, such as `"alm"`.
+#' @param variant A model-specific calibration variant, such as `"alm"` or
+#'   `"auction2nd"` for downstream second-score vertical bargaining.
 #' @param knownElast A known own-price elasticity for PCAIDS calibration.
 #' @param mktElast A known market own-price elasticity for PCAIDS calibration.
 #' @param ... Additional options accepted by the model-specific legacy
@@ -117,13 +118,26 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
         prices_up <- dots$pricesUp
         margins_up <- dots$marginsUp
         owner_pre_up <- dots$ownerPreUp
+        vertical_supply <- if (identical(spec$variant, "auction2nd")) {
+            "2nd"
+        } else {
+            "bertrand"
+        }
+        if (!is.null(dots$supplyDown)) {
+            requested_supply <- match.arg(dots$supplyDown, c("bertrand", "2nd"))
+            if (!identical(requested_supply, vertical_supply)) {
+                stop("'supplyDown' conflicts with the selected vertical bargaining variant.")
+            }
+        }
         dots$pricesUp <- NULL
         dots$marginsUp <- NULL
         dots$ownerPreUp <- NULL
+        dots$supplyDown <- NULL
         if (!is.null(dots$nests) && any(!is.na(dots$nests))) {
             stop("Nested vertical bargaining is not yet supported by calibrate().")
         }
         constructor_args <- list(
+            supplyDown = vertical_supply,
             sharesDown = shares,
             pricesDown = prices,
             marginsDown = margins,
@@ -303,7 +317,8 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
 #'   \code{\link{model_spec}}.
 #' @param conduct A conduct name.  Omit it when `demand` is a model
 #'   specification object.
-#' @param variant A model-specific calibration variant, such as `"alm"`.
+#' @param variant A model-specific calibration variant, such as `"alm"` or
+#'   `"auction2nd"` for downstream second-score vertical bargaining.
 #' @param prices A length-k vector of observed product prices.
 #' @param parameters A named list of structural demand parameters.
 #' @param ownerPre Pre-merger ownership vector or matrix.

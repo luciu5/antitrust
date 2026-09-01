@@ -6,7 +6,8 @@
 #'   or \code{"cournot"}.
 #' @param variant A model-specific calibration variant. The default is
 #'   \code{"standard"}; \code{"alm"} selects the existing unknown-market-
-#'   elasticity calibration where supported.
+#'   elasticity calibration where supported, and \code{"auction2nd"} selects
+#'   downstream second-score vertical bargaining.
 #' @return A small object of class \code{antitrust_model_spec} containing
 #'   normalized model names.
 #' @export
@@ -139,7 +140,11 @@ print.antitrust_model_spec <- function(x, ...) {
     }
     variant <- tolower(trimws(as.character(variant)))
     variant <- gsub("[[:space:]._-]+", "", variant)
-    aliases <- c(default = "standard", standard = "standard", alm = "alm")
+    aliases <- c(
+        default = "standard", standard = "standard", alm = "alm",
+        auction2nd = "auction2nd", auction2 = "auction2nd",
+        second = "auction2nd", secondscore = "auction2nd"
+    )
     if (variant %in% names(aliases)) aliases[[variant]] else variant
 }
 
@@ -237,6 +242,10 @@ print.antitrust_model_spec <- function(x, ...) {
              conduct = "vertical_bargaining", class = "VertBargBertLogit",
              calibrator = "vertical.barg", calibrate = TRUE,
              specify = FALSE, simulate = TRUE),
+        list(id = "logit::vertical_bargaining::auction2nd", demand = "logit",
+             conduct = "vertical_bargaining", variant = "auction2nd",
+             class = "VertBarg2ndLogit", calibrator = "vertical.barg",
+             calibrate = TRUE, specify = FALSE, simulate = TRUE),
         list(id = "logit::bertrand::alm", demand = "logit", conduct = "bertrand",
              variant = "alm", class = "LogitALM", calibrator = "logit.alm",
              calibrate = TRUE, specify = FALSE, simulate = TRUE),

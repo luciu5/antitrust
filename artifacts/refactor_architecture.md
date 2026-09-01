@@ -23,7 +23,8 @@ nested PCAIDS), LogLin, Logit, CES, nested Logit/CES, LogitCap, BLP, Cournot,
 second-score auction, bargaining, and second-score bargaining where the legacy
 package supports those pairings. Linear and log-linear general Cournot and
 Stackelberg are also registered as complete quantity-game entries. Standard
-Logit vertical bargaining is registered as a complete two-sided model entry.
+Logit vertical bargaining is registered as complete two-sided model entries for
+both downstream Bertrand and downstream second-score conduct.
 The capacity-constrained second-score auction
 is registered as a complete specialized model entry, rather than as a demand
 module mechanically combined with auction conduct. PCAIDS is registered as its own Bertrand
@@ -31,9 +32,8 @@ demand family even though its result classes inherit from AIDS; its
 known-elasticity and nested-parameter calibration remains in the existing
 PCAIDS-specific methods.
 ALM entries point to their complete legacy model-specific implementations;
-they are not assembled from a generic supply module.  Nested and second-score
-vertical variants remain outside this generalized registry and retain their
-legacy APIs.
+they are not assembled from a generic supply module. Nested vertical variants
+remain outside this generalized registry and retain their legacy APIs.
 
 ## Fitted state
 
@@ -95,10 +95,10 @@ method.  The dispatch preserves important differences:
 * AIDS and PCAIDS recompute their ownership-dependent price-delta equation at
   simulation time; nested PCAIDS retains its model-specific nesting
   calibration.
-* Standard Logit vertical bargaining updates upstream/downstream ownership,
+* Logit vertical bargaining updates upstream/downstream ownership,
   integration-dependent bargaining power, and two-sided cost deltas before
-  invoking its existing vertical price system. Nested and second-score
-  vertical variants remain legacy-only.
+  invoking its existing vertical price system. The downstream second-score
+  entry retains the separate `VertBarg2ndLogit` price and share methods.
 
 There is no generic supply module that mechanically combines arbitrary demand
 and conduct modules.  The registry selects a complete existing model

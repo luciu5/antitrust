@@ -39,7 +39,8 @@ required by model families whose calibration uses margins.}
 Linear or LogLin calibration, or an n-by-k plant-quantity matrix for
 general Cournot/Stackelberg calibration.}
 
-\item{variant}{A model-specific calibration variant, such as `"alm"`.}
+\item{variant}{A model-specific calibration variant, such as `"alm"` or
+`"auction2nd"` for downstream second-score vertical bargaining.}
 
 \item{knownElast}{A known own-price elasticity for PCAIDS calibration.}
 
