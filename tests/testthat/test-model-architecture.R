@@ -916,3 +916,74 @@ test_that("supplied Linear, LogLin, and AIDS parameters use the shared simulatio
         expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-8)
     }
 })
+
+test_that("BLP contraction matches its outside-good share equation", {
+    prices <- c(10, 12, 11, 9)
+    shares <- c(.35, .25, .20, .10)
+    fit <- qa_value(sim(
+        prices = prices,
+        shares = shares,
+        demand = "BLP",
+        demand.param = list(
+            alpha = -.5,
+            sigma = .3,
+            sigmaNest = .85,
+            nDraws = 24,
+            consDraws = seq(-1, 1, length.out = 24)
+        ),
+        ownerPre = c("A", "B", "C", "D"),
+        ownerPost = c("A", "A", "C", "D"),
+        insideSize = 100
+    ), "BLP outside-good contraction")
+
+    alphas <- fit@slopes$alphas
+    delta <- fit@slopes$meanval
+    sigma_nest <- fit@slopes$sigmaNest
+    utilities <- outer(alphas, prices - fit@priceOutside, "*") +
+        matrix(delta, nrow = length(alphas), ncol = length(prices), byrow = TRUE)
+    exp_util <- exp(utilities / sigma_nest)
+    denominator <- rowSums(exp_util)
+    predicted <- colMeans(
+        (exp_util / denominator) *
+            (denominator^sigma_nest / (1 + denominator^sigma_nest))
+    )
+
+    expect_true(is.na(fit@normIndex))
+    expect_equal(predicted, shares, tolerance = 1e-8)
+    expect_equal(unname(calcShares(fit, preMerger = TRUE)), shares,
+                 tolerance = 1e-8)
+})
+
+test_that("BLP contraction honors a no-outside-good normalization", {
+    prices <- c(2, 2.5, 3, 3.5)
+    shares <- c(.40, .30, .20, .10)
+    fit <- qa_value(sim(
+        prices = prices,
+        shares = shares,
+        demand = "BLP",
+        demand.param = list(
+            alpha = -.5,
+            sigma = 0,
+            sigmaNest = .9,
+            nDraws = 24,
+            consDraws = seq(-1, 1, length.out = 24)
+        ),
+        ownerPre = c("A", "B", "C", "D"),
+        ownerPost = c("A", "A", "C", "D"),
+        insideSize = 100
+    ), "BLP no-outside contraction")
+
+    alphas <- fit@slopes$alphas
+    delta <- fit@slopes$meanval
+    sigma_nest <- fit@slopes$sigmaNest
+    utilities <- outer(alphas, prices - fit@priceOutside, "*") +
+        matrix(delta, nrow = length(alphas), ncol = length(prices), byrow = TRUE)
+    exp_util <- exp(utilities / sigma_nest)
+    predicted <- colMeans(exp_util / rowSums(exp_util))
+
+    expect_equal(fit@normIndex, 1L)
+    expect_equal(unname(delta[1]), 0, tolerance = 1e-12)
+    expect_equal(predicted, shares, tolerance = 1e-8)
+    expect_equal(unname(calcShares(fit, preMerger = TRUE)), shares,
+                 tolerance = 1e-8)
+})

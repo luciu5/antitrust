@@ -477,7 +477,18 @@ shares = NULL,
         normIndex <- which(demand.param$meanval == 0)[1]
       }
     } else {
-      normIndex <- NA_integer_
+      ## When mean utilities are recovered from observed shares, retain the
+      ## no-outside-good normalization when the supplied shares exhaust the
+      ## market.  The BLP contraction uses the same normalization as
+      ## calcShares() below; forcing NA here would make a sum-one market
+      ## impossible to match because the fixed point would still include an
+      ## outside option.
+      normIndex <- if (isTRUE(all.equal(sum(shares), 1,
+                                        check.names = FALSE))) {
+        1L
+      } else {
+        NA_integer_
+      }
     }
 
     alphaVal <- if ("alpha" %in% names(demand.param)) {

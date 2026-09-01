@@ -53,6 +53,13 @@ and CV.  The architecture tests then compare old and new paths for all
 registered families, including supplied-parameter construction and repeated
 counterfactuals where applicable.
 
+The BLP regression coverage independently checks the contraction fixed point
+for both outside-good and no-outside-good markets.  During this audit,
+`master` was found to force an outside option during contraction even when
+the fitted object used a no-outside normalization.  The refactor branch now
+uses the same normalization in `sim()`, `calcSlopes()`, and `calcShares()`;
+the ordinary outside-good path is unchanged.
+
 The existing full `devtools::test()` suite passes after each committed phase.
 The final suite retains only the repository's prior warnings: missing-data ALM
 boundary warnings, CES optimizer diagnostics, and the existing bargaining CES
@@ -95,6 +102,10 @@ oddities were observed and intentionally left unchanged:
 * BLP has no observed-data calibration function in the current repository, so
   `calibrate(demand = "blp", ...)` remains unsupported rather than inventing a
   new estimator.
+* The `master` BLP contraction path did not honor its no-outside-good
+  normalization when recovering `meanval` from shares summing to one.  This
+  was reproduced independently and fixed on `refactor`; the correction is
+  covered by the BLP contraction tests.
 * The regression example `ai/examples/test_sim_regressions.R` currently stops
   at the historical LogitCap requirement for a finite `meanval`; this is
   unchanged and is not treated as a refactor fix.

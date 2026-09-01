@@ -844,7 +844,10 @@ setMethod(
       message("Using provided meanval (delta) for LogitBLP - skipping contraction mapping")
     } else {
       # Pre-compute price differences
-      price_diff <- prices - object@priceOutside
+      ## Use the same price normalization that will be installed below for
+      ## markets without an outside good.  For outside-good markets idx is NA
+      ## and this is the observed outside price.
+      price_diff <- prices - idxPrice
 
       # Define the fixed point function
       # delta implicitly contains ? * X (mean characteristic effects)
@@ -870,7 +873,11 @@ setMethod(
         insideIV <- sumExpUtil^sigmaNest
 
         withinNest <- expUtil / sumExpUtil
-        acrossNest <- insideIV / (1 + insideIV)
+        if (is.na(idx)) {
+          acrossNest <- insideIV / (1 + insideIV)
+        } else {
+          acrossNest <- rep(1, nDraws)
+        }
         shares_draw <- withinNest * acrossNest
 
         predShares <- colMeans(shares_draw)
@@ -909,6 +916,14 @@ setMethod(
       }
       if (iter == maxIter) {
         warning("BLP contraction mapping did not converge within ", maxIter, " iterations")
+      }
+
+      ## Without an outside good, mean utilities are identified only up to a
+      ## common additive constant.  Apply the existing normIndex convention
+      ## after contraction so the fitted object agrees with calcShares() and
+      ## with supplied-parameter BLP objects.
+      if (!is.na(idx)) {
+        delta <- delta - delta[idx]
       }
     }
 
