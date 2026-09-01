@@ -5,7 +5,7 @@ test_that("the registry covers generalized and migrated model combinations", {
             "linear", "aids", "loglin", "logit", "logit", "logit",
             "logit", "logit", "ces", "ces", "ces", "ces", "ces",
             "logit_nests", "ces_nests", "logit_cap", "pcaids", "pcaids_nests", "blp", "blp",
-            "auction2nd_cap",
+            "auction2nd_cap", "linear", "loglin",
             "logit", "logit", "ces", "ces", "logit_nests", "logit_cap",
             "logit", "ces", "logit", "ces"
         ),
@@ -14,17 +14,18 @@ test_that("the registry covers generalized and migrated model combinations", {
             "auction2nd", "bargaining", "bargaining2nd", "bertrand",
             "cournot", "auction2nd", "bargaining", "bargaining2nd",
             "bertrand", "bertrand", "bertrand", "bertrand", "bertrand", "bertrand", "cournot",
-            "auction2nd",
+            "auction2nd", "cournot", "cournot",
             "bertrand", "cournot", "bertrand", "cournot", "bertrand",
             "bertrand", "auction2nd", "auction2nd", "bargaining", "bargaining"
         ),
-        variant = c(rep("standard", 21), rep("alm", 10)),
+        variant = c(rep("standard", 23), rep("alm", 10)),
         class = c(
             "Linear", "AIDS", "LogLin", "Logit", "LogitCournot",
             "Auction2ndLogit", "BargainingLogit", "Bargaining2ndLogit",
             "CES", "CESCournot", "Auction2ndCES", "BargainingCES",
             "Bargaining2ndCES", "LogitNests", "CESNests", "LogitCap",
             "PCAIDS", "PCAIDSNests", "LogitBLP", "CournotBLP", "Auction2ndCap",
+            "Cournot", "Cournot",
             "LogitALM", "LogitCournotALM",
             "CESALM", "CESCournotALM", "LogitNestsALM", "LogitCapALM",
             "Auction2ndLogitALM", "Auction2ndCESALM",
@@ -35,14 +36,15 @@ test_that("the registry covers generalized and migrated model combinations", {
             "auction2nd.logit", "bargaining.logit", "bargaining2nd.logit",
             "ces", "ces.cournot", "auction2nd.ces", "bargaining.ces",
             "bargaining2nd.ces", "logit.nests", "ces.nests", "logit.cap",
-            "pcaids", "pcaids.nests", "sim", "sim", "auction2nd.cap", "logit.alm", "logit.cournot.alm", "ces.alm",
+            "pcaids", "pcaids.nests", "sim", "sim", "auction2nd.cap", "cournot", "cournot",
+            "logit.alm", "logit.cournot.alm", "ces.alm",
             "ces.cournot.alm", "logit.nests.alm", "logit.cap.alm",
             "auction2nd.logit.alm", "auction2nd.ces.alm",
             "bargaining.logit.alm", "bargaining.ces.alm"
         ),
-        calibrate = c(rep(TRUE, 18), FALSE, FALSE, TRUE, rep(TRUE, 10)),
-        specify = c(rep(TRUE, 16), FALSE, FALSE, TRUE, TRUE, FALSE, rep(FALSE, 10)),
-        simulate = rep(TRUE, 31),
+        calibrate = c(rep(TRUE, 18), FALSE, FALSE, rep(TRUE, 13)),
+        specify = c(rep(TRUE, 16), FALSE, FALSE, TRUE, TRUE, rep(FALSE, 13)),
+        simulate = rep(TRUE, 33),
         stringsAsFactors = FALSE,
         row.names = row.names(registry)
     )
@@ -67,7 +69,7 @@ test_that("model specifications normalize names and reject unsupported combinati
                  "logit::bertrand::alm")
 
     qa_expect_error(
-        model_spec("linear", "cournot"),
+        model_spec("linear", "bargaining"),
         "currently not supported",
         "unsupported model specification"
     )

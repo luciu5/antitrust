@@ -7,7 +7,7 @@
 simulate(
   fit,
   ownerPost,
-  mcDelta = rep(0, length(fit@model@prices)),
+  mcDelta = NULL,
   subset = rep(TRUE, length(fit@model@prices)),
   priceStart,
   capacitiesPost = NULL,
@@ -22,7 +22,9 @@ simulate(
 
 \item{ownerPost}{Post-counterfactual ownership vector or matrix.}
 
-\item{mcDelta}{A length-k vector of proportional marginal-cost changes.}
+\item{mcDelta}{A model-specific vector of proportional cost changes, with
+one element per product for most models and one element per plant for
+general Cournot models.}
 
 \item{subset}{A length-k logical vector selecting products in the
 counterfactual equilibrium.}

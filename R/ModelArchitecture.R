@@ -84,7 +84,8 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
 
     observed_extra <- list()
 
-    if (spec$demand %in% c("linear", "loglin")) {
+    if (spec$demand %in% c("linear", "loglin") &&
+        !identical(spec$conduct, "cournot")) {
         if (is.null(quantities)) {
             stop("'quantities' must be supplied when calibrating Linear or LogLin demand.")
         }
@@ -154,6 +155,23 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             ownerPost = ownerPre
         )
         observed_extra <- list(capacities = capacities)
+    } else if (spec$conduct == "cournot" &&
+               spec$demand %in% c("linear", "loglin")) {
+        if (is.null(quantities)) {
+            stop("'quantities' must be supplied when calibrating a Cournot model.")
+        }
+        constructor_args <- list(
+            prices = prices,
+            quantities = quantities,
+            margins = margins,
+            ownerPre = ownerPre,
+            ## The legacy constructor requires both ownership states;
+            ## simulate() replaces this placeholder for the scenario.
+            ownerPost = ownerPre
+        )
+        if (spec$demand == "loglin") {
+            constructor_args$demand <- rep("log", length(prices))
+        }
     } else {
         constructor_args <- list(
             prices = prices,
@@ -331,7 +349,9 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 #'
 #' @param fit An \code{AntitrustFit} returned by \code{\link{calibrate}}.
 #' @param ownerPost Post-counterfactual ownership vector or matrix.
-#' @param mcDelta A length-k vector of proportional marginal-cost changes.
+#' @param mcDelta A model-specific vector of proportional cost changes, with
+#' one element per product for most models and one element per plant for
+#' general Cournot models.
 #' @param subset A length-k logical vector selecting products in the
 #'   counterfactual equilibrium.
 #' @param priceStart Optional price starting values.
@@ -346,7 +366,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 #'   \code{LogitCournot}.
 #' @export
 simulate <- function(fit, ownerPost,
-                     mcDelta = rep(0, length(fit@model@prices)),
+                     mcDelta = NULL,
                      subset = rep(TRUE, length(fit@model@prices)),
                      priceStart, capacitiesPost = NULL,
                      bargpowerPost = NULL,
@@ -363,8 +383,14 @@ simulate <- function(fit, ownerPost,
 
     model <- fit@model
     nprods <- length(model@prices)
-    if (!is.numeric(mcDelta) || length(mcDelta) != nprods || anyNA(mcDelta)) {
-        stop("'mcDelta' must be a numeric vector with the same length as the fitted prices and no NAs.")
+    nmc <- if (methods::is(model, "Cournot")) {
+        nrow(model@quantities)
+    } else {
+        nprods
+    }
+    if (is.null(mcDelta)) mcDelta <- rep(0, nmc)
+    if (!is.numeric(mcDelta) || length(mcDelta) != nmc || anyNA(mcDelta)) {
+        stop("'mcDelta' must be a numeric vector with the same length as the fitted cost units and no NAs.")
     }
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
         stop("'subset' must be a logical vector the same length as the fitted prices with at least one TRUE value.")
@@ -423,6 +449,17 @@ simulate <- function(fit, ownerPost,
         }
         model@mcPost <- calcMC(model, preMerger = FALSE, exAnte = FALSE)
         model@pricePost <- calcPrices(model, preMerger = FALSE, exAnte = FALSE)
+        return(model)
+    }
+    if (methods::is(model, "Cournot")) {
+        if (!is.null(solver)) {
+            stop("Cournot uses its existing nonlinear quantity solver; 'solver' cannot be overridden.")
+        }
+        model@quantityPost <- calcQuantities(model, preMerger = FALSE, ...)
+        ## The legacy Cournot constructor leaves the marginal-cost slots
+        ## empty; downstream calcMC() computes them from the equilibrium
+        ## quantities.  Preserve that result-object convention.
+        model@pricePost <- calcPrices(model, preMerger = FALSE)
         return(model)
     }
     if (fit@spec$demand %in% c("aids", "pcaids", "pcaids_nests")) {
@@ -536,6 +573,9 @@ simulate <- function(fit, ownerPost,
         list(slopes = model@slopes, intercepts = model@intercepts)
     } else if (methods::is(model, "Linear")) {
         list(slopes = model@slopes, intercepts = model@intercepts)
+    } else if (methods::is(model, "Cournot")) {
+        list(slopes = model@slopes, intercepts = model@intercepts,
+             mktElast = model@mktElast)
     } else if (methods::is(model, "Bertrand") && is.list(model@slopes)) {
         model@slopes
     } else if (methods::is(model, "Bertrand")) {

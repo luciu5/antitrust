@@ -14,6 +14,8 @@ existing S4 classes.
 | Linear | Bertrand | `Linear` | yes | yes | `linear()`, `sim()` |
 | AIDS | Bertrand | `AIDS` | yes | yes | `aids()`, `sim()` |
 | LogLin | Bertrand | `LogLin` | yes | yes | `loglinear()`, `sim()` |
+| Linear | Cournot | `Cournot` | yes | simulate only | `cournot()` |
+| LogLin | Cournot | `Cournot` | yes | simulate only | `cournot()` |
 | Logit | Bertrand | `Logit` | yes | yes | `logit()`, `sim()` |
 | Logit | Cournot | `LogitCournot` | yes | yes | `logit.cournot()`, `sim()` |
 | Logit | second-score auction | `Auction2ndLogit` | yes | yes | `auction2nd.logit()`, `sim()` |
@@ -55,6 +57,13 @@ composition: `calibrate()` delegates seller-cost and buyer-value recovery to
 reserves, and expected prices through the existing auction methods. Supplied
 parameter construction is not exposed because `parmsStart` is an optimizer
 starting value, not a complete structural-parameter loading interface.
+
+General linear and log-linear Cournot are migrated as separate complete
+quantity-game entries. `simulate()` recalculates plant quantities through the
+existing `calcQuantities()` method after changing ownership and plant-level
+cost deltas; it does not combine a Bertrand demand implementation with a
+generic supply module. Direct `specify()` is not exposed because the legacy
+Cournot constructor has no separate supplied-demand-parameter loading path.
 
 BLP is deliberately marked calibration-ineligible: the repository has a
 parameterized BLP construction path but no observed-data BLP estimator that
@@ -127,8 +136,9 @@ oddities were observed and intentionally left unchanged:
 * The regression example `ai/examples/test_sim_regressions.R` currently stops
   at the historical LogitCap requirement for a finite `meanval`; this is
   unchanged and is not treated as a refactor fix.
-* Some specialized ALM, capacity-auction, vertical, Stackelberg, and general
-  quantity-game constructors are not generalized `sim()` demand/conduct
-  entries.  Their legacy functions were not removed or mechanically wrapped.
+* Specialized ALM, vertical, and Stackelberg constructors are not generalized
+  `sim()` demand/conduct entries.  Their legacy functions were not removed or
+  mechanically wrapped.  General linear and log-linear Cournot are registered
+  for the new fit pipeline, while the legacy `sim()` route remains unchanged.
 
 These are migration notes, not economic corrections.

@@ -1168,3 +1168,92 @@ test_that("capacity-constrained auction calibration and simulation preserve pari
     expect_equal(unconstrained_actual@pricePost,
                  unconstrained_old@pricePost, tolerance = 1e-8)
 })
+
+test_that("linear and log-linear Cournot calibration and simulation preserve parity", {
+    owner_pre <- diag(3)
+    owner_post <- owner_pre
+    owner_post[1, 2] <- owner_post[2, 1] <- 1
+    mc_delta <- c(-.05, 0, 0)
+    cases <- list(
+        list(
+            demand = "linear",
+            quantities = {
+                cap <- c(.5, .6, .7)
+                bmat <- matrix(-.25, nrow = 3, ncol = 3)
+                diag(bmat) <- 2 * diag(bmat) - 1 / cap
+                matrix(rowSums(solve(bmat) * -10), ncol = 1)
+            },
+            prices = {
+                q <- c(.5, .6, .7)
+                bmat <- matrix(-.25, nrow = 3, ncol = 3)
+                diag(bmat) <- 2 * diag(bmat) - 1 / q
+                10 + -.25 * sum(rowSums(solve(bmat) * -10))
+            },
+            margins = {
+                cap <- c(.5, .6, .7)
+                bmat <- matrix(-.25, nrow = 3, ncol = 3)
+                diag(bmat) <- 2 * diag(bmat) - 1 / cap
+                q <- rowSums(solve(bmat) * -10)
+                matrix(1 - (q / cap) /
+                           (10 + -.25 * sum(q)), ncol = 1)
+            }
+        ),
+        list(
+            demand = "loglin", quantities = matrix(c(3, 4, 5), ncol = 1),
+            prices = 7,
+            margins = matrix(c(.375, .5, .625), ncol = 1),
+             mktElast = -1.5)
+    )
+
+    for (case in cases) {
+        old_args <- list(
+            prices = case$prices, quantities = case$quantities,
+            margins = case$margins,
+            ownerPre = owner_pre, ownerPost = owner_post,
+            mcDelta = mc_delta
+        )
+        fit_args <- list(
+            demand = case$demand, conduct = "cournot", prices = case$prices,
+            quantities = case$quantities, margins = case$margins,
+            ownerPre = owner_pre
+        )
+        if (!is.null(case$mktElast)) {
+            old_args$mktElast <- case$mktElast
+            fit_args$mktElast <- case$mktElast
+        }
+        if (case$demand == "loglin") old_args$demand <- "log"
+
+        old <- qa_value(suppressWarnings(do.call(cournot, old_args)),
+                        paste("legacy", case$demand, "Cournot"))
+        fit <- qa_value(suppressWarnings(do.call(calibrate, fit_args)),
+                        paste("calibrate", case$demand, "Cournot"))
+        actual <- qa_value(suppressWarnings(simulate(
+            fit, ownerPost = owner_post, mcDelta = mc_delta
+        )), paste("simulate", case$demand, "Cournot"))
+
+        expect_true(is(fit@model, "Cournot"))
+        expect_equal(fit@parameters,
+                     getFromNamespace(".model_parameters", "antitrust")(old),
+                     tolerance = 1e-8)
+        expect_equal(class(actual), class(old))
+        for (slot in c("quantityPre", "quantityPost", "pricePre", "pricePost")) {
+            expect_equal(methods::slot(actual, slot), methods::slot(old, slot),
+                         tolerance = 1e-8,
+                         info = paste(case$demand, "Cournot", slot))
+        }
+        for (pre_merger in c(TRUE, FALSE)) {
+            expect_equal(calcQuantities(actual, pre_merger),
+                         calcQuantities(old, pre_merger), tolerance = 1e-8)
+            expect_equal(calcPrices(actual, pre_merger),
+                         calcPrices(old, pre_merger), tolerance = 1e-8)
+            expect_equal(calcMC(actual, pre_merger),
+                         calcMC(old, pre_merger), tolerance = 1e-8)
+            expect_equal(calcMargins(actual, pre_merger),
+                         calcMargins(old, pre_merger), tolerance = 1e-8)
+            expect_equal(calcShares(actual, pre_merger),
+                         calcShares(old, pre_merger), tolerance = 1e-8)
+            expect_equal(calcRevenues(actual, pre_merger),
+                         calcRevenues(old, pre_merger), tolerance = 1e-8)
+        }
+    }
+})
