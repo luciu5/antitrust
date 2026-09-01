@@ -65,6 +65,8 @@ Collate:
     'LogitFunctions.R'
     'ModelArchitecture.R'
     'ModelRegistry.R'
+    'PriceLeadershipClasses.R'
+    'PriceLeadershipFunctions.R'
     'SimFunctions.R'
     'VerticalFunctions.R'
     'antitrust-deprecated.R'

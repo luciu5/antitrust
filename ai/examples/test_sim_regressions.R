@@ -106,14 +106,21 @@ blp_stress <- sim(
 stress_elast <- elast(blp_stress, preMerger = TRUE)
 assert_true(all(is.finite(stress_elast)), "BLP stress case still produces non-finite elasticities.")
 
+logitcap_capacities <- c(30, 25, 20)
+logitcap_market_size <- 150
+logitcap_shares <- logitcap_capacities / logitcap_market_size
+logitcap_meanval <- log(logitcap_shares / (1 - sum(logitcap_shares))) -
+  (-1) * (c(10, 11, 9) - 0)
+
 logitcap <- sim(
   prices = c(10, 11, 9),
   margins = c(0.30, 0.25, 0.20),
   demand = "LogitCap",
-  demand.param = list(alpha = -1, mktSize = 150),
+  demand.param = list(alpha = -1, meanval = logitcap_meanval,
+                      mktSize = logitcap_market_size),
   ownerPre = c("A", "B", "C"),
   ownerPost = c("A", "A", "C"),
-  capacities = c(30, 25, 20)
+  capacities = logitcap_capacities
 )
 
 assert_true(is(logitcap, "LogitCap"), "sim(LogitCap) did not create a LogitCap object.")
