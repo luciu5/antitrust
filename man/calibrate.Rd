@@ -9,10 +9,12 @@ calibrate(
   conduct = NULL,
   prices,
   shares = NULL,
-  margins,
+  margins = NULL,
   ownerPre,
   quantities = NULL,
   variant = "standard",
+  knownElast = NULL,
+  mktElast = NULL,
   ...
 )
 }
@@ -28,7 +30,8 @@ specification object.}
 \item{shares}{A length-k vector of observed product shares. Required by
 demand systems whose calibration uses shares.}
 
-\item{margins}{A length-k vector of observed product margins.}
+\item{margins}{An optional length-k vector of observed product margins;
+required by model families whose calibration uses margins.}
 
 \item{ownerPre}{Pre-merger ownership vector or matrix.}
 
@@ -36,6 +39,10 @@ demand systems whose calibration uses shares.}
 Linear or LogLin calibration.}
 
 \item{variant}{A model-specific calibration variant, such as `"alm"`.}
+
+\item{knownElast}{A known own-price elasticity for PCAIDS calibration.}
+
+\item{mktElast}{A known market own-price elasticity for PCAIDS calibration.}
 
 \item{...}{Additional options accepted by the model-specific legacy
 calibration constructor.}

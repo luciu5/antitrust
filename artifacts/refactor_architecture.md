@@ -18,9 +18,13 @@ variant, existing S4 class, legacy calibrator mapping, and whether the entry
 supports `calibrate()`, `specify()`, and `simulate()`.
 
 The registry describes the combinations already exposed by generalized
-`sim()`, plus the existing ALM constructors: Linear, AIDS, LogLin, Logit, CES,
-nested Logit/CES, LogitCap, BLP, Cournot, second-score auction, bargaining,
-and second-score bargaining where the legacy package supports those pairings.
+`sim()`, plus the existing ALM constructors: Linear, AIDS, PCAIDS (including
+nested PCAIDS), LogLin, Logit, CES, nested Logit/CES, LogitCap, BLP, Cournot,
+second-score auction, bargaining, and second-score bargaining where the legacy
+package supports those pairings. PCAIDS is registered as its own Bertrand
+demand family even though its result classes inherit from AIDS; its
+known-elasticity and nested-parameter calibration remains in the existing
+PCAIDS-specific methods.
 ALM entries point to their complete legacy model-specific implementations;
 they are not assembled from a generic supply module.  Specialized capacity
 auctions, vertical models, and general quantity-game constructors remain
@@ -47,8 +51,10 @@ established result types.
 ## Calibration and parameter specification
 
 `calibrate()` dispatches through the registry to the existing model-specific
-constructor, including the ALM entries selected by `variant = "alm"`.  The
-constructor remains responsible for its own calibration equations, parameter
+constructor, including the ALM entries selected by `variant = "alm"`.  For
+PCAIDS, `knownElast` and `mktElast` are explicit calibration inputs and nested
+PCAIDS also receives its `nests` and observed margins. The constructor remains
+responsible for its own calibration equations, parameter
 identification, normalization, cost recovery, solver, and warnings.  The
 wrapper supplies pre-merger ownership as the required legacy post-ownership
 placeholder; that placeholder is replaced before a counterfactual is
@@ -75,8 +81,9 @@ method.  The dispatch preserves important differences:
   choice, including AG support where the legacy constructor provides it.
 * Second-score auction and second-score bargaining retain their direct or
   model-specific equilibrium methods.
-* AIDS recomputes its ownership-dependent price-delta equation at simulation
-  time.
+* AIDS and PCAIDS recompute their ownership-dependent price-delta equation at
+  simulation time; nested PCAIDS retains its model-specific nesting
+  calibration.
 
 There is no generic supply module that mechanically combines arbitrary demand
 and conduct modules.  The registry selects a complete existing model

@@ -27,6 +27,8 @@ existing S4 classes.
 | Nested Logit | Bertrand | `LogitNests` | yes | yes | `logit.nests()`, `sim()` |
 | Nested CES | Bertrand | `CESNests` | yes | yes | `ces.nests()`, `sim()` |
 | LogitCap | Bertrand | `LogitCap` | yes | yes | `logit.cap()`, `sim()` |
+| PCAIDS | Bertrand | `PCAIDS` | yes | simulate only | `pcaids()` |
+| Nested PCAIDS | Bertrand | `PCAIDSNests` | yes | simulate only | `pcaids.nests()` |
 | BLP | Bertrand | `LogitBLP` | no observed-data calibrator | yes | `sim()` |
 | BLP | Cournot | `CournotBLP` | no observed-data calibrator | yes | `sim()` |
 | Logit | Bertrand | `LogitALM` | yes (`variant = "alm"`) | simulate only | `logit.alm()` |
@@ -40,6 +42,11 @@ existing S4 classes.
 | Logit | bargaining | `BargainingLogitALM` | yes (`variant = "alm"`) | simulate only | `bargaining.logit.alm()` |
 | CES | bargaining | `BargainingCESALM` | yes (`variant = "alm"`) | simulate only | `bargaining.ces.alm()` |
 
+PCAIDS parameter specification is intentionally not generalized in this
+slice: its existing constructor identifies slopes from known elasticities,
+and nested PCAIDS additionally estimates nesting parameters from margins.
+Both variants use the shared `simulate()` boundary after calibration.
+
 BLP is deliberately marked calibration-ineligible: the repository has a
 parameterized BLP construction path but no observed-data BLP estimator that
 belongs behind `calibrate()`.
@@ -49,7 +56,9 @@ belongs behind `calibrate()`.
 The test foundation includes hard-coded master-oracle values for representative
 Logit-Bertrand and Logit-Cournot cases, including demand parameters, recovered
 costs, pre/post prices, shares, margins, elasticities, diversion, UPP, CMCR,
-and CV.  The architecture tests then compare old and new paths for all
+and CV.  PCAIDS and nested PCAIDS parity tests additionally compare their
+known-elasticity/nesting parameters and inherited AIDS outputs. The
+architecture tests then compare old and new paths for all
 registered families, including supplied-parameter construction and repeated
 counterfactuals where applicable.
 

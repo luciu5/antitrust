@@ -987,3 +987,107 @@ test_that("BLP contraction honors a no-outside-good normalization", {
     expect_equal(unname(calcShares(fit, preMerger = TRUE)), shares,
                  tolerance = 1e-8)
 })
+
+test_that("PCAIDS calibration and simulation preserve legacy parity", {
+    prices <- c(2, 2.2, 2.5)
+    shares <- c(.4, .35, .25)
+    diversions <- qa_fixture_diversions()
+    owner_pre <- c("A", "B", "C")
+    owner_post <- c("A", "A", "C")
+    mc_delta <- c(-.05, 0, 0)
+    price_start <- rep(.2, 3)
+
+    old <- qa_value(suppressWarnings(pcaids(
+        shares = shares, knownElast = -2, mktElast = -1.2,
+        prices = prices, diversions = diversions,
+        ownerPre = owner_pre, ownerPost = owner_post,
+        priceStart = price_start, mcDelta = mc_delta
+    )), "legacy PCAIDS simulation")
+    fit <- qa_value(suppressWarnings(calibrate(
+        demand = "pcaids", conduct = "bertrand", prices = prices,
+        shares = shares, margins = c(.4, .35, .3), ownerPre = owner_pre,
+        knownElast = -2, mktElast = -1.2, diversions = diversions,
+        priceStart = price_start
+    )), "PCAIDS calibration")
+    actual <- qa_value(suppressWarnings(simulate(
+        fit, ownerPost = owner_post, mcDelta = mc_delta
+    )), "PCAIDS simulation")
+
+    expect_true(is(fit@model, "PCAIDS"))
+    expect_equal(fit@parameters,
+                 getFromNamespace(".model_parameters", "antitrust")(old),
+                 tolerance = 1e-8)
+    expect_equal(class(actual), class(old))
+    for (slot in c("slopes", "intercepts", "priceDelta", "mcPre",
+                   "mcPost", "pricePre", "pricePost")) {
+        expect_equal(methods::slot(actual, slot), methods::slot(old, slot),
+                     tolerance = 1e-8,
+                     info = paste("PCAIDS", slot))
+    }
+    for (pre_merger in c(TRUE, FALSE)) {
+        expect_equal(calcShares(actual, pre_merger),
+                     calcShares(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcQuantities(actual, pre_merger),
+                     calcQuantities(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcMargins(actual, pre_merger),
+                     calcMargins(old, pre_merger), tolerance = 1e-8)
+        expect_equal(elast(actual, pre_merger), elast(old, pre_merger),
+                     tolerance = 1e-8)
+        expect_equal(diversion(actual, pre_merger), diversion(old, pre_merger),
+                     tolerance = 1e-8)
+    }
+    expect_equal(upp(actual), upp(old), tolerance = 1e-8)
+    expect_equal(cmcr(actual), cmcr(old), tolerance = 1e-8)
+    expect_equal(CV(actual), CV(old), tolerance = 1e-8)
+})
+
+test_that("nested PCAIDS calibration and simulation preserve legacy parity", {
+    prices <- c(2.9, 3.4, 2.2)
+    shares <- c(.2, .3, .5)
+    margins <- c(.33, .36, .44)
+    nests <- c("H", "L", "L")
+    owner_pre <- c("A", "B", "C")
+    owner_post <- c("A", "A", "C")
+    mc_delta <- c(0, -.02, 0)
+    price_start <- rep(.2, 3)
+
+    old <- qa_value(suppressWarnings(pcaids.nests(
+        shares = shares, margins = margins, knownElast = -3,
+        mktElast = -1, prices = prices, ownerPre = owner_pre,
+        ownerPost = owner_post, nests = nests, nestsParmStart = .5,
+        priceStart = price_start, mcDelta = mc_delta
+    )), "legacy nested PCAIDS simulation")
+    fit <- qa_value(suppressWarnings(calibrate(
+        demand = "pcaids_nests", conduct = "bertrand", prices = prices,
+        shares = shares, margins = margins, ownerPre = owner_pre,
+        knownElast = -3, mktElast = -1, nests = nests,
+        nestsParmStart = .5, priceStart = price_start
+    )), "nested PCAIDS calibration")
+    actual <- qa_value(suppressWarnings(simulate(
+        fit, ownerPost = owner_post, mcDelta = mc_delta
+    )), "nested PCAIDS simulation")
+
+    expect_true(is(fit@model, "PCAIDSNests"))
+    expect_equal(fit@parameters,
+                 getFromNamespace(".model_parameters", "antitrust")(old),
+                 tolerance = 1e-8)
+    expect_equal(class(actual), class(old))
+    for (slot in c("slopes", "intercepts", "nestsParms", "priceDelta",
+                   "mcPre", "mcPost", "pricePre", "pricePost")) {
+        expect_equal(methods::slot(actual, slot), methods::slot(old, slot),
+                     tolerance = 1e-8,
+                     info = paste("nested PCAIDS", slot))
+    }
+    for (pre_merger in c(TRUE, FALSE)) {
+        expect_equal(calcShares(actual, pre_merger),
+                     calcShares(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcQuantities(actual, pre_merger),
+                     calcQuantities(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcMargins(actual, pre_merger),
+                     calcMargins(old, pre_merger), tolerance = 1e-8)
+        expect_equal(elast(actual, pre_merger), elast(old, pre_merger),
+                     tolerance = 1e-8)
+        expect_equal(diversion(actual, pre_merger), diversion(old, pre_merger),
+                     tolerance = 1e-8)
+    }
+})

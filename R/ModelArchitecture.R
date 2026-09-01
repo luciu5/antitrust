@@ -39,31 +39,47 @@ setClass(
 #'   \code{\link{model_spec}}.
 #' @param conduct A conduct name.  Omit it when `demand` is a model
 #'   specification object.
-#' @param variant A model-specific calibration variant, such as `"alm"`.
 #' @param prices A length-k vector of observed product prices.
 #' @param shares A length-k vector of observed product shares. Required by
 #'   demand systems whose calibration uses shares.
-#' @param margins A length-k vector of observed product margins.
+#' @param margins An optional length-k vector of observed product margins;
+#'   required by model families whose calibration uses margins.
 #' @param ownerPre Pre-merger ownership vector or matrix.
 #' @param quantities A length-k vector of observed product quantities for
 #'   Linear or LogLin calibration.
+#' @param variant A model-specific calibration variant, such as `"alm"`.
+#' @param knownElast A known own-price elasticity for PCAIDS calibration.
+#' @param mktElast A known market own-price elasticity for PCAIDS calibration.
 #' @param ... Additional options accepted by the model-specific legacy
 #'   calibration constructor.
 #' @return An \code{AntitrustFit} object.
 #' @export
-calibrate <- function(demand, conduct = NULL, prices, shares = NULL, margins,
-                      ownerPre, quantities = NULL, variant = "standard", ...) {
+calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
+                      margins = NULL,
+                      ownerPre, quantities = NULL, variant = "standard",
+                      knownElast = NULL, mktElast = NULL, ...) {
     spec <- .architecture_model_spec(demand, conduct, variant)
 
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
     if (!.model_registry_supports(spec, "calibrate")) {
-        stop("calibrate() currently supports the registered standard and ALM model variants; unsupported structural models retain their legacy constructors.")
+        stop("calibrate() currently supports the registered standard and ALM model variants, including PCAIDS; unsupported structural models retain their legacy constructors.")
     }
 
     dots <- list(...)
     forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset"))
     if (length(forbidden)) {
         stop("'", forbidden[[1]], "' is a simulation scenario; supply it to simulate().")
+    }
+    ## These formals are explicit for PCAIDS, but were historically passed
+    ## through `...` for other demand systems.  Preserve that forwarding
+    ## behavior for existing calibrate() callers.
+    if (!is.null(knownElast) &&
+        !spec$demand %in% c("pcaids", "pcaids_nests")) {
+        dots$knownElast <- knownElast
+    }
+    if (!is.null(mktElast) &&
+        !spec$demand %in% c("pcaids", "pcaids_nests")) {
+        dots$mktElast <- mktElast
     }
 
     if (spec$demand %in% c("linear", "loglin")) {
@@ -78,6 +94,43 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL, margins,
             ## The legacy constructors require both ownership states.
             ## Calibration uses pre-merger ownership for this placeholder;
             ## simulate() replaces it for the counterfactual.
+            ownerPost = ownerPre
+        )
+    } else if (spec$demand == "pcaids") {
+        if (is.null(knownElast)) {
+            stop("'knownElast' must be supplied when calibrating PCAIDS demand.")
+        }
+        if (is.null(mktElast)) mktElast <- -1
+        constructor_args <- list(
+            shares = shares,
+            knownElast = knownElast,
+            mktElast = mktElast,
+            prices = prices,
+            ownerPre = ownerPre,
+            ## PCAIDS requires both ownership states even though the legacy
+            ## constructor performs its own price-change calculation.
+            ownerPost = ownerPre
+        )
+    } else if (spec$demand == "pcaids_nests") {
+        if (is.null(knownElast)) {
+            stop("'knownElast' must be supplied when calibrating nested PCAIDS demand.")
+        }
+        if (is.null(margins)) {
+            stop("'margins' must be supplied when calibrating nested PCAIDS demand.")
+        }
+        if (is.null(mktElast)) mktElast <- -1
+        if (is.null(dots$nests)) {
+            stop("'nests' must be supplied when calibrating nested PCAIDS demand.")
+        }
+        constructor_args <- list(
+            shares = shares,
+            margins = margins,
+            knownElast = knownElast,
+            mktElast = mktElast,
+            prices = prices,
+            ownerPre = ownerPre,
+            ## PCAIDS requires both ownership states even though the legacy
+            ## constructor performs its own price-change calculation.
             ownerPost = ownerPre
         )
     } else {
@@ -277,7 +330,7 @@ simulate <- function(fit, ownerPost,
         stop("'ownerPost' must be supplied for simulate().")
     }
     if (!.model_registry_supports(fit@spec, "simulate")) {
-        stop("simulate() currently supports Linear, LogLin, and AIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
+        stop("simulate() currently supports Linear, LogLin, AIDS, and PCAIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
     }
 
     model <- fit@model
@@ -319,7 +372,7 @@ simulate <- function(fit, ownerPost,
     if (!missing(priceStart)) {
         model@priceStart <- priceStart
     }
-    if (identical(fit@spec$demand, "aids")) {
+    if (fit@spec$demand %in% c("aids", "pcaids", "pcaids_nests")) {
         if (!is.null(solver) && !identical(solver, "nleqslv")) {
             stop("AIDS uses its existing nonlinear price solver; 'solver' cannot be overridden.")
         }
@@ -332,7 +385,8 @@ simulate <- function(fit, ownerPost,
         if (is.null(solver)) solver <- fit@diagnostics$solver
         solver <- match.arg(solver, c("nleqslv", "ag"))
         if (!(fit@spec$demand %in% c("logit", "ces", "logit_nests",
-                                      "ces_nests", "logit_cap", "blp")) &&
+                                      "ces_nests", "logit_cap", "blp",
+                                      "pcaids", "pcaids_nests")) &&
             identical(solver, "ag")) {
             stop("This model uses its existing nonlinear price solver; 'solver = \"ag\"' is not supported.")
         }
@@ -341,7 +395,8 @@ simulate <- function(fit, ownerPost,
         }
         if (identical(solver, "ag")) {
             model@pricePost <- calcPricesAG(model, preMerger = FALSE, isMax = isMax)
-        } else if (fit@spec$demand %in% c("linear", "loglin", "aids")) {
+        } else if (fit@spec$demand %in% c("linear", "loglin", "aids",
+                                           "pcaids", "pcaids_nests")) {
             ## These legacy price methods do not expose `isMax`; passing it
             ## through `...` would alter their optimizer call signature.
             model@pricePost <- calcPrices(model, preMerger = FALSE,
@@ -407,7 +462,16 @@ simulate <- function(fit, ownerPost,
 
 
 .model_parameters <- function(model) {
-    if (methods::is(model, "AIDS")) {
+    if (methods::is(model, "PCAIDSNests")) {
+        list(slopes = model@slopes, intercepts = model@intercepts,
+             mktElast = model@mktElast, knownElast = model@knownElast,
+             knownElastIndex = model@knownElastIndex,
+             nests = model@nests, nestsParms = model@nestsParms)
+    } else if (methods::is(model, "PCAIDS")) {
+        list(slopes = model@slopes, intercepts = model@intercepts,
+             mktElast = model@mktElast, knownElast = model@knownElast,
+             knownElastIndex = model@knownElastIndex)
+    } else if (methods::is(model, "AIDS")) {
         list(slopes = model@slopes, intercepts = model@intercepts,
              mktElast = model@mktElast)
     } else if (methods::is(model, "LogLin")) {

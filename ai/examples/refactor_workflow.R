@@ -21,6 +21,17 @@ fit <- calibrate(
 result_ab <- simulate(fit, ownerPost = ownerPost)
 result_ac <- simulate(fit, ownerPost = c("A", "B", "B"))
 
+## PCAIDS keeps its own known-elasticity calibration equations while using
+## the same fit/simulation boundary.
+pcaids_shares <- c(.4, .35, .25)
+pcaids_fit <- calibrate(
+    demand = "pcaids", conduct = "bertrand",
+    prices = prices, shares = pcaids_shares, margins = margins,
+    knownElast = -2, mktElast = -1.2,
+    ownerPre = ownerPre, priceStart = rep(.2, length(prices))
+)
+pcaids_result <- simulate(pcaids_fit, ownerPost = ownerPost)
+
 ## Supplied structural parameters use the same simulation boundary.
 specified_fit <- specify(
     demand = "logit", conduct = "bertrand",
