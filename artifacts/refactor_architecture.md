@@ -6,22 +6,25 @@ existing simulation result objects remain the result API.
 
 ## Model identity and registry
 
-`model_spec(demand, conduct)` returns a small S3 list with normalized
-`demand`, `conduct`, and `id` fields.  Names such as `Logit`, `CESNests`,
-`auction_2nd`, and `LogitBLP` are normalized to the vocabulary used by the
-registry.
+`model_spec(demand, conduct, variant = "standard")` returns a small S3 list
+with normalized `demand`, `conduct`, `variant`, and `id` fields.  Names such
+as `Logit`, `CESNests`, `auction_2nd`, and `LogitBLP` are normalized to the
+vocabulary used by the registry.  Existing ALM calibration variants are
+selected with `variant = "alm"` (or an ALM demand alias).
 
 `supportedModels()` is generated from one internal registry in
 `R/ModelRegistry.R`.  Each entry records the normalized demand/conduct pair,
-the existing S4 class, the legacy calibrator mapping, and whether the pair
+variant, existing S4 class, legacy calibrator mapping, and whether the entry
 supports `calibrate()`, `specify()`, and `simulate()`.
 
 The registry describes the combinations already exposed by generalized
-`sim()`: Linear, AIDS, LogLin, Logit, CES, nested Logit/CES, LogitCap, BLP,
-Cournot, second-score auction, bargaining, and second-score bargaining where
-the legacy package supports those pairings.  Specialized ALM constructors,
-capacity auctions, vertical models, and general quantity-game constructors
-remain outside this generalized registry and retain their legacy APIs.
+`sim()`, plus the existing ALM constructors: Linear, AIDS, LogLin, Logit, CES,
+nested Logit/CES, LogitCap, BLP, Cournot, second-score auction, bargaining,
+and second-score bargaining where the legacy package supports those pairings.
+ALM entries point to their complete legacy model-specific implementations;
+they are not assembled from a generic supply module.  Specialized capacity
+auctions, vertical models, and general quantity-game constructors remain
+outside this generalized registry and retain their legacy APIs.
 
 ## Fitted state
 
@@ -44,11 +47,12 @@ established result types.
 ## Calibration and parameter specification
 
 `calibrate()` dispatches through the registry to the existing model-specific
-constructor.  The constructor remains responsible for its own calibration
-equations, parameter identification, normalization, cost recovery, solver,
-and warnings.  The wrapper supplies pre-merger ownership as the required
-legacy post-ownership placeholder; that placeholder is replaced before a
-counterfactual is simulated.
+constructor, including the ALM entries selected by `variant = "alm"`.  The
+constructor remains responsible for its own calibration equations, parameter
+identification, normalization, cost recovery, solver, and warnings.  The
+wrapper supplies pre-merger ownership as the required legacy post-ownership
+placeholder; that placeholder is replaced before a counterfactual is
+simulated.
 
 `specify()` dispatches supplied structural parameters through the legacy
 parameterized construction path.  It validates and loads the parameters

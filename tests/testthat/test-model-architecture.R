@@ -419,6 +419,117 @@ test_that("legacy BLP simulation messages remain visible through sim", {
     expect_equal(nonempty(wrapper_messages), nonempty(legacy_messages))
 })
 
+test_that("ALM model variants calibrate and simulate through their legacy methods", {
+    p <- c(2, 2.5, 3)
+    s <- c(.40, .35, .25)
+    m <- c(.45, .40, .35)
+    owner_pre <- c("A", "B", "C")
+    owner_post <- c("A", "A", "C")
+    common <- list(
+        prices = p, shares = s, margins = m,
+        ownerPre = owner_pre, ownerPost = owner_post
+    )
+    cases <- list(
+        logit_bertrand = list(
+            demand = "logit", conduct = "bertrand",
+            constructor = logit.alm,
+            options = list(parmsStart = c(-.5, .1))
+        ),
+        logit_cournot = list(
+            demand = "logit", conduct = "cournot",
+            constructor = logit.cournot.alm,
+            options = list(parmsStart = c(-.5, .1))
+        ),
+        ces_bertrand = list(
+            demand = "ces", conduct = "bertrand",
+            constructor = ces.alm,
+            options = list(parmsStart = c(1, .1))
+        ),
+        ces_cournot = list(
+            demand = "ces", conduct = "cournot",
+            constructor = ces.cournot.alm,
+            options = list(parmsStart = c(1, .1))
+        ),
+        logit_auction2nd = list(
+            demand = "logit", conduct = "auction2nd",
+            constructor = auction2nd.logit.alm,
+            options = list(parmsStart = c(-.5, .1))
+        ),
+        ces_auction2nd = list(
+            demand = "ces", conduct = "auction2nd",
+            constructor = auction2nd.ces.alm,
+            options = list()
+        ),
+        logit_bargaining = list(
+            demand = "logit", conduct = "bargaining",
+            constructor = bargaining.logit.alm,
+            options = list(parmsStart = c(-.5, .1),
+                           bargpowerPre = rep(.5, 3),
+                           bargpowerPost = rep(.5, 3))
+        ),
+        ces_bargaining = list(
+            demand = "ces", conduct = "bargaining",
+            constructor = bargaining.ces.alm,
+            options = list(parmsStart = c(1, .1),
+                           bargpowerPre = rep(.5, 3),
+                           bargpowerPost = rep(.5, 3))
+        )
+    )
+    cases$logit_nests <- list(
+        demand = "logit_nests", conduct = "bertrand",
+        constructor = logit.nests.alm,
+        options = list(nests = factor(c("N1", "N1", "N2", "N2")),
+                       parmsStart = c(-.5, .5, .5)),
+        prices = c(1.8, 2, 2.2, 2.5),
+        shares = c(.35, .30, .20, .15),
+        margins = c(.45, .40, .35, .30),
+        ownerPre = c("A", "B", "C", "D"),
+        ownerPost = c("A", "A", "C", "D")
+    )
+    cases$logit_cap <- list(
+        demand = "logit_cap", conduct = "bertrand",
+        constructor = logit.cap.alm,
+        options = list(capacitiesPre = c(60, 60, 60),
+                       capacitiesPost = c(60, 60, 60),
+                       insideSize = 180,
+                       parmsStart = c(-.5, .1))
+    )
+
+    for (case_name in names(cases)) {
+        case <- cases[[case_name]]
+        prices <- if (is.null(case$prices)) common$prices else case$prices
+        shares <- if (is.null(case$shares)) common$shares else case$shares
+        margins <- if (is.null(case$margins)) common$margins else case$margins
+        owner_pre <- if (is.null(case$ownerPre)) common$ownerPre else case$ownerPre
+        owner_post <- if (is.null(case$ownerPost)) common$ownerPost else case$ownerPost
+        legacy_args <- c(
+            list(prices = prices, shares = shares, margins = margins,
+                 ownerPre = owner_pre, ownerPost = owner_post),
+            case$options
+        )
+        old <- suppressWarnings(do.call(case$constructor, legacy_args))
+        fit_args <- c(
+            list(demand = model_spec(case$demand, case$conduct, "alm"),
+                 prices = prices, shares = shares, margins = margins,
+                 ownerPre = owner_pre),
+            case$options
+        )
+        fit <- suppressWarnings(do.call(calibrate, fit_args))
+        actual <- suppressWarnings(simulate(fit, ownerPost = owner_post))
+        expect_true(is(actual, class(old)[[1]]), info = case_name)
+        expect_equal(actual@slopes, old@slopes, tolerance = 1e-7,
+                     info = case_name)
+        expect_equal(actual@mcPre, old@mcPre, tolerance = 1e-7,
+                     info = case_name)
+        expect_equal(actual@mcPost, old@mcPost, tolerance = 1e-7,
+                     info = case_name)
+        expect_equal(actual@pricePre, old@pricePre, tolerance = 1e-7,
+                     info = case_name)
+        expect_equal(actual@pricePost, old@pricePost, tolerance = 1e-7,
+                     info = case_name)
+    }
+})
+
 test_that("second-score auction calibration and simulation retain model-specific parity", {
     cases <- list(
         list(

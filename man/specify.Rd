@@ -17,6 +17,7 @@ specify(
   priceOutside,
   priceStart,
   labels = paste("Prod", 1:length(prices), sep = ""),
+  variant = "standard",
   ...
 )
 }
@@ -46,6 +47,8 @@ specification object.}
 \item{priceStart}{Optional equilibrium price starting values.}
 
 \item{labels}{Product labels.}
+
+\item{variant}{A model-specific calibration variant, such as `"alm"`.}
 
 \item{...}{Additional options accepted by the legacy parameterized
 constructor.}

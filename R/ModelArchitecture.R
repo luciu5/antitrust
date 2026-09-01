@@ -39,6 +39,7 @@ setClass(
 #'   \code{\link{model_spec}}.
 #' @param conduct A conduct name.  Omit it when `demand` is a model
 #'   specification object.
+#' @param variant A model-specific calibration variant, such as `"alm"`.
 #' @param prices A length-k vector of observed product prices.
 #' @param shares A length-k vector of observed product shares. Required by
 #'   demand systems whose calibration uses shares.
@@ -51,19 +52,12 @@ setClass(
 #' @return An \code{AntitrustFit} object.
 #' @export
 calibrate <- function(demand, conduct = NULL, prices, shares = NULL, margins,
-                      ownerPre, quantities = NULL, ...) {
-    spec <- if (inherits(demand, "antitrust_model_spec")) {
-        if (!is.null(conduct)) {
-            stop("'conduct' must be omitted when 'demand' is a model specification.")
-        }
-        demand
-    } else {
-        model_spec(demand = demand, conduct = conduct)
-    }
+                      ownerPre, quantities = NULL, variant = "standard", ...) {
+    spec <- .architecture_model_spec(demand, conduct, variant)
 
-    entry <- .model_registry_entry(spec$demand, spec$conduct)
+    entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
     if (!.model_registry_supports(spec, "calibrate")) {
-        stop("calibrate() currently supports Linear, LogLin, and AIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; and LogitCap-Bertrand.")
+        stop("calibrate() currently supports the registered standard and ALM model variants; unsupported structural models retain their legacy constructors.")
     }
 
     dots <- list(...)
@@ -139,6 +133,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL, margins,
 #'   \code{\link{model_spec}}.
 #' @param conduct A conduct name.  Omit it when `demand` is a model
 #'   specification object.
+#' @param variant A model-specific calibration variant, such as `"alm"`.
 #' @param prices A length-k vector of observed product prices.
 #' @param parameters A named list of structural demand parameters.
 #' @param ownerPre Pre-merger ownership vector or matrix.
@@ -157,18 +152,12 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                     shares = NULL, margins = NULL, quantities = NULL,
                     insideSize = 1,
                     priceOutside, priceStart,
-                    labels = paste("Prod", 1:length(prices), sep = ""), ...) {
-    spec <- if (inherits(demand, "antitrust_model_spec")) {
-        if (!is.null(conduct)) {
-            stop("'conduct' must be omitted when 'demand' is a model specification.")
-        }
-        demand
-    } else {
-        model_spec(demand = demand, conduct = conduct)
-    }
+                    labels = paste("Prod", 1:length(prices), sep = ""),
+                    variant = "standard", ...) {
+    spec <- .architecture_model_spec(demand, conduct, variant)
 
     if (!.model_registry_supports(spec, "specify")) {
-        stop("specify() currently supports Linear, LogLin, and AIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP parameter loading.")
+        stop("specify() currently supports the registered standard model variants and BLP parameter loading; ALM variants require their model-specific calibration.")
     }
     if (!is.list(parameters)) {
         stop("'parameters' must be a list.")
@@ -387,6 +376,23 @@ simulate <- function(fit, ownerPost,
     }
 
     model
+}
+
+
+.architecture_model_spec <- function(demand, conduct, variant = "standard") {
+    if (inherits(demand, "antitrust_model_spec")) {
+        if (!is.null(conduct)) {
+            stop("'conduct' must be omitted when 'demand' is a model specification.")
+        }
+        requested_variant <- .normalize_variant_name(variant)
+        if (!identical(requested_variant, "standard") &&
+            !identical(requested_variant, demand$variant)) {
+            stop("'variant' conflicts with the supplied model specification.")
+        }
+        demand
+    } else {
+        model_spec(demand = demand, conduct = conduct, variant = variant)
+    }
 }
 
 

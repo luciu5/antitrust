@@ -12,6 +12,7 @@ calibrate(
   margins,
   ownerPre,
   quantities = NULL,
+  variant = "standard",
   ...
 )
 }
@@ -33,6 +34,8 @@ demand systems whose calibration uses shares.}
 
 \item{quantities}{A length-k vector of observed product quantities for
 Linear or LogLin calibration.}
+
+\item{variant}{A model-specific calibration variant, such as `"alm"`.}
 
 \item{...}{Additional options accepted by the model-specific legacy
 calibration constructor.}

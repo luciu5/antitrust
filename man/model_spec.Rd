@@ -4,7 +4,7 @@
 \alias{model_spec}
 \title{Describe a demand/conduct model combination}
 \usage{
-model_spec(demand, conduct)
+model_spec(demand, conduct, variant = "standard")
 }
 \arguments{
 \item{demand}{A human-readable demand-system name, such as \code{"logit"}
@@ -12,6 +12,10 @@ or \code{"ces"}.}
 
 \item{conduct}{A human-readable conduct name, such as \code{"bertrand"}
 or \code{"cournot"}.}
+
+\item{variant}{A model-specific calibration variant. The default is
+\code{"standard"}; \code{"alm"} selects the existing unknown-market-
+elasticity calibration where supported.}
 }
 \value{
 A small object of class \code{antitrust_model_spec} containing

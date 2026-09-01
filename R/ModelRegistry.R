@@ -4,10 +4,13 @@
 #'   or \code{"ces"}.
 #' @param conduct A human-readable conduct name, such as \code{"bertrand"}
 #'   or \code{"cournot"}.
+#' @param variant A model-specific calibration variant. The default is
+#'   \code{"standard"}; \code{"alm"} selects the existing unknown-market-
+#'   elasticity calibration where supported.
 #' @return A small object of class \code{antitrust_model_spec} containing
 #'   normalized model names.
 #' @export
-model_spec <- function(demand, conduct) {
+model_spec <- function(demand, conduct, variant = "standard") {
     if (missing(demand) || length(demand) != 1L || is.na(demand)) {
         stop("'demand' must be a single model name.")
     }
@@ -15,9 +18,28 @@ model_spec <- function(demand, conduct) {
         stop("'conduct' must be a single conduct name.")
     }
 
-    demand <- .normalize_demand_name(demand)
+    demand_text <- tolower(trimws(as.character(demand)))
+    demand_text <- gsub("[[:space:].-]+", "_", demand_text)
+    variant_aliases <- c(
+        logit_alm = "logit",
+        logitalm = "logit",
+        ces_alm = "ces",
+        cesalm = "ces"
+    )
+    if (demand_text %in% names(variant_aliases)) {
+        requested_variant <- .normalize_variant_name(variant)
+        if (!missing(variant) && !identical(requested_variant, "standard") &&
+            !identical(requested_variant, "alm")) {
+            stop("variant is inconsistent with the ALM demand alias.")
+        }
+        demand <- variant_aliases[[demand_text]]
+        variant <- "alm"
+    } else {
+        demand <- .normalize_demand_name(demand)
+        variant <- .normalize_variant_name(variant)
+    }
     conduct <- .normalize_conduct_name(conduct)
-    entry <- .model_registry_entry(demand, conduct)
+    entry <- .model_registry_entry(demand, conduct, variant)
     if (is.null(entry)) {
         stop(demand, " / ", conduct, " currently not supported.")
     }
@@ -26,6 +48,7 @@ model_spec <- function(demand, conduct) {
         list(
             demand = demand,
             conduct = conduct,
+            variant = variant,
             id = entry$id
         ),
         class = c("antitrust_model_spec", "list")
@@ -44,6 +67,7 @@ supportedModels <- function() {
         data.frame(
             demand = entry$demand,
             conduct = entry$conduct,
+            variant = if (is.null(entry$variant)) "standard" else entry$variant,
             class = entry$class,
             calibrator = entry$calibrator,
             calibrate = entry$calibrate,
@@ -61,6 +85,7 @@ print.antitrust_model_spec <- function(x, ...) {
     cat("antitrust model specification\n")
     cat("  demand:  ", x$demand, "\n", sep = "")
     cat("  conduct: ", x$conduct, "\n", sep = "")
+    cat("  variant: ", x$variant, "\n", sep = "")
     invisible(x)
 }
 
@@ -99,8 +124,24 @@ print.antitrust_model_spec <- function(x, ...) {
 }
 
 
-.model_registry_key <- function(demand, conduct) {
-    paste(demand, conduct, sep = "::")
+.normalize_variant_name <- function(variant) {
+    if (length(variant) != 1L || is.na(variant)) {
+        stop("'variant' must be a single model variant name.")
+    }
+    variant <- tolower(trimws(as.character(variant)))
+    variant <- gsub("[[:space:]._-]+", "", variant)
+    aliases <- c(default = "standard", standard = "standard", alm = "alm")
+    if (variant %in% names(aliases)) aliases[[variant]] else variant
+}
+
+
+.model_registry_key <- function(demand, conduct, variant = "standard") {
+    variant <- .normalize_variant_name(variant)
+    if (identical(variant, "standard")) {
+        paste(demand, conduct, sep = "::")
+    } else {
+        paste(demand, conduct, variant, sep = "::")
+    }
 }
 
 
@@ -159,19 +200,57 @@ print.antitrust_model_spec <- function(x, ...) {
              specify = TRUE, simulate = TRUE),
         list(id = "blp::cournot", demand = "blp", conduct = "cournot",
              class = "CournotBLP", calibrator = "sim", calibrate = FALSE,
-             specify = TRUE, simulate = TRUE)
+             specify = TRUE, simulate = TRUE),
+        list(id = "logit::bertrand::alm", demand = "logit", conduct = "bertrand",
+             variant = "alm", class = "LogitALM", calibrator = "logit.alm",
+             calibrate = TRUE, specify = FALSE, simulate = TRUE),
+        list(id = "logit::cournot::alm", demand = "logit", conduct = "cournot",
+             variant = "alm", class = "LogitCournotALM",
+             calibrator = "logit.cournot.alm", calibrate = TRUE,
+             specify = FALSE, simulate = TRUE),
+        list(id = "ces::bertrand::alm", demand = "ces", conduct = "bertrand",
+             variant = "alm", class = "CESALM", calibrator = "ces.alm",
+             calibrate = TRUE, specify = FALSE, simulate = TRUE),
+        list(id = "ces::cournot::alm", demand = "ces", conduct = "cournot",
+             variant = "alm", class = "CESCournotALM",
+             calibrator = "ces.cournot.alm", calibrate = TRUE,
+             specify = FALSE, simulate = TRUE),
+        list(id = "logit_nests::bertrand::alm", demand = "logit_nests",
+             conduct = "bertrand", variant = "alm", class = "LogitNestsALM",
+             calibrator = "logit.nests.alm", calibrate = TRUE,
+             specify = FALSE, simulate = TRUE),
+        list(id = "logit_cap::bertrand::alm", demand = "logit_cap",
+             conduct = "bertrand", variant = "alm", class = "LogitCapALM",
+             calibrator = "logit.cap.alm", calibrate = TRUE,
+             specify = FALSE, simulate = TRUE),
+        list(id = "logit::auction2nd::alm", demand = "logit",
+             conduct = "auction2nd", variant = "alm",
+             class = "Auction2ndLogitALM", calibrator = "auction2nd.logit.alm",
+             calibrate = TRUE, specify = FALSE, simulate = TRUE),
+        list(id = "ces::auction2nd::alm", demand = "ces",
+             conduct = "auction2nd", variant = "alm",
+             class = "Auction2ndCESALM", calibrator = "auction2nd.ces.alm",
+             calibrate = TRUE, specify = FALSE, simulate = TRUE),
+        list(id = "logit::bargaining::alm", demand = "logit",
+             conduct = "bargaining", variant = "alm",
+             class = "BargainingLogitALM", calibrator = "bargaining.logit.alm",
+             calibrate = TRUE, specify = FALSE, simulate = TRUE),
+        list(id = "ces::bargaining::alm", demand = "ces",
+             conduct = "bargaining", variant = "alm",
+             class = "BargainingCESALM", calibrator = "bargaining.ces.alm",
+             calibrate = TRUE, specify = FALSE, simulate = TRUE)
     )
     registry <- setNames(entries, vapply(entries, `[[`, character(1), "id"))
     function() registry
 })
 
 
-.model_registry_entry <- function(demand, conduct) {
-    .model_registry()[[.model_registry_key(demand, conduct)]]
+.model_registry_entry <- function(demand, conduct, variant = "standard") {
+    .model_registry()[[.model_registry_key(demand, conduct, variant)]]
 }
 
 
 .model_registry_supports <- function(spec, operation) {
-    entry <- .model_registry_entry(spec$demand, spec$conduct)
+    entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
     !is.null(entry) && isTRUE(entry[[operation]])
 }

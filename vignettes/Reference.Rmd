@@ -151,6 +151,19 @@ fit <- specify(
 result <- simulate(fit, ownerPost = ownerPost)
 ```
 
+Model-specific calibration variants remain explicit. For example, the
+existing ALM Logit implementation can estimate an unobserved outside share
+from the supplied margins:
+
+```{r refactor-alm, eval=FALSE}
+fit_alm <- calibrate(
+  demand = "logit", conduct = "bertrand", variant = "alm",
+  prices = prices, shares = shares_inside, margins = margins,
+  ownerPre = ownerPre
+)
+result_alm <- simulate(fit_alm, ownerPost = ownerPost)
+```
+
 The established one-call constructors, including `logit()`, `ces()`, and
 `sim()`, remain available. The registry behind `model_spec()` and
 `supportedModels()` identifies complete demand/conduct model combinations; it

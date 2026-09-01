@@ -31,6 +31,15 @@ specified_fit <- specify(
 )
 specified_result <- simulate(specified_fit, ownerPost = ownerPost)
 
+## ALM is an explicit model-specific calibration variant.  Its legacy
+## constructor estimates the unknown outside share from additional margins.
+alm_fit <- calibrate(
+    demand = "logit", conduct = "bertrand", variant = "alm",
+    prices = prices, shares = shares / sum(shares), margins = margins,
+    ownerPre = ownerPre
+)
+alm_result <- simulate(alm_fit, ownerPost = ownerPost)
+
 ## Cost efficiencies and product exits are scenario inputs.
 efficiency_result <- simulate(
     fit, ownerPost = ownerPost,

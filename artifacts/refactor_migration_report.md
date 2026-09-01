@@ -29,6 +29,16 @@ existing S4 classes.
 | LogitCap | Bertrand | `LogitCap` | yes | yes | `logit.cap()`, `sim()` |
 | BLP | Bertrand | `LogitBLP` | no observed-data calibrator | yes | `sim()` |
 | BLP | Cournot | `CournotBLP` | no observed-data calibrator | yes | `sim()` |
+| Logit | Bertrand | `LogitALM` | yes (`variant = "alm"`) | simulate only | `logit.alm()` |
+| Logit | Cournot | `LogitCournotALM` | yes (`variant = "alm"`) | simulate only | `logit.cournot.alm()` |
+| CES | Bertrand | `CESALM` | yes (`variant = "alm"`) | simulate only | `ces.alm()` |
+| CES | Cournot | `CESCournotALM` | yes (`variant = "alm"`) | simulate only | `ces.cournot.alm()` |
+| Nested Logit | Bertrand | `LogitNestsALM` | yes (`variant = "alm"`) | simulate only | `logit.nests.alm()` |
+| LogitCap | Bertrand | `LogitCapALM` | yes (`variant = "alm"`) | simulate only | `logit.cap.alm()` |
+| Logit | second-score auction | `Auction2ndLogitALM` | yes (`variant = "alm"`) | simulate only | `auction2nd.logit.alm()` |
+| CES | second-score auction | `Auction2ndCESALM` | yes (`variant = "alm"`) | simulate only | `auction2nd.ces.alm()` |
+| Logit | bargaining | `BargainingLogitALM` | yes (`variant = "alm"`) | simulate only | `bargaining.logit.alm()` |
+| CES | bargaining | `BargainingCESALM` | yes (`variant = "alm"`) | simulate only | `bargaining.ces.alm()` |
 
 BLP is deliberately marked calibration-ineligible: the repository has a
 parameterized BLP construction path but no observed-data BLP estimator that
