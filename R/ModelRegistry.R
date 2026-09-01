@@ -104,6 +104,8 @@ print.antitrust_model_spec <- function(x, ...) {
         logit_cap = "logit_cap",
         pcaidsnests = "pcaids_nests",
         pcaids_nests = "pcaids_nests",
+        auction2ndcap = "auction2nd_cap",
+        auction2nd_cap = "auction2nd_cap",
         loglin = "loglin"
     )
     if (demand %in% names(aliases)) aliases[[demand]] else demand
@@ -210,6 +212,10 @@ print.antitrust_model_spec <- function(x, ...) {
         list(id = "blp::cournot", demand = "blp", conduct = "cournot",
              class = "CournotBLP", calibrator = "sim", calibrate = FALSE,
              specify = TRUE, simulate = TRUE),
+        list(id = "auction2nd_cap::auction2nd", demand = "auction2nd_cap",
+             conduct = "auction2nd", class = "Auction2ndCap",
+             calibrator = "auction2nd.cap", calibrate = TRUE,
+             specify = FALSE, simulate = TRUE),
         list(id = "logit::bertrand::alm", demand = "logit", conduct = "bertrand",
              variant = "alm", class = "LogitALM", calibrator = "logit.alm",
              calibrate = TRUE, specify = FALSE, simulate = TRUE),

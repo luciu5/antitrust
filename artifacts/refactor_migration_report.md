@@ -29,6 +29,7 @@ existing S4 classes.
 | LogitCap | Bertrand | `LogitCap` | yes | yes | `logit.cap()`, `sim()` |
 | PCAIDS | Bertrand | `PCAIDS` | yes | simulate only | `pcaids()` |
 | Nested PCAIDS | Bertrand | `PCAIDSNests` | yes | simulate only | `pcaids.nests()` |
+| Capacity-constrained second-score auction | specialized auction | `Auction2ndCap` | yes | simulate only | `auction2nd.cap()` |
 | BLP | Bertrand | `LogitBLP` | no observed-data calibrator | yes | `sim()` |
 | BLP | Cournot | `CournotBLP` | no observed-data calibrator | yes | `sim()` |
 | Logit | Bertrand | `LogitALM` | yes (`variant = "alm"`) | simulate only | `logit.alm()` |
@@ -46,6 +47,14 @@ PCAIDS parameter specification is intentionally not generalized in this
 slice: its existing constructor identifies slopes from known elasticities,
 and nested PCAIDS additionally estimates nesting parameters from margins.
 Both variants use the shared `simulate()` boundary after calibration.
+
+The capacity-constrained second-score auction is also migrated through a
+specialized registry entry. It is not represented as a generic demand/supply
+composition: `calibrate()` delegates seller-cost and buyer-value recovery to
+`auction2nd.cap()`, while `simulate()` updates ownership, capacity changes,
+reserves, and expected prices through the existing auction methods. Supplied
+parameter construction is not exposed because `parmsStart` is an optimizer
+starting value, not a complete structural-parameter loading interface.
 
 BLP is deliberately marked calibration-ineligible: the repository has a
 parameterized BLP construction path but no observed-data BLP estimator that

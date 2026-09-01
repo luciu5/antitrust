@@ -1091,3 +1091,80 @@ test_that("nested PCAIDS calibration and simulation preserve legacy parity", {
                      tolerance = 1e-8)
     }
 })
+
+test_that("capacity-constrained auction calibration and simulation preserve parity", {
+    capacities <- c(.65, .30, .05)
+    prices <- c(3.89, 3.79, 3.74)
+    margins <- c(.228, .209, .197)
+    owner_pre <- c("A", "B", "C")
+    owner_post <- c("A", "A", "C")
+    mc_delta <- c(.05, 0, 0)
+    common <- list(
+        capacities = capacities, margins = margins, prices = prices,
+        reserve = NA, shareInside = .67, sellerCostCDF = "punif",
+        ownerPre = owner_pre, ownerPost = owner_post, mcDelta = mc_delta
+    )
+
+    old <- qa_value(suppressWarnings(do.call(auction2nd.cap, common)),
+                    "legacy capacity-constrained auction simulation")
+    fit <- qa_value(suppressWarnings(calibrate(
+        demand = "auction2nd_cap", conduct = "auction2nd",
+        prices = prices, margins = margins, ownerPre = owner_pre,
+        capacities = capacities, reserve = NA, shareInside = .67,
+        sellerCostCDF = "punif"
+    )), "capacity-constrained auction calibration")
+    actual <- qa_value(suppressWarnings(simulate(
+        fit, ownerPost = owner_post, mcDelta = mc_delta
+    )), "capacity-constrained auction simulation")
+
+    expect_true(is(fit@model, "Auction2ndCap"))
+    expect_equal(fit@observed$capacities, capacities)
+    expect_equal(fit@parameters,
+                 getFromNamespace(".model_parameters", "antitrust")(old),
+                 tolerance = 1e-8)
+    expect_equal(class(actual), class(old))
+    for (slot in c("reservePre", "reservePost", "pricePre", "pricePost",
+                   "mcPre", "mcPost")) {
+        expect_equal(methods::slot(actual, slot), methods::slot(old, slot),
+                     tolerance = 1e-8,
+                     info = paste("capacity auction", slot))
+    }
+    for (pre_merger in c(TRUE, FALSE)) {
+        expect_equal(calcShares(actual, pre_merger),
+                     calcShares(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcMC(actual, pre_merger),
+                     calcMC(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcPrices(actual, pre_merger),
+                     calcPrices(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcProducerSurplus(actual, pre_merger),
+                     calcProducerSurplus(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcExpectedLowestCost(actual, pre_merger),
+                     calcExpectedLowestCost(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcExpectedPrice(actual, pre_merger),
+                     calcExpectedPrice(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcBuyerExpectedCost(actual, pre_merger),
+                     calcBuyerExpectedCost(old, pre_merger), tolerance = 1e-8)
+        expect_equal(cdfG(actual, preMerger = pre_merger),
+                     cdfG(old, preMerger = pre_merger), tolerance = 1e-8)
+    }
+
+    unconstrained_old <- qa_value(suppressWarnings(auction2nd.cap(
+        capacities = capacities, margins = margins, prices = prices,
+        reserve = NA, shareInside = .67, sellerCostCDF = "punif",
+        ownerPre = owner_pre, ownerPost = owner_post,
+        constrain.reserve = FALSE
+    )), "legacy unconstrained capacity auction")
+    unconstrained_fit <- qa_value(suppressWarnings(calibrate(
+        demand = "auction2nd_cap", conduct = "auction2nd",
+        prices = prices, margins = margins, ownerPre = owner_pre,
+        capacities = capacities, reserve = NA, shareInside = .67,
+        sellerCostCDF = "punif", constrain.reserve = FALSE
+    )), "unconstrained capacity auction calibration")
+    unconstrained_actual <- qa_value(suppressWarnings(simulate(
+        unconstrained_fit, ownerPost = owner_post
+    )), "unconstrained capacity auction simulation")
+    expect_equal(unconstrained_actual@reservePost,
+                 unconstrained_old@reservePost, tolerance = 1e-8)
+    expect_equal(unconstrained_actual@pricePost,
+                 unconstrained_old@pricePost, tolerance = 1e-8)
+})

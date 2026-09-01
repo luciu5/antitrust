@@ -21,7 +21,9 @@ The registry describes the combinations already exposed by generalized
 `sim()`, plus the existing ALM constructors: Linear, AIDS, PCAIDS (including
 nested PCAIDS), LogLin, Logit, CES, nested Logit/CES, LogitCap, BLP, Cournot,
 second-score auction, bargaining, and second-score bargaining where the legacy
-package supports those pairings. PCAIDS is registered as its own Bertrand
+package supports those pairings. The capacity-constrained second-score auction
+is registered as a complete specialized model entry, rather than as a demand
+module mechanically combined with auction conduct. PCAIDS is registered as its own Bertrand
 demand family even though its result classes inherit from AIDS; its
 known-elasticity and nested-parameter calibration remains in the existing
 PCAIDS-specific methods.
@@ -80,7 +82,9 @@ method.  The dispatch preserves important differences:
 * Bargaining retains its bargaining-specific equilibrium equations and solver
   choice, including AG support where the legacy constructor provides it.
 * Second-score auction and second-score bargaining retain their direct or
-  model-specific equilibrium methods.
+  model-specific equilibrium methods. The capacity-constrained auction keeps
+  its seller-cost distribution, buyer-valuation, reserve, and capacity
+  calculations together.
 * AIDS and PCAIDS recompute their ownership-dependent price-delta equation at
   simulation time; nested PCAIDS retains its model-specific nesting
   calibration.

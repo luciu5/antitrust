@@ -82,6 +82,8 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
         dots$mktElast <- mktElast
     }
 
+    observed_extra <- list()
+
     if (spec$demand %in% c("linear", "loglin")) {
         if (is.null(quantities)) {
             stop("'quantities' must be supplied when calibrating Linear or LogLin demand.")
@@ -133,6 +135,25 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             ## constructor performs its own price-change calculation.
             ownerPost = ownerPre
         )
+    } else if (spec$demand == "auction2nd_cap") {
+        if (is.null(dots$capacities)) {
+            stop("'capacities' must be supplied when calibrating the capacity-constrained auction model.")
+        }
+        if (is.null(margins)) {
+            stop("'margins' must be supplied when calibrating the capacity-constrained auction model.")
+        }
+        capacities <- dots$capacities
+        dots$capacities <- NULL
+        constructor_args <- list(
+            capacities = capacities,
+            margins = margins,
+            prices = prices,
+            ownerPre = ownerPre,
+            ## The auction constructor requires both ownership states;
+            ## simulate() replaces this placeholder for the scenario.
+            ownerPost = ownerPre
+        )
+        observed_extra <- list(capacities = capacities)
     } else {
         constructor_args <- list(
             prices = prices,
@@ -168,11 +189,18 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             shares = shares,
             margins = margins,
             ownerPre = ownerPre
-        ), if (!is.null(quantities)) list(quantities = quantities) else list()),
+        ), observed_extra,
+        if (!is.null(quantities)) list(quantities = quantities) else list()),
         diagnostics = list(
             status = "completed",
             model_class = class(model)[[1]],
             solver = solver,
+            constrain.reserve = if (spec$demand == "auction2nd_cap" &&
+                                    !is.null(dots[["constrain.reserve"]])) {
+                dots[["constrain.reserve"]]
+            } else {
+                TRUE
+            },
             warnings = captured$warnings,
             messages = captured$messages
         )
@@ -345,10 +373,19 @@ simulate <- function(fit, ownerPost,
         warning("positive values of 'mcDelta' imply an INCREASE in marginal costs")
     }
 
-    model@ownerPost <- ownerPost
-    model@ownerPost <- ownerToMatrix(model, preMerger = FALSE)
+    if (methods::is(model, "Auction2ndCap")) {
+        if (is.matrix(ownerPost) || length(ownerPost) != nprods) {
+            stop("'ownerPost' must be a length-k ownership vector for the capacity-constrained auction model.")
+        }
+        model@ownerPost <- ownerPost
+    } else {
+        model@ownerPost <- ownerPost
+        model@ownerPost <- ownerToMatrix(model, preMerger = FALSE)
+    }
     model@mcDelta <- mcDelta
-    model@subset <- subset
+    if (!methods::is(model, "Auction2ndCap")) {
+        model@subset <- subset
+    }
     if (!is.null(capacitiesPost)) {
         if (!methods::is(model, "LogitCap")) {
             stop("'capacitiesPost' is only supported for LogitCap fits.")
@@ -371,6 +408,22 @@ simulate <- function(fit, ownerPost,
     }
     if (!missing(priceStart)) {
         model@priceStart <- priceStart
+    }
+    if (methods::is(model, "Auction2ndCap")) {
+        if (!is.null(solver)) {
+            stop("The capacity-constrained auction uses its existing equilibrium methods; 'solver' cannot be overridden.")
+        }
+        if (any(!subset)) {
+            stop("'subset' is not supported for the capacity-constrained auction model.")
+        }
+        if (isTRUE(fit@diagnostics$constrain.reserve)) {
+            model@reservePost <- model@reservePre
+        } else {
+            model@reservePost <- calcOptimalReserve(model, preMerger = FALSE)
+        }
+        model@mcPost <- calcMC(model, preMerger = FALSE, exAnte = FALSE)
+        model@pricePost <- calcPrices(model, preMerger = FALSE, exAnte = FALSE)
+        return(model)
     }
     if (fit@spec$demand %in% c("aids", "pcaids", "pcaids_nests")) {
         if (!is.null(solver) && !identical(solver, "nleqslv")) {
@@ -462,7 +515,12 @@ simulate <- function(fit, ownerPost,
 
 
 .model_parameters <- function(model) {
-    if (methods::is(model, "PCAIDSNests")) {
+    if (methods::is(model, "Auction2ndCap")) {
+        list(sellerCostParms = model@sellerCostParms,
+             buyerValuation = model@buyerValuation,
+             reservePre = model@reservePre,
+             reservePost = model@reservePost)
+    } else if (methods::is(model, "PCAIDSNests")) {
         list(slopes = model@slopes, intercepts = model@intercepts,
              mktElast = model@mktElast, knownElast = model@knownElast,
              knownElastIndex = model@knownElastIndex,
