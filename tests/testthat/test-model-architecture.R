@@ -1487,3 +1487,63 @@ test_that("vertical second-score calibration and simulation preserve parity", {
                      calcRevenues(old, pre_merger), tolerance = 1e-8)
     }
 })
+
+test_that("nested vertical Bertrand calibration and simulation preserve parity", {
+    prices_down <- c(63.08158, 50.70465, 95.82960, 83.45267)
+    shares_down <- c(.1293482, .1422541, .4631014, .2152962)
+    margins_down <- c(13.04232, 13.04233, 29.53958, 29.53958) /
+        prices_down
+    prices_up <- c(58.109, 53.31135, 58.109, 53.31135)
+    margins_up <- c(23.31, 14.78715, 23.31, 14.78715) / prices_up
+    owner_pre_down <- paste0("D", rep(c(1, 2), each = 2))
+    owner_post_down <- owner_pre_down
+    owner_pre_up <- paste0("U", rep(c(1, 2), 2))
+    owner_post_up <- rep("U1", 4)
+    nests <- c("n1", "n1", "n2", "n2")
+
+    old <- qa_value(suppressWarnings(vertical.barg(
+        sharesDown = shares_down, pricesDown = prices_down,
+        marginsDown = margins_down, ownerPreDown = owner_pre_down,
+        ownerPostDown = owner_post_down, nests = nests,
+        pricesUp = prices_up, marginsUp = margins_up,
+        ownerPreUp = owner_pre_up, ownerPostUp = owner_post_up,
+        priceOutside = 10
+    )), "legacy nested vertical Bertrand")
+    fit <- qa_value(suppressWarnings(calibrate(
+        demand = "logit_nests", conduct = "vertical_bargaining",
+        prices = prices_down, shares = shares_down, margins = margins_down,
+        ownerPre = owner_pre_down, nests = nests, pricesUp = prices_up,
+        marginsUp = margins_up, ownerPreUp = owner_pre_up, priceOutside = 10
+    )), "calibrate nested vertical Bertrand")
+    actual <- qa_value(suppressWarnings(simulate(
+        fit,
+        ownerPost = list(up = owner_post_up, down = owner_post_down)
+    )), "simulate nested vertical Bertrand")
+
+    expect_true(is(fit@model, "VertBargBertLogitNests"))
+    expect_equal(fit@parameters$down, old@down@slopes, tolerance = 1e-8)
+    expect_equal(fit@parameters$bargpowerPre, old@up@bargpowerPre,
+                 tolerance = 1e-8)
+    for (side in c("up", "down")) {
+        actual_side <- slot(actual, side)
+        old_side <- slot(old, side)
+        for (slot in c("pricePre", "pricePost", "mcPre", "mcPost")) {
+            expect_equal(methods::slot(actual_side, slot),
+                         methods::slot(old_side, slot), tolerance = 1e-8,
+                         info = paste("nested vertical", side, slot))
+        }
+    }
+    for (pre_merger in c(TRUE, FALSE)) {
+        expect_equal(suppressWarnings(calcMC(actual, pre_merger)),
+                     suppressWarnings(calcMC(old, pre_merger)),
+                     tolerance = 1e-8)
+        expect_equal(calcMargins(actual, pre_merger),
+                     calcMargins(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcPrices(actual, pre_merger),
+                     calcPrices(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcShares(actual, pre_merger),
+                     calcShares(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcRevenues(actual, pre_merger),
+                     calcRevenues(old, pre_merger), tolerance = 1e-8)
+    }
+})

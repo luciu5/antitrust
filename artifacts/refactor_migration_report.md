@@ -85,8 +85,9 @@ identification to `vertical.barg()` using pre-merger ownership on both sides.
 `simulate()` accepts upstream and downstream post ownership in a named list,
 updates integration-dependent bargaining power and both cost-delta vectors,
 and invokes the existing model-specific vertical price system. Nested vertical
-variants remain legacy-only because their scenario and equilibrium methods
-require a separate migration slice.
+Bertrand is registered separately so its nested demand calibration and margin
+methods remain distinct. Nested vertical second-score remains legacy-only
+because that combination is not implemented by the legacy constructor.
 
 BLP is deliberately marked calibration-ineligible: the repository has a
 parameterized BLP construction path but no observed-data BLP estimator that
@@ -159,7 +160,7 @@ oddities were observed and intentionally left unchanged:
 * The regression example `ai/examples/test_sim_regressions.R` currently stops
   at the historical LogitCap requirement for a finite `meanval`; this is
   unchanged and is not treated as a refactor fix.
-* Specialized ALM and nested vertical constructors are not
+* Specialized ALM and nested vertical second-score constructors are not
   generalized `sim()` demand/conduct entries.  Their legacy functions were
   not removed or mechanically wrapped.  General linear and log-linear
   Cournot/Stackelberg and Logit vertical bargaining are registered

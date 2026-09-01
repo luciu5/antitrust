@@ -32,8 +32,9 @@ demand family even though its result classes inherit from AIDS; its
 known-elasticity and nested-parameter calibration remains in the existing
 PCAIDS-specific methods.
 ALM entries point to their complete legacy model-specific implementations;
-they are not assembled from a generic supply module. Nested vertical variants
-remain outside this generalized registry and retain their legacy APIs.
+they are not assembled from a generic supply module. Nested vertical
+second-score variants remain outside this generalized registry and retain
+their legacy APIs.
 
 ## Fitted state
 
@@ -99,6 +100,7 @@ method.  The dispatch preserves important differences:
   integration-dependent bargaining power, and two-sided cost deltas before
   invoking its existing vertical price system. The downstream second-score
   entry retains the separate `VertBarg2ndLogit` price and share methods.
+  Nested vertical second-score remains legacy-only.
 
 There is no generic supply module that mechanically combines arbitrary demand
 and conduct modules.  The registry selects a complete existing model

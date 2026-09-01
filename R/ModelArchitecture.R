@@ -133,8 +133,12 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
         dots$marginsUp <- NULL
         dots$ownerPreUp <- NULL
         dots$supplyDown <- NULL
-        if (!is.null(dots$nests) && any(!is.na(dots$nests))) {
-            stop("Nested vertical bargaining is not yet supported by calibrate().")
+        has_nests <- !is.null(dots$nests) && any(!is.na(dots$nests))
+        if (identical(spec$demand, "logit_nests") && !has_nests) {
+            stop("'nests' must be supplied for nested vertical bargaining calibration.")
+        }
+        if (!identical(spec$demand, "logit_nests") && has_nests) {
+            stop("'nests' is only supported for nested vertical bargaining calibration.")
         }
         constructor_args <- list(
             supplyDown = vertical_supply,
