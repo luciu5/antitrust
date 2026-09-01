@@ -1257,3 +1257,110 @@ test_that("linear and log-linear Cournot calibration and simulation preserve par
         }
     }
 })
+
+test_that("linear Stackelberg calibration and simulation preserve parity", {
+    n <- 3
+    cap <- c(.5, .6, .7)
+    intercept <- 10
+    slope <- -.25
+    bmat <- matrix(slope, nrow = n, ncol = n)
+    diag(bmat) <- 2 * slope - 1 / cap
+    quantities <- rowSums(solve(bmat) * -intercept)
+    prices <- intercept + slope * sum(quantities)
+    margins <- 1 - (quantities / cap) / prices
+    owner_pre <- diag(n)
+    owner_post <- owner_pre
+    owner_post[1, 2] <- owner_post[2, 1] <- 1
+    leader_pre <- matrix(c(FALSE, FALSE, TRUE), ncol = 1)
+    leader_post <- matrix(TRUE, nrow = n, ncol = 1)
+    mc_delta <- c(-.05, 0, 0)
+
+    old <- qa_value(suppressWarnings(stackelberg(
+        prices = prices, quantities = matrix(quantities, ncol = 1),
+        margins = matrix(margins, ncol = 1), ownerPre = owner_pre,
+        ownerPost = owner_post, isLeaderPre = leader_pre,
+        isLeaderPost = leader_post, mcDelta = mc_delta
+    )), "legacy linear Stackelberg")
+    fit <- qa_value(suppressWarnings(calibrate(
+        demand = "linear", conduct = "stackelberg", prices = prices,
+        quantities = matrix(quantities, ncol = 1),
+        margins = matrix(margins, ncol = 1), ownerPre = owner_pre,
+        isLeaderPre = leader_pre
+    )), "calibrate linear Stackelberg")
+    actual <- qa_value(suppressWarnings(simulate(
+        fit, ownerPost = owner_post, mcDelta = mc_delta,
+        isLeaderPost = leader_post
+    )), "simulate linear Stackelberg")
+
+    expect_true(is(fit@model, "Stackelberg"))
+    expect_equal(fit@parameters,
+                 getFromNamespace(".model_parameters", "antitrust")(old),
+                 tolerance = 1e-8)
+    expect_equal(class(actual), class(old))
+    for (slot in c("quantityPre", "quantityPost", "pricePre", "pricePost",
+                   "isLeaderPre", "isLeaderPost")) {
+        expect_equal(methods::slot(actual, slot), methods::slot(old, slot),
+                     tolerance = 1e-8, info = paste("Stackelberg", slot))
+    }
+    for (pre_merger in c(TRUE, FALSE)) {
+        expect_equal(calcQuantities(actual, pre_merger),
+                     calcQuantities(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcPrices(actual, pre_merger),
+                     calcPrices(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcMC(actual, pre_merger),
+                     calcMC(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcMargins(actual, pre_merger),
+                     calcMargins(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcShares(actual, pre_merger),
+                     calcShares(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcRevenues(actual, pre_merger),
+                     calcRevenues(old, pre_merger), tolerance = 1e-8)
+    }
+})
+
+test_that("log-linear Stackelberg calibration and simulation preserve parity", {
+    owner_pre <- diag(3)
+    owner_post <- owner_pre
+    owner_post[1, 2] <- owner_post[2, 1] <- 1
+    leader_pre <- matrix(c(FALSE, FALSE, TRUE), ncol = 1)
+    leader_post <- matrix(TRUE, nrow = 3, ncol = 1)
+    quantities <- matrix(c(3, 4, 5), ncol = 1)
+    margins <- matrix(c(.375, .5, .625), ncol = 1)
+
+    old <- qa_value(suppressWarnings(stackelberg(
+        prices = 7, quantities = quantities, margins = margins,
+        demand = "log", ownerPre = owner_pre, ownerPost = owner_post,
+        isLeaderPre = leader_pre, isLeaderPost = leader_post
+    )), "legacy log-linear Stackelberg")
+    fit <- qa_value(suppressWarnings(calibrate(
+        demand = "loglin", conduct = "stackelberg", prices = 7,
+        quantities = quantities, margins = margins, ownerPre = owner_pre,
+        isLeaderPre = leader_pre
+    )), "calibrate log-linear Stackelberg")
+    actual <- qa_value(suppressWarnings(simulate(
+        fit, ownerPost = owner_post, isLeaderPost = leader_post
+    )), "simulate log-linear Stackelberg")
+
+    expect_true(is(fit@model, "Stackelberg"))
+    expect_equal(fit@parameters,
+                 getFromNamespace(".model_parameters", "antitrust")(old),
+                 tolerance = 1e-8)
+    for (slot in c("quantityPre", "quantityPost", "pricePre", "pricePost")) {
+        expect_equal(methods::slot(actual, slot), methods::slot(old, slot),
+                     tolerance = 1e-8, info = paste("log-linear Stackelberg", slot))
+    }
+    for (pre_merger in c(TRUE, FALSE)) {
+        expect_equal(calcQuantities(actual, pre_merger),
+                     calcQuantities(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcPrices(actual, pre_merger),
+                     calcPrices(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcMC(actual, pre_merger),
+                     calcMC(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcMargins(actual, pre_merger),
+                     calcMargins(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcShares(actual, pre_merger),
+                     calcShares(old, pre_merger), tolerance = 1e-8)
+        expect_equal(calcRevenues(actual, pre_merger),
+                     calcRevenues(old, pre_merger), tolerance = 1e-8)
+    }
+})

@@ -31,7 +31,8 @@ counterfactual equilibrium.}
 
 \item{priceStart}{Optional price starting values.}
 
-\item{capacitiesPost}{Optional post-counterfactual capacities for LogitCap.}
+\item{capacitiesPost}{Optional post-counterfactual capacities for LogitCap
+or plant capacities for Stackelberg.}
 
 \item{bargpowerPost}{Optional post-counterfactual bargaining powers for
 bargaining models.}
@@ -41,7 +42,11 @@ by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.}
 
 \item{isMax}{Whether to run the existing local profit-maximum check.}
 
-\item{...}{Additional arguments passed to the existing price solver.}
+\item{...}{Additional arguments passed to the existing price solver.
+For Stackelberg fits, \code{isLeaderPost}, \code{productsPost},
+\code{mcfunPost}, \code{vcfunPost}, and \code{dmcfunPost} may be supplied as counterfactual
+structure; the remaining arguments are passed to the existing quantity
+solver.}
 }
 \value{
 An existing S4 simulation-result object, such as \code{Logit} or

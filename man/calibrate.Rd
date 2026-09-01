@@ -36,7 +36,8 @@ required by model families whose calibration uses margins.}
 \item{ownerPre}{Pre-merger ownership vector or matrix.}
 
 \item{quantities}{A length-k vector of observed product quantities for
-Linear or LogLin calibration.}
+Linear or LogLin calibration, or an n-by-k plant-quantity matrix for
+general Cournot/Stackelberg calibration.}
 
 \item{variant}{A model-specific calibration variant, such as `"alm"`.}
 

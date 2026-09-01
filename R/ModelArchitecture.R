@@ -46,7 +46,8 @@ setClass(
 #'   required by model families whose calibration uses margins.
 #' @param ownerPre Pre-merger ownership vector or matrix.
 #' @param quantities A length-k vector of observed product quantities for
-#'   Linear or LogLin calibration.
+#'   Linear or LogLin calibration, or an n-by-k plant-quantity matrix for
+#'   general Cournot/Stackelberg calibration.
 #' @param variant A model-specific calibration variant, such as `"alm"`.
 #' @param knownElast A known own-price elasticity for PCAIDS calibration.
 #' @param mktElast A known market own-price elasticity for PCAIDS calibration.
@@ -66,9 +67,18 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
     }
 
     dots <- list(...)
-    forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset"))
+    forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset",
+                                           "isLeaderPost"))
     if (length(forbidden)) {
         stop("'", forbidden[[1]], "' is a simulation scenario; supply it to simulate().")
+    }
+    if (identical(spec$conduct, "stackelberg")) {
+        stack_post <- intersect(names(dots), c("productsPost", "mcfunPost",
+                                               "vcfunPost", "dmcfunPost",
+                                               "capacitiesPost"))
+        if (length(stack_post)) {
+            stop("'", stack_post[[1]], "' is a Stackelberg simulation scenario; supply it to simulate().")
+        }
     }
     ## These formals are explicit for PCAIDS, but were historically passed
     ## through `...` for other demand systems.  Preserve that forwarding
@@ -85,7 +95,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
     observed_extra <- list()
 
     if (spec$demand %in% c("linear", "loglin") &&
-        !identical(spec$conduct, "cournot")) {
+        identical(spec$conduct, "bertrand")) {
         if (is.null(quantities)) {
             stop("'quantities' must be supplied when calibrating Linear or LogLin demand.")
         }
@@ -155,7 +165,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             ownerPost = ownerPre
         )
         observed_extra <- list(capacities = capacities)
-    } else if (spec$conduct == "cournot" &&
+    } else if (spec$conduct %in% c("cournot", "stackelberg") &&
                spec$demand %in% c("linear", "loglin")) {
         if (is.null(quantities)) {
             stop("'quantities' must be supplied when calibrating a Cournot model.")
@@ -169,6 +179,20 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             ## simulate() replaces this placeholder for the scenario.
             ownerPost = ownerPre
         )
+        if (spec$conduct == "stackelberg") {
+            isLeaderPre <- dots$isLeaderPre
+            dots$isLeaderPre <- NULL
+            if (is.null(isLeaderPre)) {
+                isLeaderPre <- matrix(FALSE, nrow = nrow(quantities),
+                                      ncol = ncol(quantities))
+            }
+            constructor_args$isLeaderPre <- isLeaderPre
+            ## Calibration uses the observed leader structure for the
+            ## placeholder post-merger state; simulate() supplies the
+            ## counterfactual leader structure.
+            constructor_args$isLeaderPost <- isLeaderPre
+            observed_extra <- list(isLeaderPre = isLeaderPre)
+        }
         if (spec$demand == "loglin") {
             constructor_args$demand <- rep("log", length(prices))
         }
@@ -355,13 +379,18 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 #' @param subset A length-k logical vector selecting products in the
 #'   counterfactual equilibrium.
 #' @param priceStart Optional price starting values.
-#' @param capacitiesPost Optional post-counterfactual capacities for LogitCap.
+#' @param capacitiesPost Optional post-counterfactual capacities for LogitCap
+#'   or plant capacities for Stackelberg.
 #' @param bargpowerPost Optional post-counterfactual bargaining powers for
 #'   bargaining models.
 #' @param solver Optional solver override.  The calibration solver is reused
 #'   by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.
 #' @param isMax Whether to run the existing local profit-maximum check.
 #' @param ... Additional arguments passed to the existing price solver.
+#'   For Stackelberg fits, \code{isLeaderPost}, \code{productsPost},
+#'   \code{mcfunPost}, \code{vcfunPost}, and \code{dmcfunPost} may be supplied as counterfactual
+#'   structure; the remaining arguments are passed to the existing quantity
+#'   solver.
 #' @return An existing S4 simulation-result object, such as \code{Logit} or
 #'   \code{LogitCournot}.
 #' @export
@@ -378,7 +407,7 @@ simulate <- function(fit, ownerPost,
         stop("'ownerPost' must be supplied for simulate().")
     }
     if (!.model_registry_supports(fit@spec, "simulate")) {
-        stop("simulate() currently supports Linear, LogLin, AIDS, and PCAIDS Bertrand models; Logit/CES Bertrand, Cournot, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
+        stop("simulate() currently supports Linear, LogLin, AIDS, and PCAIDS Bertrand models; Logit/CES Bertrand, Cournot, Stackelberg, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
     }
 
     model <- fit@model
@@ -412,12 +441,19 @@ simulate <- function(fit, ownerPost,
     if (!methods::is(model, "Auction2ndCap")) {
         model@subset <- subset
     }
+    dots <- list(...)
     if (!is.null(capacitiesPost)) {
-        if (!methods::is(model, "LogitCap")) {
-            stop("'capacitiesPost' is only supported for LogitCap fits.")
-        }
-        if (length(capacitiesPost) != nprods) {
-            stop("'capacitiesPost' must have the same length as the fitted prices.")
+        if (methods::is(model, "Stackelberg")) {
+            if (length(capacitiesPost) != nrow(model@quantities)) {
+                stop("'capacitiesPost' must have the same length as the fitted plants.")
+            }
+        } else {
+            if (!methods::is(model, "LogitCap")) {
+                stop("'capacitiesPost' is only supported for LogitCap or Stackelberg fits.")
+            }
+            if (length(capacitiesPost) != nprods) {
+                stop("'capacitiesPost' must have the same length as the fitted prices.")
+            }
         }
         model@capacitiesPost <- capacitiesPost
     }
@@ -435,6 +471,27 @@ simulate <- function(fit, ownerPost,
     if (!missing(priceStart)) {
         model@priceStart <- priceStart
     }
+    if (methods::is(model, "Stackelberg")) {
+        scenario_fields <- c("isLeaderPost", "productsPost", "mcfunPost",
+                             "vcfunPost", "dmcfunPost")
+        if (is.null(dots$isLeaderPost)) {
+            model@isLeaderPost <- model@isLeaderPre
+        } else {
+            model@isLeaderPost <- dots$isLeaderPost
+        }
+        if (!is.null(dots$productsPost)) {
+            model@productsPost <- dots$productsPost
+        }
+        if (!is.null(dots$mcfunPost)) {
+            model@mcfunPost <- dots$mcfunPost
+        }
+        if (!is.null(dots$vcfunPost)) {
+            model@vcfunPost <- dots$vcfunPost
+        }
+        if (!is.null(dots$dmcfunPost)) {
+            model@dmcfunPost <- dots$dmcfunPost
+        }
+    }
     if (methods::is(model, "Auction2ndCap")) {
         if (!is.null(solver)) {
             stop("The capacity-constrained auction uses its existing equilibrium methods; 'solver' cannot be overridden.")
@@ -449,6 +506,22 @@ simulate <- function(fit, ownerPost,
         }
         model@mcPost <- calcMC(model, preMerger = FALSE, exAnte = FALSE)
         model@pricePost <- calcPrices(model, preMerger = FALSE, exAnte = FALSE)
+        return(model)
+    }
+    if (methods::is(model, "Stackelberg")) {
+        if (!is.null(solver)) {
+            stop("Stackelberg uses its existing nonlinear quantity solver; 'solver' cannot be overridden.")
+        }
+        scenario_fields <- c("isLeaderPost", "productsPost", "mcfunPost",
+                             "vcfunPost", "dmcfunPost")
+        solver_args <- dots[setdiff(names(dots), scenario_fields)]
+        model@quantityPost <- do.call(
+            calcQuantities,
+            c(list(object = model, preMerger = FALSE), solver_args)
+        )
+        ## The legacy Stackelberg constructor leaves the marginal-cost slots
+        ## empty; downstream calcMC() computes them from equilibrium state.
+        model@pricePost <- calcPrices(model, preMerger = FALSE)
         return(model)
     }
     if (methods::is(model, "Cournot")) {
@@ -573,6 +646,9 @@ simulate <- function(fit, ownerPost,
         list(slopes = model@slopes, intercepts = model@intercepts)
     } else if (methods::is(model, "Linear")) {
         list(slopes = model@slopes, intercepts = model@intercepts)
+    } else if (methods::is(model, "Stackelberg")) {
+        list(slopes = model@slopes, intercepts = model@intercepts,
+             mktElast = model@mktElast, isLeaderPre = model@isLeaderPre)
     } else if (methods::is(model, "Cournot")) {
         list(slopes = model@slopes, intercepts = model@intercepts,
              mktElast = model@mktElast)

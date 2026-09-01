@@ -21,8 +21,9 @@ The registry describes the combinations already exposed by generalized
 `sim()`, plus the existing ALM constructors: Linear, AIDS, PCAIDS (including
 nested PCAIDS), LogLin, Logit, CES, nested Logit/CES, LogitCap, BLP, Cournot,
 second-score auction, bargaining, and second-score bargaining where the legacy
-package supports those pairings. Linear and log-linear general Cournot are
-also registered as complete quantity-game entries. The capacity-constrained second-score auction
+package supports those pairings. Linear and log-linear general Cournot and
+Stackelberg are also registered as complete quantity-game entries. The
+capacity-constrained second-score auction
 is registered as a complete specialized model entry, rather than as a demand
 module mechanically combined with auction conduct. PCAIDS is registered as its own Bertrand
 demand family even though its result classes inherit from AIDS; its
@@ -30,8 +31,7 @@ known-elasticity and nested-parameter calibration remains in the existing
 PCAIDS-specific methods.
 ALM entries point to their complete legacy model-specific implementations;
 they are not assembled from a generic supply module.  Specialized vertical
-models and Stackelberg constructors remain outside this generalized registry
-and retain their legacy APIs.
+models remain outside this generalized registry and retain their legacy APIs.
 
 ## Fitted state
 
@@ -80,9 +80,10 @@ method.  The dispatch preserves important differences:
 
 * Logit/CES Bertrand use their existing nonlinear or AG price solvers.
 * Logit/CES Cournot use their existing quantity-game price methods.
-* Linear and log-linear general Cournot recalculate plant quantities with the
-  existing quantity solver before calculating prices. Their plant-level cost
-  conventions are retained, and they are not exposed through `specify()`.
+* Linear and log-linear general Cournot and Stackelberg recalculate plant
+  quantities with their existing quantity solvers before calculating prices.
+  Their plant-level cost and (for Stackelberg) leader-status conventions are
+  retained, and they are not exposed through `specify()`.
 * Bargaining retains its bargaining-specific equilibrium equations and solver
   choice, including AG support where the legacy constructor provides it.
 * Second-score auction and second-score bargaining retain their direct or
