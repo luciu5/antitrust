@@ -117,14 +117,17 @@ boundary warnings, CES optimizer diagnostics, and the existing bargaining CES
 optimizer diagnostic.
 
 Direct branch comparison was also run from clean archives of `master` and
-`refactor`.  Both full test suites passed, and both built packages returned
-`Status: OK` from `R CMD check --no-manual --no-vignettes`.  The shared
-`ai/examples` scripts had matching exit status: the three BLP examples that
-complete produced matching numeric results, while the historical
-price-leadership examples failed on both branches because `ple` is not
-available in the package namespace.  The BLP informational messages emitted
-by legacy `sim()` are preserved by the compatibility wrapper; performance
-timings remain inherently variable.
+`refactor`. Both full test suites passed (`master`: 233 passes, 6 warnings;
+`refactor`: 936 passes, 8 warnings), and both built packages returned
+`Status: OK` from `R CMD check --no-manual --no-vignettes`. The shared tracked
+BLP examples had matching exit status and matching numeric prices, price
+changes, and contraction iteration counts. The shared regime and regression
+examples also had matching exit status; the regression example reaches the
+same historical LogitCap missing-`meanval` failure on both branches. The
+historical price-leadership examples fail on both branches because `ple` is
+not available in the package namespace. The BLP informational messages
+emitted by legacy `sim()` are preserved by the compatibility wrapper;
+performance timings remain inherently variable.
 
 ## Intentionally preserved behavior
 
@@ -159,7 +162,10 @@ oddities were observed and intentionally left unchanged:
   covered by the BLP contraction tests.
 * The regression example `ai/examples/test_sim_regressions.R` currently stops
   at the historical LogitCap requirement for a finite `meanval`; this is
-  unchanged and is not treated as a refactor fix.
+  unchanged and is not treated as a refactor fix. When this failure is
+  reached through a migrated `sim()` path, R's diagnostic call header names
+  the internal legacy constructor rather than `sim()`; the error text and
+  exit status are unchanged.
 * Specialized ALM and nested vertical second-score constructors are not
   generalized `sim()` demand/conduct entries.  Their legacy functions were
   not removed or mechanically wrapped.  General linear and log-linear
