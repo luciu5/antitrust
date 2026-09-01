@@ -46,7 +46,8 @@ general Cournot/Stackelberg calibration.}
 \item{mktElast}{A known market own-price elasticity for PCAIDS calibration.}
 
 \item{...}{Additional options accepted by the model-specific legacy
-calibration constructor.}
+calibration constructor. For vertical bargaining, supply the upstream
+inputs \code{pricesUp}, \code{marginsUp}, and \code{ownerPreUp} here.}
 }
 \value{
 An \code{AntitrustFit} object.

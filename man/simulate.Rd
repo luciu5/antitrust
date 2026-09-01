@@ -8,7 +8,7 @@ simulate(
   fit,
   ownerPost,
   mcDelta = NULL,
-  subset = rep(TRUE, length(fit@model@prices)),
+  subset = NULL,
   priceStart,
   capacitiesPost = NULL,
   bargpowerPost = NULL,
@@ -20,11 +20,14 @@ simulate(
 \arguments{
 \item{fit}{An \code{AntitrustFit} returned by \code{\link{calibrate}}.}
 
-\item{ownerPost}{Post-counterfactual ownership vector or matrix.}
+\item{ownerPost}{Post-counterfactual ownership vector or matrix. For
+vertical bargaining, use a list with \code{up} and \code{down} ownership
+vectors.}
 
 \item{mcDelta}{A model-specific vector of proportional cost changes, with
 one element per product for most models and one element per plant for
-general Cournot models.}
+general Cournot models. For vertical bargaining, use a list with numeric
+\code{up} and \code{down} vectors.}
 
 \item{subset}{A length-k logical vector selecting products in the
 counterfactual equilibrium.}

@@ -124,7 +124,10 @@ print.antitrust_model_spec <- function(x, ...) {
         bargaining2nd = "bargaining2nd",
         bargaining2 = "bargaining2nd",
         stackelberg = "stackelberg",
-        stack = "stackelberg"
+        stack = "stackelberg",
+        vertical = "vertical_bargaining",
+        verticalbarg = "vertical_bargaining",
+        verticalbargaining = "vertical_bargaining"
     )
     if (conduct %in% names(aliases)) aliases[[conduct]] else conduct
 }
@@ -229,6 +232,10 @@ print.antitrust_model_spec <- function(x, ...) {
              specify = FALSE, simulate = TRUE),
         list(id = "loglin::stackelberg", demand = "loglin", conduct = "stackelberg",
              class = "Stackelberg", calibrator = "stackelberg", calibrate = TRUE,
+             specify = FALSE, simulate = TRUE),
+        list(id = "logit::vertical_bargaining", demand = "logit",
+             conduct = "vertical_bargaining", class = "VertBargBertLogit",
+             calibrator = "vertical.barg", calibrate = TRUE,
              specify = FALSE, simulate = TRUE),
         list(id = "logit::bertrand::alm", demand = "logit", conduct = "bertrand",
              variant = "alm", class = "LogitALM", calibrator = "logit.alm",
