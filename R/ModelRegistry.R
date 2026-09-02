@@ -81,6 +81,49 @@ supportedModels <- function() {
 }
 
 
+## Explicit fitted-model transitions.  These are deliberately narrower than
+## the model registry: a transition is allowed only when the source and target
+## specifications have portable structural primitives and a tested target
+## construction path.  This is not a general S4 coercion table.
+.model_transition_registry <- local({
+    entries <- list(
+        list(from = "logit::bertrand", to = "logit::cournot",
+             retain = c("alpha", "meanval"),
+             recompute = c("marginal costs", "Cournot supply state"),
+             invalidate = c("Bertrand margins"),
+             calibration_required = FALSE),
+        list(from = "logit::cournot", to = "logit::bertrand",
+             retain = c("alpha", "meanval"),
+             recompute = c("marginal costs", "Bertrand supply state"),
+             invalidate = c("Cournot margins"),
+             calibration_required = FALSE),
+        list(from = "ces::bertrand", to = "ces::cournot",
+             retain = c("gamma", "alpha", "meanval", "shareInside"),
+             recompute = c("marginal costs", "Cournot supply state"),
+             invalidate = c("Bertrand margins"),
+             calibration_required = FALSE),
+        list(from = "ces::cournot", to = "ces::bertrand",
+             retain = c("gamma", "alpha", "meanval", "shareInside"),
+             recompute = c("marginal costs", "Bertrand supply state"),
+             invalidate = c("Cournot margins"),
+             calibration_required = FALSE)
+    )
+    function() entries
+})
+
+.model_transition_entry <- function(from, to) {
+    entries <- .model_transition_registry()
+    matches <- Filter(function(entry) {
+        identical(entry$from, from$id) && identical(entry$to, to$id)
+    }, entries)
+    if (!length(matches)) {
+        stop("respecify() transition from '", from$id, "' to '",
+             to$id, "' is not supported; use update() to recalibrate the target model")
+    }
+    matches[[1L]]
+}
+
+
 #' @export
 print.antitrust_model_spec <- function(x, ...) {
     cat("antitrust model specification\n")

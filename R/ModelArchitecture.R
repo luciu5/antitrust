@@ -69,6 +69,18 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
     }
 
     dots <- list(...)
+    ## Keep a canonical baseline call so update() can genuinely rerun the
+    ## target model's calibration equations.  The legacy constructor later
+    ## receives placeholder post-merger state, but that implementation detail
+    ## must not become part of the stored observed-data call.
+    calibration_args <- c(
+        list(demand = spec$demand, conduct = spec$conduct,
+             prices = prices, shares = shares, margins = margins,
+             ownerPre = ownerPre, quantities = quantities,
+             variant = spec$variant, knownElast = knownElast,
+             mktElast = mktElast),
+        dots
+    )
     forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset",
                                            "isLeaderPost"))
     if (length(forbidden)) {
@@ -298,11 +310,12 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             ownerPre = ownerPre
         ), observed_extra,
         if (!is.null(quantities)) list(quantities = quantities) else list()),
-        diagnostics = list(
-            status = "completed",
-            model_class = class(model)[[1]],
-            solver = solver,
-            constrain.reserve = if (spec$demand == "auction2nd_cap" &&
+            diagnostics = list(
+                status = "completed",
+                model_class = class(model)[[1]],
+                solver = solver,
+                calibration_args = calibration_args,
+                constrain.reserve = if (spec$demand == "auction2nd_cap" &&
                                     !is.null(dots[["constrain.reserve"]])) {
                 dots[["constrain.reserve"]]
             } else {
@@ -353,6 +366,14 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     }
 
     dots <- list(...)
+    specification_args <- c(
+        list(demand = spec$demand, conduct = spec$conduct,
+             prices = prices, parameters = parameters,
+             ownerPre = ownerPre, shares = shares, margins = margins,
+             quantities = quantities, insideSize = insideSize,
+             variant = spec$variant),
+        dots
+    )
     forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset"))
     if (length(forbidden)) {
         stop("'", forbidden[[1]], "' is a simulation scenario; supply it to simulate().")
@@ -425,9 +446,11 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         diagnostics = list(
             status = "completed",
             source = "specified",
+            route = "specify",
             model_class = class(model)[[1]],
             solver = if (identical(spec$conduct, "bargaining") &&
                         !is.null(dots$solver)) dots$solver else "nleqslv",
+            specification_args = specification_args,
             warnings = captured$warnings,
             messages = captured$messages
         )
@@ -724,6 +747,149 @@ simulate <- function(fit, ownerPost,
     }
 
     model
+}
+
+
+#' Recalibrate a fitted antitrust model
+#'
+#' `update()` rebuilds the complete calibration call from the baseline inputs
+#' stored in an `AntitrustFit`, applies the supplied replacements, and invokes
+#' the target model's ordinary calibration routine.  It is intentionally not a
+#' class conversion and is available for fits created by `calibrate()`.
+#'
+#' @param object An `AntitrustFit` returned by `calibrate()`.
+#' @param ... Baseline data, model-specification arguments, or model-specific
+#'   calibration options to replace.
+#' @param evaluate If `FALSE`, return the reconstructed calibration call.
+#' @return A newly calibrated `AntitrustFit`, or a call when `evaluate` is
+#'   `FALSE`.
+#' @export
+#' @exportS3Method stats::update AntitrustFit
+update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
+    if (!methods::is(object, "AntitrustFit")) {
+        stop("'object' must be an AntitrustFit returned by calibrate().")
+    }
+    calibration_args <- object@diagnostics$calibration_args
+    if (!is.list(calibration_args) || is.null(names(calibration_args))) {
+        stop("this fit does not retain a calibration call; update() requires a fit created by calibrate()")
+    }
+
+    replacements <- list(...)
+    if (length(replacements)) {
+        if (is.null(names(replacements)) || any(!nzchar(names(replacements)))) {
+            stop("update() arguments must be named calibration or model-specification arguments")
+        }
+        calibration_args[names(replacements)] <- replacements
+    }
+    if (!isTRUE(evaluate)) {
+        return(as.call(c(list(quote(calibrate)), calibration_args)))
+    }
+    do.call(calibrate, calibration_args)
+}
+
+
+#' Respecify a fitted antitrust model
+#'
+#' `respecify()` applies an explicitly registered model transition. Portable
+#' structural parameters are carried forward, while target-model supply state
+#' is reconstructed through `specify()` without recalibrating those parameters
+#' from the source model's margins.
+#'
+#' @param fit An `AntitrustFit` returned by `calibrate()` or `specify()`.
+#' @param demand Optional target demand-system name.
+#' @param conduct Optional target conduct name.
+#' @param variant Optional target model variant.
+#' @param ... Reserved for future transition-specific options; currently an
+#'   error is raised for unnamed or unsupported arguments.
+#' @return A newly constructed `AntitrustFit` under the target specification.
+#' @export
+respecify <- function(fit, demand = NULL, conduct = NULL,
+                      variant = NULL, ...) {
+    if (!methods::is(fit, "AntitrustFit")) {
+        stop("'fit' must be an AntitrustFit returned by calibrate() or specify().")
+    }
+    extras <- list(...)
+    if (length(extras)) {
+        stop("respecify() does not accept transition-specific arguments yet")
+    }
+
+    source <- fit@spec
+    target <- model_spec(
+        demand = if (is.null(demand)) source$demand else demand,
+        conduct = if (is.null(conduct)) source$conduct else conduct,
+        variant = if (is.null(variant)) source$variant else variant
+    )
+    if (identical(source$id, target$id)) {
+        stop("respecify() requires a different registered model specification")
+    }
+    transition <- .model_transition_entry(source, target)
+
+    portable <- fit@parameters[intersect(transition$retain,
+                                         names(fit@parameters))]
+    missing_portable <- setdiff(transition$retain, names(portable))
+    if (length(missing_portable)) {
+        for (name in missing_portable) {
+            if (.hasSlot(fit@model, name)) {
+                portable[[name]] <- slot(fit@model, name)
+            }
+        }
+    }
+    missing_portable <- setdiff(transition$retain, names(portable))
+    if (length(missing_portable)) {
+        stop("source fit does not contain portable parameter(s): ",
+             paste(missing_portable, collapse = ", "))
+    }
+
+    baseline <- fit@diagnostics$calibration_args
+    if (!is.list(baseline)) baseline <- fit@diagnostics$specification_args
+    if (!is.list(baseline)) {
+        stop("this fit does not retain the baseline inputs needed for respecify()")
+    }
+    prices <- baseline$prices
+    owner_pre <- baseline$ownerPre
+    if (is.null(prices) || is.null(owner_pre)) {
+        stop("source fit does not retain prices and ownerPre needed for respecify()")
+    }
+
+    specify_args <- list(
+        demand = target$demand,
+        conduct = target$conduct,
+        variant = target$variant,
+        prices = prices,
+        parameters = portable,
+        ownerPre = owner_pre
+    )
+    ## These are observed baseline quantities used to construct the target
+    ## state, not identifying margins.  In particular, margins are deliberately
+    ## omitted from the respecification call.
+    for (name in c("shares", "quantities", "insideSize", "priceOutside",
+                   "priceStart", "labels")) {
+        if (!is.null(baseline[[name]])) specify_args[[name]] <- baseline[[name]]
+    }
+
+    result <- do.call(specify, specify_args)
+    result@parameters <- portable
+    result@observed <- fit@observed
+    result@diagnostics$source <- "respecify"
+    result@diagnostics$route <- "respecify"
+    result@diagnostics$transition <- list(
+        from = source$id,
+        to = target$id,
+        retained = transition$retain,
+        recomputed = transition$recompute,
+        invalidated = transition$invalidate,
+        calibration_required = transition$calibration_required
+    )
+    ## A later update() should recalibrate the target specification from the
+    ## same observed-data call, including any source margins that remain useful
+    ## as target calibration data.  respecify() itself did not use them.
+    if (is.list(fit@diagnostics$calibration_args)) {
+        result@diagnostics$calibration_args <- fit@diagnostics$calibration_args
+        result@diagnostics$calibration_args$demand <- target$demand
+        result@diagnostics$calibration_args$conduct <- target$conduct
+        result@diagnostics$calibration_args$variant <- target$variant
+    }
+    result
 }
 
 

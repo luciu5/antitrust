@@ -141,6 +141,87 @@ test_that("specify loads supplied Logit parameters into the shared pipeline", {
     expect_logit_result_parity(actual, old)
 })
 
+test_that("update genuinely recalibrates from stored baseline inputs", {
+    common <- list(
+        prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
+        margins = c(.40, .35, .30), ownerPre = c("A", "B", "C")
+    )
+    fit <- qa_value(do.call(calibrate, c(
+        list(demand = "logit", conduct = "bertrand"), common
+    )), "calibrate Logit for update")
+
+    unchanged <- qa_value(update(fit), "no-op update")
+    direct <- qa_value(do.call(calibrate, c(
+        list(demand = "logit", conduct = "bertrand"), common
+    )), "direct recalibration")
+    expect_equal(unchanged@parameters, direct@parameters, tolerance = 1e-9)
+    expect_equal(unchanged@model@mcPre, direct@model@mcPre, tolerance = 1e-9)
+
+    new_margins <- c(.30, .28, .24)
+    changed <- qa_value(update(fit, margins = new_margins),
+                        "margin update")
+    direct_changed <- qa_value(calibrate(
+        demand = "logit", conduct = "bertrand", prices = common$prices,
+        shares = common$shares, margins = new_margins,
+        ownerPre = common$ownerPre
+    ), "direct changed calibration")
+    expect_equal(changed@parameters, direct_changed@parameters, tolerance = 1e-9)
+    expect_false(isTRUE(all.equal(changed@parameters, fit@parameters)))
+    expect_true(is.call(update(fit, evaluate = FALSE)))
+})
+
+test_that("update switches calibration equations while respecify preserves demand", {
+    common <- list(
+        prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
+        margins = c(.40, .35, .30), ownerPre = c("A", "B", "C")
+    )
+    fit <- qa_value(do.call(calibrate, c(
+        list(demand = "logit", conduct = "bertrand"), common
+    )), "calibrate source Logit")
+
+    updated <- qa_value(update(fit, conduct = "cournot"),
+                        "updated Logit Cournot")
+    direct <- qa_value(do.call(calibrate, c(
+        list(demand = "logit", conduct = "cournot"), common
+    )), "direct Logit Cournot")
+    expect_equal(updated@parameters, direct@parameters, tolerance = 1e-9)
+
+    respecified <- qa_value(respecify(fit, conduct = "cournot"),
+                            "respecified Logit Cournot")
+    expect_equal(respecified@parameters, fit@parameters, tolerance = 0)
+    expect_equal(respecified@diagnostics$transition$from,
+                 "logit::bertrand")
+    expect_equal(respecified@diagnostics$transition$to,
+                 "logit::cournot")
+    expect_equal(unname(respecified@model@pricePre),
+                 unname(fit@model@pricePre),
+                 tolerance = 1e-9)
+    expect_false(isTRUE(all.equal(updated@parameters,
+                                  respecified@parameters)))
+    expect_equal(fit@spec$conduct, "bertrand")
+})
+
+test_that("respecify transitions are explicit and do not mutate the source fit", {
+    common <- list(
+        prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
+        margins = c(.40, .35, .30), ownerPre = c("A", "B", "C")
+    )
+    fit <- qa_value(do.call(calibrate, c(
+        list(demand = "logit", conduct = "bertrand"), common
+    )), "calibrate source for transition validation")
+    source_parameters <- fit@parameters
+    expect_error(respecify(fit, demand = "ces"),
+                 "not supported.*use update")
+    expect_error(respecify(fit), "different registered")
+    expect_error(update(specify(
+        demand = "logit", conduct = "bertrand", prices = common$prices,
+        parameters = list(alpha = -1.2, meanval = c(.5, .3, .1)),
+        ownerPre = common$ownerPre
+    )), "requires a fit created by calibrate")
+    expect_equal(fit@parameters, source_parameters, tolerance = 0)
+    expect_equal(fit@spec$conduct, "bertrand")
+})
+
 test_that("legacy sim remains a wrapper for migrated Logit combinations", {
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),

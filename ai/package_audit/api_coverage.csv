@@ -1,6 +1,7 @@
 "kind","name","signature","status","evidence","exclusion_reason"
 "export","aids","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","calibrate","","formal-test","tests/testthat/test-model-architecture.R",""
+"export","respecify","","formal-test","tests/testthat/test-model-architecture.R",""
 "export","antitrust_shiny","","documented-exclusion","ai/package_audit/audit_report.md","Interactive optional UI; exercised by R CMD check examples when available."
 "export","auction2nd.cap","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","auction2nd.ces","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""

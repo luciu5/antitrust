@@ -74,6 +74,24 @@ shares.  BLP supports this route for both Bertrand and Cournot, but there is no
 observed-data BLP calibrator in the current package, so its registry entries
 mark `calibrate = FALSE`.
 
+## Updating and respecifying
+
+`update(fit, ...)` is a genuine recalibration operation.  The fit stores a
+canonical baseline `calibrate()` call, and `update()` replaces named observed
+inputs or specification arguments before dispatching to `calibrate()` again.
+This means a conduct change uses the target conduct's calibration equations;
+it does not coerce the source S4 object.  A fit created only by `specify()` has
+no observed-data identifying call and therefore rejects `update()`.
+
+`respecify(fit, ...)` is narrower.  An explicit transition registry currently
+allows standard Logit and CES Bertrand/Cournot transitions.  It retains the
+portable demand primitives, omits source margins from the construction call,
+and invokes `specify()` to recompute target supply-side costs and state.
+Source and target demand families, ALM variants, and other arbitrary class
+conversions are rejected until an economically valid portable-parameter rule
+and target construction path are established.  The transition metadata records
+retained, recomputed, and invalidated quantities.
+
 ## Simulation
 
 `simulate(fit, ownerPost, mcDelta, subset, ...)` applies the scenario to the

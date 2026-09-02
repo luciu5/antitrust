@@ -143,6 +143,17 @@ performance timings remain inherently variable.
 * `sim()` remains exported with its historical argument signature and falls
   back to the original implementation for unsupported/non-registered paths.
 
+## Update/respecify migration
+
+The refactor branch now stores canonical baseline calibration calls in
+`AntitrustFit@diagnostics`. `update()` replays those calls through the selected
+calibrator, including when `demand`, `conduct`, `variant`, or observed margins
+change. `respecify()` has an explicit transition registry for standard
+Logit-Bertrand/Cournot and CES-Bertrand/Cournot. It retains demand primitives
+and reconstructs the target supply state through the supplied-parameter path;
+it does not recalibrate target demand from source margins. Unsupported
+Logit-to-CES, nested-family, ALM, and other transitions remain errors by design.
+
 ## Known discrepancies and suspected issues not changed
 
 No unexplained economic-output discrepancy remains in the migrated generalized
