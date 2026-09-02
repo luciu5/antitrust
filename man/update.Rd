@@ -17,8 +17,10 @@ A newly calibrated \code{AntitrustFit}, or a call when \code{evaluate} is
 \code{FALSE}.
 }
 \description{
-\code{update} reruns the complete target model calibration using the stored
-observed-data call. It is not an S4 class conversion. Fits created only by
-\code{specify} do not contain the identifying observed-data calibration call.
+\code{update} rebuilds the complete calibration call from the baseline inputs
+stored in an \code{AntitrustFit}, applies supplied replacements, and invokes
+the target model's ordinary calibration routine. It is not an S4 class
+conversion. Fits created only by \code{specify} do not contain the identifying
+observed-data calibration call.
 }
 \seealso{\code{\link{calibrate}}, \code{\link{respecify}}}

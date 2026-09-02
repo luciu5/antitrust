@@ -65,6 +65,7 @@ Collate:
     'LogitFunctions.R'
     'ModelArchitecture.R'
     'ModelRegistry.R'
+    'ModelTranslations.R'
     'PriceLeadershipClasses.R'
     'PriceLeadershipFunctions.R'
     'SimFunctions.R'

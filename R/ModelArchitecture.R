@@ -790,10 +790,14 @@ update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
 
 #' Respecify a fitted antitrust model
 #'
-#' `respecify()` applies an explicitly registered model transition. Portable
-#' structural parameters are carried forward, while target-model supply state
-#' is reconstructed through `specify()` without recalibrating those parameters
-#' from the source model's margins.
+#' `respecify()` applies an explicitly registered model transition. Same-demand
+#' transitions carry portable structural parameters, while registered
+#' Logit/CES transitions perform a local demand translation: target mean values
+#' match baseline shares and target curvature minimizes baseline elasticity
+#' distance. Target-model supply state is reconstructed through `specify()`;
+#' source margins are not used to recalibrate translated demand. Logit/CES is a
+#' local translation between price-level and log-price systems, not a claim of
+#' global demand equivalence.
 #'
 #' @param fit An `AntitrustFit` returned by `calibrate()` or `specify()`.
 #' @param demand Optional target demand-system name.
@@ -802,6 +806,7 @@ update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
 #' @param ... Reserved for future transition-specific options; currently an
 #'   error is raised for unnamed or unsupported arguments.
 #' @return A newly constructed `AntitrustFit` under the target specification.
+#' @seealso [`specify()`], [`update.AntitrustFit()`]
 #' @export
 respecify <- function(fit, demand = NULL, conduct = NULL,
                       variant = NULL, ...) {
@@ -824,13 +829,68 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
     }
     transition <- .model_transition_entry(source, target)
 
+    if (identical(transition$kind, "local-demand-translation")) {
+        translated <- .translate_antitrust_demand(fit, target)
+        result <- translated$fit
+        result@parameters <- .model_parameters(result@model)
+        result@observed <- list(
+            prices = translated$state$prices,
+            shares = translated$shares,
+            margins = fit@observed$margins,
+            quantities = translated$state$quantities,
+            ownerPre = translated$state$owner
+        )
+        result@diagnostics$source <- "respecify"
+        result@diagnostics$route <- "respecify"
+        result@diagnostics$transition <- list(
+            from = source$id,
+            to = target$id,
+            kind = transition$kind,
+            retained = transition$retain,
+            recomputed = transition$recompute,
+            invalidated = transition$invalidate,
+            calibration_required = transition$calibration_required
+        )
+        result@diagnostics$local_translation <- translated$diagnostics
+        result@diagnostics$source_calibration_args <-
+            fit@diagnostics$calibration_args
+
+        ## Keep update() meaningful after a translation: a later update should
+        ## recalibrate the target demand from target-compatible baseline shares,
+        ## while retaining the source data for provenance.
+        if (is.list(fit@diagnostics$calibration_args)) {
+            target_calibration <- fit@diagnostics$calibration_args
+            target_calibration$demand <- target$demand
+            target_calibration$conduct <- target$conduct
+            target_calibration$variant <- target$variant
+            target_calibration$prices <- translated$state$prices
+            target_calibration$shares <- translated$shares
+            target_calibration$quantities <- NULL
+            target_calibration$ownerPre <- translated$state$owner
+            target_calibration$insideSize <- translated$inside_size
+            target_calibration$priceOutside <- if (target$demand %in%
+                                                    c("logit", "logit_nests")) {
+                0
+            } else {
+                1
+            }
+            target_calibration$labels <- translated$state$labels
+            if (target$demand %in% c("logit_nests", "ces_nests")) {
+                target_calibration$nests <- translated$state$nests
+                target_calibration$parmsStart <- NULL
+            }
+            result@diagnostics$calibration_args <- target_calibration
+        }
+        return(result)
+    }
+
     portable <- fit@parameters[intersect(transition$retain,
                                          names(fit@parameters))]
     missing_portable <- setdiff(transition$retain, names(portable))
     if (length(missing_portable)) {
         for (name in missing_portable) {
             if (.hasSlot(fit@model, name)) {
-                portable[[name]] <- slot(fit@model, name)
+                portable[[name]] <- methods::slot(fit@model, name)
             }
         }
     }

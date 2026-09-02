@@ -152,7 +152,12 @@ change. `respecify()` has an explicit transition registry for standard
 Logit-Bertrand/Cournot and CES-Bertrand/Cournot. It retains demand primitives
 and reconstructs the target supply state through the supplied-parameter path;
 it does not recalibrate target demand from source margins. Unsupported
-Logit-to-CES, nested-family, ALM, and other transitions remain errors by design.
+Logit↔CES transitions are now local demand translations for flat Bertrand and
+Cournot and for nested Bertrand models. They match target baseline shares
+analytically, choose admissible curvature using baseline elasticity distance,
+and reconstruct target marginal costs without recalibrating from source
+margins. Unsupported ALM, bargaining, auction, and other specialized
+transitions remain errors by design.
 
 ## Known discrepancies and suspected issues not changed
 

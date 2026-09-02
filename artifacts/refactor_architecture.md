@@ -83,14 +83,26 @@ This means a conduct change uses the target conduct's calibration equations;
 it does not coerce the source S4 object.  A fit created only by `specify()` has
 no observed-data identifying call and therefore rejects `update()`.
 
-`respecify(fit, ...)` is narrower.  An explicit transition registry currently
-allows standard Logit and CES Bertrand/Cournot transitions.  It retains the
-portable demand primitives, omits source margins from the construction call,
-and invokes `specify()` to recompute target supply-side costs and state.
-Source and target demand families, ALM variants, and other arbitrary class
-conversions are rejected until an economically valid portable-parameter rule
-and target construction path are established.  The transition metadata records
-retained, recomputed, and invalidated quantities.
+`respecify(fit, ...)` is narrower.  An explicit transition registry allows
+standard Logit and CES Bertrand/Cournot transitions, and the tested nested
+Logit-Bertrand/CES-Bertrand pair.  Same-demand conduct transitions retain the
+portable demand primitives, while flat and nested Logit/CES transitions use a
+separate local demand translation: baseline prices, ownership, active
+products, and accounting are retained; target mean values are solved
+analytically to match baseline shares; and curvature parameters are selected
+to minimize baseline elasticity differences.  The target supply state and
+marginal costs are then reconstructed through `specify()` without using
+source margins to recalibrate demand.
+
+This is a local translation, not a claim that price-level Logit and
+log-price CES are globally equivalent.  Their counterfactual predictions may
+diverge away from the preserved baseline.  Arbitrary demand-family,
+variant, or specialized-model conversions remain rejected until an
+economically valid transition rule and target construction path are
+established.  Transition metadata records retained, recomputed, and
+invalidated quantities, while local-translation diagnostics also report share
+and quantity discrepancies, elasticity distance, parameter mappings, and
+optimizer status.
 
 ## Simulation
 

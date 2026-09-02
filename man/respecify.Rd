@@ -9,21 +9,27 @@ respecify(fit, demand = NULL, conduct = NULL, variant = NULL, ...)
 \arguments{
 \item{fit}{An \code{AntitrustFit} returned by \code{calibrate} or
 \code{specify}.}
+
 \item{demand}{Optional target demand-system name.}
+
 \item{conduct}{Optional target conduct name.}
+
 \item{variant}{Optional target model variant.}
-\item{...}{Reserved for future transition-specific options.}
+
+\item{...}{Reserved for future transition-specific options; currently an
+error is raised for unnamed or unsupported arguments.}
 }
 \value{
 A newly constructed \code{AntitrustFit} under the target specification.
 }
 \description{
-\code{respecify} applies an explicitly registered model transition. Portable
-structural parameters are retained and target-model supply state is rebuilt
-through \code{specify}, without recalibrating those parameters from source
-margins. Standard Logit and CES Bertrand/Cournot transitions are currently
-registered. Cross-demand transitions such as Logit to CES require
-\code{update} because their demand parameters do not have a validated common
-interpretation.
+\code{respecify} applies an explicitly registered model transition.
+Same-demand transitions carry portable structural parameters, while registered
+Logit/CES transitions perform a local demand translation: target mean values
+match baseline shares and target curvature minimizes baseline elasticity
+distance. Target-model supply state is reconstructed through \code{specify};
+source margins are not used to recalibrate translated demand. Logit/CES is a
+local translation between price-level and log-price systems, not a claim of
+global demand equivalence.
 }
 \seealso{\code{\link{specify}}, \code{\link{update.AntitrustFit}}}
