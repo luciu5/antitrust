@@ -51,8 +51,29 @@ test_that("Counterfactuals compose without mutation", {
     first <- counterfactual(ownership = c("A", "A"))
     second <- counterfactual(costs = c(0, -.1))
     combined <- combine_counterfactuals(first, second)
-    expect_equal(names(combined), c("ownership", "costs"))
+    expect_s4_class(combined, "Counterfactual")
+    expect_length(combined@steps, 1L)
+    expect_equal(names(combined@steps[[1L]]@changes), c("ownership", "costs"))
     expect_error(combine_counterfactuals(
         first, counterfactual(ownership = c("A", "B"))
     ), "conflicting")
+})
+
+test_that("counterfactual() and add_step() build proper S4 objects", {
+    cf <- counterfactual(ownership = c("A", "A", "C"))
+    expect_s4_class(cf, "Counterfactual")
+    expect_length(cf@steps, 1L)
+    expect_s4_class(cf@steps[[1L]], "CounterfactualStep")
+
+    cf2 <- add_step(cf, costs = c(0, -.1, 0))
+    expect_s4_class(cf2, "Counterfactual")
+    expect_length(cf2@steps, 2L)
+    expect_true(all(vapply(cf2@steps, methods::is, logical(1), "CounterfactualStep")))
+    ## add_step() must not mutate the original Counterfactual.
+    expect_length(cf@steps, 1L)
+
+    expect_error(
+        combine_counterfactuals(cf2, counterfactual(costs = c(0, 0, 0))),
+        "single-step"
+    )
 })
