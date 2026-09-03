@@ -23,7 +23,6 @@ Collate:
     'AntitrustClasses.R'
     'BertrandClasses.R'
     'BertrandRUMClasses.R'
-    'PriceLeadershipClasses.R'
     'AuctionClasses.R'
     'BargainingClasses.R'
     'VerticalClasses.R'
@@ -60,6 +59,9 @@ Collate:
     'CESFunctions.R'
     'CMCRBertrandFunctions.R'
     'CMCRCournotFunctions.R'
+    'Counterfactual.R'
+    'CounterfactualPath.R'
+    'CounterfactualPromotion.R'
     'CournotFunctions.R'
     'HHIFunctions.R'
     'LinearFunctions.R'
@@ -67,7 +69,7 @@ Collate:
     'ModelArchitecture.R'
     'ModelRegistry.R'
     'ModelTranslations.R'
-    'Counterfactual.R'
+    'PriceLeadershipClasses.R'
     'PriceLeadershipFunctions.R'
     'SimFunctions.R'
     'VerticalFunctions.R'
@@ -75,3 +77,4 @@ Collate:
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 Config/antitrust/qa-canonical-r: 4.6.1
+RoxygenNote: 7.3.2
