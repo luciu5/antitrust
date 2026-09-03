@@ -366,11 +366,14 @@ setMethod(
       elasticities <- elast(object, preMerger)[subset, subset]
       thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
       constraint <- ifelse(is.finite(capacities), (quantities - capacities) / object@insideSize, 0)
-      ## Fischer-Burmeister complementarity residual.  The previous exact-zero
-      ## branch returned `thisFOC`, which incorrectly required the unconstrained
-      ## FOC to vanish at a binding capacity.  At capacity, KKT permits a
-      ## non-zero (negative) FOC supported by the capacity multiplier.
-      measure <- thisFOC + constraint + sqrt(thisFOC^2 + constraint^2)
+      ## Fischer-Burmeister complementarity residual for finite capacities.
+      ## A positive infinite capacity is the unconstrained-product sentinel,
+      ## so those products must retain the ordinary FOC rather than a
+      ## complementarity residual with a zero placeholder constraint.
+      finite_capacity <- is.finite(capacities)
+      complementarity <- thisFOC + constraint +
+        sqrt(thisFOC^2 + constraint^2)
+      measure <- ifelse(finite_capacity, complementarity, thisFOC)
       return(measure)
     }
     ## Find price changes that set FOCs equal to 0
