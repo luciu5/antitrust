@@ -69,6 +69,7 @@ Collate:
     'ModelArchitecture.R'
     'ModelRegistry.R'
     'ModelTranslations.R'
+    'BLPIntegration.R'
     'BLPCalibration.R'
     'SyntheticMarketAdapter.R'
     'PriceLeadershipClasses.R'

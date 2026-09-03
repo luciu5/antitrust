@@ -24,91 +24,6 @@ setClass(
 )
 
 
-.blp_draw_weights <- function(object, nDraws = length(object@slopes$alphas)) {
-    weights <- object@slopes$drawWeights
-    if (is.null(weights)) weights <- rep(1 / nDraws, nDraws)
-    if (length(weights) != nDraws || any(!is.finite(weights)) ||
-        any(weights < 0) || sum(weights) <= 0) {
-        stop("BLP draw weights must be finite, non-negative, and match the number of draws.")
-    }
-    as.numeric(weights / sum(weights))
-}
-
-
-.blp_normal_nodes <- function(n) {
-    n <- as.integer(n)
-    if (length(n) != 1L || is.na(n) || n < 1L) {
-        stop("'nDraws' must be a positive integer.")
-    }
-    if (n == 1L) return(list(nodes = 0, weights = 1))
-
-    ## Golub-Welsch nodes and weights for a standard normal integral.  This
-    ## avoids adding an integration dependency while keeping the rule fixed
-    ## throughout the outer calibration optimizer.
-    off_diag <- sqrt(seq_len(n - 1L) / 2)
-    jacobi <- matrix(0, nrow = n, ncol = n)
-    jacobi[cbind(seq_len(n - 1L), seq_len(n - 1L) + 1L)] <- off_diag
-    jacobi[cbind(seq_len(n - 1L) + 1L, seq_len(n - 1L))] <- off_diag
-    eig <- eigen(jacobi, symmetric = TRUE)
-    order_nodes <- order(eig$values)
-    list(
-        nodes = sqrt(2) * eig$values[order_nodes],
-        weights = eig$vectors[1, order_nodes]^2
-    )
-}
-
-
-.blp_integration <- function(dots) {
-    supplied_draws <- dots$draws
-    supplied_weights <- dots$drawWeights
-    integration <- dots$integration
-    if (is.null(integration)) {
-        integration <- if (is.null(supplied_draws)) "gauss-hermite" else "provided"
-    }
-    integration <- match.arg(integration,
-                             c("gauss-hermite", "monte-carlo", "provided"))
-
-    if (!is.null(supplied_draws)) {
-        if (!is.numeric(supplied_draws) || length(supplied_draws) < 1L ||
-            any(!is.finite(supplied_draws))) {
-            stop("'draws' must be a finite numeric vector when supplied.")
-        }
-        draws <- as.numeric(supplied_draws)
-        weights <- if (is.null(supplied_weights)) {
-            rep(1 / length(draws), length(draws))
-        } else {
-            supplied_weights
-        }
-        integration <- "provided"
-    } else if (identical(integration, "gauss-hermite")) {
-        n <- if (is.null(dots$nDraws)) 31L else dots$nDraws
-        rule <- .blp_normal_nodes(n)
-        draws <- rule$nodes
-        weights <- rule$weights
-    } else {
-        n <- if (is.null(dots$nDraws)) 1000L else dots$nDraws
-        if (length(n) != 1L || !is.finite(n) || n < 1 || n != as.integer(n)) {
-            stop("'nDraws' must be a positive integer.")
-        }
-        ## Monte Carlo draws are made once here, outside every objective
-        ## evaluation.  They are therefore fixed conditional on the caller's
-        ## RNG state and cannot introduce objective noise.
-        draws <- rnorm(as.integer(n))
-        weights <- rep(1 / n, n)
-    }
-
-    if (!is.numeric(weights) || length(weights) != length(draws) ||
-        any(!is.finite(weights)) || any(weights < 0) || sum(weights) <= 0) {
-        stop("'drawWeights' must be finite, non-negative, and match 'draws'.")
-    }
-    list(
-        draws = draws,
-        weights = as.numeric(weights / sum(weights)),
-        rule = integration
-    )
-}
-
-
 .blp_stable_shares <- function(delta, prices, alpha, draws, weights,
                                priceOutside = 0, outside = TRUE) {
     utility <- outer(alpha, prices - priceOutside, "*")
@@ -238,7 +153,8 @@ setClass(
                        alphaMean, sigma, meanval, draws, drawWeights,
                        s0, output = TRUE, priceOutside = 0,
                        insideSize = 1, labels = NULL, bargpowerPre = NULL,
-                       bargpowerPost = NULL, weights = NULL) {
+                       bargpowerPost = NULL, weights = NULL,
+                       integrationRule = "provided") {
     n <- length(prices)
     labels <- if (is.null(labels)) paste0("Prod", seq_len(n)) else labels
     if (is.null(weights)) weights <- rep(1, n)
@@ -249,7 +165,10 @@ setClass(
         sigmaNest = 1, piDemog = numeric(0), nDemog = 0,
         consDraws = as.numeric(draws), demogDraws = matrix(numeric(0), nrow = length(draws), ncol = 0),
         alphas = as.numeric(alphaMean + sigma * draws),
-        drawWeights = as.numeric(drawWeights)
+        drawWeights = as.numeric(drawWeights),
+        integrationWeights = as.numeric(drawWeights),
+        integration = integrationRule,
+        nNodes = if (identical(integrationRule, "gauss-hermite")) length(draws) else NULL
     )
     class_name <- switch(conduct,
         bertrand = "LogitBLP",
@@ -295,10 +214,14 @@ setClass(
 }
 
 
-# The existing second-score equation is retained; the scalar homogeneous
-# slope is replaced by the BLP product-local slope.  This is exactly the
-# homogeneous equation at sigma = 0 and makes heterogeneity enter through the
-# same demand derivatives used by the rest of the BLP implementation.
+# The second-score margin is an expectation over the heterogeneous buyer
+# types.  For a draw r, the legacy Gumbel expression is
+#   log(1 - S_Fr) / (alpha_r S_Fr),
+# where S_Fr is the probability that the relevant firm wins.  A product's
+# ex-ante conditional margin is therefore the integrated numerator divided by
+# the integrated winning probability.  This reduces exactly to the legacy
+# Auction2ndLogit expression when sigma = 0; it is not an average-alpha
+# substitution.
 setMethod(
     f = "calcMargins", signature = "Auction2ndBLP",
     definition = function(object, preMerger = TRUE, exAnte = FALSE, level = TRUE) {
@@ -314,13 +237,31 @@ setMethod(
             prices <- object@pricePost
         }
         owner <- owner[subset, subset]
-        shares <- calcShares(object, preMerger = preMerger, revenue = FALSE)[subset]
-        firmShares <- drop(owner %*% shares)
-        alpha <- .blp_effective_alpha(object, preMerger)[subset]
+        shares_draw <- calcShares(object, preMerger = preMerger,
+                                  revenue = FALSE, aggregate = FALSE)
+        shares_draw <- shares_draw[subset, , drop = FALSE]
+        draw_weights <- .blp_draw_weights(object, ncol(shares_draw))
+        alpha <- object@slopes$alphas
+        if (length(alpha) != ncol(shares_draw) || any(!is.finite(alpha))) {
+            stop("BLP auction demand has invalid price-coefficient integration points.")
+        }
+        firm_shares_draw <- owner %*% shares_draw
+        firm_shares <- drop(owner %*% as.vector(shares_draw %*% draw_weights))
+        if (any(firm_shares <= 0 | firm_shares >= 1) ||
+            any(firm_shares_draw <= 0 | firm_shares_draw >= 1)) {
+            stop("BLP auction winning probabilities must be strictly between zero and one.")
+        }
+        numerator <- as.vector(
+            (log(1 - firm_shares_draw) /
+                 matrix(alpha, nrow = nrow(firm_shares_draw),
+                        ncol = ncol(firm_shares_draw), byrow = TRUE)) %*%
+                draw_weights
+        )
         margins <- rep(NA_real_, n)
-        margins[subset] <- output * log(1 - firmShares) / (alpha * firmShares)
-        if (exAnte) margins[subset] <- margins[subset] * shares
-        if (level) margins <- margins * prices
+        margins[subset] <- output * numerator / firm_shares
+        if (exAnte) margins[subset] <- margins[subset] *
+            as.vector(shares_draw %*% draw_weights)
+        if (!level) margins[subset] <- margins[subset] / prices[subset]
         names(margins) <- object@labels
         as.vector(margins)
     }
@@ -342,16 +283,35 @@ setMethod(
         }
         if (any(barg >= 1)) stop("Bargaining BLP requires bargaining power strictly below one.")
         barg <- barg / (1 - barg)
-        shares <- calcShares(object, preMerger, revenue = FALSE)
-        div <- shares / (1 - shares)
-        alpha <- .blp_effective_alpha(object, preMerger)
-        margin_matrix <- -owner * shares
-        diag(margin_matrix) <- diag(owner) + diag(margin_matrix)
+        shares_draw <- calcShares(object, preMerger, revenue = FALSE,
+                                  aggregate = FALSE)
+        draw_weights <- .blp_draw_weights(object, ncol(shares_draw))
+        shares <- as.vector(shares_draw %*% draw_weights)
+        alpha <- object@slopes$alphas
+        if (length(alpha) != ncol(shares_draw) || any(!is.finite(alpha))) {
+            stop("BLP bargaining demand has invalid price-coefficient integration points.")
+        }
+
+        ## Integrate the draw-level bargaining kernel.  Its homogeneous limit
+        ## is exactly the legacy BargainingLogit linear system, while each
+        ## heterogeneous type contributes its own surplus and substitution
+        ## terms before aggregation.
+        margin_matrix <- matrix(0, nrow = nrow(owner), ncol = ncol(owner))
+        term <- numeric(nrow(owner))
+        for (r in seq_len(ncol(shares_draw))) {
+            shares_r <- shares_draw[, r]
+            kernel <- -owner * rep(shares_r, each = nrow(owner))
+            diag(kernel) <- diag(owner) + diag(kernel)
+            margin_matrix <- margin_matrix + draw_weights[r] * kernel
+
+            div_r <- shares_r / (1 - shares_r)
+            term_r <- log(1 - shares_r) /
+                (-1 * output * alpha[r] *
+                     (barg * div_r - log(1 - shares_r)))
+            term <- term + draw_weights[r] * diag(owner) * term_r
+        }
         inverse_matrix <- try(solve(t(margin_matrix)), silent = TRUE)
         if (inherits(inverse_matrix, "try-error")) inverse_matrix <- MASS::ginv(t(margin_matrix))
-        term <- (log(1 - shares) * diag(owner))
-        term <- sweep(term, 2, -1 * output * alpha *
-                          (barg * div - log(1 - shares)), "/")
         margins <- as.vector(inverse_matrix %*% term)
         if (!level) margins <- margins / prices
         names(margins) <- object@labels
@@ -452,7 +412,8 @@ setMethod(
         priceOutside = if (is.null(dots$priceOutside)) 0 else dots$priceOutside,
         insideSize = if (is.null(dots$insideSize)) 1 else dots$insideSize,
         labels = dots$labels, bargpowerPre = bargpowerPre,
-        bargpowerPost = bargpowerPost, weights = weights
+        bargpowerPost = bargpowerPost, weights = weights,
+        integrationRule = integration$rule
     )
 }
 
@@ -677,7 +638,16 @@ setMethod(
     alpha <- if (!is.null(parameters$alphaMean)) parameters$alphaMean else
         if (!is.null(parameters$alpha)) parameters$alpha else parameters$alpha_mean
     sigma <- parameters$sigma
-    integration <- .blp_integration(c(dots, parameters[intersect(names(parameters), c("draws", "drawWeights", "nDraws"))]))
+    integration_dots <- dots
+    for (name in intersect(names(parameters), c(
+        "draws", "consDraws", "drawWeights", "integrationWeights",
+        "integration", "nNodes", "nDraws"
+    ))) {
+        if (is.null(integration_dots[[name]])) {
+            integration_dots[[name]] <- parameters[[name]]
+        }
+    }
+    integration <- .blp_integration(integration_dots)
     s0 <- if (is.null(dots$s0)) 1 - sum(shares) else dots$s0
     .blp_validate_inputs(prices, shares, if (is.null(margins)) rep(1 / length(prices), length(prices)) else margins,
                          ownerPre, s0, output)
@@ -721,7 +691,12 @@ setMethod(
         diagnostics = list(status = "completed", source = "specified", route = "specify",
                            model_class = class(model)[[1]], specification_args = specification_args,
                            integration = list(rule = integration$rule, nodes = integration$draws,
-                                              weights = integration$weights)))
+                                              weights = integration$weights),
+                           wrongSignProbability = if (sigma == 0) 0 else if (output) {
+                               1 - stats::pnorm(-alpha / sigma)
+                           } else {
+                               stats::pnorm(-alpha / sigma)
+                           }))
 }
 
 

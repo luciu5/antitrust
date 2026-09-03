@@ -724,17 +724,21 @@ setMethod(
     # Check if meanval is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
 
-    # Check if draws already exist
+    ## Obtain consumer integration points and normalized weights from the
+    ## shared abstraction.  Legacy parameter-supplied objects retain their
+    ## historical fixed-draw Monte Carlo default; fitted refactor objects
+    ## record and reuse their selected rule.
+    integration <- .blp_object_integration(object, legacy_default = "monte-carlo")
+    consDraws <- integration$draws
+    drawWeights <- integration$weights
+    nDraws <- length(consDraws)
+
+    # Generate demographic draws (if present) over the same consumer points.
     drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
 
     if (drawsExist) {
-      consDraws <- object@slopes$consDraws
       demogDraws <- object@slopes$demogDraws
     } else {
-      # Generate consumer draws
-      consDraws <- rnorm(nDraws)
-
-      # Generate demographic draws
       if (nDemog > 0) {
         # Check if market-specific demographic distribution is provided
         demogMean <- object@slopes$demogMean
@@ -880,7 +884,7 @@ setMethod(
         }
         shares_draw <- withinNest * acrossNest
 
-        predShares <- colMeans(shares_draw)
+        predShares <- as.vector(crossprod(drawWeights, shares_draw))
 
         # BLP contraction mapping
         return(delta + sigmaNest * (log(shares) - log(predShares)))
@@ -947,7 +951,11 @@ setMethod(
       nDemog = nDemog,
       alphas = as.numeric(alphas),
       consDraws = consDraws,
-      demogDraws = demogDraws
+      demogDraws = demogDraws,
+      drawWeights = drawWeights,
+      integrationWeights = drawWeights,
+      integration = integration$rule,
+      nNodes = if (identical(integration$rule, "gauss-hermite")) nDraws else NULL
     )
 
     # Add characteristic parameters if they exist
