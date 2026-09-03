@@ -499,11 +499,35 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 ## reads a promoted `mcPre`.  So the cumulative proportional cost change
 ## (not a single step's shock) is the real persistent cost-environment
 ## state, and successive steps' cost shocks must compound multiplicatively:
-## (1 + cumulative) <- (1 + cumulative) * (1 + this step's shock).
+## (1 + cumulative) <- (1 + cumulative) * (1 + this step's shock).  `current`
+## may be shorter than `step_shock` when a prior step added an entrant;
+## pad with 0 (no prior shock for a product that did not yet exist).
 .compound_costs <- function(current, step_shock) {
     if (is.null(step_shock)) return(current)
     if (is.null(current)) current <- rep(0, length(step_shock))
+    if (length(current) < length(step_shock)) {
+        current <- c(current, rep(0, length(step_shock) - length(current)))
+    }
     (1 + current) * (1 + step_shock) - 1
+}
+
+## calcMC() cannot be given an entrant's marginal cost directly (see
+## .entrant_cost_delta(), CounterfactualPromotion.R): it always derives the
+## pre-merger marginal cost from FOC-consistency with calibrated margins,
+## which the entrant does not have.  Fold each newly added entrant's
+## implied cost delta into this step's cost-shock vector -- multiplicatively
+## composed with any ordinary cost change the same step also targets at the
+## entrant's label, so the two channels combine rather than one silently
+## overwriting the other.
+.merge_entry_cost_deltas <- function(model, entrants, step_shock) {
+    if (is.null(entrants)) return(step_shock)
+    if (is.null(step_shock)) step_shock <- rep(0, length(model@labels))
+    for (one_entrant in entrants) {
+        idx <- match(one_entrant@label, model@labels)
+        delta <- .entrant_cost_delta(model, one_entrant)
+        step_shock[idx] <- (1 + step_shock[idx]) * (1 + delta) - 1
+    }
+    step_shock
 }
 
 .compound_vertical_costs <- function(current, step_shock) {
@@ -807,6 +831,9 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         changes <- step@changes
         is_vertical <- methods::is(state, "VertBargBertLogit")
         step_shock <- .resolve_step_costs(state, changes$costs, is_vertical)
+        if (!is_vertical) {
+            step_shock <- .merge_entry_cost_deltas(state, changes$entry, step_shock)
+        }
         cumulative_costs <- if (is_vertical) {
             .compound_vertical_costs(cumulative_costs, step_shock)
         } else {
@@ -947,10 +974,14 @@ simulate <- function(fit, ownerPost = NULL,
         changes <- step@changes
         if (!is.null(changes$leader)) dots$isLeaderPost <- changes$leader
         if (!is.null(changes$products)) dots$productsPost <- changes$products
+        step_mc_delta <- .resolve_step_costs(model, changes$costs, is_vertical)
+        if (!is_vertical) {
+            step_mc_delta <- .merge_entry_cost_deltas(model, changes$entry, step_mc_delta)
+        }
         result <- .model_simulate_step(
             fit, model,
             ownerPost = changes$ownership,
-            mcDelta = .resolve_step_costs(model, changes$costs, is_vertical),
+            mcDelta = step_mc_delta,
             exit = changes$exit,
             priceStart = if (!missing(priceStart)) priceStart,
             capacitiesPost = changes$capacity,

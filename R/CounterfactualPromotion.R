@@ -72,6 +72,16 @@ setGeneric(".expand_entrant", function(model, entrant) {
     standardGeneric(".expand_entrant")
 })
 
+## calcMC() for the Bertrand family never reads mcPre/mcPost directly -- it
+## always DERIVES the pre-merger marginal cost from FOC-consistency with
+## the calibrated (margin, price, ownership) triple, ignoring whatever is
+## assigned to those slots directly. The entrant has no calibrated margin,
+## so its cost primitive cannot be set that way; the caller
+## (.apply_step_environment(), ModelArchitecture.R) instead computes the
+## proportional mcDelta needed so that calcMC()'s implied post-entry cost
+## equals entrant@cost, and threads it through the same mcDelta channel
+## used for ordinary cost counterfactuals so it is never silently
+## overwritten by the step's cost-resolution/compounding logic.
 setMethod(".expand_entrant", "Logit", function(model, entrant) {
     .require_entry_supported(model, "entry")
     if (entrant@label %in% model@labels) {
@@ -93,8 +103,8 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     model@labels <- c(model@labels, entrant@label)
     model@pricePre <- c(model@pricePre, entrant@priceStart)
     model@pricePost <- c(model@pricePost, entrant@priceStart)
-    model@mcPre <- c(model@mcPre, entrant@cost)
-    model@mcPost <- c(model@mcPost, entrant@cost)
+    model@mcPre <- c(model@mcPre, NA_real_)
+    model@mcPost <- c(model@mcPost, NA_real_)
     model@mcDelta <- c(model@mcDelta, 0)
     model@subset <- c(model@subset, TRUE)
     model@priceStart <- c(model@priceStart, entrant@priceStart)
@@ -120,6 +130,25 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     model@diversion <- expanded_diversion
 
     model
+})
+
+## The proportional mcDelta needed so that calcMC()'s FOC-implied marginal
+## cost at the entrant's position equals entrant@cost, evaluated using the
+## model's current ownership/elasticity structure (so it stays correct
+## whether entry happens against the original baseline or a promoted
+## post-merger state).
+setGeneric(".entrant_cost_delta", function(model, entrant) {
+    standardGeneric(".entrant_cost_delta")
+})
+
+setMethod(".entrant_cost_delta", "Logit", function(model, entrant) {
+    idx <- match(entrant@label, model@labels)
+    implied_mc_pre <- calcMC(model, preMerger = TRUE)[idx]
+    if (!is.finite(implied_mc_pre) || implied_mc_pre <= 0) {
+        stop("entry could not derive a consistent pre-entry marginal cost for entrant '",
+             entrant@label, "'; check 'meanval' and 'priceStart'")
+    }
+    entrant@cost / implied_mc_pre - 1
 })
 
 ## Multiply calibrated `meanval` by (1 + quality) for the named products.
