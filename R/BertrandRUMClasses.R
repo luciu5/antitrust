@@ -373,13 +373,21 @@ setClass(
     }
 
 
-    if (any(!is.finite(object@capacitiesPre) | object@capacitiesPre < 0)) {
-      stop("'capacitiesPre' values must be positive numbers")
+    ## A positive infinite capacity is the documented sentinel for an
+    ## unconstrained product (and is used by trade's no-quota path).  Reject
+    ## missing, negative, and negative-infinite capacities while preserving
+    ## that existing no-capacity convention.
+    if (any(is.na(object@capacitiesPre) |
+      object@capacitiesPre < 0 |
+      (is.infinite(object@capacitiesPre) & object@capacitiesPre < 0))) {
+      stop("'capacitiesPre' values must be non-negative numbers or +Inf")
     }
 
 
-    if (any(!is.finite(object@capacitiesPost) | object@capacitiesPost < 0)) {
-      stop("'capacitiesPost' values must be positive numbers")
+    if (any(is.na(object@capacitiesPost) |
+      object@capacitiesPost < 0 |
+      (is.infinite(object@capacitiesPost) & object@capacitiesPost < 0))) {
+      stop("'capacitiesPost' values must be non-negative numbers or +Inf")
     }
 
     if (length(object@insideSize) != 1 || !is.finite(object@insideSize) ||

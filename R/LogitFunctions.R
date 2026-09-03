@@ -26,7 +26,8 @@
 #' @param nests A length k vector identifying the nest that each
 #'   product belongs to.
 #' @param capacitiesPre A length k vector of pre-merger product capacities. Capacities
-#'   must be at least as great as shares * insideSize.
+#'   must be at least as great as shares * insideSize. A value of code{Inf}
+#'   denotes an unconstrained product.
 #' @param capacitiesPost A length k vector of post-merger product capacities.
 #' @param insideSize An integer equal to total pre-merger units sold.
 #'   If shares sum to one, this also equals the size of the market.
