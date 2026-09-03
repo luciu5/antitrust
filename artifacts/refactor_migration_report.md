@@ -154,10 +154,27 @@ and reconstructs the target supply state through the supplied-parameter path;
 it does not recalibrate target demand from source margins. Unsupported
 Logit↔CES transitions are now local demand translations for flat Bertrand and
 Cournot and for nested Bertrand models. They match target baseline shares
-analytically, choose admissible curvature using baseline elasticity distance,
+analytically, require explicit target curvature when it is not retained,
 and reconstruct target marginal costs without recalibrating from source
-margins. Unsupported ALM, bargaining, auction, and other specialized
+margins. First-order Linear and LogLin transitions preserve the fitted
+baseline Jacobian or elasticity matrix analytically. Unsupported ALM, bargaining, auction, and other specialized
 transitions remain errors by design.
+
+The demand-transition registry classifies additional paths explicitly:
+
+| Transition kind | Meaning |
+|---|---|
+| Structural restriction | Remove nesting while retaining portable demand primitives. |
+| Algebraic translation | Translate flat or nested Logit/CES demand with explicit target curvature when needed. |
+| Conditional translation | Add nests only when nests and nesting parameters are supplied. |
+| First-order Linear | Preserve the fitted baseline demand Jacobian. |
+| First-order LogLin | Preserve the fitted baseline elasticity matrix. |
+
+All target mean values and intercepts are solved analytically from the fitted
+baseline. `respecify()` does not optimize elasticity distance or infer absent
+target primitives from margins. Linear and LogLin are local representations;
+their round-trip guarantees apply at the baseline, not to arbitrary
+counterfactual prices.
 
 ## Known discrepancies and suspected issues not changed
 

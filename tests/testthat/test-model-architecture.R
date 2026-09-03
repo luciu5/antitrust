@@ -210,7 +210,7 @@ test_that("respecify transitions are explicit and do not mutate the source fit",
         list(demand = "logit", conduct = "bertrand"), common
     )), "calibrate source for transition validation")
     source_parameters <- fit@parameters
-    expect_s4_class(respecify(fit, demand = "ces")@model, "CES")
+    expect_s4_class(respecify(fit, demand = "ces", gamma = 1.2)@model, "CES")
     expect_error(respecify(fit, demand = "aids"),
                  "not supported.*use update")
     expect_error(respecify(fit), "different registered")

@@ -87,84 +87,133 @@ supportedModels <- function() {
 ## construction path.  This is not a general S4 coercion table.
 .model_transition_registry <- local({
     entries <- list(
-        list(from = "logit::bertrand", to = "logit::cournot",
-             retain = c("alpha", "meanval"),
-             recompute = c("marginal costs", "Cournot supply state"),
-             invalidate = c("Bertrand margins"),
-             calibration_required = FALSE),
-        list(from = "logit::cournot", to = "logit::bertrand",
-             retain = c("alpha", "meanval"),
-             recompute = c("marginal costs", "Bertrand supply state"),
-             invalidate = c("Cournot margins"),
-             calibration_required = FALSE),
-        list(from = "ces::bertrand", to = "ces::cournot",
-             retain = c("gamma", "alpha", "meanval", "shareInside"),
-             recompute = c("marginal costs", "Cournot supply state"),
-             invalidate = c("Bertrand margins"),
-             calibration_required = FALSE),
-        list(from = "ces::cournot", to = "ces::bertrand",
-             retain = c("gamma", "alpha", "meanval", "shareInside"),
-             recompute = c("marginal costs", "Bertrand supply state"),
-             invalidate = c("Cournot margins"),
-             calibration_required = FALSE),
-        ## These transitions are local demand translations.  They do not
-        ## claim that price-level Logit and CES are globally equivalent.
-        list(from = "logit::bertrand", to = "ces::bertrand",
-             kind = "local-demand-translation",
-             retain = c("prices", "ownership", "conduct", "labels"),
-             recompute = c("CES demand parameters", "marginal costs",
-                           "Bertrand supply state"),
-             invalidate = c("Logit demand parameters"),
-             calibration_required = FALSE),
-        list(from = "ces::bertrand", to = "logit::bertrand",
-             kind = "local-demand-translation",
-             retain = c("prices", "ownership", "conduct", "labels"),
-             recompute = c("Logit demand parameters", "marginal costs",
-                           "Bertrand supply state"),
-             invalidate = c("CES demand parameters"),
-             calibration_required = FALSE),
-        list(from = "logit::cournot", to = "ces::cournot",
-             kind = "local-demand-translation",
-             retain = c("prices", "ownership", "conduct", "labels"),
-             recompute = c("CES demand parameters", "marginal costs",
-                           "Cournot supply state"),
-             invalidate = c("Logit demand parameters"),
-             calibration_required = FALSE),
-        list(from = "ces::cournot", to = "logit::cournot",
-             kind = "local-demand-translation",
-             retain = c("prices", "ownership", "conduct", "labels"),
-             recompute = c("Logit demand parameters", "marginal costs",
-                           "Cournot supply state"),
-             invalidate = c("CES demand parameters"),
-             calibration_required = FALSE),
-        list(from = "logit_nests::bertrand", to = "ces_nests::bertrand",
-             kind = "local-demand-translation",
-             retain = c("prices", "ownership", "conduct", "labels", "nests"),
-             recompute = c("nested CES demand parameters", "marginal costs",
-                           "Bertrand supply state"),
-             invalidate = c("nested Logit demand parameters"),
-             calibration_required = FALSE),
-        list(from = "ces_nests::bertrand", to = "logit_nests::bertrand",
-             kind = "local-demand-translation",
-             retain = c("prices", "ownership", "conduct", "labels", "nests"),
-             recompute = c("nested Logit demand parameters", "marginal costs",
-                           "Bertrand supply state"),
-             invalidate = c("nested CES demand parameters"),
-             calibration_required = FALSE)
+        list(from = "logit", to = "logit_nests",
+             kind = "conditional-translation", required_arguments = c("nests", "sigma"),
+             retain = c("alpha", "prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = character(),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "ces", to = "ces_nests",
+             kind = "conditional-translation", required_arguments = c("nests", "sigma"),
+             retain = c("gamma", "prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = character(),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "logit_nests", to = "logit",
+             kind = "structural-restriction", required_arguments = character(),
+             retain = c("alpha", "prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = c("nests", "sigma"),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "ces_nests", to = "ces",
+             kind = "structural-restriction", required_arguments = character(),
+             retain = c("gamma", "prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = c("nests", "sigma"),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "logit", to = "ces",
+             kind = "algebraic-translation", required_arguments = c("gamma"),
+             retain = c("prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = c("alpha"),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "ces", to = "logit",
+             kind = "algebraic-translation", required_arguments = c("alpha"),
+             retain = c("prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = c("gamma"),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "logit_nests", to = "ces_nests",
+             kind = "algebraic-translation", required_arguments = c("gamma"),
+             retain = c("nests", "lambda", "prices", "quantities", "ownership", "conduct"),
+             derived = c("sigma", "meanval"), discarded = c("alpha"),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "ces_nests", to = "logit_nests",
+             kind = "algebraic-translation", required_arguments = c("alpha"),
+             retain = c("nests", "sigmaCES", "prices", "quantities", "ownership", "conduct"),
+             derived = c("sigma", "meanval"), discarded = c("gamma"),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "logit_nests", to = "ces",
+             kind = "algebraic-translation", required_arguments = c("gamma"),
+             retain = c("prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = c("alpha", "nests", "sigma"),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "ces_nests", to = "logit",
+             kind = "algebraic-translation", required_arguments = c("alpha"),
+             retain = c("prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = c("gamma", "nests", "sigma"),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "logit", to = "ces_nests",
+             kind = "conditional-translation", required_arguments = c("gamma", "nests", "sigma"),
+             retain = c("prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = c("alpha"),
+             recompute = c("marginal costs", "target supply state")),
+        list(from = "ces", to = "logit_nests",
+             kind = "conditional-translation", required_arguments = c("alpha", "nests", "sigma"),
+             retain = c("prices", "quantities", "ownership", "conduct"),
+             derived = c("meanval"), discarded = c("gamma"),
+             recompute = c("marginal costs", "target supply state"))
     )
+    ## Linear and LogLin are canonical local representations of any supported
+    ## differentiable demand for which the target constructor accepts supplied
+    ## slopes and intercepts.  Add these declarative records to the same
+    ## registry rather than hiding the family expansion in the dispatcher.
+    first_order_demands <- c("logit", "logit_nests", "ces", "ces_nests",
+                             "aids", "linear", "loglin")
+    first_order <- lapply(setdiff(first_order_demands, "linear"),
+                          function(from) list(
+        from = from, to = "linear",
+        kind = "first-order-linearization",
+        required_arguments = character(),
+        retain = c("prices", "quantities", "ownership", "conduct"),
+        derived = c("slopes", "intercepts"), discarded = character(),
+        recompute = c("marginal costs", "target supply state")
+    ))
+    first_order <- c(first_order, lapply(
+        setdiff(first_order_demands, "loglin"), function(from) list(
+            from = from, to = "loglin",
+            kind = "first-order-loglinearization",
+            required_arguments = character(),
+            retain = c("prices", "quantities", "ownership", "conduct"),
+            derived = c("slopes", "intercepts"), discarded = character(),
+            recompute = c("marginal costs", "target supply state")
+        )))
+    entries <- c(entries, first_order)
     function() entries
 })
 
 .model_transition_entry <- function(from, to) {
-    entries <- .model_transition_registry()
-    matches <- Filter(function(entry) {
-        identical(entry$from, from$id) && identical(entry$to, to$id)
-    }, entries)
-    if (!length(matches)) {
-        stop("respecify() transition from '", from$id, "' to '",
-             to$id, "' is not supported; use update() to recalibrate the target model")
+    if (!identical(from$conduct, to$conduct) ||
+        !identical(from$variant, to$variant)) {
+        ## Existing conduct transitions are structural restrictions that retain
+        ## the portable demand primitives.  They remain explicit below.
+        entries <- list(
+            list(from = "logit", to = "logit", kind = "structural-restriction",
+                 required_arguments = character(), retain = c("alpha", "meanval"),
+                 derived = character(), discarded = character(),
+                 recompute = c("marginal costs", "target supply state")),
+            list(from = "ces", to = "ces", kind = "structural-restriction",
+                 required_arguments = character(), retain = c("gamma", "alpha", "meanval", "shareInside"),
+                 derived = character(), discarded = character(),
+                 recompute = c("marginal costs", "target supply state")))
+    } else {
+        entries <- .model_transition_registry()
     }
-    matches[[1L]]
+    matches <- Filter(function(entry) {
+        identical(entry$from, from$demand) && identical(entry$to, to$demand)
+    }, entries)
+    target_entry <- .model_registry_entry(to$demand, to$conduct, to$variant)
+    if (length(matches) && !is.null(target_entry) &&
+        isTRUE(target_entry$specify)) {
+        entry <- matches[[1L]]
+        entry$from <- from$id
+        entry$to <- to$id
+        if (is.null(entry$calibration_required)) {
+            entry$calibration_required <- FALSE
+        }
+        entry$handler <- if (identical(from$demand, to$demand)) {
+            "portable"
+        } else {
+            "demand"
+        }
+        return(entry)
+    }
+    stop("respecify() transition from '", from$id, "' to '",
+         to$id, "' is not supported; use update() to recalibrate the target model")
 }
 
 

@@ -89,10 +89,10 @@ Logit-Bertrand/CES-Bertrand pair.  Same-demand conduct transitions retain the
 portable demand primitives, while flat and nested Logit/CES transitions use a
 separate local demand translation: baseline prices, ownership, active
 products, and accounting are retained; target mean values are solved
-analytically to match baseline shares; and curvature parameters are selected
-to minimize baseline elasticity differences.  The target supply state and
-marginal costs are then reconstructed through `specify()` without using
-source margins to recalibrate demand.
+analytically to match baseline shares; and target curvature is either retained
+or supplied explicitly. The target supply state and marginal costs are then
+reconstructed through `specify()` without using source margins to recalibrate
+demand.
 
 This is a local translation, not a claim that price-level Logit and
 log-price CES are globally equivalent.  Their counterfactual predictions may
@@ -101,8 +101,21 @@ variant, or specialized-model conversions remain rejected until an
 economically valid transition rule and target construction path are
 established.  Transition metadata records retained, recomputed, and
 invalidated quantities, while local-translation diagnostics also report share
-and quantity discrepancies, elasticity distance, parameter mappings, and
-optimizer status.
+and quantity discrepancies, deterministic parameter mappings, and local matrix
+discrepancies.
+
+### Transition taxonomy
+
+The transition registry distinguishes structural restrictions, algebraic
+translations, conditional translations, first-order Linear representations,
+and first-order LogLin representations. Structural restrictions can discard
+nesting while retaining portable primitives. Conditional translations require
+explicitly supplied nests and nesting parameters. Algebraic Logit/CES
+translations require the target curvature when it is not retained. First-order
+Linear and LogLin translations derive slopes and intercepts analytically from
+the fitted baseline elasticity matrix. No transition silently estimates a
+missing primitive from margins; if a target model requires calibration, use
+`update()` instead.
 
 ## Simulation
 

@@ -87,3 +87,30 @@ test_that("model specifications normalize names and reject unsupported combinati
         "unsupported model variant"
     )
 })
+
+test_that("demand transition registry is explicit and non-duplicated", {
+    transitions <- getFromNamespace(
+        ".model_transition_registry", "antitrust"
+    )()
+    keys <- vapply(
+        transitions,
+        function(entry) paste(entry$from, entry$to, sep = "->"),
+        character(1)
+    )
+    kinds <- vapply(transitions, `[[`, character(1), "kind")
+
+    expect_false(anyDuplicated(keys) > 0L)
+    expect_true(all(kinds %in% c(
+        "structural-restriction", "algebraic-translation",
+        "conditional-translation", "first-order-linearization",
+        "first-order-loglinearization"
+    )))
+    expect_true(all(vapply(
+        transitions,
+        function(entry) is.character(entry$required_arguments),
+        logical(1)
+    )))
+    expect_true(any(keys == "aids->linear"))
+    expect_true(any(keys == "aids->loglin"))
+    expect_true(any(keys == "logit_nests->logit"))
+})

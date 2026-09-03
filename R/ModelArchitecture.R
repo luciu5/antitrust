@@ -836,20 +836,21 @@ update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
 #' Respecify a fitted antitrust model
 #'
 #' `respecify()` applies an explicitly registered model transition. Same-demand
-#' transitions carry portable structural parameters, while registered
-#' Logit/CES transitions perform a local demand translation: target mean values
-#' match baseline shares and target curvature minimizes baseline elasticity
-#' distance. Target-model supply state is reconstructed through `specify()`;
-#' source margins are not used to recalibrate translated demand. Logit/CES is a
-#' local translation between price-level and log-price systems, not a claim of
-#' global demand equivalence.
+#' conduct transitions carry portable structural parameters. Demand transitions
+#' use the taxonomy stored in the transition registry: structural restrictions,
+#' algebraic or conditional translations, and canonical first-order Linear or
+#' LogLin representations. Target mean values, intercepts, and slopes are
+#' solved analytically from the fitted baseline, or target structural primitives
+#' are required explicitly. No transition calibrates from source margins or
+#' minimizes an elasticity-distance objective.
 #'
 #' @param fit An `AntitrustFit` returned by `calibrate()` or `specify()`.
 #' @param demand Optional target demand-system name.
 #' @param conduct Optional target conduct name.
 #' @param variant Optional target model variant.
-#' @param ... Reserved for future transition-specific options; currently an
-#'   error is raised for unnamed or unsupported arguments.
+#' @param ... Transition-specific target primitives. Depending on the
+#'   registered transition, these may include `alpha`, `gamma`, `nests`, and
+#'   `sigma`.
 #' @return A newly constructed `AntitrustFit` under the target specification.
 #' @seealso [`specify()`], [`update.AntitrustFit()`]
 #' @export
@@ -859,8 +860,15 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
         stop("'fit' must be an AntitrustFit returned by calibrate() or specify().")
     }
     extras <- list(...)
-    if (length(extras)) {
-        stop("respecify() does not accept transition-specific arguments yet")
+    if (length(extras) &&
+        (is.null(names(extras)) || any(!nzchar(names(extras))))) {
+        stop("respecify() transition arguments must be named")
+    }
+    allowed_extras <- c("alpha", "gamma", "nests", "sigma")
+    unsupported_extras <- setdiff(names(extras), allowed_extras)
+    if (length(unsupported_extras)) {
+        stop("unsupported respecify() transition argument(s): ",
+             paste(unsupported_extras, collapse = ", "))
     }
 
     source <- fit@spec
@@ -873,9 +881,14 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
         stop("respecify() requires a different registered model specification")
     }
     transition <- .model_transition_entry(source, target)
+    if (identical(transition$handler, "portable") && length(extras)) {
+        stop("respecify() transition from '", source$id, "' to '",
+             target$id, "' does not accept transition-specific demand arguments")
+    }
 
-    if (identical(transition$kind, "local-demand-translation")) {
-        translated <- .translate_antitrust_demand(fit, target)
+    if (identical(transition$handler, "demand")) {
+        translated <- .translate_antitrust_demand(fit, target, transition,
+                                                  extras)
         result <- translated$fit
         result@parameters <- .model_parameters(result@model)
         result@observed <- list(
@@ -891,11 +904,16 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
             from = source$id,
             to = target$id,
             kind = transition$kind,
+            required_arguments = transition$required_arguments,
             retained = transition$retain,
+            derived = transition$derived,
+            discarded = transition$discarded,
             recomputed = transition$recompute,
             invalidated = transition$invalidate,
             calibration_required = transition$calibration_required
         )
+        result@diagnostics$translation <- translated$diagnostics
+        ## Retain the older diagnostic name for callers of the pilot API.
         result@diagnostics$local_translation <- translated$diagnostics
         result@diagnostics$source_calibration_args <-
             fit@diagnostics$calibration_args
@@ -909,16 +927,20 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
             target_calibration$conduct <- target$conduct
             target_calibration$variant <- target$variant
             target_calibration$prices <- translated$state$prices
-            target_calibration$shares <- translated$shares
-            target_calibration$quantities <- NULL
+            target_calibration$shares <- if (target$demand %in% c("linear", "loglin")) {
+                NULL
+            } else {
+                translated$shares
+            }
+            target_calibration$quantities <- if (target$demand %in% c("linear", "loglin")) {
+                translated$state$quantities
+            } else {
+                NULL
+            }
+            target_calibration$margins <- NULL
             target_calibration$ownerPre <- translated$state$owner
             target_calibration$insideSize <- translated$inside_size
-            target_calibration$priceOutside <- if (target$demand %in%
-                                                    c("logit", "logit_nests")) {
-                0
-            } else {
-                1
-            }
+            target_calibration$priceOutside <- translated$price_outside
             target_calibration$labels <- translated$state$labels
             if (target$demand %in% c("logit_nests", "ces_nests")) {
                 target_calibration$nests <- translated$state$nests
@@ -977,13 +999,17 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
     result@observed <- fit@observed
     result@diagnostics$source <- "respecify"
     result@diagnostics$route <- "respecify"
-    result@diagnostics$transition <- list(
-        from = source$id,
-        to = target$id,
-        retained = transition$retain,
-        recomputed = transition$recompute,
-        invalidated = transition$invalidate,
-        calibration_required = transition$calibration_required
+        result@diagnostics$transition <- list(
+            from = source$id,
+            to = target$id,
+            kind = transition$kind,
+            required_arguments = transition$required_arguments,
+            retained = transition$retain,
+            derived = transition$derived,
+            discarded = transition$discarded,
+            recomputed = transition$recompute,
+            invalidated = transition$invalidate,
+            calibration_required = transition$calibration_required
     )
     ## A later update() should recalibrate the target specification from the
     ## same observed-data call, including any source margins that remain useful

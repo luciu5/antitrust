@@ -298,6 +298,7 @@ shares = NULL,
                 bargpowerPre = rep(0.5, length(prices)),
                 bargpowerPost = bargpowerPre,
                 labels = paste("Prod", 1:length(prices), sep = ""),
+                diversions = NULL,
                 ...) {
   supply_missing <- missing(supply)
   demand <- match.arg(demand)
@@ -552,6 +553,7 @@ shares = NULL,
         any(demand.param$sigma <= 0) || any(demand.param$sigma > 1)) {
         stop("'demand.param$sigma' must contain numeric nesting parameters in (0,1].")
       }
+      parmsStartSigma <- demand.param$sigma
       if (length(demand.param$sigma) == 1) {
         constraint <- TRUE
         demand.param$sigma <- rep(demand.param$sigma, nlevels(nests))
@@ -614,6 +616,7 @@ shares = NULL,
         any(demand.param$sigma <= 0) || any(demand.param$sigma > 1)) {
         stop("'demand.param$sigma' must contain numeric nesting parameters in (0,1].")
       }
+      parmsStartSigma <- demand.param$sigma
       if (length(demand.param$sigma) == 1) {
         constraint <- TRUE
         demand.param$sigma <- rep(demand.param$sigma, nlevels(nests))
@@ -738,7 +741,7 @@ shares = NULL,
       ownerPost = ownerPost,
       nests = nests,
       normIndex = normIndex,
-      parmsStart = c(demand.param$gamma, demand.param$sigma),
+      parmsStart = c(demand.param$gamma, parmsStartSigma),
       priceStart = priceStart,
       constraint = constraint,
       shareInside = shareInside, labels = labels
@@ -753,7 +756,7 @@ shares = NULL,
       ownerPost = ownerPost,
       nests = nests,
       normIndex = normIndex,
-      parmsStart = c(demand.param$alpha, demand.param$sigma),
+      parmsStart = c(demand.param$alpha, parmsStartSigma),
       priceStart = priceStart,
       constraint = constraint,
       shareInside = shareInside, labels = labels
@@ -898,8 +901,12 @@ shares = NULL,
     ## the implied diversion matrix as the placeholder so valid parameterized
     ## simulations are not rejected by the class validator.  This is the same
     ## identity used by calcSlopes,Linear-method: D_ij = -B_ji / B_jj.
-    sim_diversion <- -t(demand.param$slopes) /
-      matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
+    sim_diversion <- if (is.null(diversions)) {
+      -t(demand.param$slopes) /
+        matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
+    } else {
+      diversions
+    }
     result <- new(demand,
       prices = prices, quantities = shares, margins = margins,
       shares = shares, mcDelta = mcDelta, subset = subset,
@@ -923,8 +930,12 @@ shares = NULL,
       ownerPost = ownerPost, labels = labels
     )
   } else if (demand == "LogLin") {
-    sim_diversion <- -t(demand.param$slopes) /
-      matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
+    sim_diversion <- if (is.null(diversions)) {
+      -t(demand.param$slopes) /
+        matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
+    } else {
+      diversions
+    }
     result <- new(demand,
       prices = prices, quantities = shares, margins = margins,
       shares = shares, mcDelta = mcDelta, subset = subset, priceStart = priceStart,
