@@ -9,6 +9,7 @@
 ^\.\.Rcheck$
 ^.*[.]Rcheck$
 ^\.codex$
+^\.claude$
 ^\.github$
 ^AGENTS[.]md$
 ^\.Rhistory$
