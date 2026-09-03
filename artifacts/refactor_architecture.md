@@ -106,6 +106,21 @@ optimizer status.
 
 ## Simulation
 
+## Counterfactual boundary
+
+`counterfactual()` is a lightweight container for simultaneous post-fit
+changes. It stores only supplied environment fields such as `ownership`,
+`costs`, `exit`, `capacity`, `bargaining`, and Stackelberg leadership/product
+state. Model identity fields (`demand`, `conduct`, and `variant`) are rejected
+there and remain the responsibility of `update()` or `respecify()`.
+
+`simulate(fit, cf)` validates the requested fields against registry-derived
+capabilities, translates them to the existing model-specific slots, and
+performs one equilibrium solve. Legacy argument calls remain supported and
+are translated internally. Results retain lightweight `counterfactual`
+metadata as an attribute; the original fit is never mutated. The same
+counterfactual can therefore be reused with multiple compatible fits.
+
 `simulate(fit, ownerPost, mcDelta, subset, ...)` applies the scenario to the
 fitted model, recovers post-counterfactual marginal costs with the model's
 existing `calcMC()` method, and calls that model's existing equilibrium

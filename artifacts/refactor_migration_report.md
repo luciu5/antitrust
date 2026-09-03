@@ -161,6 +161,16 @@ transitions remain errors by design.
 
 ## Known discrepancies and suspected issues not changed
 
+## Counterfactual migration
+
+`Counterfactual` and `combine_counterfactuals()` now provide a normalized
+scenario boundary. Ownership, cost, exit, capacity, bargaining, leadership,
+and product-structure fields are validated against the registered antitrust
+model before being translated to legacy simulation arguments. Model changes
+remain in `update()`/`respecify()`, and all legacy `simulate()` argument forms
+remain operational. Results retain scenario metadata without changing the
+existing S4 result hierarchy.
+
 No unexplained economic-output discrepancy remains in the migrated generalized
 combinations covered by the tests.  The following historical constraints or
 oddities were observed and intentionally left unchanged:

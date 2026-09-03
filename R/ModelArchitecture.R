@@ -461,7 +461,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 #' Simulate a counterfactual from a calibrated structural model
 #'
 #' @param fit An \code{AntitrustFit} returned by \code{\link{calibrate}}.
-#' @param ownerPost Post-counterfactual ownership vector or matrix. For
+#' @param ownerPost Post-counterfactual ownership vector or matrix, or a
+#' `Counterfactual` object. For
 #'   vertical bargaining, use a list with \code{up} and \code{down} ownership
 #'   vectors.
 #' @param mcDelta A model-specific vector of proportional cost changes, with
@@ -486,7 +487,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 #' @return An existing S4 simulation-result object, such as \code{Logit} or
 #'   \code{LogitCournot}.
 #' @export
-simulate <- function(fit, ownerPost,
+simulate <- function(fit, ownerPost = NULL,
                      mcDelta = NULL,
                      subset = NULL,
                      priceStart, capacitiesPost = NULL,
@@ -495,16 +496,61 @@ simulate <- function(fit, ownerPost,
     if (!methods::is(fit, "AntitrustFit")) {
         stop("'fit' must be an AntitrustFit returned by calibrate() or specify().")
     }
-    if (missing(ownerPost)) {
-        stop("'ownerPost' must be supplied for simulate().")
-    }
     if (!.model_registry_supports(fit@spec, "simulate")) {
         stop("simulate() currently supports Linear, LogLin, AIDS, and PCAIDS Bertrand models; Logit/CES Bertrand, Cournot, Stackelberg, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
     }
 
     model <- fit@model
     is_vertical <- methods::is(model, "VertBargBertLogit")
+    dots <- list(...)
+    cf <- if (inherits(ownerPost, "Counterfactual")) ownerPost else NULL
+    if (!is.null(cf)) {
+        .validate_counterfactual(cf, fit@spec)
+        conflicts <- c(
+            if (!is.null(mcDelta)) "mcDelta",
+            if (!is.null(subset)) "subset",
+            if (!is.null(capacitiesPost)) "capacitiesPost",
+            if (!is.null(bargpowerPost)) "bargpowerPost",
+            if (!missing(priceStart)) "priceStart",
+            intersect(names(dots), c("isLeaderPost", "productsPost",
+                                     "mcfunPost", "vcfunPost", "dmcfunPost"))
+        )
+        if (length(conflicts)) {
+            stop("cannot combine a Counterfactual with legacy scenario argument(s): ",
+                 paste(unique(conflicts), collapse = ", "))
+        }
+        ownerPost <- cf$ownership
+        mcDelta <- cf$costs
+        exit <- cf$exit
+        capacitiesPost <- cf$capacity
+        bargpowerPost <- cf$bargaining
+        if (!is.null(cf$leader)) dots$isLeaderPost <- cf$leader
+        if (!is.null(cf$products)) dots$productsPost <- cf$products
+    } else {
+        if (is.null(ownerPost)) {
+            if (missing(ownerPost)) stop("'ownerPost' must be supplied for simulate().")
+            stop("'ownerPost' must not be NULL for simulate().")
+        }
+        exit <- NULL
+        fields <- list(ownership = ownerPost, costs = mcDelta,
+                       capacity = capacitiesPost, bargaining = bargpowerPost)
+        fields <- fields[!vapply(fields, is.null, logical(1))]
+        cf <- do.call(counterfactual, fields)
+    }
+    if (is.null(ownerPost)) {
+        ownerPost <- if (is_vertical) {
+            list(up = model@up@ownerPre, down = model@down@ownerPre)
+        } else if (!is.null(fit@observed$ownerPre)) {
+            fit@observed$ownerPre
+        } else {
+            model@ownerPre
+        }
+    }
     nprods <- if (is_vertical) length(model@down@prices) else length(model@prices)
+    if (!is.null(exit)) {
+        labels <- if (is_vertical) model@down@labels else model@labels
+        subset <- .counterfactual_subset(exit, nprods, labels)
+    }
     if (is.null(subset)) subset <- rep(TRUE, nprods)
     nmc <- if (is_vertical) {
         NA_integer_
@@ -578,7 +624,7 @@ simulate <- function(fit, ownerPost,
         prices_post <- calcPrices(model, preMerger = FALSE, ...)
         model@up@pricePost <- prices_post$up
         model@down@pricePost <- prices_post$down
-        return(model)
+        return(.counterfactual_attach(model, fit, cf))
     }
 
     if (methods::is(model, "Auction2ndCap")) {
@@ -594,7 +640,6 @@ simulate <- function(fit, ownerPost,
     if (!methods::is(model, "Auction2ndCap")) {
         model@subset <- subset
     }
-    dots <- list(...)
     if (!is.null(capacitiesPost)) {
         if (methods::is(model, "Stackelberg")) {
             if (length(capacitiesPost) != nrow(model@quantities)) {
@@ -659,7 +704,7 @@ simulate <- function(fit, ownerPost,
         }
         model@mcPost <- calcMC(model, preMerger = FALSE, exAnte = FALSE)
         model@pricePost <- calcPrices(model, preMerger = FALSE, exAnte = FALSE)
-        return(model)
+        return(.counterfactual_attach(model, fit, cf))
     }
     if (methods::is(model, "Stackelberg")) {
         if (!is.null(solver)) {
@@ -675,7 +720,7 @@ simulate <- function(fit, ownerPost,
         ## The legacy Stackelberg constructor leaves the marginal-cost slots
         ## empty; downstream calcMC() computes them from equilibrium state.
         model@pricePost <- calcPrices(model, preMerger = FALSE)
-        return(model)
+        return(.counterfactual_attach(model, fit, cf))
     }
     if (methods::is(model, "Cournot")) {
         if (!is.null(solver)) {
@@ -686,7 +731,7 @@ simulate <- function(fit, ownerPost,
         ## empty; downstream calcMC() computes them from the equilibrium
         ## quantities.  Preserve that result-object convention.
         model@pricePost <- calcPrices(model, preMerger = FALSE)
-        return(model)
+        return(.counterfactual_attach(model, fit, cf))
     }
     if (fit@spec$demand %in% c("aids", "pcaids", "pcaids_nests")) {
         if (!is.null(solver) && !identical(solver, "nleqslv")) {
@@ -746,7 +791,7 @@ simulate <- function(fit, ownerPost,
         model@pricePost <- calcPrices(model, preMerger = FALSE)
     }
 
-    model
+    .counterfactual_attach(model, fit, cf)
 }
 
 

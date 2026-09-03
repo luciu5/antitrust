@@ -66,6 +66,7 @@ Collate:
     'ModelArchitecture.R'
     'ModelRegistry.R'
     'ModelTranslations.R'
+    'Counterfactual.R'
     'PriceLeadershipClasses.R'
     'PriceLeadershipFunctions.R'
     'SimFunctions.R'

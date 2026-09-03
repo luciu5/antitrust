@@ -376,7 +376,7 @@ print.antitrust_model_spec <- function(x, ...) {
              class = "BargainingCESALM", calibrator = "bargaining.ces.alm",
              calibrate = TRUE, specify = FALSE, simulate = TRUE)
     )
-    registry <- setNames(entries, vapply(entries, `[[`, character(1), "id"))
+    registry <- stats::setNames(entries, vapply(entries, `[[`, character(1), "id"))
     function() registry
 })
 
@@ -389,4 +389,21 @@ print.antitrust_model_spec <- function(x, ...) {
 .model_registry_supports <- function(spec, operation) {
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
     !is.null(entry) && isTRUE(entry[[operation]])
+}
+
+.model_counterfactual_capabilities <- function(spec) {
+    entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
+    if (is.null(entry)) return(stats::setNames(logical(), character()))
+    cls <- entry$class
+    c(
+        ownership = TRUE,
+        costs = TRUE,
+        exit = cls != "Auction2ndCap",
+        capacity = cls %in% c("LogitCap", "LogitCapALM", "Stackelberg"),
+        bargaining = spec$conduct %in% c("bargaining", "bargaining2nd"),
+        leader = cls == "Stackelberg",
+        products = cls == "Stackelberg",
+        tariff = FALSE,
+        quota = FALSE
+    )
 }
