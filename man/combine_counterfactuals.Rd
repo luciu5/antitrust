@@ -2,16 +2,20 @@
 % Please edit documentation in R/Counterfactual.R
 \name{combine_counterfactuals}
 \alias{combine_counterfactuals}
-\title{Combine non-conflicting counterfactual changes}
+\title{Combine non-conflicting counterfactual changes into one simultaneous step}
 \usage{
 combine_counterfactuals(...)
 }
 \arguments{
-\item{...}{`Counterfactual` objects.}
+\item{...}{`Counterfactual` objects, each with exactly one step.}
 }
 \value{
-A combined `Counterfactual`.
+A one-step `Counterfactual`.
 }
 \description{
-Combine non-conflicting counterfactual changes
+`combine_counterfactuals()` merges the single steps of several one-step
+`Counterfactual` objects into one simultaneous `CounterfactualStep`,
+erroring if any field is supplied with conflicting values. Combining
+multi-step `Counterfactual` objects is ambiguous and is rejected
+explicitly; use `add_step()` to sequence changes instead.
 }

@@ -477,100 +477,115 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 }
 
 
-#' Simulate a counterfactual from a calibrated structural model
-#'
-#' @param fit An \code{AntitrustFit} returned by \code{\link{calibrate}}.
-#' @param ownerPost Post-counterfactual ownership vector or matrix, or a
-#' `Counterfactual` object. For
-#'   vertical bargaining, use a list with \code{up} and \code{down} ownership
-#'   vectors.
-#' @param mcDelta A model-specific vector of proportional cost changes, with
-#'   one element per product for most models and one element per plant for
-#'   general Cournot models. For vertical bargaining, use a list with numeric
-#'   \code{up} and \code{down} vectors.
-#' @param subset A length-k logical vector selecting products in the
-#'   counterfactual equilibrium.
-#' @param priceStart Optional price starting values.
-#' @param capacitiesPost Optional post-counterfactual capacities for LogitCap
-#'   or plant capacities for Stackelberg.
-#' @param bargpowerPost Optional post-counterfactual bargaining powers for
-#'   bargaining models.
-#' @param solver Optional solver override.  The calibration solver is reused
-#'   by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.
-#' @param isMax Whether to run the existing local profit-maximum check.
-#' @param ... Additional arguments passed to the existing price solver.
-#'   For Stackelberg fits, \code{isLeaderPost}, \code{productsPost},
-#'   \code{mcfunPost}, \code{vcfunPost}, and \code{dmcfunPost} may be supplied as counterfactual
-#'   structure; the remaining arguments are passed to the existing quantity
-#'   solver.
-#' @return An existing S4 simulation-result object, such as \code{Logit} or
-#'   \code{LogitCournot}.
-#' @export
-simulate <- function(fit, ownerPost = NULL,
-                     mcDelta = NULL,
-                     subset = NULL,
-                     priceStart, capacitiesPost = NULL,
-                     bargpowerPost = NULL,
-                     solver = NULL, isMax = FALSE, ...) {
-    if (!methods::is(fit, "AntitrustFit")) {
-        stop("'fit' must be an AntitrustFit returned by calibrate() or specify().")
+## Apply the quality/entry environmental changes of one CounterfactualStep to
+## `model`, before that step's ownership/cost/capacity/bargaining/exit
+## changes are solved.  Entry expands the product dimension first, so
+## same-step ownership/cost vectors are validated against the expanded
+## model exactly like any other sequential-dimension-changing field.
+.apply_step_environment <- function(model, step) {
+    entrants <- step@changes$entry
+    if (!is.null(entrants)) {
+        for (one_entrant in entrants) {
+            model <- .expand_entrant(model, one_entrant)
+        }
     }
-    if (!.model_registry_supports(fit@spec, "simulate")) {
-        stop("simulate() currently supports Linear, LogLin, AIDS, and PCAIDS Bertrand models; Logit/CES Bertrand, Cournot, Stackelberg, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
+    quality <- step@changes$quality
+    if (!is.null(quality)) {
+        model <- .apply_quality(model, quality)
     }
+    model
+}
 
-    model <- fit@model
-    is_vertical <- methods::is(model, "VertBargBertLogit")
-    dots <- list(...)
-    cf <- if (inherits(ownerPost, "Counterfactual")) ownerPost else NULL
-    if (!is.null(cf)) {
-        .validate_counterfactual(cf, fit@spec)
-        conflicts <- c(
-            if (!is.null(mcDelta)) "mcDelta",
-            if (!is.null(subset)) "subset",
-            if (!is.null(capacitiesPost)) "capacitiesPost",
-            if (!is.null(bargpowerPost)) "bargpowerPost",
-            if (!missing(priceStart)) "priceStart",
-            intersect(names(dots), c("isLeaderPost", "productsPost",
-                                     "mcfunPost", "vcfunPost", "dmcfunPost"))
-        )
-        if (length(conflicts)) {
-            stop("cannot combine a Counterfactual with legacy scenario argument(s): ",
-                 paste(unique(conflicts), collapse = ", "))
-        }
-        ownerPost <- cf$ownership
-        mcDelta <- cf$costs
-        exit <- cf$exit
-        capacitiesPost <- cf$capacity
-        bargpowerPost <- cf$bargaining
-        if (!is.null(cf$leader)) dots$isLeaderPost <- cf$leader
-        if (!is.null(cf$products)) dots$productsPost <- cf$products
-    } else {
-        if (is.null(ownerPost)) {
-            if (missing(ownerPost)) stop("'ownerPost' must be supplied for simulate().")
-            stop("'ownerPost' must not be NULL for simulate().")
-        }
-        exit <- NULL
-        fields <- list(ownership = ownerPost, costs = mcDelta,
-                       capacity = capacitiesPost, bargaining = bargpowerPost)
-        fields <- fields[!vapply(fields, is.null, logical(1))]
-        cf <- do.call(counterfactual, fields)
+## `costs` may be supplied as a plain positional vector (existing,
+## fixed-dimension behavior) or, once the market has changed dimension via
+## entry/exit, as a named vector resolved against the model's current
+## active labels.  Vertical bargaining's `costs` is always a list with
+## `up`/`down` numeric vectors (not itself a "named shock" vector) and is
+## passed through unchanged; vertical models are not entry/quality-
+## supported, so dimension-changing named resolution never applies to them.
+.resolve_step_costs <- function(model, costs, is_vertical) {
+    if (is.null(costs) || is_vertical || is.null(names(costs))) return(costs)
+    .resolve_named_shock(costs, model@labels, model@subset, "costs", default = 0)
+}
+
+## calcMC() for every supported model family always recomputes the
+## pre-shock marginal cost fresh from immutable calibration constants
+## (observed prices/margins, or cost functions) and applies `mcDelta` as a
+## one-shot multiplicative wedge relative to that fixed baseline -- it never
+## reads a promoted `mcPre`.  So the cumulative proportional cost change
+## (not a single step's shock) is the real persistent cost-environment
+## state, and successive steps' cost shocks must compound multiplicatively:
+## (1 + cumulative) <- (1 + cumulative) * (1 + this step's shock).  `current`
+## may be shorter than `step_shock` when a prior step added an entrant;
+## pad with 0 (no prior shock for a product that did not yet exist).
+.compound_costs <- function(current, step_shock) {
+    if (is.null(step_shock)) return(current)
+    if (is.null(current)) current <- rep(0, length(step_shock))
+    if (length(current) < length(step_shock)) {
+        current <- c(current, rep(0, length(step_shock) - length(current)))
     }
+    (1 + current) * (1 + step_shock) - 1
+}
+
+## calcMC() cannot be given an entrant's marginal cost directly (see
+## .entrant_cost_delta(), CounterfactualPromotion.R): it always derives the
+## pre-merger marginal cost from FOC-consistency with calibrated margins,
+## which the entrant does not have.  Fold each newly added entrant's
+## implied cost delta into this step's cost-shock vector -- multiplicatively
+## composed with any ordinary cost change the same step also targets at the
+## entrant's label, so the two channels combine rather than one silently
+## overwriting the other.
+.merge_entry_cost_deltas <- function(model, entrants, step_shock) {
+    if (is.null(entrants)) return(step_shock)
+    if (is.null(step_shock)) step_shock <- rep(0, length(model@labels))
+    for (one_entrant in entrants) {
+        idx <- match(one_entrant@label, model@labels)
+        delta <- .entrant_cost_delta(model, one_entrant)
+        step_shock[idx] <- (1 + step_shock[idx]) * (1 + delta) - 1
+    }
+    step_shock
+}
+
+.compound_vertical_costs <- function(current, step_shock) {
+    if (is.null(step_shock)) return(current)
+    list(
+        up = .compound_costs(current$up, step_shock$up),
+        down = .compound_costs(current$down, step_shock$down)
+    )
+}
+
+## Solve one equilibrium: apply ownership/cost/capacity/bargaining/exit
+## changes to the (already environment-adjusted) `model` and return the
+## legacy S4 result.  This is the extracted core of the original one-step
+## `simulate()`; it never reads or writes `fit@model` directly so it can be
+## called repeatedly with a promoted current state for sequential paths.
+.model_simulate_step <- function(fit, model, ownerPost = NULL, mcDelta = NULL,
+                                 exit = NULL, subset = NULL, priceStart = NULL,
+                                 capacitiesPost = NULL, bargpowerPost = NULL,
+                                 solver = NULL, isMax = FALSE, dots = list()) {
+    is_vertical <- methods::is(model, "VertBargBertLogit")
     if (is.null(ownerPost)) {
         ownerPost <- if (is_vertical) {
             list(up = model@up@ownerPre, down = model@down@ownerPre)
-        } else if (!is.null(fit@observed$ownerPre)) {
-            fit@observed$ownerPre
         } else {
             model@ownerPre
         }
     }
     nprods <- if (is_vertical) length(model@down@prices) else length(model@prices)
+    has_subset_slot <- is_vertical || "subset" %in% methods::slotNames(model)
+    current_subset <- if (is_vertical) {
+        model@down@subset
+    } else if (has_subset_slot) {
+        model@subset
+    } else {
+        rep(TRUE, nprods)
+    }
+    if (length(current_subset) != nprods) current_subset <- rep(TRUE, nprods)
     if (!is.null(exit)) {
         labels <- if (is_vertical) model@down@labels else model@labels
-        subset <- .counterfactual_subset(exit, nprods, labels)
+        subset <- current_subset & .counterfactual_subset(exit, nprods, labels)
     }
-    if (is.null(subset)) subset <- rep(TRUE, nprods)
+    if (is.null(subset)) subset <- current_subset
     nmc <- if (is_vertical) {
         NA_integer_
     } else if (methods::is(model, "Cournot")) {
@@ -640,10 +655,10 @@ simulate <- function(fit, ownerPost = NULL,
         mc_post <- calcMC(model, preMerger = FALSE)
         model@up@mcPost <- mc_post$up
         model@down@mcPost <- mc_post$down
-        prices_post <- calcPrices(model, preMerger = FALSE, ...)
+        prices_post <- do.call(calcPrices, c(list(model, preMerger = FALSE), dots))
         model@up@pricePost <- prices_post$up
         model@down@pricePost <- prices_post$down
-        return(.counterfactual_attach(model, fit, cf))
+        return(model)
     }
 
     if (methods::is(model, "Auction2ndCap")) {
@@ -685,7 +700,7 @@ simulate <- function(fit, ownerPost = NULL,
         }
         model@bargpowerPost <- bargpowerPost
     }
-    if (!missing(priceStart)) {
+    if (!is.null(priceStart)) {
         model@priceStart <- priceStart
     }
     if (methods::is(model, "Stackelberg")) {
@@ -723,7 +738,7 @@ simulate <- function(fit, ownerPost = NULL,
         }
         model@mcPost <- calcMC(model, preMerger = FALSE, exAnte = FALSE)
         model@pricePost <- calcPrices(model, preMerger = FALSE, exAnte = FALSE)
-        return(.counterfactual_attach(model, fit, cf))
+        return(model)
     }
     if (methods::is(model, "Stackelberg")) {
         if (!is.null(solver)) {
@@ -739,25 +754,26 @@ simulate <- function(fit, ownerPost = NULL,
         ## The legacy Stackelberg constructor leaves the marginal-cost slots
         ## empty; downstream calcMC() computes them from equilibrium state.
         model@pricePost <- calcPrices(model, preMerger = FALSE)
-        return(.counterfactual_attach(model, fit, cf))
+        return(model)
     }
     if (methods::is(model, "Cournot")) {
         if (!is.null(solver)) {
             stop("Cournot uses its existing nonlinear quantity solver; 'solver' cannot be overridden.")
         }
-        model@quantityPost <- calcQuantities(model, preMerger = FALSE, ...)
+        model@quantityPost <- do.call(calcQuantities, c(list(model, preMerger = FALSE), dots))
         ## The legacy Cournot constructor leaves the marginal-cost slots
         ## empty; downstream calcMC() computes them from the equilibrium
         ## quantities.  Preserve that result-object convention.
         model@pricePost <- calcPrices(model, preMerger = FALSE)
-        return(.counterfactual_attach(model, fit, cf))
+        return(model)
     }
     if (fit@spec$demand %in% c("aids", "pcaids", "pcaids_nests")) {
         if (!is.null(solver) && !identical(solver, "nleqslv")) {
             stop("AIDS uses its existing nonlinear price solver; 'solver' cannot be overridden.")
         }
-        model@priceDelta <- calcPriceDelta(model, isMax = isMax,
-                                            subset = subset, ...)
+        model@priceDelta <- do.call(calcPriceDelta, c(
+            list(model, isMax = isMax, subset = subset), dots
+        ))
     }
     model@mcPost <- calcMC(model, preMerger = FALSE)
 
@@ -779,11 +795,13 @@ simulate <- function(fit, ownerPost = NULL,
                                            "pcaids", "pcaids_nests")) {
             ## These legacy price methods do not expose `isMax`; passing it
             ## through `...` would alter their optimizer call signature.
-            model@pricePost <- calcPrices(model, preMerger = FALSE,
-                                           subset = subset, ...)
+            model@pricePost <- do.call(calcPrices, c(
+                list(model, preMerger = FALSE, subset = subset), dots
+            ))
         } else {
-            model@pricePost <- calcPrices(model, preMerger = FALSE,
-                                           subset = subset, isMax = isMax, ...)
+            model@pricePost <- do.call(calcPrices, c(
+                list(model, preMerger = FALSE, subset = subset, isMax = isMax), dots
+            ))
         }
     } else if (identical(fit@spec$conduct, "cournot")) {
         if (!is.null(solver) && !identical(solver, "nleqslv")) {
@@ -797,8 +815,9 @@ simulate <- function(fit, ownerPost = NULL,
             model@pricePost <- calcPricesAG(model, preMerger = FALSE,
                                              isMax = isMax, subset = subset)
         } else {
-            model@pricePost <- calcPrices(model, preMerger = FALSE,
-                                           subset = subset, isMax = isMax, ...)
+            model@pricePost <- do.call(calcPrices, c(
+                list(model, preMerger = FALSE, subset = subset, isMax = isMax), dots
+            ))
         }
     } else {
         if (!is.null(solver)) {
@@ -810,7 +829,200 @@ simulate <- function(fit, ownerPost = NULL,
         model@pricePost <- calcPrices(model, preMerger = FALSE)
     }
 
-    .counterfactual_attach(model, fit, cf)
+    model
+}
+
+
+## Solve every step of a multi-step Counterfactual in order, promoting the
+## solved state between steps so step t+1 begins from step t's equilibrium
+## (never resetting to the originally calibrated baseline).  Returns a list
+## of legacy S4 results, one per step.
+.model_simulate_steps <- function(fit, initial_model, steps, initial_costs = NULL) {
+    state <- initial_model
+    cumulative_costs <- initial_costs
+    results <- vector("list", length(steps))
+    for (i in seq_along(steps)) {
+        step <- steps[[i]]
+        state <- .apply_step_environment(state, step)
+        changes <- step@changes
+        is_vertical <- methods::is(state, "VertBargBertLogit")
+        step_shock <- .resolve_step_costs(state, changes$costs, is_vertical)
+        if (!is_vertical) {
+            step_shock <- .merge_entry_cost_deltas(state, changes$entry, step_shock)
+        }
+        cumulative_costs <- if (is_vertical) {
+            .compound_vertical_costs(cumulative_costs, step_shock)
+        } else {
+            .compound_costs(cumulative_costs, step_shock)
+        }
+        dots <- list()
+        if (!is.null(changes$leader)) dots$isLeaderPost <- changes$leader
+        if (!is.null(changes$products)) dots$productsPost <- changes$products
+        result <- .model_simulate_step(
+            fit, state,
+            ownerPost = changes$ownership,
+            mcDelta = cumulative_costs,
+            exit = changes$exit,
+            capacitiesPost = changes$capacity,
+            bargpowerPost = changes$bargaining,
+            dots = dots
+        )
+        results[[i]] <- result
+        state <- .promote_post_to_pre(result, step)
+    }
+    list(results = results, cumulative_costs = cumulative_costs)
+}
+
+#' Simulate a counterfactual from a calibrated structural model
+#'
+#' For a one-step `Counterfactual` (or the equivalent direct legacy scenario
+#' arguments), `simulate()` returns the existing S4 simulation-result object
+#' unchanged, exactly as before. For a multi-step `Counterfactual` (built
+#' with \code{\link{add_step}}), each step is solved in turn, promoting the
+#' previous step's solved equilibrium into the next step's starting state,
+#' and a `CounterfactualPath` recording every step's result is returned.
+#' `fit` may also be a `CounterfactualPath`, in which case simulation
+#' resumes from that path's final solved state and the returned path's
+#' history includes the earlier steps.
+#'
+#' @param fit An \code{AntitrustFit} returned by \code{\link{calibrate}}, or
+#'   a `CounterfactualPath` to resume from.
+#' @param ownerPost Post-counterfactual ownership vector or matrix, or a
+#' `Counterfactual` object. For
+#'   vertical bargaining, use a list with \code{up} and \code{down} ownership
+#'   vectors.
+#' @param mcDelta A model-specific vector of proportional cost changes, with
+#'   one element per product for most models and one element per plant for
+#'   general Cournot models. For vertical bargaining, use a list with numeric
+#'   \code{up} and \code{down} vectors.
+#' @param subset A length-k logical vector selecting products in the
+#'   counterfactual equilibrium.
+#' @param priceStart Optional price starting values.
+#' @param capacitiesPost Optional post-counterfactual capacities for LogitCap
+#'   or plant capacities for Stackelberg.
+#' @param bargpowerPost Optional post-counterfactual bargaining powers for
+#'   bargaining models.
+#' @param solver Optional solver override.  The calibration solver is reused
+#'   by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.
+#' @param isMax Whether to run the existing local profit-maximum check.
+#' @param ... Additional arguments passed to the existing price solver.
+#'   For Stackelberg fits, \code{isLeaderPost}, \code{productsPost},
+#'   \code{mcfunPost}, \code{vcfunPost}, and \code{dmcfunPost} may be supplied as counterfactual
+#'   structure; the remaining arguments are passed to the existing quantity
+#'   solver.
+#' @return For a one-step counterfactual, an existing S4 simulation-result
+#'   object, such as \code{Logit} or \code{LogitCournot}. For a multi-step
+#'   counterfactual, a `CounterfactualPath`.
+#' @export
+simulate <- function(fit, ownerPost = NULL,
+                     mcDelta = NULL,
+                     subset = NULL,
+                     priceStart, capacitiesPost = NULL,
+                     bargpowerPost = NULL,
+                     solver = NULL, isMax = FALSE, ...) {
+    resume_path <- if (methods::is(fit, "CounterfactualPath")) fit else NULL
+    if (!is.null(resume_path)) fit <- NULL
+
+    dots <- list(...)
+    cf <- if (methods::is(ownerPost, "Counterfactual")) ownerPost else NULL
+
+    if (!is.null(resume_path)) {
+        if (is.null(cf)) {
+            stop("simulate() on a CounterfactualPath requires a Counterfactual as its second argument.")
+        }
+        base_fit <- resume_path@diagnostics$fit
+        if (is.null(base_fit)) {
+            stop("'fit' CounterfactualPath does not retain enough diagnostics to resume simulation.")
+        }
+        .validate_counterfactual(cf, base_fit@spec)
+        last_step <- resume_path@steps[[length(resume_path@steps)]]
+        state <- .promote_post_to_pre(final_result(resume_path), last_step)
+        solved <- .model_simulate_steps(base_fit, state, cf@steps,
+                                        initial_costs = resume_path@diagnostics$cumulative_costs)
+        return(new(
+            "CounterfactualPath",
+            initial = resume_path@initial,
+            steps = c(resume_path@steps, cf@steps),
+            results = c(resume_path@results, solved$results),
+            diagnostics = list(fit = base_fit, cumulative_costs = solved$cumulative_costs)
+        ))
+    }
+
+    if (!methods::is(fit, "AntitrustFit")) {
+        stop("'fit' must be an AntitrustFit returned by calibrate() or specify(), or a CounterfactualPath.")
+    }
+    if (!.model_registry_supports(fit@spec, "simulate")) {
+        stop("simulate() currently supports Linear, LogLin, AIDS, and PCAIDS Bertrand models; Logit/CES Bertrand, Cournot, Stackelberg, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
+    }
+
+    model <- fit@model
+    is_vertical <- methods::is(model, "VertBargBertLogit")
+
+    if (!is.null(cf)) {
+        .validate_counterfactual(cf, fit@spec)
+        conflicts <- c(
+            if (!is.null(mcDelta)) "mcDelta",
+            if (!is.null(subset)) "subset",
+            if (!is.null(capacitiesPost)) "capacitiesPost",
+            if (!is.null(bargpowerPost)) "bargpowerPost",
+            if (!missing(priceStart)) "priceStart",
+            intersect(names(dots), c("isLeaderPost", "productsPost",
+                                     "mcfunPost", "vcfunPost", "dmcfunPost"))
+        )
+        if (length(conflicts)) {
+            stop("cannot combine a Counterfactual with legacy scenario argument(s): ",
+                 paste(unique(conflicts), collapse = ", "))
+        }
+
+        if (length(cf@steps) > 1L) {
+            solved <- .model_simulate_steps(fit, model, cf@steps)
+            return(new(
+                "CounterfactualPath",
+                initial = model,
+                steps = cf@steps,
+                results = solved$results,
+                diagnostics = list(fit = fit, cumulative_costs = solved$cumulative_costs)
+            ))
+        }
+
+        step <- cf@steps[[1L]]
+        model <- .apply_step_environment(model, step)
+        changes <- step@changes
+        if (!is.null(changes$leader)) dots$isLeaderPost <- changes$leader
+        if (!is.null(changes$products)) dots$productsPost <- changes$products
+        step_mc_delta <- .resolve_step_costs(model, changes$costs, is_vertical)
+        if (!is_vertical) {
+            step_mc_delta <- .merge_entry_cost_deltas(model, changes$entry, step_mc_delta)
+        }
+        result <- .model_simulate_step(
+            fit, model,
+            ownerPost = changes$ownership,
+            mcDelta = step_mc_delta,
+            exit = changes$exit,
+            priceStart = if (!missing(priceStart)) priceStart,
+            capacitiesPost = changes$capacity,
+            bargpowerPost = changes$bargaining,
+            solver = solver, isMax = isMax, dots = dots
+        )
+        return(.counterfactual_attach(result, fit, cf))
+    }
+
+    if (is.null(ownerPost)) {
+        if (missing(ownerPost)) stop("'ownerPost' must be supplied for simulate().")
+        stop("'ownerPost' must not be NULL for simulate().")
+    }
+    fields <- list(ownership = ownerPost, costs = mcDelta,
+                   capacity = capacitiesPost, bargaining = bargpowerPost)
+    fields <- fields[!vapply(fields, is.null, logical(1))]
+    cf <- do.call(counterfactual, fields)
+    result <- .model_simulate_step(
+        fit, model,
+        ownerPost = ownerPost, mcDelta = mcDelta, subset = subset,
+        priceStart = if (!missing(priceStart)) priceStart,
+        capacitiesPost = capacitiesPost, bargpowerPost = bargpowerPost,
+        solver = solver, isMax = isMax, dots = dots
+    )
+    .counterfactual_attach(result, fit, cf)
 }
 
 
