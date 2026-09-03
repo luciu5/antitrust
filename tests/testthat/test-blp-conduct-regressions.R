@@ -123,7 +123,7 @@ blp_conduct_expected_bargaining <- function(object) {
     for (r in seq_len(ncol(draw_shares))) {
         shares_r <- draw_shares[, r]
         kernel_r <- -object@ownerPre *
-            matrix(rep(shares_r, each = n), nrow = n, ncol = n)
+            matrix(rep(shares_r, times = n), nrow = n, ncol = n)
         diag(kernel_r) <- diag(object@ownerPre) + diag(kernel_r)
         margin_system <- margin_system + weights[r] * kernel_r
 

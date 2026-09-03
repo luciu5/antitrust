@@ -288,7 +288,10 @@ setMethod(
         term <- numeric(nrow(owner))
         for (r in seq_len(ncol(shares_draw))) {
             shares_r <- shares_draw[, r]
-            kernel <- -owner * rep(shares_r, each = nrow(owner))
+            ## Match the row-wise share broadcasting used by the legacy
+            ## BargainingLogit FOC.  This is the orientation implied by its
+            ## demand derivative and is required for the sigma = 0 limit.
+            kernel <- -owner * rep(shares_r, times = nrow(owner))
             diag(kernel) <- diag(owner) + diag(kernel)
             margin_matrix <- margin_matrix + draw_weights[r] * kernel
 

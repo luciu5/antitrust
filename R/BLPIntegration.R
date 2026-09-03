@@ -38,10 +38,11 @@
 
 
 .blp_normal_nodes <- function(n) {
-    n <- as.integer(n)
-    if (length(n) != 1L || is.na(n) || n < 1L) {
+    if (length(n) != 1L || !is.numeric(n) || !is.finite(n) ||
+        n < 1 || n != as.integer(n)) {
         stop("'nNodes' must be a positive integer.")
     }
+    n <- as.integer(n)
     if (n == 1L) return(list(nodes = 0, weights = 1))
 
     ## Golub-Welsch nodes and weights for a standard normal integral.
