@@ -202,18 +202,6 @@ setClass(
 }
 
 
-.blp_effective_alpha <- function(object, preMerger = TRUE) {
-    shares <- calcShares(object, preMerger = preMerger, revenue = FALSE)
-    derivative <- elast(object, preMerger = preMerger, partial = TRUE)
-    denominator <- shares * (1 - shares)
-    result <- diag(derivative) / denominator
-    if (any(!is.finite(result))) {
-        stop("BLP demand does not provide finite local price slopes for the conduct equations.")
-    }
-    result
-}
-
-
 # The second-score margin is an expectation over the heterogeneous buyer
 # types.  For a draw r, the legacy Gumbel expression is
 #   log(1 - S_Fr) / (alpha_r S_Fr),
@@ -555,13 +543,20 @@ setMethod(
     )
     starts$alpha <- pmin(pmax(starts$alpha, alpha_bounds[1]), alpha_bounds[2])
     starts$sigma <- pmin(starts$sigma, sigma_upper)
+    optimizer_control <- dots$optimizer_control
+    if (is.null(optimizer_control)) {
+        ## The calibration objective is deterministic but can be very flat at
+        ## a well-fitting point. A tighter function tolerance avoids treating
+        ## a nearby local plateau as the best multi-start solution.
+        optimizer_control <- list(factr = 1e3, pgtol = 1e-8)
+    }
     fits <- lapply(seq_len(nrow(starts)), function(i) {
         opt <- try(optim(
             par = c(starts$alpha[i], starts$sigma[i]),
             fn = function(par) .blp_objective(par, context),
             method = "L-BFGS-B", lower = c(alpha_bounds[1], 0),
             upper = c(alpha_bounds[2], sigma_upper),
-            control = dots$optimizer_control
+            control = optimizer_control
         ), silent = TRUE)
         if (inherits(opt, "try-error")) return(NULL)
         list(optim = opt, converged = isTRUE(opt$convergence == 0), value = opt$value)
