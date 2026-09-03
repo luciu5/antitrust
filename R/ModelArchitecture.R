@@ -60,7 +60,7 @@ setClass(
 calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
                       margins = NULL,
                       ownerPre, quantities = NULL, variant = "standard",
-                      knownElast = NULL, mktElast = NULL, ...) {
+                      knownElast = NULL, mktElast = NULL, s0 = NULL, ...) {
     spec <- .architecture_model_spec(demand, conduct, variant)
 
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
@@ -78,7 +78,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
              prices = prices, shares = shares, margins = margins,
              ownerPre = ownerPre, quantities = quantities,
              variant = spec$variant, knownElast = knownElast,
-             mktElast = mktElast),
+             mktElast = mktElast, s0 = s0),
         dots
     )
     forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset",
@@ -285,6 +285,13 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             ownerPost = ownerPre
         )
     }
+    if (identical(spec$demand, "blp")) {
+        return(.calibrate_blp_fit(
+            spec = spec, prices = prices, shares = shares, margins = margins,
+            ownerPre = ownerPre, s0 = s0, dots = dots,
+            calibration_args = calibration_args
+        ))
+    }
     duplicate_core <- intersect(names(dots), names(constructor_args))
     if (length(duplicate_core)) {
         stop("argument(s) supplied more than once: ", paste(duplicate_core, collapse = ", "))
@@ -382,6 +389,15 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     }
     if (spec$demand %in% c("linear", "loglin") && is.null(quantities)) {
         stop("'quantities' must be supplied when specifying Linear or LogLin demand.")
+    }
+    if (identical(spec$demand, "blp") &&
+        spec$conduct %in% c("auction2nd", "bargaining")) {
+        return(.specify_blp_conduct_fit(
+            spec = spec, prices = prices, parameters = parameters,
+            ownerPre = ownerPre, shares = shares, margins = margins,
+            insideSize = insideSize, output = output, dots = dots,
+            specification_args = specification_args
+        ))
     }
     sim_shares <- if (spec$demand %in% c("linear", "loglin")) {
         quantities / sum(quantities)

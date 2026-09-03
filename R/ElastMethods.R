@@ -217,6 +217,7 @@ setMethod(
 
     # Initialize partial derivatives matrix
     partial_deriv <- matrix(0, nrow = nprods, ncol = nprods)
+    draw_weights <- .blp_draw_weights(object, nDraws)
 
     # Calculate average partial derivatives across draws
     for (r in 1:nDraws) {
@@ -241,7 +242,7 @@ setMethod(
         deriv_r <- deriv_r * outer(active_r, active_r)
 
         # Add to average
-        partial_deriv <- partial_deriv + deriv_r / nDraws
+        partial_deriv <- partial_deriv + deriv_r * draw_weights[r]
       }
     }
 
