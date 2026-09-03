@@ -74,6 +74,15 @@ shares.  BLP supports this route for both Bertrand and Cournot, but there is no
 observed-data BLP calibrator in the current package, so its registry entries
 mark `calibrate = FALSE`.
 
+Demand-transition validation remains model-specific.  In ordinary output
+markets, CES uses `gamma > 1` and nested CES uses `sigma_g > gamma > 1`; these
+are distinct restrictions from nested-Logit `lambda_g` in `(0, 1]`.  The
+translation layer carries the source model's `output` orientation into the
+target supplied-parameter construction and reports both orientations in its
+diagnostics.  Input-market transitions are accepted only where a verified
+target construction and input-market restrictions exist; unsupported cases
+fail explicitly rather than applying output-market bounds.
+
 ## Updating and respecifying
 
 `update(fit, ...)` is a genuine recalibration operation.  The fit stores a
@@ -84,15 +93,15 @@ it does not coerce the source S4 object.  A fit created only by `specify()` has
 no observed-data identifying call and therefore rejects `update()`.
 
 `respecify(fit, ...)` is narrower.  An explicit transition registry allows
-standard Logit and CES Bertrand/Cournot transitions, and the tested nested
-Logit-Bertrand/CES-Bertrand pair.  Same-demand conduct transitions retain the
-portable demand primitives, while flat and nested Logit/CES transitions use a
-separate local demand translation: baseline prices, ownership, active
-products, and accounting are retained; target mean values are solved
-analytically to match baseline shares; and target curvature is either retained
-or supplied explicitly. The target supply state and marginal costs are then
-reconstructed through `specify()` without using source margins to recalibrate
-demand.
+standard Logit and CES Bertrand/Cournot transitions, and tested nested
+Logit/CES translations where the target primitives and domain are valid.
+Same-demand conduct transitions retain the portable demand primitives, while
+flat and nested Logit/CES transitions use a separate deterministic demand
+translation: baseline prices, ownership, active products, and accounting are
+retained; target mean values are solved analytically to match baseline shares;
+and target curvature is either retained or supplied explicitly. The target
+supply state and marginal costs are then reconstructed through `specify()`
+without using source margins to recalibrate demand.
 
 This is a local translation, not a claim that price-level Logit and
 log-price CES are globally equivalent.  Their counterfactual predictions may
@@ -101,8 +110,15 @@ variant, or specialized-model conversions remain rejected until an
 economically valid transition rule and target construction path are
 established.  Transition metadata records retained, recomputed, and
 invalidated quantities, while local-translation diagnostics also report share
-and quantity discrepancies, deterministic parameter mappings, and local matrix
-discrepancies.
+and quantity discrepancies, deterministic parameter mappings, output/input
+orientation, and local matrix discrepancies.
+
+`respecify()` is not a calibration operation.  Its result keeps the source
+calibration call only as provenance in `source_calibration_args` and clears
+`calibration_args`; consequently `update(respecify_fit)` fails rather than
+silently recalibrating the target model from source margins.  Use `update()`
+when the intended question is a fresh calibration under the target
+specification.
 
 ### Transition taxonomy
 

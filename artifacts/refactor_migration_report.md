@@ -151,14 +151,16 @@ calibrator, including when `demand`, `conduct`, `variant`, or observed margins
 change. `respecify()` has an explicit transition registry for standard
 Logit-Bertrand/Cournot and CES-Bertrand/Cournot. It retains demand primitives
 and reconstructs the target supply state through the supplied-parameter path;
-it does not recalibrate target demand from source margins. Unsupported
-Logit↔CES transitions are now local demand translations for flat Bertrand and
-Cournot and for nested Bertrand models. They match target baseline shares
-analytically, require explicit target curvature when it is not retained,
-and reconstruct target marginal costs without recalibrating from source
-margins. First-order Linear and LogLin transitions preserve the fitted
-baseline Jacobian or elasticity matrix analytically. Unsupported ALM, bargaining, auction, and other specialized
-transitions remain errors by design.
+it does not recalibrate target demand from source margins. Flat and supported
+nested Logit↔CES transitions match target baseline shares analytically,
+require explicit target curvature when it is not retained, preserve the
+source output/input orientation where a verified target path exists, and
+reconstruct target marginal costs without recalibrating from source margins.
+Nested CES validation follows the legacy output-market restriction
+`sigma_g > gamma > 1`, separately from nested-Logit `lambda_g` in `(0, 1]`.
+First-order Linear and LogLin transitions preserve the fitted baseline
+Jacobian or elasticity matrix analytically. Unsupported ALM, bargaining,
+auction, and other specialized transitions remain errors by design.
 
 The demand-transition registry classifies additional paths explicitly:
 
@@ -172,9 +174,11 @@ The demand-transition registry classifies additional paths explicitly:
 
 All target mean values and intercepts are solved analytically from the fitted
 baseline. `respecify()` does not optimize elasticity distance or infer absent
-target primitives from margins. Linear and LogLin are local representations;
-their round-trip guarantees apply at the baseline, not to arbitrary
-counterfactual prices.
+target primitives from margins. A respecified fit retains the source
+calibration call only as provenance; it has no current `calibration_args`, so
+`update(respecified_fit)` fails with an informative error. Linear and LogLin
+are local representations; their round-trip guarantees apply at the
+baseline, not to arbitrary counterfactual prices.
 
 ## Known discrepancies and suspected issues not changed
 

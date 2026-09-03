@@ -2,33 +2,47 @@
 % Please edit documentation in R/Counterfactual.R
 \name{counterfactual}
 \alias{counterfactual}
-\alias{combine_counterfactuals}
 \title{Define a post-calibration economic counterfactual}
 \usage{
-counterfactual(ownership = NULL, costs = NULL, exit = NULL,
-  capacity = NULL, tariff = NULL, quota = NULL, bargaining = NULL,
-  leader = NULL, products = NULL, ...)
-
-combine_counterfactuals(...)
+counterfactual(
+  ownership = NULL,
+  costs = NULL,
+  exit = NULL,
+  capacity = NULL,
+  tariff = NULL,
+  quota = NULL,
+  bargaining = NULL,
+  leader = NULL,
+  products = NULL,
+  ...
+)
 }
 \arguments{
 \item{ownership}{Post-counterfactual ownership.}
+
 \item{costs}{Post-counterfactual marginal-cost changes.}
+
 \item{exit}{Products to remove, or a logical active-product vector.}
+
 \item{capacity}{Post-counterfactual capacities.}
+
 \item{tariff}{A tariff change, unsupported by antitrust models.}
+
 \item{quota}{A quota change, unsupported by antitrust models.}
+
 \item{bargaining}{Post-counterfactual bargaining parameters.}
+
 \item{leader}{Post-counterfactual leader indicators for Stackelberg models.}
+
 \item{products}{Post-counterfactual product structure for Stackelberg models.}
-\item{...}{For \code{counterfactual}, reserved model-environment fields;
-model specification fields must be changed with \code{update} or
-\code{respecify}. For \code{combine_counterfactuals}, counterfactual objects
-to combine.}
+
+\item{...}{Reserved; model specification fields are rejected.}
 }
-\value{A lightweight object of class \code{Counterfactual}.}
+\value{
+A lightweight object of class `Counterfactual`.
+}
 \description{
-The object stores only supplied changes to the economic environment.
-Unspecified dimensions remain at their fitted baseline. All supplied changes
-are interpreted as one simultaneous post-counterfactual state.
+`counterfactual()` stores only supplied changes to the economic environment.
+Demand, conduct, and model variants are deliberately not counterfactual
+fields; use `update()` or `respecify()` for those changes.
 }

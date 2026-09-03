@@ -299,6 +299,7 @@ shares = NULL,
                 bargpowerPost = bargpowerPre,
                 labels = paste("Prod", 1:length(prices), sep = ""),
                 diversions = NULL,
+                output = NULL,
                 ...) {
   supply_missing <- missing(supply)
   demand <- match.arg(demand)
@@ -378,6 +379,10 @@ shares = NULL,
   }
 
   outputFlag <- TRUE
+  if (!is.null(output) &&
+      (!is.logical(output) || length(output) != 1L || is.na(output))) {
+    stop("'output' must be a single logical value")
+  }
   shareInside <- sum(shares)
   normIndex <- if (isTRUE(all.equal(sum(shares), 1, check.names = FALSE))) 1 else NA
 
@@ -613,8 +618,12 @@ shares = NULL,
         stop("When 'demand' equals 'CESNests', 'nests' must equal a vector whose length equals the number of products.")
       }
       if (!is.numeric(demand.param$sigma) || any(!is.finite(demand.param$sigma)) ||
-        any(demand.param$sigma <= 0) || any(demand.param$sigma > 1)) {
-        stop("'demand.param$sigma' must contain numeric nesting parameters in (0,1].")
+          !isTRUE(demand.param$gamma > 1) ||
+          any(demand.param$sigma <= demand.param$gamma)) {
+        if (isTRUE(demand.param$gamma > 1)) {
+          stop("'demand.param$sigma' must satisfy sigma_g > gamma > 1 for output-market CESNests.")
+        }
+        stop("'demand.param$sigma' and 'gamma' do not define a supported CESNests input-market model.")
       }
       parmsStartSigma <- demand.param$sigma
       if (length(demand.param$sigma) == 1) {
@@ -727,6 +736,8 @@ shares = NULL,
       demand.param$mktElast <- -1
     }
   }
+
+  if (!is.null(output)) outputFlag <- output
 
 
   ## Create constructors for each demand system specified in the 'demand' parameter
@@ -912,7 +923,8 @@ shares = NULL,
       shares = shares, mcDelta = mcDelta, subset = subset,
       ownerPre = ownerPre, diversion = sim_diversion,
       symmetry = identical(demand.param$slopes, t(demand.param$slopes)),
-      ownerPost = ownerPost, priceStart = priceStart, labels = labels
+      ownerPost = ownerPost, priceStart = priceStart, output = outputFlag,
+      labels = labels
     )
   } else if (demand == "AIDS") {
     ## find the market elasticity that best explains user-supplied intercepts and prices
@@ -940,7 +952,7 @@ shares = NULL,
       prices = prices, quantities = shares, margins = margins,
       shares = shares, mcDelta = mcDelta, subset = subset, priceStart = priceStart,
       ownerPre = ownerPre, diversion = sim_diversion,
-      ownerPost = ownerPost, labels = labels
+      ownerPost = ownerPost, output = outputFlag, labels = labels
     )
   }
 

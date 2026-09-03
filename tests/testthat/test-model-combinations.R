@@ -47,7 +47,7 @@ test_that("all documented sim demand/supply combinations have formal coverage", 
     results$bertrand_ces_nests <- qa_value(sim(
         p4, supply = "bertrand", demand = "CESNests",
         demand.param = list(gamma = 2, meanval = c(1, .8, .6, .5),
-                            sigma = c(.7, .8), shareInside = .7),
+                            sigma = c(3, 4), shareInside = .7),
         nests = nests4, ownerPre = op4, ownerPost = oo4
     ), "sim bertrand CESNests")
     results$bertrand_logit_cap <- qa_value(sim(

@@ -355,7 +355,7 @@ test_that("legacy sim routes nested Bertrand models through specify and simulate
             alpha = -1, meanval = c(.4, .2, .1, .05), sigma = .7
         ), parmsStart = c(-1, .7)),
         list(demand = "CESNests", parameters = list(
-            gamma = 2, meanval = c(1, .8, .6, .5), sigma = c(.7, .8),
+            gamma = 2, meanval = c(1, .8, .6, .5), sigma = c(3, 4),
             shareInside = .7
         ))
     )

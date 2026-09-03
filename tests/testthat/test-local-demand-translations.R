@@ -63,9 +63,9 @@ nested_ces_fit <- function() {
     specify(
         "ces_nests", "bertrand", prices = c(1.8, 2, 2.2, 2.5),
         shares = rep(.25, 4), ownerPre = c("A", "B", "C", "D"),
-        parameters = list(gamma = .8,
+        parameters = list(gamma = 2,
                           meanval = c(1, .6, .8, .5),
-                          sigma = c(.7, .8)),
+                          sigma = c(3, 4)),
         nests = c("N1", "N1", "N2", "N2"), insideSize = 200
     )
 }
@@ -76,10 +76,10 @@ test_that("flat Logit and CES translations require and use target primitives", {
 
     expect_error(respecify(source, demand = "ces"),
                  "requires explicit target primitive.*gamma")
-    target <- respecify(source, demand = "ces", gamma = .8)
+    target <- respecify(source, demand = "ces", gamma = 2)
     translation_assertions(source, target, "ces")
     expect_s4_class(target@model, "CES")
-    expect_equal(target@parameters$gamma, .8, tolerance = 0)
+    expect_equal(target@parameters$gamma, 2, tolerance = 0)
     expect_false(isTRUE(all.equal(source@model@mcPre, target@model@mcPre)))
 
     reverse <- respecify(target, demand = "logit", alpha = -1.5)
@@ -91,7 +91,7 @@ test_that("flat Logit and CES translations require and use target primitives", {
 
 test_that("flat Logit/CES translations retain Cournot conduct", {
     source <- flat_logit_fit("cournot")
-    target <- respecify(source, demand = "ces", gamma = .8)
+    target <- respecify(source, demand = "ces", gamma = 2)
     translation_assertions(source, target, "ces")
     expect_s4_class(target@model, "CESCournot")
     expect_equal(target@spec$conduct, "cournot")
@@ -117,13 +117,13 @@ test_that("nested-to-flat transitions are structural restrictions", {
 
 test_that("nested Logit/CES translations preserve nests and derive curvature", {
     logit_source <- nested_logit_fit()
-    ces_target <- respecify(logit_source, demand = "ces_nests", gamma = .8)
+    ces_target <- respecify(logit_source, demand = "ces_nests", gamma = 2)
     translation_assertions(logit_source, ces_target, "ces_nests")
     expect_s4_class(ces_target@model, "CESNests")
     expect_equal(as.character(ces_target@model@nests),
                  as.character(logit_source@model@nests))
     expect_equal(unname(ces_target@parameters$sigma),
-                 unname(1 + (.8 - 1) / logit_source@parameters$sigma),
+                 unname(1 + (2 - 1) / logit_source@parameters$sigma),
                  tolerance = 1e-12)
 
     logit_target <- respecify(ces_target, demand = "logit_nests", alpha = -1.5)
@@ -132,7 +132,7 @@ test_that("nested Logit/CES translations preserve nests and derive curvature", {
     expect_equal(as.character(logit_target@model@nests),
                  as.character(ces_target@model@nests))
     expect_equal(unname(logit_target@parameters$sigma),
-                 unname((.2) / (1 - ces_target@parameters$sigma)),
+                 unname((1 - 2) / (1 - ces_target@parameters$sigma)),
                  tolerance = 1e-12)
 })
 
@@ -159,8 +159,8 @@ test_that("flat-to-nested transitions require all new structural primitives", {
         parameters = list(gamma = 1.5, meanval = c(1, .8, .6, .4)),
         insideSize = 100
     )
-    ces_target <- respecify(ces_source, demand = "ces_nests", gamma = .8,
-                            nests = nests, sigma = .7)
+    ces_target <- respecify(ces_source, demand = "ces_nests", gamma = 1.5,
+                            nests = nests, sigma = 3)
     translation_assertions(ces_source, ces_target, "ces_nests")
     expect_equal(as.character(ces_target@model@nests), nests)
 })
@@ -212,9 +212,53 @@ test_that("respecification is deterministic, explicit, and non-mutating", {
                            nests = c("N1", "N1", "N2")),
                  "requires explicit target primitive.*sigma")
 
-    target <- respecify(source, demand = "ces", gamma = .8)
+    target <- respecify(source, demand = "ces", gamma = 2)
     expect_equal(source@parameters, source_parameters, tolerance = 0)
     expect_equal(source@model, source_model, tolerance = 0)
     expect_equal(target@diagnostics$translation$required_arguments, "gamma")
     expect_false("objective" %in% names(target@diagnostics$translation))
+})
+
+test_that("translation validates CES and nested-Logit parameter domains", {
+    source <- flat_logit_fit()
+    expect_error(
+        respecify(source, demand = "ces", gamma = .8),
+        "output-market CES 'gamma' must be greater than 1"
+    )
+    expect_error(
+        respecify(source, demand = "logit_nests",
+                  nests = c("N1", "N1", "N2"), sigma = 1.2),
+        "nested Logit nesting parameters.*\\(0, 1\\]"
+    )
+
+    ces_source <- flat_ces_fit()
+    expect_error(
+        respecify(ces_source, demand = "ces_nests",
+                  gamma = 1.5,
+                  nests = c("N1", "N1", "N2"), sigma = 1.5),
+        "sigma_g > gamma > 1"
+    )
+})
+
+test_that("respecify preserves output/input orientation and disables update", {
+    output_source <- flat_logit_fit()
+    output_target <- respecify(output_source, demand = "ces", gamma = 2)
+    expect_true(output_target@model@output)
+    expect_equal(output_target@diagnostics$translation$source_output,
+                 output_target@diagnostics$translation$target_output)
+    expect_null(output_target@diagnostics$calibration_args)
+    expect_equal(output_target@diagnostics$source_calibration_args,
+                 output_source@diagnostics$calibration_args)
+    expect_error(update(output_target), "fit.*created by calibrate.*respecify")
+
+    input_source <- specify(
+        "logit", "bertrand", prices = c(1.8, 2, 2.2),
+        shares = c(.30, .20, .10), ownerPre = c("A", "B", "C"),
+        parameters = list(alpha = 2, meanval = c(.6, .4, .2)),
+        insideSize = 100, output = FALSE
+    )
+    input_target <- respecify(input_source, demand = "ces", gamma = -10)
+    expect_false(input_target@model@output)
+    expect_equal(input_target@diagnostics$translation$source_output,
+                 input_target@diagnostics$translation$target_output)
 })

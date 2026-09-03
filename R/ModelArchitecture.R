@@ -336,6 +336,8 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
 #'   specification object.
 #' @param variant A model-specific calibration variant, such as `"alm"` or
 #'   `"auction2nd"` for downstream second-score vertical bargaining.
+#' @param output Logical indicator for an output (`TRUE`) or input (`FALSE`)
+#'   market when the selected model supports both orientations.
 #' @param prices A length-k vector of observed product prices.
 #' @param parameters A named list of structural demand parameters.
 #' @param ownerPre Pre-merger ownership vector or matrix.
@@ -355,7 +357,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                     insideSize = 1,
                     priceOutside, priceStart,
                     labels = paste("Prod", 1:length(prices), sep = ""),
-                    variant = "standard", ...) {
+                    variant = "standard", output = NULL, ...) {
     spec <- .architecture_model_spec(demand, conduct, variant)
 
     if (!.model_registry_supports(spec, "specify")) {
@@ -371,7 +373,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
              prices = prices, parameters = parameters,
              ownerPre = ownerPre, shares = shares, margins = margins,
              quantities = quantities, insideSize = insideSize,
-             variant = spec$variant),
+             variant = spec$variant, output = output),
         dots
     )
     forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset"))
@@ -409,6 +411,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     )
     if (!missing(priceOutside)) constructor_args$priceOutside <- priceOutside
     if (!missing(priceStart)) constructor_args$priceStart <- priceStart
+    if (!is.null(output)) constructor_args$output <- output
     duplicate_core <- intersect(names(dots), names(constructor_args))
     if (length(duplicate_core)) {
         stop("argument(s) supplied more than once: ", paste(duplicate_core, collapse = ", "))
@@ -816,6 +819,10 @@ update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
     }
     calibration_args <- object@diagnostics$calibration_args
     if (!is.list(calibration_args) || is.null(names(calibration_args))) {
+        if (identical(object@diagnostics$route, "respecify") ||
+            !is.null(object@diagnostics$source_calibration_args)) {
+            stop("update() requires a fit whose current specification was created by calibrate(); this fit was created by respecify()")
+        }
         stop("this fit does not retain a calibration call; update() requires a fit created by calibrate()")
     }
 
@@ -918,36 +925,10 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
         result@diagnostics$source_calibration_args <-
             fit@diagnostics$calibration_args
 
-        ## Keep update() meaningful after a translation: a later update should
-        ## recalibrate the target demand from target-compatible baseline shares,
-        ## while retaining the source data for provenance.
-        if (is.list(fit@diagnostics$calibration_args)) {
-            target_calibration <- fit@diagnostics$calibration_args
-            target_calibration$demand <- target$demand
-            target_calibration$conduct <- target$conduct
-            target_calibration$variant <- target$variant
-            target_calibration$prices <- translated$state$prices
-            target_calibration$shares <- if (target$demand %in% c("linear", "loglin")) {
-                NULL
-            } else {
-                translated$shares
-            }
-            target_calibration$quantities <- if (target$demand %in% c("linear", "loglin")) {
-                translated$state$quantities
-            } else {
-                NULL
-            }
-            target_calibration$margins <- NULL
-            target_calibration$ownerPre <- translated$state$owner
-            target_calibration$insideSize <- translated$inside_size
-            target_calibration$priceOutside <- translated$price_outside
-            target_calibration$labels <- translated$state$labels
-            if (target$demand %in% c("logit_nests", "ces_nests")) {
-                target_calibration$nests <- translated$state$nests
-                target_calibration$parmsStart <- NULL
-            }
-            result@diagnostics$calibration_args <- target_calibration
-        }
+        ## A translated fit was not calibrated under its target specification.
+        ## Preserve the source call only as provenance; never turn it into a
+        ## synthetic target calibration call.
+        result@diagnostics$calibration_args <- NULL
         return(result)
     }
 
@@ -1011,15 +992,11 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
             invalidated = transition$invalidate,
             calibration_required = transition$calibration_required
     )
-    ## A later update() should recalibrate the target specification from the
-    ## same observed-data call, including any source margins that remain useful
-    ## as target calibration data.  respecify() itself did not use them.
-    if (is.list(fit@diagnostics$calibration_args)) {
-        result@diagnostics$calibration_args <- fit@diagnostics$calibration_args
-        result@diagnostics$calibration_args$demand <- target$demand
-        result@diagnostics$calibration_args$conduct <- target$conduct
-        result@diagnostics$calibration_args$variant <- target$variant
-    }
+    ## A portable respecification is not a calibration under the target
+    ## specification.  Keep any source call as provenance only.
+    result@diagnostics$source_calibration_args <-
+        fit@diagnostics$calibration_args
+    result@diagnostics$calibration_args <- NULL
     result
 }
 

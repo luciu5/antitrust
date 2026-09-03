@@ -47,13 +47,65 @@
     nests
 }
 
-.translation_validate_sigma <- function(sigma, nests, target) {
-    sigma <- .translation_nest_values(sigma, nests)
-    if (any(!is.finite(sigma)) || any(sigma <= 0) || any(sigma > 1)) {
-        stop("target nesting parameters must be numeric values in (0, 1]")
+.translation_validate_alpha <- function(alpha, output) {
+    if (!is.numeric(alpha) || length(alpha) != 1L ||
+        !is.finite(alpha) || alpha == 0) {
+        stop("target 'alpha' must be a finite, non-zero scalar")
     }
-    if (identical(target, "ces_nests") && any(sigma >= 1 - 1e-10)) {
-        stop("target nested CES parameters must be strictly below 1")
+    if (isTRUE(output) && alpha >= 0) {
+        stop("target output-market Logit 'alpha' must be negative")
+    }
+    if (!isTRUE(output) && alpha <= 0) {
+        stop("target input-market Logit 'alpha' must be positive")
+    }
+    as.numeric(alpha)
+}
+
+.translation_validate_gamma <- function(gamma, output, shares) {
+    if (!is.numeric(gamma) || length(gamma) != 1L ||
+        !is.finite(gamma)) {
+        stop("target 'gamma' must be a finite scalar")
+    }
+    if (isTRUE(output)) {
+        if (gamma <= 1) {
+            stop("target output-market CES 'gamma' must be greater than 1")
+        }
+    } else {
+        ## This is the same input-market bound used by the legacy CES
+        ## calibration routine.  It is target-share dependent and therefore
+        ## cannot be replaced by a generic finite-value check.
+        if (any(shares <= 0 | shares >= 1)) {
+            stop("target input-market CES translation requires interior shares")
+        }
+        upper <- min(-shares / (1 - shares))
+        if (gamma >= upper) {
+            stop("target input-market CES 'gamma' must satisfy the legacy CES input-market restriction")
+        }
+    }
+    as.numeric(gamma)
+}
+
+.translation_validate_sigma <- function(sigma, nests, target,
+                                         gamma = NULL, output = TRUE) {
+    sigma <- .translation_nest_values(sigma, nests)
+    if (any(!is.finite(sigma))) {
+        stop("target nesting parameters must be finite numeric values")
+    }
+    if (identical(target, "logit_nests")) {
+        if (any(sigma <= 0) || any(sigma > 1)) {
+            stop("target nested Logit nesting parameters must be in (0, 1]")
+        }
+    } else if (identical(target, "ces_nests")) {
+        if (!isTRUE(output)) {
+            stop("input-market respecification for nested CES is not yet supported")
+        }
+        if (!is.numeric(gamma) || length(gamma) != 1L ||
+            !is.finite(gamma) || gamma <= 1) {
+            stop("target output-market nested CES requires gamma > 1")
+        }
+        if (any(sigma <= gamma)) {
+            stop("target nested CES parameters must satisfy sigma_g > gamma > 1")
+        }
     }
     sigma
 }
@@ -112,6 +164,7 @@
         labels = .translation_slot(model, "labels", names(prices)),
         owner = owner,
         nests = nests,
+        output = isTRUE(.translation_slot(model, "output", TRUE)),
         elasticity = as.matrix(elast(model, preMerger = TRUE)),
         market_elasticity = .translation_market_elasticity(model)
     )
@@ -206,8 +259,10 @@
     sigma <- .translation_nest_values(sigma, nests)
     nest_index <- as.character(nests)
     nest_sigma <- unname(sigma[nest_index])
-    if (any(!is.finite(sigma)) || any(sigma <= 0) || any(sigma >= 1)) {
-        stop("target nested CES parameters must be strictly below 1")
+    if (!is.numeric(gamma) || length(gamma) != 1L ||
+        !is.finite(gamma) || gamma <= 1 || any(!is.finite(sigma)) ||
+        any(sigma <= gamma)) {
+        stop("target nested CES parameters must satisfy sigma_g > gamma > 1")
     }
     nest_shares <- as.numeric(tapply(shares, nests, sum))
     names(nest_shares) <- levels(factor(nests))
@@ -263,6 +318,7 @@
             prices = state$prices,
             parameters = parameters,
             ownerPre = state$owner,
+            output = state$output,
             quantities = state$quantities,
             margins = rep(0, n),
             labels = state$labels,
@@ -282,6 +338,7 @@
         priceOutside = target_price_outside,
         labels = state$labels
     )
+    args$output <- state$output
     if (target$demand %in% c("logit_nests", "ces_nests")) {
         args$nests <- state$nests
     }
@@ -356,7 +413,10 @@
         } else {
             supplied$sigma
         }
-        sigma <- .translation_validate_sigma(sigma, nests, target_demand)
+        sigma <- .translation_validate_sigma(
+            sigma, nests, target_demand, gamma = gamma,
+            output = state$output
+        )
         ## The legacy constructors use a scalar sigma to represent a common
         ## nest parameter.  Preserve that representation for flat-to-nested
         ## transitions when the caller supplied a scalar; this is important
@@ -388,6 +448,12 @@
         FALSE
     } else {
         state$has_outside_quantity
+    }
+    if (target_demand %in% c("logit", "logit_nests")) {
+        alpha <- .translation_validate_alpha(alpha, state$output)
+    }
+    if (target_demand %in% c("ces", "ces_nests")) {
+        gamma <- .translation_validate_gamma(gamma, state$output, shares)
     }
     ## The legacy nested-Logit constructor tests `shareInside < 1` directly,
     ## rather than using a tolerance.  Normalize no-outside shares before
@@ -491,6 +557,8 @@
         source_demand = state$source_demand,
         target_demand = target$demand,
         transition_kind = transition$kind,
+        source_output = state$output,
+        target_output = isTRUE(.translation_slot(target_model, "output", TRUE)),
         baseline_price_discrepancy = max(abs(price_difference), na.rm = TRUE),
         baseline_quantity_discrepancy = max(abs(quantity_difference), na.rm = TRUE),
         baseline_share_discrepancy = max(abs(share_difference), na.rm = TRUE),
@@ -526,6 +594,10 @@
         state, target, translated$parameters, translated$shares,
         translated$inside_size, translated$price_outside
     )
+    target_output <- isTRUE(.translation_slot(target_fit@model, "output", TRUE))
+    if (!identical(target_output, state$output)) {
+        stop("respecify() failed to preserve the source output/input-market orientation")
+    }
     translated$fit <- target_fit
     translated$state <- state
     translated$diagnostics <- .translation_diagnostics(

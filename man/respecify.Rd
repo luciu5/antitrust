@@ -7,8 +7,7 @@
 respecify(fit, demand = NULL, conduct = NULL, variant = NULL, ...)
 }
 \arguments{
-\item{fit}{An \code{AntitrustFit} returned by \code{calibrate} or
-\code{specify}.}
+\item{fit}{An `AntitrustFit` returned by `calibrate()` or `specify()`.}
 
 \item{demand}{Optional target demand-system name.}
 
@@ -16,20 +15,23 @@ respecify(fit, demand = NULL, conduct = NULL, variant = NULL, ...)
 
 \item{variant}{Optional target model variant.}
 
-\item{...}{Reserved for future transition-specific options; currently an
-error is raised for unnamed or unsupported arguments.}
+\item{...}{Transition-specific target primitives. Depending on the
+registered transition, these may include `alpha`, `gamma`, `nests`, and
+`sigma`.}
 }
 \value{
-A newly constructed \code{AntitrustFit} under the target specification.
+A newly constructed `AntitrustFit` under the target specification.
 }
 \description{
-\code{respecify} applies an explicitly registered model transition.
-Same-demand transitions carry portable structural parameters, while registered
-Logit/CES transitions perform a local demand translation: target mean values
-match baseline shares and target curvature minimizes baseline elasticity
-distance. Target-model supply state is reconstructed through \code{specify};
-source margins are not used to recalibrate translated demand. Logit/CES is a
-local translation between price-level and log-price systems, not a claim of
-global demand equivalence.
+`respecify()` applies an explicitly registered model transition. Same-demand
+conduct transitions carry portable structural parameters. Demand transitions
+use the taxonomy stored in the transition registry: structural restrictions,
+algebraic or conditional translations, and canonical first-order Linear or
+LogLin representations. Target mean values, intercepts, and slopes are
+solved analytically from the fitted baseline, or target structural primitives
+are required explicitly. No transition calibrates from source margins or
+minimizes an elasticity-distance objective.
 }
-\seealso{\code{\link{specify}}, \code{\link{update.AntitrustFit}}}
+\seealso{
+[`specify()`], [`update.AntitrustFit()`]
+}
