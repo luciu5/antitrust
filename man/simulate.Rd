@@ -18,7 +18,8 @@ simulate(
 )
 }
 \arguments{
-\item{fit}{An \code{AntitrustFit} returned by \code{\link{calibrate}}.}
+\item{fit}{An \code{AntitrustFit} returned by \code{\link{calibrate}}, or
+a `CounterfactualPath` to resume from.}
 
 \item{ownerPost}{Post-counterfactual ownership vector or matrix, or a
 `Counterfactual` object. For
@@ -53,9 +54,18 @@ structure; the remaining arguments are passed to the existing quantity
 solver.}
 }
 \value{
-An existing S4 simulation-result object, such as \code{Logit} or
-  \code{LogitCournot}.
+For a one-step counterfactual, an existing S4 simulation-result
+  object, such as \code{Logit} or \code{LogitCournot}. For a multi-step
+  counterfactual, a `CounterfactualPath`.
 }
 \description{
-Simulate a counterfactual from a calibrated structural model
+For a one-step `Counterfactual` (or the equivalent direct legacy scenario
+arguments), `simulate()` returns the existing S4 simulation-result object
+unchanged, exactly as before. For a multi-step `Counterfactual` (built
+with \code{\link{add_step}}), each step is solved in turn, promoting the
+previous step's solved equilibrium into the next step's starting state,
+and a `CounterfactualPath` recording every step's result is returned.
+`fit` may also be a `CounterfactualPath`, in which case simulation
+resumes from that path's final solved state and the returned path's
+history includes the earlier steps.
 }
