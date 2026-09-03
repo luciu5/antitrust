@@ -12,7 +12,7 @@ Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com
                   )
 Maintainer: Charles Taragin <ctaragin+antitrustr@gmail.com>
 Author: Charles Taragin [aut, cre], Michael Sandfort [aut], Shlok Goyal [ctb]
-Imports: methods, BB, numDeriv, nleqslv, SQUAREM
+Imports: iopolicy (>= 0.0.0.9000), methods, BB, numDeriv, nleqslv, SQUAREM
 Suggests: MASS, ggplot2, knitr, bookdown, rmarkdown, competitiontoolbox, testthat
 Encoding: UTF-8
 Description: A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects of mergers under different competitive regimes.
@@ -68,6 +68,7 @@ Collate:
     'ModelRegistry.R'
     'ModelTranslations.R'
     'Counterfactual.R'
+    'SyntheticMarketAdapter.R'
     'PriceLeadershipFunctions.R'
     'SimFunctions.R'
     'VerticalFunctions.R'
