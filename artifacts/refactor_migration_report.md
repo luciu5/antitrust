@@ -123,10 +123,13 @@ Direct branch comparison was also run from clean archives of `master` and
 BLP examples had matching exit status and matching numeric prices, price
 changes, and contraction iteration counts. The shared regime and regression
 examples also had matching exit status; the regression example reaches the
-same historical LogitCap missing-`meanval` failure on both branches. The
-historical price-leadership examples fail on both branches because `ple` is
-not available in the package namespace. The BLP informational messages
-emitted by legacy `sim()` are preserved by the compatibility wrapper;
+same historical LogitCap missing-`meanval` failure on both branches. A clean
+install of the current refactor archive explicitly verifies that both `ple`
+and `ple.blp` are namespace exports, and the historical standard and BLP
+price-leadership examples now execute with finite results. The earlier
+statement that these examples failed because `ple` was unavailable is stale;
+no PLE economics or collation change was needed. The BLP informational
+messages emitted by legacy `sim()` are preserved by the compatibility wrapper;
 performance timings remain inherently variable.
 
 ## Intentionally preserved behavior

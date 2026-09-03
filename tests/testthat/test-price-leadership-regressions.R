@@ -1,3 +1,9 @@
+test_that("price leadership constructors are exported", {
+    exports <- getNamespaceExports("antitrust")
+    testthat::expect_true("ple" %in% exports)
+    testthat::expect_true("ple.blp" %in% exports)
+})
+
 test_that("price leadership examples construct finite equilibria", {
     result <- qa_value(ple(
         prices = c(10, 12, 11, 9),
