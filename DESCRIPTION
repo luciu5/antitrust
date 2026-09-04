@@ -35,6 +35,7 @@ Collate:
     'PricesMethods.R'
     'CostMethods.R'
     'MarginsMethods.R'
+    'BLPIntegration.R'
     'ParamsMethods.R'
     'PriceDeltaMethods.R'
     'PSMethods.R'

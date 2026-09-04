@@ -147,11 +147,14 @@ setMethod(
     mktSize <- object@mktSize
 
     # Quantile cutoffs
-    qlo <- quantile(alphas, lim[1], names = FALSE)
-    qhi <- quantile(alphas, lim[2], names = FALSE)
+    draw_weights <- .blp_draw_weights(object, length(alphas))
+    qlo <- .blp_weighted_quantile(alphas, lim[1], draw_weights)
+    qhi <- .blp_weighted_quantile(alphas, lim[2], draw_weights)
 
     keep <- alphas >= qlo & alphas <= qhi
     alphas <- alphas[keep]
+    draw_weights <- draw_weights[keep]
+    draw_weights <- draw_weights / sum(draw_weights)
 
     if (!is.null(char_random)) {
       char_random <- char_random[keep, , drop = FALSE]
@@ -202,7 +205,7 @@ setMethod(
     ## -------- Compensating Variation --------
     cvInd <- output * (VPost - VPre) / alphas
 
-    result <- mean(cvInd)
+    result <- sum(draw_weights * cvInd)
 
     if (!is.na(mktSize)) {
       result <- result * mktSize

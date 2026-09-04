@@ -704,7 +704,6 @@ setMethod(
     if (is.null(sigma)) sigma <- 0
 
     # Get demographic parameters
-    nDraws <- object@nDraws
     piDemog <- object@slopes$piDemog
     if (is.null(piDemog)) piDemog <- numeric(0)
     nDemog <- object@slopes$nDemog
@@ -724,16 +723,25 @@ setMethod(
     # Check if meanval is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
 
-    # Check if draws already exist
-    drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
+    ## Obtain consumer integration points and normalized weights.  The object
+    ## stores the resulting points so every later demand calculation reuses
+    ## the same deterministic quadrature rule or Monte Carlo sample.
+    integration <- .blp_object_integration(object, legacy_default = "auto")
+    consDraws <- integration$draws
+    drawWeights <- integration$weights
+    nDraws <- length(consDraws)
+
+    # Reuse demographic draws only when they were stored alongside the
+    # integration points.  A new model may already contain supplied/GH price
+    # nodes but still need its demographic draws generated once.
+    drawsExist <- "consDraws" %in% names(object@slopes) &&
+      !is.null(object@slopes$consDraws) &&
+      (nDemog == 0 || !is.null(object@slopes$demogDraws))
 
     if (drawsExist) {
       consDraws <- object@slopes$consDraws
       demogDraws <- object@slopes$demogDraws
     } else {
-      # Generate consumer draws
-      consDraws <- rnorm(nDraws)
-
       # Generate demographic draws
       if (nDemog > 0) {
         # Check if market-specific demographic distribution is provided
@@ -873,7 +881,7 @@ setMethod(
         acrossNest <- insideIV / (1 + insideIV)
         shares_draw <- withinNest * acrossNest
 
-        predShares <- colMeans(shares_draw)
+        predShares <- as.vector(crossprod(drawWeights, shares_draw))
 
         # BLP contraction mapping
         return(delta + sigmaNest * (log(shares) - log(predShares)))
@@ -932,7 +940,11 @@ setMethod(
       nDemog = nDemog,
       alphas = as.numeric(alphas),
       consDraws = consDraws,
-      demogDraws = demogDraws
+      demogDraws = demogDraws,
+      drawWeights = drawWeights,
+      integrationWeights = drawWeights,
+      integration = integration$rule,
+      nNodes = if (identical(integration$rule, "gauss-hermite")) nDraws else NULL
     )
 
     # Add characteristic parameters if they exist

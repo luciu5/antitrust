@@ -192,6 +192,7 @@ setMethod(
     shares_draw <- calcShares(object, preMerger = preMerger, aggregate = FALSE)
     nDraws <- ncol(shares_draw)
     nprods <- nrow(shares_draw)
+    draw_weights <- .blp_draw_weights(object, nDraws)
 
     # Replace NAs with zeros for calculation purposes
     shares_draw[is.na(shares_draw)] <- 0
@@ -241,7 +242,7 @@ setMethod(
         deriv_r <- deriv_r * outer(active_r, active_r)
 
         # Add to average
-        partial_deriv <- partial_deriv + deriv_r / nDraws
+        partial_deriv <- partial_deriv + deriv_r * draw_weights[r]
       }
     }
 
