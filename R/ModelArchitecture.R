@@ -495,19 +495,25 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 ## calcMC() for every supported model family always recomputes the
 ## pre-shock marginal cost fresh from immutable calibration constants
 ## (observed prices/margins, or cost functions) and applies `mcDelta` as a
-## one-shot multiplicative wedge relative to that fixed baseline -- it never
-## reads a promoted `mcPre`.  So the cumulative proportional cost change
-## (not a single step's shock) is the real persistent cost-environment
-## state, and successive steps' cost shocks must compound multiplicatively:
-## (1 + cumulative) <- (1 + cumulative) * (1 + this step's shock).  `current`
-## may be shorter than `step_shock` when a prior step added an entrant;
-## pad with 0 (no prior shock for a product that did not yet exist).
-.compound_costs <- function(current, step_shock) {
+## one-shot wedge relative to that fixed baseline -- it never reads a
+## promoted `mcPre`.  So the cumulative cost change (not a single step's
+## shock) is the real persistent cost-environment state, and successive
+## steps' cost shocks must compound.  Most families apply mcDelta
+## multiplicatively (`mc*(1+delta)`), so shocks compound as ratios:
+## (1+cumulative) <- (1+cumulative)*(1+shock).  The second-score-auction
+## family (Auction2ndLogit and its descendants Auction2ndCES/
+## Bargaining2nd*, see .mc_delta_is_additive()) applies mcDelta as an
+## additive level wedge (`mc+delta`), so shocks there compound by simple
+## addition instead.  `current` may be shorter than `step_shock` when a
+## prior step added an entrant; pad with 0 (no prior shock for a product
+## that did not yet exist).
+.compound_costs <- function(current, step_shock, additive = FALSE) {
     if (is.null(step_shock)) return(current)
     if (is.null(current)) current <- rep(0, length(step_shock))
     if (length(current) < length(step_shock)) {
         current <- c(current, rep(0, length(step_shock) - length(current)))
     }
+    if (additive) return(current + step_shock)
     (1 + current) * (1 + step_shock) - 1
 }
 
@@ -515,17 +521,23 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 ## .entrant_cost_delta(), CounterfactualPromotion.R): it always derives the
 ## pre-merger marginal cost from FOC-consistency with calibrated margins,
 ## which the entrant does not have.  Fold each newly added entrant's
-## implied cost delta into this step's cost-shock vector -- multiplicatively
-## composed with any ordinary cost change the same step also targets at the
-## entrant's label, so the two channels combine rather than one silently
-## overwriting the other.
+## implied cost delta into this step's cost-shock vector -- composed
+## (additively or multiplicatively, matching the model's mcDelta
+## semantics) with any ordinary cost change the same step also targets at
+## the entrant's label, so the two channels combine rather than one
+## silently overwriting the other.
 .merge_entry_cost_deltas <- function(model, entrants, step_shock) {
     if (is.null(entrants)) return(step_shock)
     if (is.null(step_shock)) step_shock <- rep(0, length(model@labels))
+    additive <- .mc_delta_is_additive(model)
     for (one_entrant in entrants) {
         idx <- match(one_entrant@label, model@labels)
         delta <- .entrant_cost_delta(model, one_entrant)
-        step_shock[idx] <- (1 + step_shock[idx]) * (1 + delta) - 1
+        step_shock[idx] <- if (additive) {
+            step_shock[idx] + delta
+        } else {
+            (1 + step_shock[idx]) * (1 + delta) - 1
+        }
     }
     step_shock
 }
@@ -837,7 +849,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         cumulative_costs <- if (is_vertical) {
             .compound_vertical_costs(cumulative_costs, step_shock)
         } else {
-            .compound_costs(cumulative_costs, step_shock)
+            .compound_costs(cumulative_costs, step_shock, additive = .mc_delta_is_additive(state))
         }
         dots <- list()
         if (!is.null(changes$leader)) dots$isLeaderPost <- changes$leader

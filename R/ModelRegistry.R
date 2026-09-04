@@ -440,15 +440,41 @@ print.antitrust_model_spec <- function(x, ...) {
     !is.null(entry) && isTRUE(entry[[operation]])
 }
 
-## Quality and entry are verified only for the four leaf classes whose
-## product-dimensional slots are byte-identical Logit/CES vectors: bare
-## Logit, CES, and their Cournot-conduct counterparts (which add no new
-## slots -- conduct is dispatched separately from class structure). Every
-## other Logit/CES descendant (LogitCap, LogitNests, LogitBLP,
-## Auction2ndLogit*, Bargaining*, VertBarg*) is excluded until individually
-## audited; all non-Logit/CES demands (Linear, LogLin, AIDS, PCAIDS*,
-## Cournot, Stackelberg) are excluded outright.
-.entry_quality_supported_classes <- c("Logit", "LogitCournot", "CES", "CESCournot")
+## Quality and entry are verified for every registered Logit/CES-family
+## class: bare Logit/CES, their Cournot and ALM variants, nested Logit/CES
+## (+ALM), LogitCap(+ALM), second-score auction (Auction2ndLogit/CES,
+## +ALM), and bargaining/bargaining2nd (+ALM). Each has been calibrated and
+## shocked directly to confirm a meanval quality shock moves shares in the
+## right direction and the post-shock FOC residual is at machine precision
+## or ~1e-9. Two families remain excluded:
+##   * BLP (LogitBLP/CournotBLP): its @slopes list also carries random-
+##     coefficient structure (sigma/sigmaNest); scaling meanval alone is a
+##     different, unverified experiment.
+##   * Vertical bargaining (VertBargBertLogit*): product-dimensional state
+##     lives in @up/@down sub-objects, so a container-level meanval shock
+##     or single-product entrant is ill-defined.
+## All non-Logit/CES demands (Linear, LogLin, AIDS, PCAIDS*, Cournot,
+## Stackelberg) are excluded outright -- they have no meanval slot at all.
+.quality_entry_supported_classes <- c(
+    "Logit", "LogitALM", "LogitCournot", "LogitCournotALM",
+    "CES", "CESALM", "CESCournot", "CESCournotALM",
+    "LogitNests", "LogitNestsALM", "CESNests",
+    "LogitCap", "LogitCapALM",
+    "Auction2ndLogit", "Auction2ndLogitALM", "Auction2ndCES", "Auction2ndCESALM",
+    "BargainingLogit", "BargainingLogitALM", "BargainingCES", "BargainingCESALM",
+    "Bargaining2ndLogit", "Bargaining2ndCES"
+)
+
+## Exit (the subset mask) is supported for every class in
+## .quality_entry_supported_classes plus every other pre-existing
+## non-Auction2ndCap class, EXCEPT BargainingLogit/BargainingLogitALM: their
+## calcPrices() method does not subset bargpower/shares conformably
+## (verified: `non-conformable arguments`), a pre-existing legacy solver
+## defect present even via the raw legacy bargaining.logit(subset=)
+## constructor, unrelated to this feature. BargainingCES/BargainingCESALM
+## dispatch to the shared Bertrand/CES calcPrices method and exit correctly
+## (verified, FOC ~1e-9).
+.exit_unsupported_classes <- c("Auction2ndCap", "BargainingLogit", "BargainingLogitALM")
 
 .model_counterfactual_capabilities <- function(spec) {
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
@@ -457,14 +483,14 @@ print.antitrust_model_spec <- function(x, ...) {
     c(
         ownership = TRUE,
         costs = TRUE,
-        exit = cls != "Auction2ndCap",
+        exit = !(cls %in% .exit_unsupported_classes),
         capacity = cls %in% c("LogitCap", "LogitCapALM", "Stackelberg"),
         bargaining = spec$conduct %in% c("bargaining", "bargaining2nd"),
         leader = cls == "Stackelberg",
         products = cls == "Stackelberg",
         tariff = FALSE,
         quota = FALSE,
-        quality = cls %in% .entry_quality_supported_classes,
-        entry = cls %in% .entry_quality_supported_classes
+        quality = cls %in% .quality_entry_supported_classes,
+        entry = cls %in% .quality_entry_supported_classes
     )
 }
