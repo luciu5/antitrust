@@ -118,7 +118,16 @@
 #'   for demographic variables. Default is identity matrix (unit variance, independent).
 #'   Should match the variance structure of demographics in your data. For a single
 #'   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
-#'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
+#'   \item{integration}{Optional integration rule: \code{"auto"},
+#'   \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
+#'   Automatic integration uses Gauss-Hermite nodes for price-only BLP and
+#'   Monte Carlo for existing multidimensional BLP specifications.}
+#'   \item{nNodes}{Optional number of Gauss-Hermite nodes; default 31.}
+#'   \item{nDraws}{Number of Monte Carlo draws. It requires
+#'   \code{integration = "monte-carlo"}; it is not a quadrature-node count.}
+#'   \item{consDraws or draws}{Optional supplied BLP integration points.}
+#'   \item{integrationWeights}{Optional non-negative weights for supplied
+#'   integration points; normalized internally to sum to one.}
 #'   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
 #'   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
 #'   \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}
@@ -242,6 +251,7 @@
 #'   alpha = 1.0,
 #'   sigma = 0.3,
 #'   sigmaNest = 0.9,
+#'   integration = "monte-carlo",
 #'   nDraws = 200
 #' )
 #'
@@ -396,14 +406,68 @@ shares = NULL,
     if (!("meanval" %in% names(demand.param))) {
       message("Note: 'meanval' (delta) not provided for BLP. It will be recovered via BLP contraction from observed shares/prices.")
     }
-    if (!("nDraws" %in% names(demand.param))) {
-      demand.param$nDraws <- 1000
-      message("'nDraws' not provided for BLP. Defaulting to 1000 draws.")
-    }
     if (!("piDemog" %in% names(demand.param))) {
       demand.param$piDemog <- numeric(0)
     }
     demand.param$nDemog <- length(demand.param$piDemog)
+
+    has_points <- !is.null(demand.param$draws) || !is.null(demand.param$consDraws)
+    has_weights <- !is.null(demand.param$integrationWeights) ||
+      !is.null(demand.param$drawWeights)
+    has_n_draws <- "nDraws" %in% names(demand.param)
+    has_n_nodes <- "nNodes" %in% names(demand.param)
+    integration_specified <- "integration" %in% names(demand.param)
+    integration <- if (integration_specified) demand.param$integration else "auto"
+    integration <- match.arg(integration,
+      c("auto", "gauss-hermite", "monte-carlo", "provided")
+    )
+    if (has_n_draws && has_points &&
+        (!is.numeric(demand.param$nDraws) || length(demand.param$nDraws) != 1 ||
+         !is.finite(demand.param$nDraws) || demand.param$nDraws < 1)) {
+      stop("'demand.param$nDraws' must be a positive scalar.")
+    }
+    supplied_points <- if (!is.null(demand.param$draws)) {
+      demand.param$draws
+    } else {
+      demand.param$consDraws
+    }
+    if (has_n_draws && has_points &&
+        demand.param$nDraws != length(supplied_points)) {
+      stop("'demand.param$nDraws' must equal the number of supplied BLP integration points.")
+    }
+    if (has_n_draws && !integration_specified && !has_points) {
+      stop("'demand.param$nDraws' requires explicit integration = 'monte-carlo' or 'gauss-hermite'; use 'nNodes' for Gauss-Hermite.")
+    }
+    if (has_n_draws && !has_points && !identical(integration, "monte-carlo")) {
+      stop("'demand.param$nDraws' is only valid with integration = 'monte-carlo'; use 'nNodes' for Gauss-Hermite.")
+    }
+    if (has_n_nodes && identical(integration, "auto")) {
+      integration <- "gauss-hermite"
+    }
+    if (has_n_nodes && !identical(integration, "gauss-hermite")) {
+      stop("'demand.param$nNodes' is only valid with integration = 'gauss-hermite'.")
+    }
+    if (has_points && integration %in% c("gauss-hermite", "monte-carlo")) {
+      stop("supplied BLP integration points conflict with integration = '", integration, "'.")
+    }
+    if (has_weights && !has_points) {
+      stop("BLP integration weights require supplied 'draws' or 'consDraws'.")
+    }
+    if (identical(integration, "provided") && !has_points) {
+      stop("integration = 'provided' requires supplied BLP integration points.")
+    }
+    demand.param$integration <- integration
+    integration_result <- .blp_integration(demand.param)
+    demand.param$consDraws <- integration_result$draws
+    demand.param$drawWeights <- integration_result$weights
+    demand.param$integrationWeights <- integration_result$weights
+    demand.param$integration <- integration_result$rule
+    demand.param$nNodes <- if (identical(integration_result$rule, "gauss-hermite")) {
+      length(integration_result$draws)
+    } else {
+      NULL
+    }
+    demand.param$nDraws <- length(integration_result$draws)
     if (demand.param$nDemog > 0) {
       if (!("demogMean" %in% names(demand.param))) {
         demand.param$demogMean <- rep(0, demand.param$nDemog)
@@ -439,10 +503,6 @@ shares = NULL,
       is.na(demand.param$sigmaNest) || !is.finite(demand.param$sigmaNest) ||
       demand.param$sigmaNest <= 0 || demand.param$sigmaNest > 1) {
       stop("'sigmaNest' (nesting parameter) must be a single numeric value in (0,1].")
-    }
-    if (!is.numeric(demand.param$nDraws) || length(demand.param$nDraws) != 1 ||
-      !is.finite(demand.param$nDraws) || demand.param$nDraws < 1) {
-      stop("'demand.param$nDraws' must be a positive scalar.")
     }
     if ("prodChar" %in% names(demand.param)) {
       if (!is.matrix(demand.param$prodChar) || nrow(demand.param$prodChar) != nprods) {

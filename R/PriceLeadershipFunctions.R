@@ -28,7 +28,17 @@
  #'   binds, all firm-specific timing parameters are estimated and saved.
 #' @param insideSize An integer equal to total pre-merger units sold.
 #'   If shares sum to one, this also equals the size of the market.
-#' @param nDraws Number of consumer draws used for BLP demand.
+#' @param integration BLP integration rule: \code{"auto"} (the default),
+#' \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
+#' Automatic integration uses one-dimensional Gauss-Hermite quadrature for a
+#' price-only BLP specification and fixed-draw Monte Carlo otherwise.
+#' @param nNodes Number of Gauss-Hermite nodes. Defaults to 31 when
+#' \code{integration = "gauss-hermite"}.
+#' @param nDraws Number of Monte Carlo draws used for BLP demand. It requires
+#' \code{integration = "monte-carlo"}; it is not a quadrature-node count.
+#' @param consDraws Optional supplied BLP integration points.
+#' @param integrationWeights Optional non-negative weights for supplied BLP
+#' integration points. They are normalized to sum to one.
 #' @param slopes A list of pre-calibrated BLP demand parameters.
  #' @param normIndex An integer equalling the index (position) of the
  #'   inside product whose mean valuation will be normalized to 1. Default
@@ -236,7 +246,11 @@ ple.blp <- function(
   priceOutside = 0,
   priceStart = prices,
   isMax = FALSE,
-  nDraws = 500,
+  integration = c("auto", "gauss-hermite", "monte-carlo", "provided"),
+  nNodes = NULL,
+  nDraws = NULL,
+  consDraws = NULL,
+  integrationWeights = NULL,
   slopes,
   control.slopes,
   control.equ,
@@ -245,6 +259,54 @@ ple.blp <- function(
 ){
 
   nprods <- length(prices)
+  integration_missing <- missing(integration)
+  integration <- match.arg(integration)
+
+  if (!is.list(slopes)) {
+    stop("'slopes' must be a list of BLP demand parameters.")
+  }
+  if (!missing(nDraws) && identical(integration, "auto")) {
+    stop("'nDraws' requires explicit integration = 'monte-carlo' or 'gauss-hermite'; use 'nNodes' for Gauss-Hermite.")
+  }
+  if (!is.null(nDraws) && !identical(integration, "monte-carlo")) {
+    stop("'nDraws' is only valid with integration = 'monte-carlo'; use 'nNodes' for Gauss-Hermite.")
+  }
+  if (!is.null(nNodes) && !identical(integration, "gauss-hermite")) {
+    stop("'nNodes' is only valid with integration = 'gauss-hermite'.")
+  }
+  if (!is.null(consDraws) && (!is.null(slopes$consDraws) || !is.null(slopes$draws))) {
+    stop("BLP integration points were supplied both in 'slopes' and 'consDraws'.")
+  }
+  if (!is.null(integrationWeights) &&
+      (!is.null(slopes$integrationWeights) || !is.null(slopes$drawWeights))) {
+    stop("BLP integration weights were supplied both in 'slopes' and 'integrationWeights'.")
+  }
+
+  if (!is.null(consDraws)) slopes$consDraws <- consDraws
+  if (!is.null(integrationWeights)) slopes$integrationWeights <- integrationWeights
+  if (!is.null(nNodes)) slopes$nNodes <- nNodes
+  if (!is.null(nDraws)) slopes$nDraws <- nDraws
+  supplied_points <- if (!is.null(slopes$draws)) slopes$draws else slopes$consDraws
+  if (!is.null(slopes$nDraws) && !is.null(supplied_points) &&
+      slopes$nDraws != length(supplied_points)) {
+    stop("'nDraws' must equal the number of supplied BLP integration points.")
+  }
+  if (!is.null(slopes$nDraws) && isTRUE(integration_missing) &&
+      is.null(slopes$consDraws) && is.null(slopes$draws)) {
+    stop("'nDraws' requires explicit integration = 'monte-carlo' or 'gauss-hermite'; use 'nNodes' for Gauss-Hermite.")
+  }
+  slopes$integration <- integration
+  integration_result <- .blp_integration(slopes)
+  slopes$consDraws <- integration_result$draws
+  slopes$drawWeights <- integration_result$weights
+  slopes$integrationWeights <- integration_result$weights
+  slopes$integration <- integration_result$rule
+  slopes$nNodes <- if (identical(integration_result$rule, "gauss-hermite")) {
+    length(integration_result$draws)
+  } else {
+    NULL
+  }
+  nDraws <- length(integration_result$draws)
 
   ## Check post-merger coalition
   ## Logit's parent validity requires a finite margin vector even though
@@ -571,7 +633,6 @@ setMethod(
     if(is.null(sigma)){
       stop("calcBLPDelta: missing 'sigma' in slopes.")
     }
-    nDraws       <-  object@nDraws
     piDemog      <-  object@slopes$piDemog
     if(is.null(piDemog)) piDemog <- numeric(0)
     nDemog       <-  object@slopes$nDemog
@@ -581,8 +642,18 @@ setMethod(
     # Check if meanval (delta) is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
 
-    # Check if draws already exist (to ensure consistency across calls)
-    drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
+    ## Reuse the same point/weight abstraction as the main BLP path.
+    integration <- .blp_object_integration(object, legacy_default = "auto")
+    consDraws <- integration$draws
+    drawWeights <- integration$weights
+    nDraws <- length(consDraws)
+
+    # Reuse demographic draws only when they were stored alongside the
+    # integration points.  Supplied/GH price nodes may still need demographics
+    # generated once for a multidimensional legacy model.
+    drawsExist <- "consDraws" %in% names(object@slopes) &&
+      !is.null(object@slopes$consDraws) &&
+      (nDemog == 0 || !is.null(object@slopes$demogDraws))
 
     if(drawsExist) {
       # Reuse existing draws
@@ -594,9 +665,6 @@ setMethod(
         demogEffect <- 0
       }
     } else {
-      # Generate new consumer heterogeneity draws (unobserved)
-      consDraws <- rnorm(nDraws)
-
       # Generate demographic draws (observed heterogeneity)
       if(!is.null(nDemog) && nDemog > 0){
         demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
@@ -680,7 +748,7 @@ setMethod(
         } else {
           denom <- insideIV
         }
-        predShares <- colMeans(expUtil/denom)
+        predShares <- as.vector(crossprod(drawWeights, expUtil / denom))
 
         return(delta + log(shares) - log(predShares))
       }
@@ -747,6 +815,10 @@ setMethod(
     object@slopes$alphas <- as.numeric(alphas)
     object@slopes$consDraws <- consDraws
     object@slopes$demogDraws <- demogDraws
+    object@slopes$drawWeights <- drawWeights
+    object@slopes$integrationWeights <- drawWeights
+    object@slopes$integration <- integration$rule
+    object@slopes$nNodes <- if (identical(integration$rule, "gauss-hermite")) nDraws else NULL
 
     return(object)
   }
