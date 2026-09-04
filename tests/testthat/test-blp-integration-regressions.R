@@ -63,6 +63,36 @@ test_that("Gauss-Hermite shares agree with direct one-dimensional integration", 
 })
 
 
+test_that("one demographic with zero price sigma defaults to Gauss-Hermite", {
+    RNGkind("Mersenne-Twister", "Inversion", "Rejection")
+    set.seed(20260904)
+    before <- .Random.seed
+    first <- qa_value(sim(
+        prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .20),
+        supply = "bertrand", demand = "BLP",
+        demand.param = list(
+            alpha = -1, sigma = 0, piDemog = .1,
+            demogMean = .3, demogCov = matrix(.25, nrow = 1, ncol = 1),
+            meanval = c(.5, .3, .1)
+        ),
+        ownerPre = c("A", "B", "C"),
+        ownerPost = c("A", "A", "C"),
+        insideSize = 100
+    ), "one-dimensional demographic BLP")
+    after <- .Random.seed
+
+    expect_identical(before, after)
+    expect_identical(first@slopes$integration, "gauss-hermite")
+    expect_length(first@slopes$consDraws, 31L)
+    expect_equal(
+        first@slopes$demogDraws[, 1],
+        .3 + .5 * first@slopes$consDraws,
+        tolerance = 1e-14
+    )
+})
+
+
 test_that("BLP aggregate derivatives pass a finite-difference check", {
     nodes <- c(-1.5, -.25, .75, 1.75)
     weights <- c(.05, .15, .30, .50)

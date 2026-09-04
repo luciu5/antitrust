@@ -4,7 +4,26 @@
 # Deterministic quadrature and fixed-draw Monte Carlo therefore follow the
 # same aggregation path.
 
+.blp_single_demographic_dimension <- function(dots) {
+    sigma <- dots$sigma
+    n_demog <- dots$nDemog
+    if (is.null(n_demog)) n_demog <- length(dots$piDemog)
+    is_single_demog <- length(n_demog) == 1L && is.numeric(n_demog) &&
+        is.finite(n_demog) && n_demog == 1L
+    is_zero_sigma <- length(sigma) == 1L && is.numeric(sigma) &&
+        is.finite(sigma) && as.numeric(sigma) == 0
+    no_random_characteristics <- is.null(dots$sigmaChar) ||
+        length(dots$sigmaChar) == 0L
+    is_single_demog && is_zero_sigma && no_random_characteristics
+}
+
+
 .blp_multidimensional <- function(dots) {
+    ## A single demographic with sigma = 0 is one normal integration
+    ## dimension, even when demographic interactions load product
+    ## characteristics.  Keep the existing conservative Monte Carlo behavior
+    ## for all other characteristic/demographic specifications.
+    if (.blp_single_demographic_dimension(dots)) return(FALSE)
     indicators <- c("prodChar", "sigmaChar", "pi", "piDemog",
                     "demogMean", "demogCov")
     any(vapply(indicators, function(name) !is.null(dots[[name]]), logical(1))) ||
@@ -59,6 +78,24 @@
 }
 
 
+.blp_quadrature_demog_draws <- function(points, nDemog, demogMean = NULL,
+                                        demogCov = NULL) {
+    if (length(nDemog) != 1L || !is.numeric(nDemog) || nDemog != 1L) {
+        stop("Gauss-Hermite demographic integration requires exactly one demographic dimension.")
+    }
+    if (is.null(demogMean)) demogMean <- 0
+    if (is.null(demogCov)) demogCov <- matrix(1, nrow = 1L, ncol = 1L)
+    if (!is.numeric(demogMean) || length(demogMean) != 1L ||
+        !is.finite(demogMean) || !is.matrix(demogCov) ||
+        !identical(dim(demogCov), c(1L, 1L)) || !is.finite(demogCov[1, 1]) ||
+        demogCov[1, 1] <= 0) {
+        stop("demogCov must be positive definite for Gauss-Hermite demographic integration.")
+    }
+    matrix(as.numeric(demogMean) + sqrt(demogCov[1, 1]) * as.numeric(points),
+           ncol = 1L)
+}
+
+
 .blp_integration <- function(dots) {
     supplied_draws <- dots$draws
     if (is.null(supplied_draws)) supplied_draws <- dots$consDraws
@@ -88,7 +125,7 @@
     }
 
     if (identical(method, "gauss-hermite") && multidimensional) {
-        stop("Gauss-Hermite integration is currently supported only for one-dimensional BLP price heterogeneity; use integration = 'monte-carlo'.")
+        stop("Gauss-Hermite integration is currently supported only for one-dimensional BLP heterogeneity; use integration = 'monte-carlo'.")
     }
 
     if (identical(method, "provided")) {
@@ -96,8 +133,7 @@
     }
 
     if (identical(method, "gauss-hermite")) {
-        n <- if (!is.null(dots$nNodes)) dots$nNodes else
-            if (!is.null(dots$nDraws)) dots$nDraws else 31L
+        n <- if (!is.null(dots$nNodes)) dots$nNodes else 31L
         rule <- .blp_normal_nodes(n)
         return(list(draws = rule$nodes, weights = rule$weights,
                     rule = "gauss-hermite"))
@@ -118,7 +154,18 @@
     has_points <- !is.null(slopes$draws) || !is.null(slopes$consDraws)
     requested <- slopes$integration
     if (has_points) requested <- "provided"
-    if (is.null(requested)) requested <- legacy_default
+    if (is.null(requested)) {
+        ## Legacy objects retain their Monte Carlo default, except when the
+        ## only heterogeneous dimension is one demographic and sigma = 0.
+        ## That case is exactly one normal dimension and can be integrated
+        ## deterministically without changing other legacy defaults.
+        requested <- if (identical(legacy_default, "monte-carlo") &&
+                         .blp_single_demographic_dimension(slopes)) {
+            "auto"
+        } else {
+            legacy_default
+        }
+    }
     result <- .blp_integration(list(
         integration = requested,
         nNodes = slopes$nNodes,
@@ -129,6 +176,7 @@
         drawWeights = slopes$drawWeights,
         prodChar = slopes$prodChar,
         sigmaChar = slopes$sigmaChar,
+        sigma = slopes$sigma,
         pi = slopes$pi,
         piDemog = slopes$piDemog,
         nDemog = slopes$nDemog,
