@@ -16,6 +16,8 @@
 \alias{elast,Cournot-method}
 \alias{elast,VertBargBertLogit-method}
 \alias{elast,LogitBLP-method}
+\alias{elast,Auction2ndBLP-method}
+\alias{elast,BargainingBLP-method}
 \title{Methods For Calculating Own and Cross-Price Elasticities}
 \usage{
 \S4method{elast}{Cournot}(object, preMerger = TRUE, market = FALSE)

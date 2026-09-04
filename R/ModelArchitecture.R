@@ -52,6 +52,8 @@ setClass(
 #'   `"auction2nd"` for downstream second-score vertical bargaining.
 #' @param knownElast A known own-price elasticity for PCAIDS calibration.
 #' @param mktElast A known market own-price elasticity for PCAIDS calibration.
+#' @param s0 A known outside-good share for price-only BLP calibration. It
+#'   must lie in \code{[0, 1)} and product shares must sum to \code{1 - s0}.
 #' @param ... Additional options accepted by the model-specific legacy
 #'   calibration constructor. For vertical bargaining, supply the upstream
 #'   inputs \code{pricesUp}, \code{marginsUp}, and \code{ownerPreUp} here.
@@ -60,7 +62,7 @@ setClass(
 calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
                       margins = NULL,
                       ownerPre, quantities = NULL, variant = "standard",
-                      knownElast = NULL, mktElast = NULL, ...) {
+                      knownElast = NULL, mktElast = NULL, s0 = NULL, ...) {
     spec <- .architecture_model_spec(demand, conduct, variant)
 
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
@@ -78,7 +80,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
              prices = prices, shares = shares, margins = margins,
              ownerPre = ownerPre, quantities = quantities,
              variant = spec$variant, knownElast = knownElast,
-             mktElast = mktElast),
+             mktElast = mktElast, s0 = s0),
         dots
     )
     forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset",
@@ -285,6 +287,13 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             ownerPost = ownerPre
         )
     }
+    if (identical(spec$demand, "blp")) {
+        return(.calibrate_blp_fit(
+            spec = spec, prices = prices, shares = shares, margins = margins,
+            ownerPre = ownerPre, s0 = s0, dots = dots,
+            calibration_args = calibration_args
+        ))
+    }
     duplicate_core <- intersect(names(dots), names(constructor_args))
     if (length(duplicate_core)) {
         stop("argument(s) supplied more than once: ", paste(duplicate_core, collapse = ", "))
@@ -382,6 +391,28 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     }
     if (spec$demand %in% c("linear", "loglin") && is.null(quantities)) {
         stop("'quantities' must be supplied when specifying Linear or LogLin demand.")
+    }
+    ## The refactor BLP builder currently covers the calibrated price-only
+    ## random coefficient used by the observed-data API.  Preserve the legacy
+    ## constructor for existing higher-dimensional BLP specifications rather
+    ## than silently dropping characteristics or demographic interactions.
+    blp_price_only <- identical(spec$demand, "blp") &&
+        !any(c("prodChar", "sigmaChar", "pi", "piDemog", "demogMean",
+               "demogCov") %in% names(parameters)) &&
+        (is.null(parameters$sigmaNest) ||
+         isTRUE(as.numeric(parameters$sigmaNest) == 1))
+    blp_new_integration <- any(c(
+        "integration", "nNodes", "draws", "drawWeights",
+        "integrationWeights"
+    ) %in% c(names(parameters), names(dots)))
+    if (blp_price_only && blp_new_integration &&
+        spec$conduct %in% c("bertrand", "cournot", "auction2nd", "bargaining")) {
+        return(.specify_blp_conduct_fit(
+            spec = spec, prices = prices, parameters = parameters,
+            ownerPre = ownerPre, shares = shares, margins = margins,
+            insideSize = insideSize, output = output, dots = dots,
+            specification_args = specification_args
+        ))
     }
     sim_shares <- if (spec$demand %in% c("linear", "loglin")) {
         quantities / sum(quantities)

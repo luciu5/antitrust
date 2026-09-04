@@ -25,6 +25,8 @@
 #' calcShares,Auction2ndLogitNests-method
 #' calcShares,Cournot-method
 #' calcShares,LogitBLP-method
+#' calcShares,Auction2ndBLP-method
+#' calcShares,BargainingBLP-method
 #' calcRevenues
 #' calcRevenues,ANY-method
 #' calcRevenues,Bertrand-method
@@ -739,7 +741,8 @@ setMethod(
 
     # 7 Aggregate or return full draws
     if (aggregate) {
-      shares <- rowMeans(shares_draw)
+      draw_weights <- .blp_draw_weights(object, nDraws)
+      shares <- as.vector(shares_draw %*% draw_weights)
       shares[!subset] <- NA
     } else {
       shares <- shares_draw # returns nprods x nDraws matrix

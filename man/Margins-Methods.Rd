@@ -16,6 +16,8 @@
 \alias{calcMargins,Cournot-method}
 \alias{calcMargins,BargainingLogit-method}
 \alias{calcMargins,Bargaining2ndLogit-method}
+\alias{calcMargins,Auction2ndBLP-method}
+\alias{calcMargins,BargainingBLP-method}
 \alias{calcMargins,CES-method}
 \alias{calcMargins,CESCournot-method}
 \alias{calcMargins,Bargaining2ndCES-method}

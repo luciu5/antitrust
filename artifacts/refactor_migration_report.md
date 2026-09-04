@@ -36,8 +36,10 @@ existing S4 classes.
 | Capacity-constrained second-score auction | specialized auction | `Auction2ndCap` | yes | simulate only | `auction2nd.cap()` |
 | Logit | vertical bargaining | `VertBargBertLogit` | yes | simulate only | `vertical.barg()` |
 | Logit | vertical bargaining, downstream second-score | `VertBarg2ndLogit` | yes (`variant = "auction2nd"`) | simulate only | `vertical.barg()` |
-| BLP | Bertrand | `LogitBLP` | no observed-data calibrator | yes | `sim()` |
-| BLP | Cournot | `CournotBLP` | no observed-data calibrator | yes | `sim()` |
+| BLP | Bertrand | `LogitBLP` | yes (`s0`, price-RC margins) | yes | `sim()` |
+| BLP | Cournot | `CournotBLP` | yes (`s0`, price-RC margins) | yes | `sim()` |
+| BLP | second-score auction | `Auction2ndBLP` | yes (`s0`, price-RC margins) | yes | `sim()` |
+| BLP | bargaining | `BargainingBLP` | yes (`s0`, fixed bargaining power) | yes | `sim()` |
 | Logit | Bertrand | `LogitALM` | yes (`variant = "alm"`) | simulate only | `logit.alm()` |
 | Logit | Cournot | `LogitCournotALM` | yes (`variant = "alm"`) | simulate only | `logit.cournot.alm()` |
 | CES | Bertrand | `CESALM` | yes (`variant = "alm"`) | simulate only | `ces.alm()` |
@@ -89,9 +91,12 @@ Bertrand is registered separately so its nested demand calibration and margin
 methods remain distinct. Nested vertical second-score remains legacy-only
 because that combination is not implemented by the legacy constructor.
 
-BLP is deliberately marked calibration-ineligible: the repository has a
-parameterized BLP construction path but no observed-data BLP estimator that
-belongs behind `calibrate()`.
+BLP observed-data calibration is implemented for the four registered
+price-random-coefficient paths above. It uses known outside share `s0`, fixed
+integration points and weights, and minimum distance on observed proportional
+margin moments to recover `alphaMean` and `sigma`; mean utilities are recovered
+by contraction. Higher-dimensional legacy BLP specifications retain their
+existing parameter-loading/Monte Carlo path.
 
 ## Compatibility and parity coverage
 
@@ -143,6 +148,12 @@ performance timings remain inherently variable.
   conventions.  It does not impose one supply formula on all demand systems.
 * BLP keeps its existing nonlinear price solver; AG is not silently substituted
   for it.
+* Price-only BLP calibration defaults to one-dimensional Gauss-Hermite under
+  the new API. Legacy `sim()` calls without an explicit integration rule retain
+  fixed-draw Monte Carlo and the historical `nDraws` default.
+* BLP auction and bargaining margins integrate their conduct primitives over
+  draw-level demand objects; the old product-local effective-alpha shortcut is
+  not used by the new calibrated path.
 * `sim()` remains exported with its historical argument signature and falls
   back to the original implementation for unsupported/non-registered paths.
 
@@ -203,9 +214,6 @@ oddities were observed and intentionally left unchanged:
   the diversion matrix mechanically derived from it has rows above zero.  This
   was observed while probing parameters recovered by a legacy `loglinear`
   call; the validation and error behavior were not broadened.
-* BLP has no observed-data calibration function in the current repository, so
-  `calibrate(demand = "blp", ...)` remains unsupported rather than inventing a
-  new estimator.
 * The `master` BLP contraction path did not honor its no-outside-good
   normalization when recovering `meanval` from shares summing to one.  This
   was reproduced independently and fixed on `refactor`; the correction is

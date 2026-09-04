@@ -131,9 +131,9 @@ test_that("unsupported sim combinations fail explicitly", {
         ownerPre = c("A", "B"), ownerPost = c("A", "A")
     ), "currently not supported", "unsupported Linear/Cournot combination")
     qa_expect_error(sim(
-        c(2, 2.2), supply = "auction2nd", demand = "BLP",
+        c(2, 2.2), supply = "bargaining2nd", demand = "BLP",
         demand.param = qa_fixture_blp_parameters(),
         ownerPre = c("A", "B"), ownerPost = c("A", "A"),
         shares = c(.3, .2)
-    ), "currently not supported|only compatible", "unsupported BLP/auction combination")
+    ), "currently not supported|only compatible", "unsupported BLP/bargaining2nd combination")
 })

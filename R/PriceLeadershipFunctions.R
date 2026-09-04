@@ -581,7 +581,15 @@ setMethod(
     # Check if meanval (delta) is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
 
-    # Check if draws already exist (to ensure consistency across calls)
+    ## Reuse the same node/weight abstraction as the main BLP path. A legacy
+    ## PriceLeadershipBLP object without stored points retains its historical
+    ## Monte Carlo default.
+    integration <- .blp_object_integration(object, legacy_default = "monte-carlo")
+    consDraws <- integration$draws
+    drawWeights <- integration$weights
+    nDraws <- length(consDraws)
+
+    # Check if demographic draws already exist (to ensure consistency across calls)
     drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
 
     if(drawsExist) {
@@ -594,9 +602,6 @@ setMethod(
         demogEffect <- 0
       }
     } else {
-      # Generate new consumer heterogeneity draws (unobserved)
-      consDraws <- rnorm(nDraws)
-
       # Generate demographic draws (observed heterogeneity)
       if(!is.null(nDemog) && nDemog > 0){
         demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
@@ -680,7 +685,7 @@ setMethod(
         } else {
           denom <- insideIV
         }
-        predShares <- colMeans(expUtil/denom)
+        predShares <- as.vector(crossprod(drawWeights, expUtil / denom))
 
         return(delta + log(shares) - log(predShares))
       }
@@ -747,6 +752,10 @@ setMethod(
     object@slopes$alphas <- as.numeric(alphas)
     object@slopes$consDraws <- consDraws
     object@slopes$demogDraws <- demogDraws
+    object@slopes$drawWeights <- drawWeights
+    object@slopes$integrationWeights <- drawWeights
+    object@slopes$integration <- integration$rule
+    object@slopes$nNodes <- if(identical(integration$rule, "gauss-hermite")) nDraws else NULL
 
     return(object)
   }

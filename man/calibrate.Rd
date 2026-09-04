@@ -15,6 +15,7 @@ calibrate(
   variant = "standard",
   knownElast = NULL,
   mktElast = NULL,
+  s0 = NULL,
   ...
 )
 }
@@ -45,6 +46,9 @@ general Cournot/Stackelberg calibration.}
 \item{knownElast}{A known own-price elasticity for PCAIDS calibration.}
 
 \item{mktElast}{A known market own-price elasticity for PCAIDS calibration.}
+
+\item{s0}{A known outside-good share for price-only BLP calibration. It
+must lie in \code{[0, 1)} and product shares must sum to \code{1 - s0}.}
 
 \item{...}{Additional options accepted by the model-specific legacy
 calibration constructor. For vertical bargaining, supply the upstream
