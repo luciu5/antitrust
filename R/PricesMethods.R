@@ -11,6 +11,7 @@
 #' calcPrices,AIDS-method
 #' calcPrices,LogitCap-method
 #' calcPrices,Auction2ndLogit-method
+#' calcPrices,BargainingBLP-method
 #' calcPrices,VertBargBertLogit-method
 #' calcPrices,VertBarg2ndLogit-method
 #' calcPrices

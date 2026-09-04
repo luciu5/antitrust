@@ -1,5 +1,5 @@
-#' @importFrom stats constrOptim integrate model.matrix optim optimize quantile rnorm runif weighted.mean
-#' @importFrom methods .hasSlot callNextMethod new selectMethod show
+#' @importFrom stats constrOptim integrate median model.matrix optim optimize pnorm quantile rnorm runif weighted.mean
+#' @importFrom methods .hasSlot callNextMethod new selectMethod show validObject
 #' @importFrom BB BBoptim BBsolve
 #' @importFrom numDeriv genD
 #' @importFrom nleqslv nleqslv

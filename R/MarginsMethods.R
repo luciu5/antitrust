@@ -15,6 +15,8 @@
 #' calcMargins,Cournot-method
 #' calcMargins,BargainingLogit-method
 #' calcMargins,Bargaining2ndLogit-method
+#' calcMargins,Auction2ndBLP-method
+#' calcMargins,BargainingBLP-method
 #'
 #' @description Computes equilibrium product margins assuming that firms are playing a
 #' Nash-Bertrand, Cournot, 2nd Score Auction, or Bargaining game. For "LogitCap", assumes firms are

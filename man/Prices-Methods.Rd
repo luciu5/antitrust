@@ -13,6 +13,7 @@
 \alias{calcPrices,AIDS-method}
 \alias{calcPrices,LogitCap-method}
 \alias{calcPrices,Auction2ndLogit-method}
+\alias{calcPrices,BargainingBLP-method}
 \alias{calcPrices,VertBargBertLogit-method}
 \alias{calcPrices,VertBarg2ndLogit-method}
 \alias{calcPrices}

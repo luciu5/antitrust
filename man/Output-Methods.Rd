@@ -25,6 +25,8 @@
 \alias{calcShares,Auction2ndLogitNests-method}
 \alias{calcShares,Cournot-method}
 \alias{calcShares,LogitBLP-method}
+\alias{calcShares,Auction2ndBLP-method}
+\alias{calcShares,BargainingBLP-method}
 \alias{calcRevenues}
 \alias{calcRevenues,ANY-method}
 \alias{calcRevenues,Bertrand-method}

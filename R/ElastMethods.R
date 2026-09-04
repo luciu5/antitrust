@@ -15,6 +15,8 @@
 #' elast,Cournot-method
 #' elast,VertBargBertLogit-method
 #' elast,LogitBLP-method
+#' elast,Auction2ndBLP-method
+#' elast,BargainingBLP-method
 #'
 #' @description Calculate the own and cross-price elasticity between any two products in the market.
 #' @param object An instance of one of the classes listed above.

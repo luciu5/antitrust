@@ -25,6 +25,8 @@
 #' calcShares,Auction2ndLogitNests-method
 #' calcShares,Cournot-method
 #' calcShares,LogitBLP-method
+#' calcShares,Auction2ndBLP-method
+#' calcShares,BargainingBLP-method
 #' calcRevenues
 #' calcRevenues,ANY-method
 #' calcRevenues,Bertrand-method
