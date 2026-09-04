@@ -257,11 +257,15 @@ setMethod(
 
     alpha <- object@slopes$alpha
 
+    nprods <- length(object@shares)
+
     if (preMerger) {
+      subset <- rep(TRUE, nprods)
       prices <- object@pricePre
       owner <- object@ownerPre
       barg <- object@bargpowerPre
     } else {
+      subset <- object@subset
       prices <- object@pricePost
       owner <- object@ownerPost
       barg <- object@bargpowerPost
@@ -270,9 +274,18 @@ setMethod(
 
     barg <- barg / (1 - barg) # relative bargaining
 
-    nprods <- length(prices)
-
     shares <- calcShares(object, preMerger, revenue = FALSE)
+
+    ## An excluded product's degenerate FOC term is not merely irrelevant --
+    ## it is undefined (0 * NaN poisons matrix multiplication even against a
+    ## zero coefficient), so exited products must be dropped from every
+    ## vector/matrix entering the linear algebra below, exactly as the base
+    ## Bertrand calcMargins method does, and only re-expanded to NA
+    ## afterward.
+    owner <- owner[subset, subset]
+    barg <- barg[subset]
+    shares <- shares[subset]
+    prices <- prices[subset]
 
     div <- shares / (1 - shares)
 
@@ -286,15 +299,15 @@ setMethod(
     margins <- as.vector(margins %*% ((log(1 - shares) * diag(owner)) / (-1 * output * alpha * (barg * div -
       log(1 - shares)))))
 
-    margins <- margins
-
     if (!level) {
       margins <- margins / prices
     }
 
-    names(margins) <- object@labels
+    result <- rep(NA_real_, nprods)
+    result[subset] <- margins
+    names(result) <- object@labels
 
-    return(as.vector(margins))
+    return(result)
   }
 )
 

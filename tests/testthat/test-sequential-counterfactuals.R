@@ -530,23 +530,32 @@ test_that("exit resolves cleanly for nested Logit/CES and second-score auction/b
     expect_equal(result_b2@subset, c(FALSE, TRUE, TRUE))
 })
 
-test_that("first-score bargaining exit is rejected (pre-existing legacy solver defect)", {
+test_that("first-score bargaining Logit and CES both exit cleanly", {
+    ## BargainingLogit's calcPrices()/calcMargins() previously operated on
+    ## full-length vectors without ever dropping excluded products -- an
+    ## excluded product's degenerate FOC term (0 * NaN) poisoned every
+    ## other product's result through the matrix multiply, on top of an
+    ## un-subsetted bargpower vector causing an outright length-mismatch
+    ## error. Both methods were fixed to subset/re-expand consistently with
+    ## the rest of the package (see calcMargins,BargainingLogit-method).
     fb <- suppressWarnings(calibrate(
         "logit", "bargaining", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
         ownerPre = c("A", "B", "C"), insideSize = 100
     ))
-    expect_error(simulate(fb, counterfactual(exit = "Prod1")), "does not support")
+    result_b <- simulate(fb, counterfactual(exit = "Prod1"))
+    expect_equal(result_b@subset, c(FALSE, TRUE, TRUE))
+    expect_true(is.na(result_b@pricePost[1]))
+    expect_lt(.foc_residual(result_b), 1e-6)
 
     fbc <- suppressWarnings(calibrate(
         "ces", "bargaining", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
         ownerPre = c("A", "B", "C"), insideSize = 100
     ))
-    ## BargainingCES dispatches to the shared Bertrand/CES calcPrices()
-    ## method (not BargainingLogit's broken override) and exits correctly.
     result <- simulate(fbc, counterfactual(exit = "Prod1"))
     expect_equal(result@subset, c(FALSE, TRUE, TRUE))
+    expect_lt(.foc_residual(result), 1e-6)
 })
 
 test_that("entry into second-score auction requires no extra primitive and mcPost matches cost via the additive wedge", {

@@ -467,14 +467,18 @@ print.antitrust_model_spec <- function(x, ...) {
 
 ## Exit (the subset mask) is supported for every class in
 ## .quality_entry_supported_classes plus every other pre-existing
-## non-Auction2ndCap class, EXCEPT BargainingLogit/BargainingLogitALM: their
-## calcPrices() method does not subset bargpower/shares conformably
-## (verified: `non-conformable arguments`), a pre-existing legacy solver
-## defect present even via the raw legacy bargaining.logit(subset=)
-## constructor, unrelated to this feature. BargainingCES/BargainingCESALM
-## dispatch to the shared Bertrand/CES calcPrices method and exit correctly
-## (verified, FOC ~1e-9).
-.exit_unsupported_classes <- c("Auction2ndCap", "BargainingLogit", "BargainingLogitALM")
+## non-Auction2ndCap class. BargainingLogit/BargainingLogitALM's
+## calcPrices()/calcMargins() methods previously operated on full-length
+## vectors/matrices without ever dropping excluded products -- unlike
+## every other family's calcMargins(), which subsets owner/shares/prices
+## before the linear algebra and re-expands to NA afterward (see the
+## Bertrand method). That let an excluded product's degenerate FOC term
+## (0 * NaN) poison every other product's result through the matrix
+## multiply, on top of a separate un-subsetted `bargpower` vector causing
+## an outright length-mismatch error in calcPrices(). Both methods now
+## subset/re-expand consistently with the rest of the package; fixed and
+## verified (FOC ~1e-9-1e-10) rather than worked around.
+.exit_unsupported_classes <- c("Auction2ndCap")
 
 .model_counterfactual_capabilities <- function(spec) {
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
