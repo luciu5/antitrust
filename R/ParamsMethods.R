@@ -734,7 +734,9 @@ setMethod(
     nDraws <- length(consDraws)
 
     # Generate demographic draws (if present) over the same consumer points.
-    drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
+    drawsExist <- "consDraws" %in% names(object@slopes) &&
+      !is.null(object@slopes$consDraws) &&
+      (nDemog == 0 || !is.null(object@slopes$demogDraws))
 
     if (drawsExist) {
       demogDraws <- object@slopes$demogDraws
@@ -744,7 +746,14 @@ setMethod(
         demogMean <- object@slopes$demogMean
         demogCov <- object@slopes$demogCov
 
-        if (!is.null(demogMean) && !is.null(demogCov)) {
+        if (identical(integration$rule, "gauss-hermite")) {
+          ## With sigma = 0 and one demographic, use the stored quadrature
+          ## nodes for that single normal dimension rather than drawing a
+          ## separate Monte Carlo demographic sample.
+          demogDraws <- .blp_quadrature_demog_draws(
+            consDraws, nDemog, demogMean, demogCov
+          )
+        } else if (!is.null(demogMean) && !is.null(demogCov)) {
           # Sample from actual market distribution using multivariate normal
           # Sample from N(demogMean, demogCov) using Cholesky decomposition
           # Avoid MASS dependency: X = mu + chol(Sigma) * Z where Z ~ N(0,I)
