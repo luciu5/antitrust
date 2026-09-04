@@ -1062,6 +1062,22 @@ sim <- function(prices,
         .model_registry_supports(normalized_spec, "simulate")
     if (migrated) {
         dots <- list(...)
+        ## Preserve the historical sim() default for BLP parameter-loading
+        ## calls.  The refactor API uses integration = "auto" (GH for the
+        ## one-dimensional price-only case), but legacy sim() used fixed-draw
+        ## Monte Carlo with 1,000 draws unless callers supplied a rule/draws.
+        if (identical(registry_demand, "BLP") &&
+            is.null(dots$integration) && is.null(dots$nNodes) &&
+            is.null(dots$draws) && is.null(dots$consDraws) &&
+            is.null(demand.param$integration) &&
+            is.null(demand.param$nNodes) &&
+            is.null(demand.param$draws) &&
+            is.null(demand.param$consDraws)) {
+            dots$integration <- "monte-carlo"
+            if (is.null(dots$nDraws) && is.null(demand.param$nDraws)) {
+                dots$nDraws <- 1000L
+            }
+        }
         specify_args <- list(
             demand = registry_demand,
             conduct = supply_name,

@@ -154,7 +154,7 @@ setClass(
                        s0, output = TRUE, priceOutside = 0,
                        insideSize = 1, labels = NULL, bargpowerPre = NULL,
                        bargpowerPost = NULL, weights = NULL,
-                       integrationRule = "provided") {
+                       integrationRule = "provided", validate = TRUE) {
     n <- length(prices)
     labels <- if (is.null(labels)) paste0("Prod", seq_len(n)) else labels
     if (is.null(weights)) weights <- rep(1, n)
@@ -197,7 +197,7 @@ setClass(
     result <- do.call(methods::new, c(list(Class = class_name), args))
     result@ownerPre <- ownerToMatrix(result, preMerger = TRUE)
     result@ownerPost <- ownerToMatrix(result, preMerger = FALSE)
-    validObject(result)
+    if (isTRUE(validate)) validObject(result)
     result
 }
 
@@ -394,7 +394,8 @@ setMethod(
 .blp_new_model <- function(conduct, prices, shares, margins, ownerPre,
                            alphaMean, sigma, delta, integration, s0,
                            output, dots, bargpowerPre = NULL,
-                           bargpowerPost = NULL, weights = NULL) {
+                           bargpowerPost = NULL, weights = NULL,
+                           validate = TRUE) {
     .blp_model(
         conduct = conduct, prices = prices, shares = shares, margins = margins,
         ownerPre = ownerPre, alphaMean = alphaMean, sigma = sigma,
@@ -404,7 +405,7 @@ setMethod(
         insideSize = if (is.null(dots$insideSize)) 1 else dots$insideSize,
         labels = dots$labels, bargpowerPre = bargpowerPre,
         bargpowerPost = bargpowerPost, weights = weights,
-        integrationRule = integration$rule
+        integrationRule = integration$rule, validate = validate
     )
 }
 
@@ -423,14 +424,27 @@ setMethod(
     ), silent = TRUE)
     if (inherits(contracted, "try-error") || !contracted$converged ||
         any(!is.finite(contracted$delta))) return(1e100)
-    model <- try(.blp_new_model(
-        conduct = context$conduct, prices = context$prices,
-        shares = context$shares, margins = context$margins,
-        ownerPre = context$ownerPre, alphaMean = alpha, sigma = sigma,
-        delta = contracted$delta, integration = context$integration,
-        s0 = context$s0, output = context$output, dots = context$dots,
-        bargpowerPre = context$bargpowerPre,
-        bargpowerPost = context$bargpowerPost, weights = context$weights
+    model <- try(withCallingHandlers(
+        .blp_new_model(
+            conduct = context$conduct, prices = context$prices,
+            shares = context$shares, margins = context$margins,
+            ownerPre = context$ownerPre, alphaMean = alpha, sigma = sigma,
+            delta = contracted$delta, integration = context$integration,
+            s0 = context$s0, output = context$output, dots = context$dots,
+            bargpowerPre = context$bargpowerPre,
+            bargpowerPost = context$bargpowerPost,
+            weights = context$weights, validate = FALSE
+        ),
+        warning = function(condition) {
+            ## The optimizer constructs a pre-merger placeholder with the
+            ## same ownership in both slots.  Muffle only that expected
+            ## internal validity warning; all economic/numerical warnings
+            ## remain observable.
+            if (grepl("'ownerPost' and 'ownerPre' are the same",
+                      conditionMessage(condition), fixed = TRUE)) {
+                invokeRestart("muffleWarning")
+            }
+        }
     ), silent = TRUE)
     if (inherits(model, "try-error")) return(1e100)
     predicted <- try(calcMargins(model, preMerger = TRUE, level = FALSE), silent = TRUE)
@@ -461,7 +475,20 @@ setMethod(
         args$bargpowerPre <- context$bargpowerPre
         args$bargpowerPost <- context$bargpowerPre
     }
-    candidate <- try(do.call(.legacy_constructor(constructor), args), silent = TRUE)
+    candidate <- try(withCallingHandlers(
+        do.call(.legacy_constructor(constructor), args),
+        warning = function(condition) {
+            ## The legacy start-value constructor receives the pre-merger
+            ## ownership in both slots.  Its validity warning is expected for
+            ## this internal placeholder and would otherwise be repeated for
+            ## every profile/objective evaluation.  Other warnings remain
+            ## visible to the caller.
+            if (grepl("'ownerPost' and 'ownerPre' are the same",
+                      conditionMessage(condition), fixed = TRUE)) {
+                invokeRestart("muffleWarning")
+            }
+        }
+    ), silent = TRUE)
     if (!inherits(candidate, "try-error") && methods::is(candidate, "Bertrand") &&
         is.finite(candidate@slopes$alpha)) {
         value <- as.numeric(candidate@slopes$alpha)
@@ -571,6 +598,9 @@ setMethod(
     best <- fits[[best_index]]$optim
     details <- .blp_objective(best$par, context, details = TRUE)
     model <- details$model
+    ## Candidate models are not validity-checked inside the outer optimizer;
+    ## validate the selected fitted model once, after calibration.
+    validObject(model)
     model@mcPre <- calcMC(model, preMerger = TRUE)
     model@mcPost <- calcMC(model, preMerger = FALSE)
     model@pricePre <- as.numeric(prices)
@@ -672,7 +702,7 @@ setMethod(
         integration = integration, s0 = s0, output = output,
         dots = c(dots, list(insideSize = insideSize)),
         bargpowerPre = barg_pre, bargpowerPost = dots$bargpowerPost,
-        weights = dots$weights
+        weights = dots$weights, validate = TRUE
     )
     model@mcPre <- calcMC(model, TRUE)
     model@mcPost <- calcMC(model, FALSE)
@@ -698,6 +728,19 @@ setMethod(
 }
 
 
+#' Profile the BLP calibration objective over random-coefficient scale
+#'
+#' For a calibrated price-random-coefficient BLP fit, evaluate the minimum
+#' margin-distance objective at each supplied value of \code{sigma},
+#' re-optimizing \code{alphaMean}. This is an identification diagnostic, not
+#' an econometric standard-error calculation.
+#'
+#' @param fit An \code{AntitrustFit} produced by BLP calibration.
+#' @param sigma_grid A finite, non-negative numeric vector of values at which
+#'   to profile the objective.
+#' @return A data frame with \code{sigma}, \code{alphaMean}, \code{objective},
+#'   and optimizer convergence columns.
+#' @export
 profileBLP <- function(fit, sigma_grid) {
     if (!methods::is(fit, "AntitrustFit") || fit@spec$demand != "blp") {
         stop("'fit' must be an AntitrustFit for BLP demand.")

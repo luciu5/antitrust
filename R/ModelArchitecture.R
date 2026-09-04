@@ -52,6 +52,8 @@ setClass(
 #'   `"auction2nd"` for downstream second-score vertical bargaining.
 #' @param knownElast A known own-price elasticity for PCAIDS calibration.
 #' @param mktElast A known market own-price elasticity for PCAIDS calibration.
+#' @param s0 A known outside-good share for price-only BLP calibration. It
+#'   must lie in \code{[0, 1)} and product shares must sum to \code{1 - s0}.
 #' @param ... Additional options accepted by the model-specific legacy
 #'   calibration constructor. For vertical bargaining, supply the upstream
 #'   inputs \code{pricesUp}, \code{marginsUp}, and \code{ownerPreUp} here.
@@ -390,8 +392,21 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     if (spec$demand %in% c("linear", "loglin") && is.null(quantities)) {
         stop("'quantities' must be supplied when specifying Linear or LogLin demand.")
     }
-    if (identical(spec$demand, "blp") &&
-        spec$conduct %in% c("auction2nd", "bargaining")) {
+    ## The refactor BLP builder currently covers the calibrated price-only
+    ## random coefficient used by the observed-data API.  Preserve the legacy
+    ## constructor for existing higher-dimensional BLP specifications rather
+    ## than silently dropping characteristics or demographic interactions.
+    blp_price_only <- identical(spec$demand, "blp") &&
+        !any(c("prodChar", "sigmaChar", "pi", "piDemog", "demogMean",
+               "demogCov") %in% names(parameters)) &&
+        (is.null(parameters$sigmaNest) ||
+         isTRUE(as.numeric(parameters$sigmaNest) == 1))
+    blp_new_integration <- any(c(
+        "integration", "nNodes", "draws", "drawWeights",
+        "integrationWeights"
+    ) %in% c(names(parameters), names(dots)))
+    if (blp_price_only && blp_new_integration &&
+        spec$conduct %in% c("bertrand", "cournot", "auction2nd", "bargaining")) {
         return(.specify_blp_conduct_fit(
             spec = spec, prices = prices, parameters = parameters,
             ownerPre = ownerPre, shares = shares, margins = margins,
