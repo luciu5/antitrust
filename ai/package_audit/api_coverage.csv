@@ -1,6 +1,7 @@
 "kind","name","signature","status","evidence","exclusion_reason"
 "export","aids","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","calibrate","","formal-test","tests/testthat/test-model-architecture.R",""
+"export","synthetic_market","","formal-test","tests/testthat/test-synthetic-market.R",""
 "export","counterfactual","","formal-test","tests/testthat/test-counterfactual.R",""
 "export","combine_counterfactuals","","formal-test","tests/testthat/test-counterfactual.R",""
 "export","add_step","","formal-test","tests/testthat/test-counterfactual.R; tests/testthat/test-sequential-counterfactuals.R",""

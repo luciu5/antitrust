@@ -71,6 +71,7 @@ Collate:
     'ModelTranslations.R'
     'BLPIntegration.R'
     'BLPCalibration.R'
+    'SyntheticMarket.R'
     'SyntheticMarketAdapter.R'
     'PriceLeadershipClasses.R'
     'PriceLeadershipFunctions.R'
