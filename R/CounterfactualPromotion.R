@@ -110,15 +110,22 @@ setMethod(".promote_post_to_pre", "VertBargBertLogit", function(model, step) {
 ## wedge (`mc * (1 + mcDelta)`) used by the Bertrand/Cournot/bargaining
 ## families.  This distinction determines how sequential cost shocks
 ## compound and how an entrant's cost primitive is converted into an
-## mcDelta.  Only the second-score-auction family (Auction2ndLogit and its
-## descendants Auction2ndCES / Bargaining2ndLogit / Bargaining2ndCES) is
-## additive; everything else is multiplicative.
+## mcDelta.  Verified directly against each calcMC() method: Auction2ndLogit
+## (and its descendant Bargaining2ndLogit) is additive
+## (`calcMC,Auction2ndLogit-method`: "mc <- mc + object@mcDelta"), but
+## Auction2ndCES (and its descendant Bargaining2ndCES) is MULTIPLICATIVE
+## despite the shared "second-score auction" family name
+## (`calcMC,Auction2ndCES-method`: "mc <- mc * (1 + object@mcDelta)") --
+## the two demand systems are not symmetric here. Using the additive delta
+## for a CES entrant was verified to produce the wrong marginal cost
+## (implied 1.298, delta -0.298 targeting cost=1, but the multiplicative
+## calcMC() actually returned 0.911); this is CES-specific data, not an
+## approximation.
 setGeneric(".mc_delta_is_additive", function(model) {
     standardGeneric(".mc_delta_is_additive")
 })
 setMethod(".mc_delta_is_additive", "ANY", function(model) FALSE)
 setMethod(".mc_delta_is_additive", "Auction2ndLogit", function(model) TRUE)
-setMethod(".mc_delta_is_additive", "Auction2ndCES", function(model) TRUE)
 
 ## Expand a Logit/CES-family model's product dimension for one new
 ## single-product entrant.  Reuses the existing exported `ownerToMatrix()`
@@ -205,10 +212,18 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     ## not a plain vector, so appending requires rebuilding it with the
     ## entrant's nest as a valid level. There is no safe default nest, so
     ## this primitive is required. Joining an existing nest reuses that
-    ## nest's calibrated sigma; forming a new nest adds a new level, and
-    ## the existing single-product-nest normalization (sigma = 1) already
-    ## used by calibration for singleton nests applies to it unchanged --
-    ## no sigma re-derivation is performed here.
+    ## nest's calibrated sigma; forming a new nest adds a new level, using
+    ## the same singleton-nest normalization the legacy calibration
+    ## routines already use for a nest with one product. This normalization
+    ## is NOT the same constant across demand families -- verified directly
+    ## against each family's calcSlopes(): LogitNests normalizes an
+    ## unidentified singleton sigma to 1 (calcSlopes,LogitNests-method), but
+    ## CESNests normalizes it to 0 (calcSlopes,CESNests-method: "sigma <-
+    ## as.numeric(!isSingletonNest)"), because CES's calcShares() raises
+    ## sharesAcross to the power (1-gamma)/(1-sigma) -- sigma=1 there would
+    ## divide by zero. Using 1 for a new CES nest was verified to produce
+    ## NaN throughout calcMC()/calcShares(); this is family-specific data,
+    ## not a re-derivation of the optimizer's estimate.
     if (methods::.hasSlot(model, "nests")) {
         nest <- .require_entrant_extra(entrant, "nest", "entry")
         if (length(nest) != 1L || !is.character(nest) || is.na(nest) || !nzchar(nest)) {
@@ -217,7 +232,8 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
         new_levels <- union(levels(model@nests), nest)
         model@nests <- factor(c(as.character(model@nests), nest), levels = new_levels)
         if (!(nest %in% names(model@slopes$sigma))) {
-            model@slopes$sigma <- c(model@slopes$sigma, stats::setNames(1, nest))
+            singleton_sigma <- if (methods::is(model, "CESNests")) 0 else 1
+            model@slopes$sigma <- c(model@slopes$sigma, stats::setNames(singleton_sigma, nest))
         }
     }
 
@@ -243,9 +259,11 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
 ## entrant's position equals entrant@cost, evaluated using the model's
 ## current ownership/elasticity structure (so it stays correct whether
 ## entry happens against the original baseline or a promoted post-merger
-## state). Additive families (second-score auction and its descendants)
-## need a level difference; every other family needs a ratio, since
-## calcMC() applies mcDelta multiplicatively for them.
+## state). Additive families (Auction2ndLogit and its descendant
+## Bargaining2ndLogit -- see .mc_delta_is_additive()) need a level
+## difference; every other family (including Auction2ndCES/
+## Bargaining2ndCES, which apply mcDelta multiplicatively despite the
+## shared family name) needs a ratio.
 setGeneric(".entrant_cost_delta", function(model, entrant) {
     standardGeneric(".entrant_cost_delta")
 })

@@ -485,7 +485,12 @@ test_that("sequential cost shocks compound multiplicatively for nested and barga
     expect_equal(final@mcPost, reference@mcPost, tolerance = 1e-8)
 })
 
-test_that("sequential cost shocks compound additively for second-score auction families", {
+test_that("sequential cost shocks compound additively for Auction2ndLogit but multiplicatively for Auction2ndCES", {
+    ## calcMC,Auction2ndLogit-method applies mcDelta additively ("mc <- mc +
+    ## object@mcDelta"), but calcMC,Auction2ndCES-method applies it
+    ## multiplicatively ("mc <- mc * (1 + object@mcDelta)") despite the
+    ## shared "second-score auction" family name -- verified directly
+    ## against both methods; the two demand systems are NOT symmetric here.
     fa <- suppressWarnings(calibrate(
         "logit", "auction2nd", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -501,6 +506,22 @@ test_that("sequential cost shocks compound additively for second-score auction f
 
     wrong_reference <- simulate(fa, ownerPost = fa@model@ownerPre, mcDelta = c(0.9 * 0.9 - 1, 0, 0))
     expect_false(isTRUE(all.equal(final@mcPost, wrong_reference@mcPost, tolerance = 1e-8)))
+
+    fac <- suppressWarnings(calibrate(
+        "ces", "auction2nd", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    cf_c <- counterfactual(costs = c(-.1, 0, 0))
+    cf_c <- add_step(cf_c, costs = c(-.1, 0, 0))
+    path_c <- simulate(fac, cf_c)
+    final_c <- final_result(path_c)
+    ## Multiplicative: two -0.1 shocks compound to -0.19, NOT sum to -0.2.
+    reference_c <- simulate(fac, ownerPost = fac@model@ownerPre, mcDelta = c(0.9 * 0.9 - 1, 0, 0))
+    expect_equal(final_c@mcPost, reference_c@mcPost, tolerance = 1e-8)
+
+    wrong_reference_c <- simulate(fac, ownerPost = fac@model@ownerPre, mcDelta = c(-.2, 0, 0))
+    expect_false(isTRUE(all.equal(final_c@mcPost, wrong_reference_c@mcPost, tolerance = 1e-8)))
 })
 
 test_that("exit resolves cleanly for nested Logit/CES and second-score auction/bargaining2nd", {
@@ -652,4 +673,117 @@ test_that("BLP and vertical bargaining still reject quality and entry", {
     expect_error(simulate(fit_blp, counterfactual(quality = c(Prod1 = .1))), "does not support")
     e1 <- entrant(label = "E1", meanval = .1, cost = 1, priceStart = 2)
     expect_error(simulate(fit_blp, counterfactual(entry = e1)), "does not support")
+})
+
+## ---- Additional coverage: ALM, Cournot-conduct entry, CESNests new-nest, --
+## ---- Bargaining2ndCES -------------------------------------------------------
+
+test_that("entry and quality resolve cleanly for LogitALM and CESALM", {
+    p <- c(2, 2.5, 3); s <- c(.40, .35, .25); mgn <- c(.45, .40, .35)
+
+    fit_l <- suppressWarnings(calibrate(
+        model_spec("logit", "bertrand", "alm"), prices = p, shares = s, margins = mgn,
+        ownerPre = c("A", "B", "C"), parmsStart = c(-.5, .1)
+    ))
+    baseline_l <- fit_l@model@slopes$meanval[[1]]
+    result_l <- simulate(fit_l, counterfactual(quality = c(Prod1 = .1)))
+    expect_equal(result_l@slopes$meanval[[1]], baseline_l * 1.1, tolerance = 1e-10)
+
+    e1 <- entrant(label = "E1", meanval = fit_l@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result_e1 <- simulate(fit_l, counterfactual(entry = e1))
+    idx <- match("E1", result_e1@labels)
+    expect_equal(unname(result_e1@mcPost[idx]), 1, tolerance = 1e-6)
+    expect_lt(.foc_residual(result_e1), 1e-6)
+
+    fit_c <- suppressWarnings(calibrate(
+        model_spec("ces", "bertrand", "alm"), prices = p, shares = s, margins = mgn,
+        ownerPre = c("A", "B", "C"), parmsStart = c(1, .1)
+    ))
+    e2 <- entrant(label = "E1", meanval = fit_c@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result_e2 <- simulate(fit_c, counterfactual(entry = e2))
+    idx2 <- match("E1", result_e2@labels)
+    expect_equal(unname(result_e2@mcPost[idx2]), 1, tolerance = 1e-6)
+    expect_lt(.foc_residual(result_e2), 1e-6)
+})
+
+test_that("entry resolves cleanly for Cournot-conduct LogitCournot and CESCournot", {
+    fit_lc <- calibrate(
+        "logit", "cournot", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    )
+    e1 <- entrant(label = "E1", meanval = fit_lc@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result_lc <- simulate(fit_lc, counterfactual(entry = e1))
+    idx <- match("E1", result_lc@labels)
+    expect_equal(unname(result_lc@mcPost[idx]), 1, tolerance = 1e-8)
+    expect_lt(.foc_residual(result_lc), 1e-6)
+
+    fit_cc <- calibrate(
+        "ces", "cournot", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    )
+    e2 <- entrant(label = "E1", meanval = fit_cc@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result_cc <- simulate(fit_cc, counterfactual(entry = e2))
+    idx2 <- match("E1", result_cc@labels)
+    expect_equal(unname(result_cc@mcPost[idx2]), 1, tolerance = 1e-6)
+    expect_lt(.foc_residual(result_cc), 1e-6)
+})
+
+test_that("entry into CESNests can join an existing nest or form a new one with the correct singleton sigma", {
+    ## CESNests' singleton-nest sigma normalization is 0, NOT 1 like
+    ## LogitNests (verified against calcSlopes,CESNests-method: "sigma <-
+    ## as.numeric(!isSingletonNest)"). CES's calcShares() raises
+    ## sharesAcross to the power (1-gamma)/(1-sigma), so sigma=1 there
+    ## divides by zero and produces NaN throughout -- this test locks in
+    ## the family-specific fix.
+    fn <- suppressWarnings(calibrate(
+        "ces_nests", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), nests = c("N1", "N1", "N2"), insideSize = 100
+    ))
+    e1_no_nest <- entrant(label = "E1", meanval = fn@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    expect_error(simulate(fn, counterfactual(entry = e1_no_nest)), "nest")
+
+    e1_join <- entrant(label = "E1", meanval = fn@model@slopes$meanval[[1]] * .5,
+                       cost = 1, priceStart = 2, nest = "N1")
+    result_join <- simulate(fn, counterfactual(entry = e1_join))
+    idx <- match("E1", result_join@labels)
+    expect_equal(as.character(result_join@nests[idx]), "N1")
+    expect_equal(unname(result_join@mcPost[idx]), 1, tolerance = 1e-8)
+    expect_lt(.foc_residual(result_join), 1e-6)
+
+    e1_new <- entrant(label = "E1", meanval = fn@model@slopes$meanval[[1]] * .5,
+                      cost = 1, priceStart = 2, nest = "N3")
+    result_new <- simulate(fn, counterfactual(entry = e1_new))
+    expect_equal(as.character(result_new@nests[idx]), "N3")
+    expect_equal(result_new@slopes$sigma[["N3"]], 0)
+    expect_equal(unname(result_new@mcPost[idx]), 1, tolerance = 1e-8)
+    expect_lt(.foc_residual(result_new), 1e-6)
+})
+
+test_that("quality, entry, and exit resolve cleanly for Bargaining2ndCES", {
+    ## Uses the same non-degenerate calibration inputs as the existing
+    ## bargaining2nd.ces parity test in test-model-architecture.R --
+    ## prices=c(2,2.2,2.5)/shares=c(.35,.25,.2)/margins=c(.4,.35,.3) produce
+    ## a degenerate zero-margin baseline for this class specifically
+    ## (mcPre == pricePre exactly), which is a pre-existing property of
+    ## this legacy calibration, unrelated to counterfactuals.
+    fb2c <- suppressWarnings(calibrate(
+        "ces", "bargaining2nd", prices = c(1.5, 1.5, 1.5), shares = c(.50, .30, .20),
+        margins = c(.30, .20, .15), ownerPre = c("A", "B", "C")
+    ))
+    baseline <- fb2c@model@slopes$meanval[["Prod1"]]
+    result_q <- simulate(fb2c, counterfactual(quality = c(Prod1 = .1)))
+    expect_equal(result_q@slopes$meanval[["Prod1"]], baseline * 1.1, tolerance = 1e-10)
+
+    e1 <- entrant(label = "E1", meanval = fb2c@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 1.5)
+    result_e <- simulate(fb2c, counterfactual(entry = e1))
+    idx <- match("E1", result_e@labels)
+    expect_equal(unname(result_e@mcPost[idx]), 1, tolerance = 1e-6)
+    expect_lt(.foc_residual(result_e), 1e-6)
+
+    result_x <- simulate(fb2c, counterfactual(exit = "Prod1"))
+    expect_equal(result_x@subset, c(FALSE, TRUE, TRUE))
+    expect_lt(.foc_residual(result_x), 1e-6)
 })
