@@ -31,11 +31,13 @@
 #' @param integration BLP integration rule: \code{"auto"} (the default),
 #' \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
 #' Automatic integration uses one-dimensional Gauss-Hermite quadrature for a
-#' price-only BLP specification and fixed-draw Monte Carlo otherwise.
+#' price-only BLP specification, or for a single demographic price dimension
+#' when \code{sigma = 0}; it uses fixed-draw Monte Carlo otherwise.
 #' @param nNodes Number of Gauss-Hermite nodes. Defaults to 31 when
 #' \code{integration = "gauss-hermite"}.
-#' @param nDraws Number of Monte Carlo draws used for BLP demand. It requires
-#' \code{integration = "monte-carlo"}; it is not a quadrature-node count.
+#' @param nDraws Number of Monte Carlo draws used for BLP demand. It selects
+#' \code{integration = "monte-carlo"} when no integration rule is supplied,
+#' preserving legacy BLP calls; it is not a quadrature-node count.
 #' @param consDraws Optional supplied BLP integration points.
 #' @param integrationWeights Optional non-negative weights for supplied BLP
 #' integration points. They are normalized to sum to one.
@@ -266,7 +268,8 @@ ple.blp <- function(
     stop("'slopes' must be a list of BLP demand parameters.")
   }
   if (!missing(nDraws) && identical(integration, "auto")) {
-    stop("'nDraws' requires explicit integration = 'monte-carlo' or 'gauss-hermite'; use 'nNodes' for Gauss-Hermite.")
+    ## Preserve the historical meaning of nDraws in the legacy public API.
+    integration <- "monte-carlo"
   }
   if (!is.null(nDraws) && !identical(integration, "monte-carlo")) {
     stop("'nDraws' is only valid with integration = 'monte-carlo'; use 'nNodes' for Gauss-Hermite.")
@@ -293,7 +296,7 @@ ple.blp <- function(
   }
   if (!is.null(slopes$nDraws) && isTRUE(integration_missing) &&
       is.null(slopes$consDraws) && is.null(slopes$draws)) {
-    stop("'nDraws' requires explicit integration = 'monte-carlo' or 'gauss-hermite'; use 'nNodes' for Gauss-Hermite.")
+    integration <- "monte-carlo"
   }
   slopes$integration <- integration
   integration_result <- .blp_integration(slopes)
@@ -667,7 +670,14 @@ setMethod(
     } else {
       # Generate demographic draws (observed heterogeneity)
       if(!is.null(nDemog) && nDemog > 0){
-        demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
+        if (identical(integration$rule, "gauss-hermite")) {
+          demogDraws <- .blp_quadrature_demog_draws(
+            consDraws, nDemog, object@slopes$demogMean,
+            object@slopes$demogCov
+          )
+        } else {
+          demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
+        }
         demogEffect <- demogDraws %*% piDemog
       } else {
         demogDraws <- matrix(nrow=nDraws, ncol=0)

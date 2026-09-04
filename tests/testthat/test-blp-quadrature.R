@@ -44,11 +44,44 @@ test_that("price-only BLP defaults to deterministic Gauss-Hermite", {
 })
 
 
-test_that("BLP integration mode distinguishes nodes, draws, and supplied points", {
-    expect_error(
-        blp_quadrature_market(list(alpha = -1, sigma = .1, nDraws = 12)),
-        "requires explicit integration"
+test_that("one demographic with zero price sigma defaults to Gauss-Hermite", {
+    RNGkind("Mersenne-Twister", "Inversion", "Rejection")
+    set.seed(20260904)
+    before <- .Random.seed
+    first <- blp_quadrature_market(list(
+        alpha = -1, sigma = 0, piDemog = .1,
+        demogMean = .3, demogCov = matrix(.25, nrow = 1, ncol = 1),
+        meanval = c(.5, .3, .1)
+    ))
+    after <- .Random.seed
+    second <- blp_quadrature_market(list(
+        alpha = -1, sigma = 0, piDemog = .1,
+        demogMean = .3, demogCov = matrix(.25, nrow = 1, ncol = 1),
+        meanval = c(.5, .3, .1)
+    ))
+
+    expect_identical(before, after)
+    expect_identical(first@slopes$integration, "gauss-hermite")
+    expect_length(first@slopes$consDraws, 31L)
+    expect_equal(
+        first@slopes$demogDraws[, 1],
+        .3 + .5 * first@slopes$consDraws,
+        tolerance = 1e-14
     )
+    expect_equal(
+        first@slopes$alphas,
+        -1 + .1 * (first@slopes$demogDraws[, 1] - .3),
+        tolerance = 1e-14
+    )
+    expect_identical(first@slopes$consDraws, second@slopes$consDraws)
+    expect_identical(first@pricePost, second@pricePost)
+})
+
+
+test_that("BLP integration mode distinguishes nodes, draws, and supplied points", {
+    legacy_mc <- blp_quadrature_market(list(alpha = -1, sigma = .1, nDraws = 12))
+    expect_identical(legacy_mc@slopes$integration, "monte-carlo")
+    expect_length(legacy_mc@slopes$consDraws, 12L)
     expect_error(
         blp_quadrature_market(list(alpha = -1, sigma = .1,
                                    integration = "gauss-hermite", nDraws = 12)),

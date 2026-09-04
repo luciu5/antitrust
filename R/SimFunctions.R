@@ -120,11 +120,13 @@
 #'   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
 #'   \item{integration}{Optional integration rule: \code{"auto"},
 #'   \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
-#'   Automatic integration uses Gauss-Hermite nodes for price-only BLP and
-#'   Monte Carlo for existing multidimensional BLP specifications.}
+#'   Automatic integration uses Gauss-Hermite nodes for price-only BLP, or for
+#'   a single demographic price dimension when \code{sigma = 0}; it uses Monte
+#'   Carlo for higher-dimensional BLP specifications.}
 #'   \item{nNodes}{Optional number of Gauss-Hermite nodes; default 31.}
-#'   \item{nDraws}{Number of Monte Carlo draws. It requires
-#'   \code{integration = "monte-carlo"}; it is not a quadrature-node count.}
+#'   \item{nDraws}{Number of Monte Carlo draws. It selects
+#'   \code{integration = "monte-carlo"} when no integration rule is supplied,
+#'   preserving legacy BLP calls; it is not a quadrature-node count.}
 #'   \item{consDraws or draws}{Optional supplied BLP integration points.}
 #'   \item{integrationWeights}{Optional non-negative weights for supplied
 #'   integration points; normalized internally to sum to one.}
@@ -436,7 +438,9 @@ shares = NULL,
       stop("'demand.param$nDraws' must equal the number of supplied BLP integration points.")
     }
     if (has_n_draws && !integration_specified && !has_points) {
-      stop("'demand.param$nDraws' requires explicit integration = 'monte-carlo' or 'gauss-hermite'; use 'nNodes' for Gauss-Hermite.")
+      ## nDraws historically selected a fixed Monte Carlo sample in sim().
+      ## Preserve that behavior while reserving nNodes for quadrature.
+      integration <- "monte-carlo"
     }
     if (has_n_draws && !has_points && !identical(integration, "monte-carlo")) {
       stop("'demand.param$nDraws' is only valid with integration = 'monte-carlo'; use 'nNodes' for Gauss-Hermite.")

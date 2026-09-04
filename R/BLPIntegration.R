@@ -4,16 +4,38 @@
 # lets deterministic quadrature and fixed-draw Monte Carlo share the same
 # demand, derivative, and welfare aggregation code.
 
+.blp_integration_dimensions <- function(dots) {
+    ## A price random coefficient and each demographic draw are independent
+    ## normal dimensions.  One demographic with sigma = 0 is therefore still
+    ## a one-dimensional problem and can use Gauss-Hermite quadrature.
+    sigma <- dots$sigma
+    price_dimension <- !is.null(sigma) && length(sigma) == 1L &&
+        is.finite(sigma) && as.numeric(sigma) != 0
+
+    n_demog <- dots$nDemog
+    if (is.null(n_demog)) n_demog <- length(dots$piDemog)
+    if (length(n_demog) != 1L || !is.numeric(n_demog) ||
+        !is.finite(n_demog) || n_demog < 0 || n_demog != as.integer(n_demog)) {
+        return(Inf)
+    }
+    n_demog <- as.integer(n_demog)
+
+    ## sigmaChar introduces independent characteristic shocks.  A pi matrix
+    ## loads the existing demographic draws, so it adds no new dimension when
+    ## nDemog is positive; a malformed pi without demographics is retained as
+    ## a conservative Monte Carlo case.
+    has_random_characteristics <- !is.null(dots$sigmaChar) &&
+        length(dots$sigmaChar) > 0L
+    has_unmapped_demographics <- !is.null(dots$pi) &&
+        length(dots$pi) > 0L && n_demog == 0L
+    if (has_random_characteristics || has_unmapped_demographics) return(Inf)
+
+    as.integer(price_dimension) + n_demog
+}
+
+
 .blp_multidimensional <- function(dots) {
-    ## Product characteristics without a random or demographic coefficient do
-    ## not add an integration dimension: their mean effect is absorbed in
-    ## delta.  Only actual heterogeneous components require Monte Carlo.
-    indicators <- c("sigmaChar", "pi", "piDemog", "demogMean", "demogCov")
-    any(vapply(indicators, function(name) {
-        value <- dots[[name]]
-        !is.null(value) && length(value) > 0L
-    }, logical(1))) ||
-        (!is.null(dots$nDemog) && isTRUE(as.numeric(dots$nDemog) > 0))
+    .blp_integration_dimensions(dots) > 1L
 }
 
 
@@ -64,6 +86,24 @@
 }
 
 
+.blp_quadrature_demog_draws <- function(points, nDemog, demogMean = NULL,
+                                        demogCov = NULL) {
+    if (length(nDemog) != 1L || !is.numeric(nDemog) || nDemog != 1L) {
+        stop("Gauss-Hermite demographic integration requires exactly one demographic dimension.")
+    }
+    if (is.null(demogMean)) demogMean <- 0
+    if (is.null(demogCov)) demogCov <- matrix(1, nrow = 1L, ncol = 1L)
+    if (!is.numeric(demogMean) || length(demogMean) != 1L ||
+        !is.finite(demogMean) || !is.matrix(demogCov) ||
+        !identical(dim(demogCov), c(1L, 1L)) || !is.finite(demogCov[1, 1]) ||
+        demogCov[1, 1] <= 0) {
+        stop("demogCov must be positive definite for Gauss-Hermite demographic integration.")
+    }
+    matrix(as.numeric(demogMean) + sqrt(demogCov[1, 1]) * as.numeric(points),
+           ncol = 1L)
+}
+
+
 .blp_integration <- function(dots) {
     supplied_draws <- dots$draws
     if (is.null(supplied_draws)) supplied_draws <- dots$consDraws
@@ -93,7 +133,7 @@
     }
 
     if (identical(method, "gauss-hermite") && multidimensional) {
-        stop("Gauss-Hermite integration is currently supported only for one-dimensional BLP price heterogeneity; use integration = 'monte-carlo'.")
+        stop("Gauss-Hermite integration is currently supported only for one-dimensional BLP heterogeneity; use integration = 'monte-carlo'.")
     }
     if (identical(method, "provided")) {
         stop("integration = 'provided' requires supplied BLP integration points.")
@@ -133,6 +173,7 @@
         drawWeights = slopes$drawWeights,
         prodChar = slopes$prodChar,
         sigmaChar = slopes$sigmaChar,
+        sigma = slopes$sigma,
         pi = slopes$pi,
         piDemog = slopes$piDemog,
         nDemog = slopes$nDemog,

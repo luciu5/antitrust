@@ -748,7 +748,14 @@ setMethod(
         demogMean <- object@slopes$demogMean
         demogCov <- object@slopes$demogCov
 
-        if (!is.null(demogMean) && !is.null(demogCov)) {
+        if (identical(integration$rule, "gauss-hermite")) {
+          ## With sigma = 0 and one demographic, the demographic is the
+          ## single normal integration dimension.  Use the stored
+          ## Gauss-Hermite nodes instead of drawing a Monte Carlo sample.
+          demogDraws <- .blp_quadrature_demog_draws(
+            consDraws, nDemog, demogMean, demogCov
+          )
+        } else if (!is.null(demogMean) && !is.null(demogCov)) {
           # Sample from actual market distribution using multivariate normal
           # Sample from N(demogMean, demogCov) using Cholesky decomposition
           # Avoid MASS dependency: X = mu + chol(Sigma) * Z where Z ~ N(0,I)

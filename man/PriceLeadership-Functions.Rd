@@ -136,13 +136,15 @@ passed to the non-linear equation solver.}
 \item{integration}{BLP integration rule: \code{"auto"} (the default),
 \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
 Automatic integration uses one-dimensional Gauss-Hermite quadrature for a
-price-only BLP specification and fixed-draw Monte Carlo otherwise.}
+price-only BLP specification, or for a single demographic price dimension
+when \code{sigma = 0}; it uses fixed-draw Monte Carlo otherwise.}
 
 \item{nNodes}{Number of Gauss-Hermite nodes. Defaults to 31 when
 \code{integration = "gauss-hermite"}.}
 
-\item{nDraws}{Number of Monte Carlo draws used for BLP demand. It requires
-\code{integration = "monte-carlo"}; it is not a quadrature-node count.}
+\item{nDraws}{Number of Monte Carlo draws used for BLP demand. It selects
+\code{integration = "monte-carlo"} when no integration rule is supplied,
+preserving legacy BLP calls; it is not a quadrature-node count.}
 
 \item{consDraws}{Optional supplied BLP integration points.}
 
