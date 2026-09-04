@@ -108,8 +108,9 @@ Representative recovered values were:
 
 The same suite includes the `sigma = 0` boundary and diagnostics for the
 contraction residual, margin RMSE, starts, boundary status, wrong-sign
-probability, and the sigma profile. No optimizer Hessian standard errors are
-reported.
+probability, and the sigma profile. `preMergerFOCResidual` records the maximum
+conduct-equation residual in the proportional-margin units used by calibration.
+No optimizer Hessian standard errors are reported.
 
 ## Limitations preserved
 

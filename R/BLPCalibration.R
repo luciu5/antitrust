@@ -633,6 +633,11 @@ setMethod(
                                     residuals[context$moment_index]^2) /
                                 sum(context$weights[context$moment_index])),
         maxAbsResidual = max(abs(residuals[context$moment_index])),
+        ## Observed-margin moments are the pre-merger conduct equations
+        ## evaluated at observed prices. Keep this explicit for diagnostics;
+        ## the units are those of the calibration objective.
+        preMergerFOCResidual = max(abs(residuals[context$moment_index])),
+        focResidualUnits = "proportional margin",
         marginMoments = length(context$moment_index), weights = context$weights,
         s0 = s0, alphaMean = best$par[1], sigma = best$par[2],
         wrongSignProbability = wrong_sign,

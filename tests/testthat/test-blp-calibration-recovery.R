@@ -123,6 +123,9 @@ test_that("BLP calibration recovers price heterogeneity under all supported cond
                      fixture$shares, tolerance = 1e-10, info = conduct)
         expect_equal(fit@diagnostics$maxAbsResidual, 0, tolerance = 2e-6,
                      info = conduct)
+        expect_equal(fit@diagnostics$preMergerFOCResidual,
+                     fit@diagnostics$maxAbsResidual, tolerance = 0,
+                     info = conduct)
         expect_equal(fit@diagnostics$integration$weights,
                      fixture$weights / sum(fixture$weights), tolerance = 0,
                      info = conduct)
