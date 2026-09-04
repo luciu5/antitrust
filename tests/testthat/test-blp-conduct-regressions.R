@@ -5,6 +5,10 @@
 # heterogeneous margins below are assembled from draw-level primitives in
 # this file; they do not call calcMargins() to create their oracle.
 
+# Heterogeneous auction and bargaining conduct checks use independent kernels
+# and belong to the extended economics gate.
+qa_skip_if_not_extended()
+
 blp_conduct_prices <- c(1.75, 2.10, 2.45)
 blp_conduct_shares <- c(.30, .25, .25)
 blp_conduct_owner <- c("A", "A", "B")

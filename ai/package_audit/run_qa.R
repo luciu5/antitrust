@@ -16,6 +16,12 @@ required <- c("testthat", "pkgload")
 missing <- required[!vapply(required, requireNamespace, logical(1), quietly = TRUE)]
 if (length(missing)) stop("Missing QA packages: ", paste(missing, collapse = ", "))
 
+test_tier <- tolower(trimws(Sys.getenv("ANTITRUST_TEST_TIER", "fast")))
+if (!nzchar(test_tier)) test_tier <- "fast"
+if (!test_tier %in% c("fast", "extended")) {
+    stop("ANTITRUST_TEST_TIER must be 'fast' or 'extended'.")
+}
+
 git_value <- function(...) {
     value <- tryCatch(system2("git", c(...), stdout = TRUE, stderr = FALSE),
                       error = function(e) "unavailable")
@@ -165,6 +171,7 @@ metadata <- list(
     LAPACK = soft_value("LAPACK"),
     RNGkind = RNGkind(),
     fixture_md5 = fixture_hash,
+    test_tier = test_tier,
     test_status = test_status,
     test_count = nrow(expectations),
     warning_count = nrow(recorded_warnings),
@@ -180,6 +187,7 @@ report <- c(
     paste0("R: `", metadata$R, "` on `", metadata$platform, "`"),
     paste0("BLAS: `", metadata$BLAS, "`; LAPACK: `", metadata$LAPACK, "`"),
     paste0("Package tarball: `", metadata$package_tarball, "` (MD5 `", metadata$package_tarball_md5, "`)"),
+    paste0("Test tier: `", metadata$test_tier, "`"),
     paste0("Formal expectations: ", metadata$test_count,
            "; status: ", if (test_status == 0L) "PASS" else "FAIL"),
     paste0("Warnings captured: ", metadata$warning_count,
