@@ -36,6 +36,65 @@ test_that("Gauss-Hermite normal rule reproduces standard moments", {
 })
 
 
+test_that("Gauss-Hermite shares agree with direct one-dimensional integration", {
+    prices <- c(1.5, 1.8, 2.1)
+    delta <- c(.5, .2, -.1)
+    alpha <- -1.2
+    sigma <- .3
+    share_at <- function(z) {
+        utility <- delta + (alpha + sigma * z) * prices
+        scale <- max(c(0, utility))
+        exp(utility - scale) /
+            (exp(-scale) + sum(exp(utility - scale)))
+    }
+    reference <- vapply(seq_along(prices), function(j) {
+        stats::integrate(function(z) {
+            vapply(z, function(zz) share_at(zz)[j] * stats::dnorm(zz),
+                   numeric(1))
+        }, -Inf, Inf,
+                         subdivisions = 200L, rel.tol = 1e-11)$value
+    }, numeric(1))
+    rule <- antitrust:::.blp_normal_nodes(30L)
+    quadrature <- vapply(seq_along(prices), function(j) {
+        sum(rule$weights * vapply(rule$nodes,
+                                  function(z) share_at(z)[j], numeric(1)))
+    }, numeric(1))
+    expect_equal(quadrature, reference, tolerance = 1e-10)
+})
+
+
+test_that("BLP aggregate derivatives pass a finite-difference check", {
+    nodes <- c(-1.5, -.25, .75, 1.75)
+    weights <- c(.05, .15, .30, .50)
+    model <- blp_integration_test_model(nodes, weights)
+    analytic <- unname(elast(model, preMerger = TRUE, partial = TRUE))
+    numerical <- matrix(0, nrow = length(model@pricePre),
+                        ncol = length(model@pricePre))
+    h <- 1e-6
+    for (j in seq_along(model@pricePre)) {
+        plus <- model
+        minus <- model
+        plus@pricePre[j] <- plus@pricePre[j] + h
+        minus@pricePre[j] <- minus@pricePre[j] - h
+        numerical[, j] <- (calcShares(plus) - calcShares(minus)) / (2 * h)
+    }
+    expect_equal(analytic, numerical, tolerance = 2e-9)
+})
+
+
+test_that("integration node and weight validation is strict", {
+    expect_error(antitrust:::.blp_normal_nodes(10.5), "positive integer")
+    expect_error(antitrust:::.blp_integration(list(
+        integration = "provided", draws = c(-1, 0),
+        integrationWeights = c(1, -1)
+    )), "non-negative")
+    expect_error(antitrust:::.blp_integration(list(
+        integration = "gauss-hermite", nNodes = 5,
+        prodChar = matrix(1, nrow = 3, ncol = 1)
+    )), "one-dimensional")
+})
+
+
 test_that("BLP aggregate shares honor supplied integration weights", {
     nodes <- c(-1, 0, 2)
     weights <- c(.10, .20, .70)
@@ -117,6 +176,35 @@ test_that("BLP repeated share and derivative evaluations are deterministic", {
 
     expect_identical(shares_one, shares_two)
     expect_identical(derivatives_one, derivatives_two)
+})
+
+
+test_that("BLP fits reuse their integration rule across counterfactual simulations", {
+    nodes <- c(-1.5, -.25, .75, 1.75)
+    weights <- c(.05, .15, .30, .50)
+    fit <- specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1),
+        shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"),
+        parameters = list(
+            alphaMean = -1.2, sigma = .3,
+            meanval = c(.5, .2, -.1),
+            draws = nodes, drawWeights = weights
+        )
+    )
+    original_prices <- fit@model@pricePre
+    original_draws <- fit@model@slopes$consDraws
+    original_weights <- fit@model@slopes$drawWeights
+    first <- simulate(fit, ownerPost = c("A", "A", "C"))
+    second <- simulate(fit, ownerPost = c("A", "A", "C"))
+
+    expect_identical(fit@model@pricePre, original_prices)
+    expect_identical(fit@model@slopes$consDraws, original_draws)
+    expect_identical(fit@model@slopes$drawWeights, original_weights)
+    expect_equal(first@pricePost, second@pricePost, tolerance = 1e-12)
+    expect_equal(first@slopes$drawWeights, weights / sum(weights),
+                 tolerance = 0)
 })
 
 

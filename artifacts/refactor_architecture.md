@@ -70,9 +70,14 @@ simulated.
 parameterized construction path.  It validates and loads the parameters
 without recalibrating demand.  Linear and LogLin use an explicit `quantities`
 argument because their historical constructors distinguish quantities from
-shares.  BLP supports this route for both Bertrand and Cournot, but there is no
-observed-data BLP calibrator in the current package, so its registry entries
-mark `calibrate = FALSE`.
+shares.  BLP price-only supplied-parameter calls can use the shared integration
+contract (`auto`, Gauss-Hermite, Monte Carlo, or provided points/weights), while
+legacy higher-dimensional parameter paths retain their existing constructor
+behavior.  Observed-data BLP calibration is available for Bertrand, Cournot,
+second-score auction, and bargaining with known `s0` and fixed bargaining power
+where applicable.  The outer objective recovers mean utilities by contraction
+and compares conduct-specific proportional margins; it does not estimate
+`s0` or bargaining power.
 
 Demand-transition validation remains model-specific.  In ordinary output
 markets, CES uses `gamma > 1` and nested CES uses `sigma_g > gamma > 1`; these
