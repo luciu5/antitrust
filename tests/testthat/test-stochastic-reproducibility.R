@@ -26,7 +26,8 @@ test_that("seeded generated BLP draws are repeatable", {
         set.seed(918273)
         qa_value(sim(
             f$prices, shares = f$shares, demand = "BLP",
-            demand.param = list(alpha = -1, sigma = .1, sigmaNest = 1, nDraws = 12),
+            demand.param = list(alpha = -1, sigma = .1, sigmaNest = 1,
+                                integration = "monte-carlo", nDraws = 12),
             ownerPre = f$ownerPre, ownerPost = f$ownerPost, insideSize = 100
         ), "seeded generated BLP")
     }

@@ -171,7 +171,16 @@ If \sQuote{demand} equals \sQuote{BLP}, then
   for demographic variables. Default is identity matrix (unit variance, independent).
   Should match the variance structure of demographics in your data. For a single
   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
-  \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
+  \item{integration}{Optional integration rule: \code{"auto"},
+  \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
+  Automatic integration uses Gauss-Hermite nodes for price-only BLP and
+  Monte Carlo for existing multidimensional BLP specifications.}
+  \item{nNodes}{Optional number of Gauss-Hermite nodes; default 31.}
+  \item{nDraws}{Number of Monte Carlo draws. It requires
+  \code{integration = "monte-carlo"}; it is not a quadrature-node count.}
+  \item{consDraws or draws}{Optional supplied BLP integration points.}
+  \item{integrationWeights}{Optional non-negative weights for supplied
+  integration points; normalized internally to sum to one.}
   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
   \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}
@@ -289,6 +298,7 @@ blp_params <- list(
   alpha = 1.0,
   sigma = 0.3,
   sigmaNest = 0.9,
+  integration = "monte-carlo",
   nDraws = 200
 )
 

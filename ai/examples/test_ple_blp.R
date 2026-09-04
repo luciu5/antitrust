@@ -64,6 +64,7 @@ slopes_blp <- list(
   sigma = sigma,       # Std dev of random coefficients
   meanval = meanval,   # Mean valuations (from logit calibration)
   sigmaNest = 1,       # No nesting
+  integration = "monte-carlo",
   nDraws = 500,        # Number of simulation draws
   nDemog = 0,
   piDemog = numeric(0)
