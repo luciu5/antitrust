@@ -4,6 +4,8 @@
 ## simultaneous-vs-sequential distinction between combine_counterfactuals()
 ## and add_step().
 
+qa_skip_if_not_extended()
+
 .seq_fit <- function() {
     calibrate(
         "logit", "bertrand", prices = c(2, 2.2, 2.5),

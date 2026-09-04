@@ -5,6 +5,10 @@
 # by calcMargins(), so the recovery tests do not merely reproduce the method
 # under test by construction.
 
+# Multi-start BLP recovery is intentionally extended: the fast integration
+# tests still protect nodes, weights, derivatives, and deterministic reuse.
+qa_skip_if_not_extended()
+
 .blp_recovery_fixture <- function(conduct, alpha = -5, sigma = .8) {
     prices <- c(1.5, 2, 2.6)
     owner <- c("A", "A", "B")
