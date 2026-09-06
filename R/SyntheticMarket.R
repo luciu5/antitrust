@@ -22,6 +22,37 @@
     if (level_conduct) markup else markup / reference_price
 }
 
+.antitrust_synthetic_product_counts <- function(n_firms, n_products) {
+    n_products_input <- as.numeric(n_products)
+    if (length(n_products_input) != 1L &&
+        length(n_products_input) != n_firms) {
+        stop("'n_products' must be a positive integer scalar or a vector of length n_firms")
+    }
+    if (any(!is.finite(n_products_input)) ||
+        any(n_products_input != as.integer(n_products_input)) ||
+        any(n_products_input < 1)) {
+        stop("'n_products' must contain positive integers")
+    }
+    products_per_firm <- if (length(n_products_input) == 1L) {
+        rep(as.integer(n_products_input), n_firms)
+    } else {
+        as.integer(n_products_input)
+    }
+    if (sum(products_per_firm) > 2147483646) {
+        stop("the number of inside products is too large")
+    }
+    list(
+        input = if (length(n_products_input) == 1L) {
+            as.integer(n_products_input)
+        } else {
+            products_per_firm
+        },
+        products_per_firm = products_per_firm,
+        n_inside = as.integer(sum(products_per_firm)),
+        n_total = as.integer(sum(products_per_firm) + 1L)
+    )
+}
+
 .antitrust_synthetic_complete_parameters <- function(spec, parameters, shares,
                                                      prices, reference_product) {
     if (!is.list(parameters) || is.null(names(parameters)) ||
@@ -154,7 +185,8 @@
 }
 
 .antitrust_synthetic_attach <- function(fit, market, mode, reference_markup,
-                                        parameter_truth = list()) {
+                                        parameter_truth = list(),
+                                        foc_diagnostics = list()) {
     fit@observed$shares <- market$shares
     fit@observed$prices <- market$prices
     fit@observed$ownerPre <- market$products$firm_id
@@ -169,10 +201,18 @@
     fit@diagnostics$synthetic_recovered <- fit@parameters
     fit@diagnostics$synthetic_parameter_error <-
         .antitrust_synthetic_parameter_error(parameter_truth, fit@parameters)
-    fit@diagnostics$synthetic <- .antitrust_synthetic_diagnostics(
+    synthetic_diagnostics <- .antitrust_synthetic_diagnostics(
         fit, market$shares, market$prices,
         market$design$reference_product, reference_markup, mode
     )
+    if (length(foc_diagnostics)) {
+        synthetic_diagnostics$foc_rank <- foc_diagnostics$rank
+        synthetic_diagnostics$foc_condition_number <-
+            foc_diagnostics$condition_number
+        synthetic_diagnostics$foc_condition_limit <-
+            foc_diagnostics$condition_limit
+    }
+    fit@diagnostics$synthetic <- synthetic_diagnostics
     fit
 }
 
@@ -187,9 +227,9 @@
 #' recalibration.
 #'
 #' `n_firms` counts inside firms. The active reference product is an additional
-#' one-product firm and is included in `ownerPre`. All inside firms have
-#' `n_products` products, and `dirichlet_alpha` is product-level with length
-#' `n_firms * n_products`.
+#' one-product firm and is included in `ownerPre`. `n_products` may be a scalar
+#' shared by all inside firms or a vector with one count per firm, and
+#' `dirichlet_alpha` is product-level.
 #'
 #' Prices and margins are not independently drawn. `reference_price` is the
 #' positive price normalization for the market; if `prices` is supplied, it
@@ -201,8 +241,10 @@
 #' @param supply Supply/conduct name, with `"bertrand"` as the default.
 #' @param mode Either `"observed"` or `"primitives"`.
 #' @param n_firms Number of inside firms; the reference firm is additional.
-#' @param n_products Number of products per inside firm.
-#' @param dirichlet_alpha Positive product-level Dirichlet parameters.
+#' @param n_products Number of products per inside firm. A scalar is recycled
+#' across firms; a vector must have length `n_firms`.
+#' @param dirichlet_alpha Positive product-level Dirichlet parameters, one per
+#' inside product. If omitted, all shapes equal one.
 #' @param outside_beta Positive Beta shape parameters for the reference share.
 #' @param reference_price A positive level price for the reference product.
 #' @param prices Optional complete positive price vector. It is not randomly
@@ -219,7 +261,7 @@ synthetic_market <- function(
     demand = "logit", supply = "bertrand",
     mode = c("observed", "primitives"),
     n_firms = 3L, n_products = 1L,
-    dirichlet_alpha = rep(1, n_firms * n_products),
+    dirichlet_alpha = NULL,
     outside_beta = c(2, 8), reference_price = 100,
     prices = NULL, outside_margin = NULL, parameters = NULL,
     seed = NULL, ...) {
@@ -230,15 +272,12 @@ synthetic_market <- function(
         n_firms != as.integer(n_firms) || n_firms < 1L) {
         stop("'n_firms' must be a positive integer")
     }
-    if (!is.numeric(n_products) || length(n_products) != 1L ||
-        n_products != as.integer(n_products) || n_products < 1L) {
-        stop("'n_products' must be a positive integer")
-    }
     n_firms <- as.integer(n_firms)
-    n_products <- as.integer(n_products)
-    n <- n_firms * n_products + 1L
-    if (!is.numeric(dirichlet_alpha) || length(dirichlet_alpha) != n - 1L ||
-        any(!is.finite(dirichlet_alpha)) || any(dirichlet_alpha <= 0)) {
+    counts <- .antitrust_synthetic_product_counts(n_firms, n_products)
+    n <- counts$n_total
+    if (!is.null(dirichlet_alpha) &&
+        (!is.numeric(dirichlet_alpha) || length(dirichlet_alpha) != n - 1L ||
+         any(!is.finite(dirichlet_alpha)) || any(dirichlet_alpha <= 0))) {
         stop("'dirichlet_alpha' must be a finite, strictly positive vector of length ",
              n - 1L)
     }
@@ -294,6 +333,14 @@ synthetic_market <- function(
     if (mode == "observed" && markup >= reference_price) {
         stop("the reference markup implies a non-positive reference cost; use a larger 'reference_price' or supply a smaller 'outside_margin'")
     }
+    foc_diagnostics <- list()
+    if (identical(spec$demand, "logit") &&
+        identical(spec$conduct, "bertrand") &&
+        identical(spec$variant, "standard")) {
+        foc_diagnostics <- .antitrust_synthetic_foc_solution(
+            shares, design$ownership
+        )
+    }
 
     if (mode == "observed") {
         margin_input <- rep(NA_real_, n)
@@ -310,7 +357,8 @@ synthetic_market <- function(
         )
         fit <- do.call(calibrate, calibration_args)
         return(.antitrust_synthetic_attach(
-            fit, design, mode, markup, parameter_truth = list()
+            fit, design, mode, markup, parameter_truth = list(),
+            foc_diagnostics = foc_diagnostics
         ))
     }
 
@@ -326,6 +374,7 @@ synthetic_market <- function(
     if (spec$demand == "blp") specification_args$shares <- shares
     fit <- do.call(specify, specification_args)
     .antitrust_synthetic_attach(
-        fit, design, mode, NA_real_, parameter_truth = parameters
+        fit, design, mode, NA_real_, parameter_truth = parameters,
+        foc_diagnostics = foc_diagnostics
     )
 }

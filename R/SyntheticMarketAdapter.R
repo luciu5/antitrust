@@ -18,6 +18,42 @@
   stop("'spec' must be an antitrust model_spec or a Logit model descriptor")
 }
 
+.antitrust_synthetic_foc_solution <- function(shares, ownership) {
+  derivative <- diag(shares) - tcrossprod(shares)
+  ## D is symmetric for Logit, but retain the explicit transpose to make the
+  ## ownership/derivative orientation visible in the implementation.
+  G <- t(ownership * derivative)
+  n <- length(shares)
+  rank_tolerance <- sqrt(.Machine$double.eps)
+  foc_rank <- qr(G, tol = rank_tolerance)$rank
+  foc_condition_limit <- 1 / rank_tolerance
+  foc_condition_number <- tryCatch(
+    kappa(G, exact = TRUE),
+    error = function(e) Inf
+  )
+  if (foc_rank < n || !is.finite(foc_condition_number) ||
+      foc_condition_number > foc_condition_limit) {
+    stop(
+      "ownership-adjusted Logit FOC system is singular or ill-conditioned",
+      " (rank = ", foc_rank, "/", n,
+      ", condition number = ", format(foc_condition_number, digits = 6),
+      ", limit = ", format(foc_condition_limit, digits = 6), ")"
+    )
+  }
+  z <- tryCatch(solve(G, shares), error = function(e) e)
+  if (inherits(z, "error") || any(!is.finite(z))) {
+    stop("ownership-adjusted Logit FOC system is singular or non-finite: ",
+         if (inherits(z, "error")) conditionMessage(z) else "non-finite solution")
+  }
+  list(
+    G = G,
+    z = z,
+    rank = foc_rank,
+    condition_number = foc_condition_number,
+    condition_limit = foc_condition_limit
+  )
+}
+
 #' Realize a SyntheticMarket under multi-product Bertrand Logit
 #'
 #' This is the first model-specific synthetic-market adapter. It accepts a
@@ -85,13 +121,9 @@ realize_market.SyntheticMarket <- function(market, spec, alpha = NULL,
   ## Rows of D_unit are demanded products and columns are prices. This matches
   ## antitrust::elast()'s documented orientation. The FOC for each price is
   ## s + t(O * D) %*% mu = 0, where O is symmetric product ownership.
-  D_unit <- diag(shares) - tcrossprod(shares, shares)
-  G <- t(ownership * D_unit)
-  z <- tryCatch(solve(G, shares), error = function(e) e)
-  if (inherits(z, "error") || any(!is.finite(z))) {
-    reason <- if (inherits(z, "error")) conditionMessage(z) else "non-finite inverse"
-    stop("ownership-adjusted Logit FOC system is singular or non-finite: ", reason)
-  }
+  foc_solution <- .antitrust_synthetic_foc_solution(shares, ownership)
+  G <- foc_solution$G
+  z <- foc_solution$z
 
   known_alpha <- alpha
   if (is.null(known_alpha) && is.list(market$truth)) known_alpha <- market$truth$alpha
@@ -169,6 +201,9 @@ realize_market.SyntheticMarket <- function(market, spec, alpha = NULL,
   diagnostics$foc <- unname(foc)
   diagnostics$foc_residual <- unname(foc_residual)
   diagnostics$foc_tolerance <- foc_tolerance
+  diagnostics$foc_rank <- foc_solution$rank
+  diagnostics$foc_condition_number <- foc_solution$condition_number
+  diagnostics$foc_condition_limit <- foc_solution$condition_limit
   diagnostics$share_residual <- unname(share_residual)
   diagnostics$negative_cost_products <- which(negative_cost)
   diagnostics$observed_outside_margin <- market$observed$outside_margin %||%
@@ -182,6 +217,8 @@ realize_market.SyntheticMarket <- function(market, spec, alpha = NULL,
     reference_product = ref,
     derivative_orientation = "rows are demanded products; columns are prices",
     ownership_adjustment = "transpose(ownership * derivative)",
+    foc_rank = foc_solution$rank,
+    foc_condition_number = foc_solution$condition_number,
     markup_units = "level price difference"
   )
 

@@ -13,12 +13,28 @@ test_that("multi-product Bertrand Logit realizes a known-primitives market", {
   expect_lt(realized$diagnostics$foc_residual, 1e-8)
   expect_equal(realized$diagnostics$recovered_parameters$alpha, -1,
                tolerance = 1e-12)
+  expect_equal(realized$diagnostics$foc_rank, length(market$shares))
+  expect_lt(realized$diagnostics$foc_condition_number,
+            realized$diagnostics$foc_condition_limit)
   expect_equal(realized$products$cost,
                realized$prices - realized$products$markup, tolerance = 1e-12)
   expect_equal(realized$products$mean_value[realized$design$reference_product], 0,
                tolerance = 1e-14)
   expect_equal(market$products, source_products)
   expect_true(all(is.na(market$products$cost)))
+})
+
+test_that("singular ownership-adjusted systems are rejected", {
+  skip_if_not_installed("iopolicy")
+  market <- iopolicy::fake_market(
+    mode = "primitives", n_firms = 2, n_products = c(1, 2),
+    parameters = list(alpha = -1), price_level = 100, seed = 505
+  )
+  market$ownership[,] <- 1
+  expect_error(
+    iopolicy::realize_market(market, model_spec("logit", "bertrand")),
+    "singular or ill-conditioned"
+  )
 })
 
 test_that("observed reference markup identifies alpha with the full ownership system", {

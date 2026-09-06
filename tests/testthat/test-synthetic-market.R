@@ -14,6 +14,9 @@ test_that("observed synthetic Logit markets use the full multi-product FOC", {
                  tolerance = 1e-10)
     expect_lt(abs(fit@diagnostics$synthetic$reference_markup_error), 1e-6)
     expect_lt(fit@diagnostics$synthetic$foc_residual, 1e-8)
+    expect_equal(fit@diagnostics$synthetic$foc_rank, 5)
+    expect_lt(fit@diagnostics$synthetic$foc_condition_number,
+              fit@diagnostics$synthetic$foc_condition_limit)
     expect_equal(unname(fit@model@pricePre), market$prices, tolerance = 1e-10)
     expect_true(all(is.finite(fit@model@mcPre)))
     expect_equal(market$products$firm_id, c(1, 1, 2, 2, 3))
@@ -29,6 +32,18 @@ test_that("one-product synthetic Logit reduces to the analytic special case", {
     share_ref <- fit@model@shares[length(fit@model@shares)]
     expected <- -1 / (20 * (1 - share_ref))
     expect_equal(unname(fit@model@slopes$alpha), expected, tolerance = 1e-8)
+    expect_lt(fit@diagnostics$synthetic$foc_residual, 1e-8)
+})
+
+test_that("synthetic antitrust markets preserve heterogeneous ownership", {
+    fit <- synthetic_market(
+        demand = "logit", supply = "bertrand", n_firms = 3,
+        n_products = c(1, 2, 3), reference_price = 100,
+        outside_margin = 20, seed = 13
+    )
+    market <- fit@diagnostics$synthetic_market
+    expect_equal(market$design$products_per_firm, c(1, 2, 3))
+    expect_equal(market$products$firm_id, c(1, 2, 2, 3, 3, 3, 4))
     expect_lt(fit@diagnostics$synthetic$foc_residual, 1e-8)
 })
 
