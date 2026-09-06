@@ -10,3 +10,4 @@ pattern,class,disposition
 "utilization equal capacity|utilization is greater than capacity",capacity-boundary,recorded-review
 "Reporting shares instead of quantities|Calculating CV as|calcQuantities.*yielded all NAs|normalized shares instead of quantities",diagnostic-fallback,recorded-review
 "ownerPost.*ownerPre.*same",no-merger-identity,recorded-review
+"Timing parameter not specified|Slack values show only immediate payoff difference",diagnostic-fallback,recorded-review
