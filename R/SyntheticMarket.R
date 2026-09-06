@@ -1,6 +1,6 @@
-## Model-aware synthetic markets are deliberately implemented in antitrust.
-## iopolicy supplies only the neutral share and ownership design; it does not
-## dispatch demand or supply models.
+## Model-aware synthetic markets and their neutral design are deliberately
+## implemented in antitrust. The design layer does not dispatch demand or
+## supply models; realization remains model-specific.
 
 .antitrust_synthetic_or <- function(x, y) if (is.null(x)) y else x
 
@@ -314,7 +314,7 @@ synthetic_market <- function(
     }
 
     spec <- model_spec(demand, supply)
-    design <- iopolicy::fake_market(
+    design <- fake_market(
         mode = if (mode == "observed") "observed" else "primitives",
         n_firms = n_firms, n_products = n_products,
         dirichlet_alpha = dirichlet_alpha, outside_beta = outside_beta,

@@ -6,5 +6,5 @@ Registries list complete implemented models, not arbitrary demand × conduct com
 respecify() must not secretly recalibrate.
 Synthetic-market code must respect multi-product ownership and test FOCs.
 Test economic behavior, not just object construction.
-trade depends on/reuses antitrust; if we eliminate iopolicy, remove that dependency cleanly.
+trade depends on/reuses antitrust; synthetic-market design and realization are antitrust-owned.
 Report tests and substantive changes; never claim a test was run when it wasn't.

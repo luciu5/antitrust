@@ -22,35 +22,57 @@ synthetic_market(
 }
 \arguments{
 \item{demand}{Demand-system name, with `"logit"` as the default.}
+
 \item{supply}{Supply/conduct name, with `"bertrand"` as the default.}
+
 \item{mode}{Either `"observed"` or `"primitives"`.}
+
 \item{n_firms}{Number of inside firms; the reference firm is additional.}
+
 \item{n_products}{Number of products per inside firm. A scalar is recycled
 across firms; a vector must have length `n_firms`.}
+
 \item{dirichlet_alpha}{Positive product-level Dirichlet parameters, one per
 inside product. If omitted, all shapes equal one.}
+
 \item{outside_beta}{Positive Beta shape parameters for the reference share.}
+
 \item{reference_price}{A positive level price for the reference product.}
-\item{prices}{Optional complete positive price vector ending at
-`reference_price`.}
+
+\item{prices}{Optional complete positive price vector. It is not randomly
+generated and the final element is the reference-product price.}
+
 \item{outside_margin}{Optional level reference-product markup in observed
 mode. Otherwise the open numerical implementation of `U(0, 100)` is used.}
+
 \item{parameters}{Named model-specific primitives in primitives mode.}
+
 \item{seed}{Optional explicit integer seed.}
-\item{...}{Model-specific arguments forwarded to `calibrate()` or `specify()`.}
+
+\item{...}{Model-specific arguments forwarded to [calibrate()] or
+[specify()], such as `nests`, `capacities`, or solver controls.}
 }
 \value{
-An `AntitrustFit` directly accepted by `simulate()`.
+An [AntitrustFit] directly accepted by [simulate()].
 }
 \description{
-Draws a neutral share and ownership design and uses antitrust's selected
-demand/supply implementation to construct a consistent fitted market. In
-observed mode the reference level markup identifies the structural price
-parameter through the model's supply condition. In primitives mode supplied
-parameters are passed through `specify()` without hidden recalibration.
+`synthetic_market()` is the antitrust-native entry point for fake markets.
+It draws only a product-share and ownership design. The active reference
+product has a real positive price. In observed mode, the selected
+demand/supply implementation uses the reference-product level markup and
+all product shares to recover structural demand parameters. In primitives
+mode, the supplied parameters are passed through [specify()] without hidden
+recalibration.
 }
 \details{
-The reference product is active, positively priced, and owned by an
-additional reference firm. `n_firms` counts inside firms. Prices and margins
-are not independently drawn.
+`n_firms` counts inside firms. The active reference product is an additional
+one-product firm and is included in `ownerPre`. `n_products` may be a scalar
+shared by all inside firms or a vector with one count per firm, and
+`dirichlet_alpha` is product-level.
+
+Prices and margins are not independently drawn. `reference_price` is the
+positive price normalization for the market; if `prices` is supplied, it
+must contain the complete positive product-price vector and its last value
+must equal `reference_price`. The selected economic implementation derives
+the remaining markups and marginal costs.
 }
