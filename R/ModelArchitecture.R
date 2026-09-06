@@ -1191,6 +1191,24 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
              paste(missing_portable, collapse = ", "))
     }
 
+    ## The legacy second-price auction constructor interprets Logit mean
+    ## utilities relative to the outside good.  Preserve that convention when
+    ## moving a fitted Logit model into auction2nd so conduct comparisons remain
+    ## numerically compatible with the established simulation workflow.
+    auction_meanval_normalization <- NULL
+    if (identical(source$demand, "logit") &&
+        identical(target$demand, "logit") &&
+        identical(target$conduct, "auction2nd") &&
+        "meanval" %in% names(portable)) {
+        share_outside <- 1 - sum(fit@model@shares)
+        if (is.finite(share_outside) && share_outside >= 1e-10) {
+            portable$meanval <- log(fit@model@shares) - log(share_outside)
+            auction_meanval_normalization <- "outside-good"
+        } else {
+            auction_meanval_normalization <- "source"
+        }
+    }
+
     baseline <- fit@diagnostics$calibration_args
     if (!is.list(baseline)) baseline <- fit@diagnostics$specification_args
     if (!is.list(baseline)) {
@@ -1235,6 +1253,10 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
             invalidated = transition$invalidate,
             calibration_required = transition$calibration_required
     )
+    if (!is.null(auction_meanval_normalization)) {
+        result@diagnostics$transition$meanval_normalization <-
+            auction_meanval_normalization
+    }
     ## A portable respecification is not a calibration under the target
     ## specification.  Keep any source call as provenance only.
     result@diagnostics$source_calibration_args <-
