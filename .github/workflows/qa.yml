@@ -24,7 +24,7 @@ jobs:
           r-version: ${{ matrix.r }}
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM
+          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown, any::competitiontoolbox
       - name: Run formal synthetic QA
         run: Rscript ai/package_audit/run_qa.R . qa-output
       - name: Upload QA evidence
@@ -45,7 +45,7 @@ jobs:
       - uses: r-lib/actions/setup-tinytex@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM
+          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown, any::competitiontoolbox
       - name: Run reproducibility runner
         run: Rscript ai/package_audit/run_qa.R . qa-output
       - name: Build package
@@ -73,7 +73,7 @@ jobs:
       - uses: r-lib/actions/setup-tinytex@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM
+          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown, any::competitiontoolbox
       - name: Run extended reproducibility runner
         run: Rscript ai/package_audit/run_qa.R . qa-output-extended
       - name: Build package
