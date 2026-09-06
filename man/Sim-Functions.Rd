@@ -171,7 +171,7 @@ If \sQuote{demand} equals \sQuote{BLP}, then
   for demographic variables. Default is identity matrix (unit variance, independent).
   Should match the variance structure of demographics in your data. For a single
   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
-  \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
+  \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 5000.}
   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
   \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}

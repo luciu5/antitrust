@@ -118,7 +118,7 @@
 #'   for demographic variables. Default is identity matrix (unit variance, independent).
 #'   Should match the variance structure of demographics in your data. For a single
 #'   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
-#'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
+#'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 5000.}
 #'   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
 #'   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
 #'   \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}
@@ -403,8 +403,8 @@ shares = NULL,
       message("Note: 'meanval' (delta) not provided for BLP. It will be recovered via BLP contraction from observed shares/prices.")
     }
     if (!("nDraws" %in% names(demand.param))) {
-      demand.param$nDraws <- 1000
-      message("'nDraws' not provided for BLP. Defaulting to 1000 draws.")
+      demand.param$nDraws <- 5000
+      message("'nDraws' not provided for BLP. Defaulting to 5000 draws.")
     }
     if (!("piDemog" %in% names(demand.param))) {
       demand.param$piDemog <- numeric(0)
@@ -1075,7 +1075,7 @@ sim <- function(prices,
             is.null(demand.param$consDraws)) {
             dots$integration <- "monte-carlo"
             if (is.null(dots$nDraws) && is.null(demand.param$nDraws)) {
-                dots$nDraws <- 1000L
+                dots$nDraws <- 5000L
             }
         }
         specify_args <- list(

@@ -11,7 +11,7 @@ setClass(
     Class = "Auction2ndBLP",
     contains = "Auction2ndLogit",
     slots = list(nDraws = "numeric"),
-    prototype = prototype(nDraws = 31)
+    prototype = prototype(nDraws = 5000)
 )
 
 #' @rdname Bargaining-Classes
@@ -20,7 +20,7 @@ setClass(
     Class = "BargainingBLP",
     contains = "BargainingLogit",
     slots = list(nDraws = "numeric"),
-    prototype = prototype(nDraws = 31)
+    prototype = prototype(nDraws = 5000)
 )
 
 

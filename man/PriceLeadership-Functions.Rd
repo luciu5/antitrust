@@ -49,7 +49,11 @@ ple.blp(
   priceOutside = 0,
   priceStart = prices,
   isMax = FALSE,
-  nDraws = 500,
+  integration = c("auto", "gauss-hermite", "monte-carlo", "provided"),
+  nNodes = NULL,
+  nDraws = NULL,
+  consDraws = NULL,
+  integrationWeights = NULL,
   slopes,
   control.slopes,
   control.equ,
@@ -129,7 +133,24 @@ passed to the non-linear equation solver.}
 
 \item{...}{Additional options to feed to the optimizer.}
 
-\item{nDraws}{Number of consumer draws used for BLP demand.}
+\item{integration}{BLP integration rule: \code{"auto"} (the default),
+\code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
+Automatic integration uses one-dimensional Gauss-Hermite quadrature for a
+price-only BLP specification, or for a single demographic price dimension
+when \code{sigma = 0}; it uses fixed-draw Monte Carlo otherwise.}
+
+\item{nNodes}{Number of Gauss-Hermite nodes. Defaults to 31 when
+\code{integration = "gauss-hermite"}.}
+
+\item{nDraws}{Number of Monte Carlo draws used for BLP demand. It selects
+\code{integration = "monte-carlo"} when no integration rule is supplied,
+preserving legacy BLP calls; it defaults to 5000 when Monte Carlo is selected;
+it is not a quadrature-node count.}
+
+\item{consDraws}{Optional supplied BLP integration points.}
+
+\item{integrationWeights}{Optional non-negative weights for supplied BLP
+integration points. They are normalized to sum to one.}
 
 \item{slopes}{A list of pre-calibrated BLP demand parameters.}
 }

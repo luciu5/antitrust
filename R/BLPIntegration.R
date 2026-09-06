@@ -18,16 +18,38 @@
 }
 
 
+.blp_integration_dimensions <- function(dots) {
+    ## A price random coefficient and each demographic draw are independent
+    ## normal dimensions.  A single demographic with sigma = 0 is therefore
+    ## still a one-dimensional problem and can use Gauss-Hermite quadrature.
+    sigma <- dots$sigma
+    price_dimension <- !is.null(sigma) && length(sigma) == 1L &&
+        is.finite(sigma) && as.numeric(sigma) != 0
+
+    n_demog <- dots$nDemog
+    if (is.null(n_demog)) n_demog <- length(dots$piDemog)
+    if (length(n_demog) != 1L || !is.numeric(n_demog) ||
+        !is.finite(n_demog) || n_demog < 0 || n_demog != as.integer(n_demog)) {
+        return(Inf)
+    }
+    n_demog <- as.integer(n_demog)
+
+    ## sigmaChar introduces independent characteristic shocks.  A pi matrix
+    ## loads existing demographic draws, so it adds no dimension when
+    ## nDemog is positive; a malformed pi without demographics remains a
+    ## conservative Monte Carlo case.
+    has_random_characteristics <- !is.null(dots$sigmaChar) &&
+        length(dots$sigmaChar) > 0L
+    has_unmapped_demographics <- !is.null(dots$pi) &&
+        length(dots$pi) > 0L && n_demog == 0L
+    if (has_random_characteristics || has_unmapped_demographics) return(Inf)
+
+    as.integer(price_dimension) + n_demog
+}
+
+
 .blp_multidimensional <- function(dots) {
-    ## A single demographic with sigma = 0 is one normal integration
-    ## dimension, even when demographic interactions load product
-    ## characteristics.  Keep the existing conservative Monte Carlo behavior
-    ## for all other characteristic/demographic specifications.
-    if (.blp_single_demographic_dimension(dots)) return(FALSE)
-    indicators <- c("prodChar", "sigmaChar", "pi", "piDemog",
-                    "demogMean", "demogCov")
-    any(vapply(indicators, function(name) !is.null(dots[[name]]), logical(1))) ||
-        (!is.null(dots$nDemog) && isTRUE(as.numeric(dots$nDemog) > 0))
+    .blp_integration_dimensions(dots) > 1L
 }
 
 
@@ -139,7 +161,7 @@
                     rule = "gauss-hermite"))
     }
 
-    n <- if (is.null(dots$nDraws)) 1000L else dots$nDraws
+    n <- if (is.null(dots$nDraws)) 5000L else dots$nDraws
     if (length(n) != 1L || !is.finite(n) || n < 1 || n != as.integer(n)) {
         stop("'nDraws' must be a positive integer for Monte Carlo integration.")
     }
