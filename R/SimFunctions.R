@@ -14,7 +14,7 @@
 #' calibrate costs from observed margins. Ignored for \sQuote{BLP} demand, where marginal costs are
 #' recovered from observed prices and the estimated demand system.
 #' @param supply A character string indicating how firms compete with one another. Valid
-#' values are "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
+#' values are "moncom" (differentiated-product monopolistic competition), "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
 #' (2nd score auction), "bargaining", or "bargaining2nd".
 #' @param demand A character string indicating the type of demand system
 #'   to be used in the merger simulation. Supported demand systems are
@@ -64,6 +64,10 @@
 #' @details Using user-supplied demand parameters,
 #' \code{sim} simulates the effects of a merger in a market where
 #' firms are playing a differentiated products pricing game.
+#' Under \sQuote{supply = "moncom"}, each product uses its own demand
+#' response and does not internalize strategic cross-product effects. Pure
+#' ownership changes therefore have no strategic price effect, while cost,
+#' demand, and product-set changes remain model-specific counterfactuals.
 #'
 #' The \sQuote{supply} parameter determines the type of competition.
 #' When \sQuote{supply} equals \sQuote{cournot}, firms compete on quantities
@@ -287,7 +291,7 @@ NULL
 .sim_legacy <- function(prices,
 shares = NULL,
                 margins = NULL,
-                supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+                supply = c("bertrand", "moncom", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
                 demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP", "LogitBLP", "CournotBLP"), demand.param,
                 ownerPre, ownerPost, nests, capacities,
                 mcDelta = rep(0, length(prices)),
@@ -323,6 +327,7 @@ shares = NULL,
 
   # Validate supply/demand combinations
   valid_combinations <- list(
+    moncom = c("Logit", "CES"),
     bertrand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"),
     cournot = c("Logit", "CES", "BLP"),
     auction2nd = c("Logit", "CES"),
@@ -801,6 +806,22 @@ shares = NULL,
     )
   } else if (demand %in% c("Logit", "CES")) {
     result <- switch(supply,
+      moncom = new(paste0("MonCom", demand),
+        prices = prices, shares = shares,
+        margins = margins,
+        weights = sim_weights,
+        normIndex = normIndex,
+        mcDelta = mcDelta,
+        insideSize = insideSize,
+        subset = subset,
+        ownerPre = ownerPre,
+        ownerPost = ownerPost,
+        priceStart = priceStart,
+        priceOutside = priceOutside,
+        shareInside = shareInside,
+        output = outputFlag,
+        labels = labels
+      ),
       bertrand = new(demand,
         prices = prices, shares = shares,
         margins = margins,
@@ -1020,7 +1041,7 @@ shares = NULL,
 sim <- function(prices,
                 shares = NULL,
                 margins = NULL,
-                supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+                supply = c("bertrand", "moncom", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
                 demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP", "LogitBLP", "CournotBLP"),
                 demand.param,
                 ownerPre, ownerPost, nests, capacities,

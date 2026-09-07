@@ -179,16 +179,27 @@ supportedModels <- function() {
 .model_transition_entry <- function(from, to) {
     if (!identical(from$conduct, to$conduct) ||
         !identical(from$variant, to$variant)) {
-        ## Existing conduct transitions are structural restrictions that retain
-        ## the portable demand primitives.  They remain explicit below.
+        ## Conduct transitions retain portable demand primitives and rebuild
+        ## the target supply state.  Target-specific conduct primitives are
+        ## never inferred by this dispatcher.
+        conduct_required <- if (to$conduct %in% c("bargaining", "bargaining2nd") &&
+                                !identical(from$conduct, to$conduct)) {
+            "bargpowerPre"
+        } else {
+            character()
+        }
         entries <- list(
-            list(from = "logit", to = "logit", kind = "structural-restriction",
-                 required_arguments = character(), retain = c("alpha", "meanval"),
-                 derived = character(), discarded = character(),
+            list(from = "logit", to = "logit", kind = "conduct_change",
+                 required_arguments = conduct_required,
+                 retain = c("alpha", "meanval"),
+                 derived = character(),
+                 discarded = c("source conduct-specific supply state"),
                  recompute = c("marginal costs", "target supply state")),
-            list(from = "ces", to = "ces", kind = "structural-restriction",
-                 required_arguments = character(), retain = c("gamma", "alpha", "meanval", "shareInside"),
-                 derived = character(), discarded = character(),
+            list(from = "ces", to = "ces", kind = "conduct_change",
+                 required_arguments = conduct_required,
+                 retain = c("gamma", "alpha", "meanval", "shareInside"),
+                 derived = character(),
+                 discarded = c("source conduct-specific supply state"),
                  recompute = c("marginal costs", "target supply state")))
     } else {
         entries <- .model_transition_registry()
@@ -260,6 +271,8 @@ print.antitrust_model_spec <- function(x, ...) {
         bargaining = "bargaining",
         bargaining2nd = "bargaining2nd",
         bargaining2 = "bargaining2nd",
+        moncom = "moncom",
+        monopolisticcompetition = "moncom",
         stackelberg = "stackelberg",
         stack = "stackelberg",
         vertical = "vertical_bargaining",
@@ -309,6 +322,9 @@ print.antitrust_model_spec <- function(x, ...) {
         list(id = "logit::bertrand", demand = "logit", conduct = "bertrand",
              class = "Logit", calibrator = "logit", calibrate = TRUE,
              specify = TRUE, simulate = TRUE),
+        list(id = "logit::moncom", demand = "logit", conduct = "moncom",
+             class = "MonComLogit", calibrator = "moncom.logit",
+             calibrate = TRUE, specify = TRUE, simulate = TRUE),
         list(id = "logit::cournot", demand = "logit", conduct = "cournot",
              class = "LogitCournot", calibrator = "logit.cournot", calibrate = TRUE,
              specify = TRUE, simulate = TRUE),
@@ -324,6 +340,9 @@ print.antitrust_model_spec <- function(x, ...) {
         list(id = "ces::bertrand", demand = "ces", conduct = "bertrand",
              class = "CES", calibrator = "ces", calibrate = TRUE,
              specify = TRUE, simulate = TRUE),
+        list(id = "ces::moncom", demand = "ces", conduct = "moncom",
+             class = "MonComCES", calibrator = "moncom.ces",
+             calibrate = TRUE, specify = TRUE, simulate = TRUE),
         list(id = "ces::cournot", demand = "ces", conduct = "cournot",
              class = "CESCournot", calibrator = "ces.cournot", calibrate = TRUE,
              specify = TRUE, simulate = TRUE),
@@ -454,7 +473,10 @@ print.antitrust_model_spec <- function(x, ...) {
 ## Auction2ndLogit*, Bargaining*, VertBarg*) is excluded until individually
 ## audited; all non-Logit/CES demands (Linear, LogLin, AIDS, PCAIDS*,
 ## Cournot, Stackelberg) are excluded outright.
-.entry_quality_supported_classes <- c("Logit", "LogitCournot", "CES", "CESCournot")
+.entry_quality_supported_classes <- c(
+    "Logit", "LogitCournot", "CES", "CESCournot",
+    "MonComLogit", "MonComCES"
+)
 
 .model_counterfactual_capabilities <- function(spec) {
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)

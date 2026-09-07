@@ -52,7 +52,10 @@ setMethod(".promote_post_to_pre", "VertBargBertLogit", function(model, step) {
 ## class structure). Every other Logit/CES descendant (LogitCap, LogitNests,
 ## LogitBLP, Auction2ndLogit*, Bargaining*, VertBarg*) is deliberately
 ## excluded until each is individually audited.
-.entry_supported_classes <- c("Logit", "LogitCournot", "CES", "CESCournot")
+.entry_supported_classes <- c(
+    "Logit", "LogitCournot", "CES", "CESCournot",
+    "MonComLogit", "MonComCES"
+)
 
 .require_entry_supported <- function(model, action = "entry") {
     if (!(class(model)[[1L]] %in% .entry_supported_classes)) {

@@ -319,7 +319,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             ownerPre = ownerPre
         ), observed_extra,
         if (!is.null(quantities)) list(quantities = quantities) else list()),
-            diagnostics = list(
+            diagnostics = c(list(
                 status = "completed",
                 model_class = class(model)[[1]],
                 solver = solver,
@@ -331,8 +331,8 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
                 TRUE
             },
             warnings = captured$warnings,
-            messages = captured$messages
-        )
+                messages = captured$messages
+        ), if (spec$conduct == "moncom") .moncom_diagnostics(model) else list())
     )
 }
 
@@ -477,7 +477,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
             quantities = quantities,
             ownerPre = ownerPre
         ),
-        diagnostics = list(
+        diagnostics = c(list(
             status = "completed",
             source = "specified",
             route = "specify",
@@ -487,7 +487,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
             specification_args = specification_args,
             warnings = captured$warnings,
             messages = captured$messages
-        )
+        ), if (spec$conduct == "moncom") .moncom_diagnostics(model) else list())
     )
 }
 
@@ -1114,7 +1114,8 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
         (is.null(names(extras)) || any(!nzchar(names(extras))))) {
         stop("respecify() transition arguments must be named")
     }
-    allowed_extras <- c("alpha", "gamma", "nests", "sigma")
+    allowed_extras <- c("alpha", "gamma", "nests", "sigma",
+                        "bargpowerPre", "bargpowerPost")
     unsupported_extras <- setdiff(names(extras), allowed_extras)
     if (length(unsupported_extras)) {
         stop("unsupported respecify() transition argument(s): ",
@@ -1131,9 +1132,19 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
         stop("respecify() requires a different registered model specification")
     }
     transition <- .model_transition_entry(source, target)
-    if (identical(transition$handler, "portable") && length(extras)) {
-        stop("respecify() transition from '", source$id, "' to '",
-             target$id, "' does not accept transition-specific demand arguments")
+    if (identical(transition$handler, "portable")) {
+        missing_required <- setdiff(transition$required_arguments, names(extras))
+        if (length(missing_required)) {
+            stop("respecify() transition from '", source$id, "' to '",
+                 target$id, "' requires explicit target primitive(s): ",
+                 paste(missing_required, collapse = ", "))
+        }
+        unexpected <- setdiff(names(extras), transition$required_arguments)
+        if (length(unexpected)) {
+            stop("respecify() transition from '", source$id, "' to '",
+                 target$id, "' does not accept transition-specific argument(s): ",
+                 paste(unexpected, collapse = ", "))
+        }
     }
 
     if (identical(transition$handler, "demand")) {
@@ -1236,7 +1247,7 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
         if (!is.null(baseline[[name]])) specify_args[[name]] <- baseline[[name]]
     }
 
-    result <- do.call(specify, specify_args)
+    result <- do.call(specify, c(specify_args, extras))
     result@parameters <- portable
     result@observed <- fit@observed
     result@diagnostics$source <- "respecify"
