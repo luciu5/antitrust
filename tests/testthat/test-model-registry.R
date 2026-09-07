@@ -2,27 +2,27 @@ test_that("the registry covers generalized and migrated model combinations", {
     registry <- supportedModels()
     expected <- data.frame(
         demand = c(
-            "linear", "aids", "loglin", "logit", "logit", "logit",
-            "logit", "logit", "ces", "ces", "ces", "ces", "ces",
+            "linear", "aids", "loglin", "logit", "logit", "logit", "logit",
+            "logit", "logit", "ces", "ces", "ces", "ces", "ces", "ces",
             "logit_nests", "ces_nests", "logit_cap", "pcaids", "pcaids_nests", "blp", "blp", "blp", "blp",
             "auction2nd_cap", "linear", "loglin", "linear", "loglin", "logit",
             "logit_nests", "logit", "logit", "logit", "ces", "ces", "logit_nests", "logit_cap",
             "logit", "ces", "logit", "ces"
         ),
         conduct = c(
-            "bertrand", "bertrand", "bertrand", "bertrand", "cournot",
-            "auction2nd", "bargaining", "bargaining2nd", "bertrand",
+            "bertrand", "bertrand", "bertrand", "bertrand", "moncom", "cournot",
+            "auction2nd", "bargaining", "bargaining2nd", "bertrand", "moncom",
             "cournot", "auction2nd", "bargaining", "bargaining2nd",
             "bertrand", "bertrand", "bertrand", "bertrand", "bertrand", "bertrand", "cournot",
             "auction2nd", "bargaining", "auction2nd", "cournot", "cournot", "stackelberg", "stackelberg", "vertical_bargaining", "vertical_bargaining", "vertical_bargaining",
             "bertrand", "cournot", "bertrand", "cournot", "bertrand",
             "bertrand", "auction2nd", "auction2nd", "bargaining", "bargaining"
         ),
-        variant = c(rep("standard", 29), "auction2nd", rep("alm", 10)),
+        variant = c(rep("standard", 31), "auction2nd", rep("alm", 10)),
         class = c(
-            "Linear", "AIDS", "LogLin", "Logit", "LogitCournot",
+            "Linear", "AIDS", "LogLin", "Logit", "MonComLogit", "LogitCournot",
             "Auction2ndLogit", "BargainingLogit", "Bargaining2ndLogit",
-            "CES", "CESCournot", "Auction2ndCES", "BargainingCES",
+            "CES", "MonComCES", "CESCournot", "Auction2ndCES", "BargainingCES",
             "Bargaining2ndCES", "LogitNests", "CESNests", "LogitCap",
             "PCAIDS", "PCAIDSNests", "LogitBLP", "CournotBLP", "Auction2ndBLP",
             "BargainingBLP", "Auction2ndCap",
@@ -33,9 +33,9 @@ test_that("the registry covers generalized and migrated model combinations", {
             "BargainingLogitALM", "BargainingCESALM"
         ),
         calibrator = c(
-            "linear", "aids", "loglinear", "logit", "logit.cournot",
+            "linear", "aids", "loglinear", "logit", "moncom.logit", "logit.cournot",
             "auction2nd.logit", "bargaining.logit", "bargaining2nd.logit",
-            "ces", "ces.cournot", "auction2nd.ces", "bargaining.ces",
+            "ces", "moncom.ces", "ces.cournot", "auction2nd.ces", "bargaining.ces",
             "bargaining2nd.ces", "logit.nests", "ces.nests", "logit.cap",
             "pcaids", "pcaids.nests", "blp", "blp", "blp", "blp", "auction2nd.cap", "cournot", "cournot",
             "stackelberg", "stackelberg",
@@ -45,9 +45,9 @@ test_that("the registry covers generalized and migrated model combinations", {
             "auction2nd.logit.alm", "auction2nd.ces.alm",
             "bargaining.logit.alm", "bargaining.ces.alm"
         ),
-        calibrate = c(rep(TRUE, 18), rep(TRUE, 4), rep(TRUE, 18)),
-        specify = c(rep(TRUE, 16), rep(FALSE, 2), rep(TRUE, 4), rep(FALSE, 18)),
-        simulate = rep(TRUE, 40),
+        calibrate = rep(TRUE, 42),
+        specify = c(rep(TRUE, 18), rep(FALSE, 2), rep(TRUE, 4), rep(FALSE, 18)),
+        simulate = rep(TRUE, 42),
         stringsAsFactors = FALSE,
         row.names = row.names(registry)
     )

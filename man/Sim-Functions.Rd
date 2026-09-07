@@ -9,7 +9,8 @@ sim(
   prices,
   shares = NULL,
   margins = NULL,
-  supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+  supply = c("bertrand", "moncom", "cournot", "auction2nd", "bargaining",
+    "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
     "LogitCap", "BLP", "LogitBLP", "CournotBLP"),
   demand.param,
@@ -38,7 +39,7 @@ calibrate costs from observed margins. Ignored for \sQuote{BLP} demand, where ma
 recovered from observed prices and the estimated demand system.}
 
 \item{supply}{A character string indicating how firms compete with one another. Valid
-values are "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
+values are "moncom" (differentiated-product monopolistic competition), "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
 (2nd score auction), "bargaining", or "bargaining2nd".}
 
 \item{demand}{A character string indicating the type of demand system
@@ -117,6 +118,10 @@ Let k denote the number of products produced by all firms below.
 Using user-supplied demand parameters,
 \code{sim} simulates the effects of a merger in a market where
 firms are playing a differentiated products pricing game.
+Under \sQuote{supply = "moncom"}, each product uses its own demand
+response and does not internalize strategic cross-product effects. Pure
+ownership changes therefore have no strategic price effect, while cost,
+demand, and product-set changes remain model-specific counterfactuals.
 
 The \sQuote{supply} parameter determines the type of competition.
 When \sQuote{supply} equals \sQuote{cournot}, firms compete on quantities
