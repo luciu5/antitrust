@@ -35,6 +35,7 @@ direct_classes <- c(
     "Cournot", "CournotBLP", "Linear", "LogLin", "Logit", "LogitALM",
     "LogitBLP", "LogitCap", "LogitCapALM", "LogitCournot", "LogitCournotALM",
     "LogitNests", "LogitNestsALM", "PCAIDS", "PCAIDSNests", "Stackelberg",
+    "MonComBLP", "MonComCES", "MonComLogit",
     "Auction2ndCap", "Auction2ndCES", "Auction2ndCESALM", "Auction2ndLogit",
     "Auction2ndLogitALM", "Auction2ndLogitNests", "BargainingCES",
     "BargainingCESALM", "BargainingLogit", "BargainingLogitALM",
