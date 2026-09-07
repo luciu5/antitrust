@@ -67,12 +67,12 @@ model metadata but does not enter the MonCom FOC.}
 \item{weights}{A length-k vector of non-negative product weights used in
 calibration.}
 
+\item{normIndex}{Normalization product when inside shares exhaust the market.}
+
 \item{mcDelta}{A vector of proportional marginal-cost changes.}
 
 \item{subset}{A logical vector identifying products active in the post-
 counterfactual market.}
-
-\item{normIndex}{Normalization product when inside shares exhaust the market.}
 
 \item{insideSize}{Total inside quantity (Logit) or revenue (CES).}
 
@@ -95,6 +95,10 @@ A `MonComLogit` or `MonComCES` object.
 }
 \description{
 Calibrate flat Logit or CES demand under differentiated-product
-monopolistic competition.  Each product uses its own demand derivative and
-does not internalize cross-product effects.
+monopolistic competition.  Each product uses its own perceived demand
+derivative and does not internalize cross-product effects.  For CES, the
+aggregate CES index is held fixed, so the perceived own elasticity is
+`-gamma`, rather than the full share-adjusted CES elasticity.  The BLP
+MonCom model is exposed through the general `calibrate()` and `specify()`
+lifecycle using the validated integration engine.
 }

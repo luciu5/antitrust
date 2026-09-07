@@ -708,7 +708,12 @@ setMethod(
     piDemog <- object@slopes$piDemog
     if (is.null(piDemog)) piDemog <- numeric(0)
     nDemog <- object@slopes$nDemog
-    if (is.null(nDemog)) nDemog <- 0
+    if (is.null(nDemog)) nDemog <- length(piDemog)
+    if (length(nDemog) != 1L || !is.finite(nDemog) || nDemog < 0 ||
+        nDemog != as.integer(nDemog)) {
+      stop("'nDemog' must be a non-negative integer.")
+    }
+    nDemog <- as.integer(nDemog)
     sigmaNest <- object@slopes$sigmaNest
     if (is.null(sigmaNest)) sigmaNest <- 1
 
@@ -769,8 +774,10 @@ setMethod(
           # Generate standard normal draws
           z_draws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
 
-          # Transform: X = mu + Z * chol(Sigma)^T
-          demogDraws <- sweep(z_draws %*% t(demogCov_chol), 2, demogMean, "+")
+          # R's chol() returns an upper-triangular factor U with
+          # t(U) %*% U = Sigma.  Row draws therefore use Z %*% U (not
+          # Z %*% t(U)) to obtain covariance Sigma.
+          demogDraws <- sweep(z_draws %*% demogCov_chol, 2, demogMean, "+")
 
           if (nDemog == 1) {
             demogDraws <- matrix(demogDraws, ncol = 1)
@@ -805,15 +812,8 @@ setMethod(
       warning(
         wrongSigns, " out of ", length(alphas),
         " individual price coefficients have wrong sign. ",
-        "Clipping them to enforce correct sign (",
-        ifelse(output, "negative", "positive"), ")."
+        "They are retained under the supplied random-coefficient distribution."
       )
-
-      if (output) {
-        alphas <- pmin(alphas, -1e-2)
-      } else {
-        alphas <- pmax(alphas, 1e-2)
-      }
     }
 
     nprods <- length(shares)

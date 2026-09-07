@@ -2,8 +2,9 @@
 #
 # These fixtures keep the demand state fixed while comparing the new BLP
 # conduct methods with the homogeneous legacy methods.  The expected
-# heterogeneous margins below are assembled from draw-level primitives in
-# this file; they do not call calcMargins() to create their oracle.
+# heterogeneous margins below are assembled from independently aggregated
+# demand primitives in this file; they do not call calcMargins() to create
+# their oracle.
 
 # Heterogeneous auction and bargaining conduct checks use independent kernels
 # and belong to the extended economics gate.
@@ -119,26 +120,27 @@ blp_conduct_expected_bargaining <- function(object) {
     barg <- object@bargpowerPre / (1 - object@bargpowerPre)
     output_sign <- -1
     n <- nrow(draw_shares)
-    margin_system <- matrix(0, nrow = n, ncol = n)
-    right_hand_side <- numeric(n)
-
-    ## This is the integrated bargaining kernel written from its draw-level
-    ## definition.  In particular, no aggregate or effective alpha is used.
+    aggregate_shares <- as.vector(draw_shares %*% weights)
+    derivative <- matrix(0, nrow = n, ncol = n)
+    buyer_surplus <- numeric(n)
     for (r in seq_len(ncol(draw_shares))) {
         shares_r <- draw_shares[, r]
-        kernel_r <- -object@ownerPre *
-            matrix(rep(shares_r, times = n), nrow = n, ncol = n)
-        diag(kernel_r) <- diag(object@ownerPre) + diag(kernel_r)
-        margin_system <- margin_system + weights[r] * kernel_r
-
-        diversion_odds <- shares_r / (1 - shares_r)
-        term_r <- log(1 - shares_r) /
-            (-1 * output_sign * alpha[r] *
-                 (barg * diversion_odds - log(1 - shares_r)))
-        right_hand_side <- right_hand_side + weights[r] *
-            diag(object@ownerPre) * term_r
+        derivative <- derivative + weights[r] * alpha[r] *
+            (diag(shares_r) - tcrossprod(shares_r))
+        buyer_surplus <- buyer_surplus + weights[r] *
+            log1p(-shares_r) / alpha[r]
     }
 
+    normalized <- sweep(derivative, 2, aggregate_shares, "/")
+    margin_system <- object@ownerPre * normalized
+    own_normalized <- diag(derivative) / aggregate_shares
+    right_hand_side <- own_normalized /
+        (output_sign * (own_normalized - barg * aggregate_shares /
+                        buyer_surplus))
+
+    ## This is the aggregate Nash system: aggregate the demand Jacobian and
+    ## buyer surplus first, then solve the ownership-adjusted FOCs.  Averaging
+    ## inverses of draw-level systems is not an aggregate equilibrium.
     as.vector(solve(t(margin_system), right_hand_side))
 }
 
@@ -200,7 +202,7 @@ test_that("Auction2ndBLP integrates heterogeneous firm winning margins draw by d
 })
 
 
-test_that("BargainingBLP integrates its bargaining kernel draw by draw", {
+test_that("BargainingBLP solves the aggregate heterogeneous bargaining FOC", {
     blp <- blp_conduct_make_blp(
         conduct = "bargaining", sigma = .35,
         nodes = c(-1.5, -.25, .8, 1.75),
@@ -217,4 +219,59 @@ test_that("BargainingBLP integrates its bargaining kernel draw by draw", {
     expect_equal(observed_level,
                  expected_proportional * blp_conduct_prices,
                  tolerance = 1e-12)
+})
+
+
+test_that("zero buyer bargaining power satisfies the aggregate Bertrand FOC", {
+    prices <- c(2, 2.5, 3)
+    shares <- c(.2, .3, .25)
+    alpha <- -1.5
+    sigma <- .6
+    nodes <- c(-1, 0, 1)
+    weights <- rep(1 / 3, 3)
+    s0 <- 1 - sum(shares)
+    delta <- antitrust:::.blp_contract(
+        prices, shares, alpha, sigma, nodes, weights, s0
+    )$delta
+    bertrand <- suppressWarnings(antitrust:::.blp_model(
+        conduct = "bertrand", prices = prices, shares = shares,
+        margins = rep(.2, 3), ownerPre = 1:3, alphaMean = alpha,
+        sigma = sigma, meanval = delta, draws = nodes,
+        drawWeights = weights, s0 = s0
+    ))
+    bargaining <- suppressWarnings(antitrust:::.blp_model(
+        conduct = "bargaining", prices = prices, shares = shares,
+        margins = rep(.2, 3), ownerPre = 1:3, alphaMean = alpha,
+        sigma = sigma, meanval = delta, draws = nodes,
+        drawWeights = weights, s0 = s0, bargpowerPre = rep(0, 3)
+    ))
+
+    expected <- unname(calcMargins(bertrand, level = TRUE))
+    observed <- unname(calcMargins(bargaining, level = TRUE))
+    ## The zero-power boundary is the documented Bertrand limit.  The
+    ## aggregate bargaining system has a distinct Nash objective for positive
+    ## buyer power; this regression guards the economically decisive boundary
+    ## without treating the legacy Bertrand margin method as a demand FOC
+    ## oracle.
+    expect_equal(observed, expected, tolerance = 1e-12)
+})
+
+
+test_that("sigma-zero BLP auction allocation uses values net of cost", {
+    prices <- c(2, 2.5, 3)
+    shares <- c(.2, .3, .1)
+    s0 <- .4
+    meanval <- log(shares / s0) - (-1.5) * prices
+    fit <- suppressWarnings(specify(
+        demand = "BLP", conduct = "auction2nd", prices = prices,
+        shares = shares, ownerPre = 1:3,
+        parameters = list(alpha = -1.5, sigma = 0, meanval = meanval,
+                          integration = "auto"),
+        bargpowerPre = rep(.5, 3)
+    ))
+    simulated <- suppressWarnings(simulate(fit, ownerPost = c(1, 1, 3)))
+    expect_equal(unname(calcShares(simulated, preMerger = FALSE)), shares,
+                 tolerance = 1e-12)
+    expect_equal(unname(simulated@pricePost),
+                 c(2.180384, 2.631585, 3), tolerance = 1e-6)
 })

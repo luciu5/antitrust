@@ -54,7 +54,7 @@ test_that("update genuinely recalibrates from stored baseline inputs", {
     expect_true(is.call(update(fit, evaluate = FALSE)))
 })
 
-test_that("update switches calibration equations while respecify preserves demand", {
+test_that("update reruns the same calibration while respecify changes conduct", {
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
         margins = c(.40, .35, .30), ownerPre = c("A", "B", "C")
@@ -63,11 +63,14 @@ test_that("update switches calibration equations while respecify preserves deman
         list(demand = "logit", conduct = "bertrand"), common
     )), "calibrate source Logit")
 
-    updated <- qa_value(update(fit, conduct = "cournot"),
-                        "updated Logit Cournot")
-    direct <- qa_value(do.call(calibrate, c(
-        list(demand = "logit", conduct = "cournot"), common
-    )), "direct Logit Cournot")
+    revised_margins <- c(.30, .28, .24)
+    updated <- qa_value(update(fit, margins = revised_margins),
+                        "updated same-model Logit")
+    direct <- qa_value(calibrate(
+        demand = "logit", conduct = "bertrand", prices = common$prices,
+        shares = common$shares, margins = revised_margins,
+        ownerPre = common$ownerPre
+    ), "direct same-model Logit")
     expect_equal(updated@parameters, direct@parameters, tolerance = 1e-9)
 
     respecified <- qa_value(respecify(fit, conduct = "cournot"),
@@ -80,8 +83,9 @@ test_that("update switches calibration equations while respecify preserves deman
     expect_equal(unname(respecified@model@pricePre),
                  unname(fit@model@pricePre),
                  tolerance = 1e-9)
-    expect_false(isTRUE(all.equal(updated@parameters,
-                                  respecified@parameters)))
+    expect_equal(updated@spec$id, fit@spec$id)
+    expect_error(update(fit, conduct = "cournot"),
+                 "same demand, conduct, and variant")
     expect_equal(fit@spec$conduct, "bertrand")
 })
 

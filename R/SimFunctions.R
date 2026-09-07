@@ -68,6 +68,13 @@
 #' response and does not internalize strategic cross-product effects. Pure
 #' ownership changes therefore have no strategic price effect, while cost,
 #' demand, and product-set changes remain model-specific counterfactuals.
+#' For flat CES, the direct perceived own elasticity is `-gamma`, not the
+#' full share-adjusted diagonal returned by `elast()`. For BLP, the direct
+#' perceived derivative is integrated over the existing consumer draws as
+#' `sum_r w_r * alpha_r * s_jr`. Nested Logit/CES, Linear, LogLinear, AIDS,
+#' and PCAIDS remain rejected because their package-specific nest,
+#' expenditure, or quantity-game objects do not yet have a complete validated
+#' MonCom lifecycle.
 #'
 #' The \sQuote{supply} parameter determines the type of competition.
 #' When \sQuote{supply} equals \sQuote{cournot}, firms compete on quantities
@@ -327,7 +334,7 @@ shares = NULL,
 
   # Validate supply/demand combinations
   valid_combinations <- list(
-    moncom = c("Logit", "CES"),
+    moncom = c("Logit", "CES", "BLP"),
     bertrand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"),
     cournot = c("Logit", "CES", "BLP"),
     auction2nd = c("Logit", "CES"),
@@ -781,6 +788,8 @@ shares = NULL,
     # Determine class based on supply type
     if (supply == "cournot") {
       demandClass <- "CournotBLP"
+    } else if (supply == "moncom") {
+      demandClass <- "MonComBLP"
     } else {
       demandClass <- "LogitBLP"
     }

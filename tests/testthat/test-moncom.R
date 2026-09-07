@@ -19,7 +19,7 @@ moncom_ces_fixture <- function() {
   list(
     prices = prices,
     shares = shares,
-    margins = 1 / (gamma - (gamma - 1) * shares),
+    margins = rep(1 / gamma, length(prices)),
     ownerPre = c("A", "A", "B"),
     gamma = gamma
   )
@@ -51,7 +51,7 @@ test_that("MonCom Logit calibration uses own-product FOCs", {
   expect_lt(attr(diagnostics, "moncom")$foc_residual_pre, 1e-10)
 })
 
-test_that("MonCom CES calibration uses the CES own elasticity", {
+test_that("MonCom CES calibration uses the direct CES own derivative", {
   x <- moncom_ces_fixture()
   fit <- calibrate("ces", "moncom", prices = x$prices,
                    shares = x$shares, margins = x$margins,
@@ -62,23 +62,29 @@ test_that("MonCom CES calibration uses the CES own elasticity", {
   expect_equal(unname(fit@parameters$gamma), x$gamma, tolerance = 1e-10)
   expect_equal(unname(calcShares(fit@model, TRUE, revenue = TRUE)), x$shares,
                tolerance = 1e-10)
-  expected_margin <- 1 / (x$gamma - (x$gamma - 1) * x$shares)
+  expected_margin <- rep(1 / x$gamma, length(x$prices))
   expect_equal(unname(calcMargins(fit@model, TRUE)), expected_margin,
                tolerance = 1e-10)
   quantity_shares <- calcShares(fit@model, TRUE)
   revenue_shares <- calcShares(fit@model, TRUE, revenue = TRUE)
-  own_elast <- -x$gamma + (x$gamma - 1) * revenue_shares
+  own_elast <- rep(-x$gamma, length(x$prices))
   foc <- quantity_shares +
     (x$prices - calcMC(fit@model, TRUE)) * quantity_shares *
       own_elast / x$prices
   expect_lt(max(abs(foc)), 1e-10)
   expect_lt(fit@diagnostics$foc_residual_pre, 1e-10)
+  ## elast() remains the full Marshallian CES elasticity used by the mature
+  ## demand diagnostics.  It is not the atomistic MonCom derivative.
+  expect_equal(unname(diag(elast(fit@model, TRUE))),
+               unname(-x$gamma + (x$gamma - 1) * revenue_shares),
+               tolerance = 1e-10)
+  expect_false(isTRUE(all.equal(diag(elast(fit@model, TRUE)), own_elast)))
 })
 
 test_that("MonCom CES preserves the confirmed input-market sign convention", {
   x <- moncom_ces_fixture()
   gamma <- -2
-  margins <- 1 / (-gamma + (gamma - 1) * x$shares)
+  margins <- rep(1 / (-gamma), length(x$prices))
   fit <- calibrate("ces", "moncom", prices = x$prices,
                    shares = x$shares, margins = margins,
                    ownerPre = x$ownerPre, output = FALSE,
@@ -87,6 +93,10 @@ test_that("MonCom CES preserves the confirmed input-market sign convention", {
   expect_equal(unname(fit@parameters$gamma), gamma, tolerance = 1e-10)
   expect_equal(unname(calcMargins(fit@model, TRUE)), margins,
                tolerance = 1e-10)
+  expect_equal(unname(calcMargins(fit@model, TRUE, level = TRUE)),
+               x$prices / (-gamma), tolerance = 1e-10)
+  expect_equal(unname(antitrust:::.moncom_ces_own_elast(fit@model)),
+               rep(-gamma, length(x$prices)), tolerance = 1e-10)
 })
 
 test_that("MonCom supports input-market Logit sign conventions", {
@@ -237,7 +247,7 @@ test_that("Bertrand and MonCom differ on multiproduct ownership but both respond
 })
 
 test_that("unsupported MonCom demand families fail explicitly", {
-  for (demand in c("logit_nests", "ces_nests", "blp", "linear",
+  for (demand in c("logit_nests", "ces_nests", "linear",
                    "loglin", "aids", "pcaids", "pcaids_nests")) {
     expect_error(model_spec(demand, "moncom"), "currently not supported")
   }

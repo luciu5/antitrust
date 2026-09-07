@@ -642,7 +642,12 @@ setMethod(
     piDemog      <-  object@slopes$piDemog
     if(is.null(piDemog)) piDemog <- numeric(0)
     nDemog       <-  object@slopes$nDemog
-    if(is.null(nDemog)) nDemog <- 0
+    if(is.null(nDemog)) nDemog <- length(piDemog)
+    if(length(nDemog) != 1L || !is.finite(nDemog) || nDemog < 0 ||
+       nDemog != as.integer(nDemog)) {
+      stop("'nDemog' must be a non-negative integer.")
+    }
+    nDemog <- as.integer(nDemog)
     sigmaNest    <-  object@slopes$sigmaNest
 
     # Check if meanval (delta) is already provided
@@ -657,25 +662,45 @@ setMethod(
     nDraws <- length(consDraws)
 
     # Check if demographic draws already exist (to ensure consistency across calls)
-    drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
+    drawsExist <- "consDraws" %in% names(object@slopes) &&
+      !is.null(object@slopes$consDraws) &&
+      (nDemog == 0L || !is.null(object@slopes$demogDraws))
 
     if(drawsExist) {
       # Reuse existing draws
       consDraws <- object@slopes$consDraws
       demogDraws <- object@slopes$demogDraws
-      if(!is.null(demogDraws) && ncol(demogDraws) > 0) {
-        demogEffect <- demogDraws %*% piDemog
+      if(nDemog > 0L && !is.null(demogDraws) && ncol(demogDraws) > 0) {
+        demogMean <- object@slopes$demogMean
+        if(is.null(demogMean)) demogMean <- rep(0, nDemog)
+        demogEffect <- (demogDraws - matrix(demogMean,
+                                            nrow = nrow(demogDraws),
+                                            ncol = nDemog, byrow = TRUE)) %*%
+          piDemog
       } else {
-        demogEffect <- 0
+        demogEffect <- numeric(nDraws)
       }
     } else {
       # Generate demographic draws (observed heterogeneity)
-      if(!is.null(nDemog) && nDemog > 0){
-        demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
-        demogEffect <- demogDraws %*% piDemog
+      if(nDemog > 0L){
+        demogMean <- object@slopes$demogMean
+        if(is.null(demogMean)) demogMean <- rep(0, nDemog)
+        demogCov <- object@slopes$demogCov
+        if(is.null(demogCov)) demogCov <- diag(nDemog)
+        if(!is.matrix(demogCov) || !identical(dim(demogCov), c(nDemog, nDemog))) {
+          stop("'demogCov' must be an nDemog by nDemog matrix.")
+        }
+        demog_chol <- tryCatch(chol(demogCov), error = function(e)
+          stop("'demogCov' must be positive definite: ", e$message))
+        z_demog <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
+        ## chol() is upper triangular in R; row draws use Z %*% chol(Sigma).
+        demogDraws <- sweep(z_demog %*% demog_chol, 2, demogMean, "+")
+        demogEffect <- (demogDraws - matrix(demogMean,
+                                            nrow = nDraws, ncol = nDemog,
+                                            byrow = TRUE)) %*% piDemog
       } else {
         demogDraws <- matrix(nrow=nDraws, ncol=0)
-        demogEffect <- 0
+        demogEffect <- numeric(nDraws)
         piDemog <- numeric(0)
         nDemog <- 0
       }
@@ -684,6 +709,40 @@ setMethod(
     # Compute individual-specific price coefficients
     # alpha_i = alphaMean + sigma * nu_i + pi * d_i
     alphas <- alphaMean + sigma * consDraws + demogEffect
+
+    ## Characteristic-only random coefficients are an independent integration
+    ## component; they do not imply a demographic dimension.
+    prodChar <- object@slopes$prodChar
+    beta <- object@slopes$beta
+    sigmaChar <- object@slopes$sigmaChar
+    pi <- object@slopes$pi
+    hasChar <- is.matrix(prodChar) && nrow(prodChar) == length(shares)
+    nChar <- if(hasChar) ncol(prodChar) else 0L
+    char_random <- matrix(0, nrow = nDraws, ncol = length(shares))
+    if(hasChar) {
+      if(!is.null(sigmaChar)) {
+        if(length(sigmaChar) != nChar || any(!is.finite(sigmaChar))) {
+          stop("'sigmaChar' must be finite and match the characteristic count.")
+        }
+        charDraws <- object@slopes$charDraws
+        if(is.null(charDraws) || !is.matrix(charDraws) ||
+           !identical(dim(charDraws), c(nDraws, nChar))) {
+          charDraws <- matrix(rnorm(nDraws * nChar), nrow=nDraws, ncol=nChar)
+        }
+        char_random <- char_random +
+          sweep(charDraws, 2, sigmaChar, "*") %*% t(prodChar)
+      } else {
+        charDraws <- NULL
+      }
+      if(nDemog > 0L && !is.null(pi)) {
+        if(!is.matrix(pi) || !identical(dim(pi), c(nDemog, nChar))) {
+          stop("'pi' must have dimensions nDemog by the characteristic count.")
+        }
+        char_random <- char_random + demogDraws %*% pi %*% t(prodChar)
+      }
+    } else {
+      charDraws <- NULL
+    }
 
     # Use output slot to verify sign consistency
     output <- object@output
@@ -729,8 +788,25 @@ setMethod(
     if (deltaProvided) {
       delta <- object@slopes$meanval
       message("Using provided meanval (delta) for BLP - skipping contraction mapping")
-    }
-    else {
+    } else if (sigmaNest == 1 && nDemog == 0L && !hasChar) {
+      ## Keep PriceLeadershipBLP on the same flat-Logit contraction path as
+      ## the observed-data BLP adapter.  The branch below remains for nested
+      ## and characteristic-rich legacy objects.
+      contracted <- .blp_contract(
+        prices = prices, shares = shares, alphaMean = alphaMean,
+        sigma = sigma, draws = consDraws, weights = drawWeights,
+        s0 = if (is.na(idx)) 1 - shareInside else 0,
+        priceOutside = idxPrice,
+        tol = ifelse(!is.null(object@slopes$contractionTol),
+                     object@slopes$contractionTol, 1e-12),
+        maxIter = ifelse(!is.null(object@slopes$contractionMaxIter),
+                         object@slopes$contractionMaxIter, 1000L)
+      )
+      if (!contracted$converged) {
+        warning("BLP contraction mapping did not converge within the configured iteration limit.")
+      }
+      delta <- contracted$delta
+    } else {
       # Pre-compute constant price term for efficiency
       price_diff <- prices - object@priceOutside
 
@@ -739,6 +815,9 @@ setMethod(
         # Compute utilities: nDraws x nProducts matrix
         utilities <- outer(alphas, price_diff, "*")
         utilities <- sweep(utilities, 2, delta, "+")
+        if (hasChar) {
+          utilities <- utilities + char_random
+        }
 
         # Prevent numeric overflow
         maxUtil <- 700
@@ -823,6 +902,14 @@ setMethod(
     object@slopes$integrationWeights <- drawWeights
     object@slopes$integration <- integration$rule
     object@slopes$nNodes <- if(identical(integration$rule, "gauss-hermite")) nDraws else NULL
+    if(hasChar) {
+      object@slopes$prodChar <- prodChar
+      object@slopes$beta <- beta
+      object@slopes$char_random <- char_random
+      if(!is.null(sigmaChar)) object@slopes$sigmaChar <- sigmaChar
+      if(!is.null(charDraws)) object@slopes$charDraws <- charDraws
+      if(!is.null(pi)) object@slopes$pi <- pi
+    }
 
     return(object)
   }

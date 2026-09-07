@@ -4,8 +4,9 @@
 #' of a multi-step `Counterfactual`, together with the ordered
 #' `CounterfactualStep` objects that produced them and the originally
 #' calibrated legacy S4 state the path began from. The state history is the
-#' actual legacy S4 result objects; no parallel economic-state
-#' representation is kept.
+#' actual legacy S4 result objects; constant-cost models additionally carry internal
+#' structural cost metadata so promotion preserves calibrated cost primitives
+#' while public result slots record each step.
 #'
 #' @slot initial The originally calibrated legacy S4 model state.
 #' @slot steps The ordered `CounterfactualStep` objects that were solved.

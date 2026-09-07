@@ -1,14 +1,23 @@
 # Monopolistic-competition methods for the existing flat Logit and CES
-# demand classes.  The atomistic/competitive-fringe convention holds the
-# relevant aggregate demand index fixed and uses only the own-product
-# derivative.  For flat Logit this is D^MC_j = alpha * s_j, so an output
-# market has markup -1 / alpha, rather than Bertrand's
-# -1 / (alpha * (1 - s_j)).  CES uses the own derivative already encoded by
-# the mature CES elasticity method.  Demand shares and counterfactual
-# promotion remain inherited from those implementations.
+# demand classes, plus the validated price-random-coefficient BLP path.  The
+# atomistic/competitive-fringe convention holds the relevant aggregate
+# demand index fixed and uses only the perceived own-product derivative.  For
+# flat Logit this is D^MC_j = alpha * s_j, so an output market has markup
+# -1 / alpha, rather than Bertrand's -1 / (alpha * (1 - s_j)).  For flat CES
+# the direct own elasticity is -gamma, not the full Marshallian diagonal
+# returned by elast().  Demand shares and counterfactual promotion remain
+# inherited from the mature implementations.
 
 .moncom_output_sign <- function(object) {
   if (isTRUE(object@output)) -1 else 1
+}
+
+.moncom_ces_own_elast <- function(object) {
+  gamma <- as.numeric(object@slopes$gamma)
+  if (length(gamma) != 1L || !is.finite(gamma) || gamma == 0) {
+    stop("MonCom CES requires a finite non-zero gamma")
+  }
+  rep(-gamma, length(object@prices))
 }
 
 .moncom_foc_residual <- function(object, preMerger = TRUE) {
@@ -103,22 +112,19 @@ setMethod(
       stop("MonCom CES calibration requires at least one positive observed margin with share below one")
     }
 
-    ## CES own-price elasticity is e_jj = -gamma + (gamma - 1) s_j.
-    ## MonCom uses only this own derivative, so gamma is identified from
-    ## own margins and shares rather than the ownership-adjusted Bertrand
-    ## elasticity matrix.
-    own_elast <- .moncom_output_sign(object) / margins[observed]
-    x <- 1 - shares[observed]
+    ## Hold the aggregate CES index fixed.  The direct own derivative implied
+    ## by calcShares() is d log(q_j) / d log(p_j) = -gamma, whereas elast()
+    ## returns the full Marshallian elasticity -gamma + (gamma - 1)s_j.
+    ## MonCom therefore identifies gamma from the own-product margins alone.
+    gamma_by_product <- -.moncom_output_sign(object) / margins[observed]
     weights <- .product_weights(object)[observed]
-    gamma <- -sum(weights * x * (own_elast + shares[observed])) /
-      sum(weights * x^2)
+    gamma <- stats::weighted.mean(gamma_by_product, w = weights)
     if (!is.finite(gamma)) stop("MonCom CES calibration could not identify gamma")
     if (isTRUE(object@output) && gamma <= 1) {
       stop("MonCom output-market CES requires gamma > 1")
     }
-    if (!isTRUE(object@output) &&
-      any(gamma >= -shares / pmax(1 - shares, .Machine$double.eps))) {
-      stop("MonCom input-market CES requires gamma below every own-elasticity singularity")
+    if (!isTRUE(object@output) && gamma >= 0) {
+      stop("MonCom input-market CES requires gamma < 0 so the direct own derivative is positive")
     }
 
     share_inside <- object@shareInside
@@ -190,12 +196,49 @@ setMethod(
   definition = function(object, preMerger = TRUE, level = FALSE) {
     prices <- if (preMerger) object@pricePre else object@pricePost
     active <- if (preMerger) rep(TRUE, length(prices)) else object@subset
-    own_elast <- diag(elast(object, preMerger = preMerger))
+    ## Do not use diag(elast(object)): that is the full CES demand elasticity
+    ## and contains the endogenous-share term (gamma - 1) * s_j.  Atomistic
+    ## MonCom holds the CES aggregate/index fixed and perceives only -gamma.
+    own_elast <- .moncom_ces_own_elast(object)
     result <- rep(NA_real_, length(prices))
     if (any(!is.finite(own_elast[active]) | abs(own_elast[active]) < 1e-12)) {
       stop("MonCom CES has a singular own-product elasticity")
     }
     result[active] <- .moncom_output_sign(object) / own_elast[active]
+    if (level) result[active] <- result[active] * prices[active]
+    names(result) <- object@labels
+    result
+  }
+)
+
+#' @rdname Margins-Methods
+#' @export
+setMethod(
+  f = "calcMargins",
+  signature = "MonComBLP",
+  definition = function(object, preMerger = TRUE, level = FALSE) {
+    prices <- if (preMerger) object@pricePre else object@pricePost
+    active <- if (preMerger) rep(TRUE, length(prices)) else object@subset
+    shares_draw <- calcShares(object, preMerger = preMerger,
+                               revenue = FALSE, aggregate = FALSE)
+    shares_draw <- shares_draw[active, , drop = FALSE]
+    weights <- .blp_draw_weights(object, ncol(shares_draw))
+    alpha <- object@slopes$alphas
+    if (length(alpha) != ncol(shares_draw) || any(!is.finite(alpha))) {
+      stop("MonCom BLP requires finite draw-level price coefficients")
+    }
+    direct_derivative <- as.vector(
+      shares_draw %*% (weights * alpha)
+    )
+    shares <- calcShares(object, preMerger = preMerger,
+                         revenue = FALSE)[active]
+    if (any(!is.finite(direct_derivative) |
+            abs(direct_derivative) < 1e-12)) {
+      stop("MonCom BLP has a singular integrated own-product derivative")
+    }
+    result <- rep(NA_real_, length(prices))
+    result[active] <- .moncom_output_sign(object) * shares /
+      (prices[active] * direct_derivative)
     if (level) result[active] <- result[active] * prices[active]
     names(result) <- object@labels
     result

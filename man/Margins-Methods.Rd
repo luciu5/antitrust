@@ -28,6 +28,7 @@
 \alias{calcMargins,CournotBLP-method}
 \alias{calcMargins,MonComLogit-method}
 \alias{calcMargins,MonComCES-method}
+\alias{calcMargins,MonComBLP-method}
 \alias{calcMargins,PriceLeadershipBLP-method}
 \alias{calcMargins,PriceLeadership-method}
 \title{Methods for Calculating Margins}
@@ -71,6 +72,8 @@
 \S4method{calcMargins}{MonComLogit}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{MonComCES}(object, preMerger = TRUE, level = FALSE)
+
+\S4method{calcMargins}{MonComBLP}(object, preMerger = TRUE, level = FALSE)
 
 \S4method{calcMargins}{PriceLeadershipBLP}(
   object,

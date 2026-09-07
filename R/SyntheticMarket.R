@@ -141,7 +141,8 @@
     ## This is the complete product-level Bertrand Logit FOC, with the
     ## reference product included in the same strategic system. Other model
     ## families retain their package-specific solver diagnostics below.
-    if (methods::is(model, "Logit") && !methods::is(model, "LogitCournot") &&
+    if (identical(fit@spec$conduct, "bertrand") &&
+        methods::is(model, "Logit") && !methods::is(model, "LogitCournot") &&
         !methods::is(model, "LogitCap") &&
         !methods::is(model, "LogitNests")) {
         alpha <- model@slopes$alpha
@@ -154,6 +155,7 @@
             foc_residual <- max(abs(foc))
         }
     }
+    foc_supported <- is.finite(foc_residual)
     list(
         status = "completed",
         mode = mode,
@@ -164,8 +166,9 @@
         foc = unname(foc),
         foc_residual = foc_residual,
         foc_tolerance = 1e-8,
-        equilibrium_check = if (is.finite(price_residual)) {
-            price_residual < 1e-7
+        foc_status = if (foc_supported) "verified" else "unavailable",
+        equilibrium_check = if (foc_supported) {
+            foc_residual < 1e-8
         } else {
             NA
         }

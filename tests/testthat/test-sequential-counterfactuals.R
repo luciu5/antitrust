@@ -14,6 +14,22 @@ qa_skip_if_not_extended()
     )
 }
 
+.independent_logit_foc <- function(model, preMerger = FALSE) {
+    prices <- if (preMerger) model@pricePre else model@pricePost
+    marginal_cost <- if (preMerger) model@mcPre else model@mcPost
+    alpha <- as.numeric(model@slopes$alpha)[1]
+    meanval <- as.numeric(model@slopes$meanval)
+    weights <- exp(meanval + alpha * prices)
+    shares <- weights / (1 + sum(weights))
+    demand_jacobian <- alpha * (diag(shares) - tcrossprod(shares))
+    ownership <- ownerToMatrix(model, preMerger = preMerger)
+    foc <- vapply(seq_along(shares), function(j) {
+        shares[j] + sum(ownership[j, ] *
+                            (prices - marginal_cost) * demand_jacobian[, j])
+    }, numeric(1))
+    foc
+}
+
 test_that("sequential ownership -> ownership uses the promoted post-merger state", {
     fit <- .seq_fit()
     cf <- counterfactual(ownership = c("A", "A", "C"))
@@ -31,10 +47,11 @@ test_that("sequential ownership -> ownership uses the promoted post-merger state
     expect_equal(step2@pricePre, step1@pricePost, tolerance = 1e-8)
     expect_equal(step2@mcPre, step1@mcPost, tolerance = 1e-8)
 
-    ## Resetting to the originally calibrated baseline would give a
-    ## different (wrong) answer for step 2 -- confirm the two diverge.
+    ## Both paths now solve the same final static environment.  Promoted
+    ## prices remain the solver's starting values, while structural costs stay
+    ## fixed, so the unique equilibrium is path-order invariant.
     naive <- simulate(fit, ownerPost = c("A", "A", "A"))
-    expect_false(isTRUE(all.equal(naive@pricePost, step2@pricePost, tolerance = 1e-8)))
+    expect_equal(naive@pricePost, step2@pricePost, tolerance = 1e-8)
 
     expect_identical(final_result(path), step2)
 })
@@ -68,8 +85,46 @@ test_that("sequential ownership -> costs and costs -> ownership both use the pro
     step2_b <- result_at(path2, 2)
     expect_equal(step2_b@pricePre, step1_b@pricePost, tolerance = 1e-8)
 
-    ## Order matters: these two orderings must not produce the same final price.
-    expect_false(isTRUE(all.equal(step2_a@pricePost, step2_b@pricePost, tolerance = 1e-8)))
+    ## Ownership and cost changes commute when they define the same final
+    ## static environment and the equilibrium is unique.
+    expect_equal(step2_a@pricePost, step2_b@pricePost, tolerance = 1e-8)
+})
+
+test_that("an empty step preserves the solved equilibrium and structural costs", {
+    fit <- .seq_fit()
+    baseline <- simulate(fit, counterfactual())
+    path <- simulate(fit, add_step(counterfactual()))
+    final <- final_result(path)
+
+    expect_equal(final@pricePost, baseline@pricePost, tolerance = 1e-8)
+    expect_equal(final@mcPost, baseline@mcPost, tolerance = 1e-8)
+    expect_equal(unname(final@mcPost), unname(fit@model@mcPre), tolerance = 1e-8)
+})
+
+test_that("ownership and quality changes do not re-identify incumbent costs", {
+    fit <- .seq_fit()
+    expected <- unname(fit@model@mcPre)
+
+    merger <- simulate(fit, counterfactual(ownership = c("A", "A", "C")))
+    quality <- simulate(fit, counterfactual(quality = c(Prod1 = .2)))
+    exit <- simulate(fit, counterfactual(exit = "Prod1"))
+
+    expect_equal(unname(merger@mcPost), expected, tolerance = 1e-8)
+    expect_equal(unname(quality@mcPost), expected, tolerance = 1e-8)
+    expect_equal(unname(exit@mcPost), expected, tolerance = 1e-8)
+})
+
+test_that("preserved cost state still satisfies independent Logit price FOCs", {
+    fit <- .seq_fit()
+    result <- simulate(fit, counterfactual(ownership = c("A", "A", "C")))
+
+    ## Shares and the Jacobian are reconstructed directly from the Logit
+    ## primitives.  The expected FOC is independent of calcMC() and
+    ## calcMargins(), which are the methods under regression here.
+    expect_lt(max(abs(.independent_logit_foc(fit@model, preMerger = TRUE))),
+              1e-8)
+    expect_lt(max(abs(.independent_logit_foc(result, preMerger = FALSE))),
+              1e-7)
 })
 
 test_that("simulate() preserves the ordinary legacy result for one-step Counterfactuals", {
@@ -89,20 +144,20 @@ test_that("quality = 0 reproduces the baseline meanval", {
     expect_equal(result@slopes$meanval, fit@model@slopes$meanval, tolerance = 1e-12)
 })
 
-test_that("quality applies an exact proportional change to meanval", {
+test_that("quality applies a proportional choice-weight change to Logit meanval", {
     fit <- .seq_fit()
     baseline_meanval <- fit@model@slopes$meanval
 
     cf <- counterfactual(quality = c(Prod1 = .10))
     result <- simulate(fit, cf)
-    expect_equal(result@slopes$meanval[["Prod1"]], baseline_meanval[["Prod1"]] * 1.10, tolerance = 1e-12)
+    expect_equal(result@slopes$meanval[["Prod1"]], baseline_meanval[["Prod1"]] + log1p(.10), tolerance = 1e-12)
 
     cf_neg <- counterfactual(quality = c(Prod1 = -.05))
     result_neg <- simulate(fit, cf_neg)
-    expect_equal(result_neg@slopes$meanval[["Prod1"]], baseline_meanval[["Prod1"]] * .95, tolerance = 1e-12)
+    expect_equal(result_neg@slopes$meanval[["Prod1"]], baseline_meanval[["Prod1"]] + log1p(-.05), tolerance = 1e-12)
 })
 
-test_that("sequential quality shocks compound: +10% then +20% gives 1.32x", {
+test_that("sequential Logit quality shocks compound in choice weights", {
     fit <- .seq_fit()
     baseline_meanval <- fit@model@slopes$meanval[["Prod1"]]
 
@@ -111,8 +166,8 @@ test_that("sequential quality shocks compound: +10% then +20% gives 1.32x", {
     path <- simulate(fit, cf)
 
     final <- final_result(path)
-    expect_equal(final@slopes$meanval[["Prod1"]], baseline_meanval * 1.10 * 1.20, tolerance = 1e-10)
-    expect_equal(final@slopes$meanval[["Prod1"]], baseline_meanval * 1.32, tolerance = 1e-10)
+    expect_equal(final@slopes$meanval[["Prod1"]], baseline_meanval + log1p(.10) + log1p(.20), tolerance = 1e-10)
+    expect_equal(final@slopes$meanval[["Prod1"]], baseline_meanval + log(1.32), tolerance = 1e-10)
 })
 
 test_that("quality persists into a later ownership change", {
@@ -124,7 +179,7 @@ test_that("quality persists into a later ownership change", {
     path <- simulate(fit, cf)
 
     step2 <- result_at(path, 2)
-    expect_equal(step2@slopes$meanval[["Prod1"]], baseline_meanval * 1.10, tolerance = 1e-10)
+    expect_equal(step2@slopes$meanval[["Prod1"]], baseline_meanval + log1p(.10), tolerance = 1e-10)
 })
 
 test_that("quality persists into a later cost change", {
@@ -136,7 +191,7 @@ test_that("quality persists into a later cost change", {
     path <- simulate(fit, cf)
 
     step2 <- result_at(path, 2)
-    expect_equal(step2@slopes$meanval[["Prod1"]], baseline_meanval * 1.10, tolerance = 1e-10)
+    expect_equal(step2@slopes$meanval[["Prod1"]], baseline_meanval + log1p(.10), tolerance = 1e-10)
 })
 
 test_that("a quality shock to an exited product errors", {
@@ -171,7 +226,7 @@ test_that("quality works for Logit Cournot and CES Bertrand/Cournot", {
     )
     result_lc <- simulate(fit_lc, counterfactual(quality = c(Prod1 = .1)))
     expect_equal(result_lc@slopes$meanval[["Prod1"]],
-                 fit_lc@model@slopes$meanval[["Prod1"]] * 1.1, tolerance = 1e-10)
+                 fit_lc@model@slopes$meanval[["Prod1"]] + log1p(.1), tolerance = 1e-10)
 
     fit_ces <- calibrate(
         "ces", "bertrand", prices = c(2, 2.2, 2.5),
@@ -237,6 +292,8 @@ test_that("one entrant increases product and firm count by one", {
     idx <- match("E1", result@labels)
     expect_equal(sum(owner_mat[idx, ] != 0), 1L)
     expect_true(is.finite(result@pricePost[idx]))
+    expect_equal(unname(result@mcPost[idx]), e1@cost, tolerance = 1e-10)
+    expect_equal(unname(result@mcPost[-idx]), unname(fit@model@mcPre), tolerance = 1e-10)
 })
 
 test_that("entrant can receive a later quality shock, cost shock, and merger", {
@@ -250,7 +307,7 @@ test_that("entrant can receive a later quality shock, cost shock, and merger", {
     step2 <- result_at(path, 2)
     idx <- match("E1", step2@labels)
     expect_equal(step2@slopes$meanval[[idx]],
-                 result_at(path, 1)@slopes$meanval[[idx]] * 1.1, tolerance = 1e-10)
+                 result_at(path, 1)@slopes$meanval[[idx]] + log1p(.1), tolerance = 1e-10)
 
     cf2 <- counterfactual(entry = e1)
     cf2 <- add_step(cf2, costs = c(Prod1 = 0, Prod2 = 0, Prod3 = 0, E1 = -.1))
@@ -389,7 +446,7 @@ test_that("a mixed entry, quality, merger, and exit sequence resolves and tracks
     expect_equal(length(step_entry@labels), 4L)
     idxE1 <- match("E1", step_quality@labels)
     expect_equal(step_quality@slopes$meanval[[idxE1]],
-                 step_entry@slopes$meanval[[idxE1]] * 1.1, tolerance = 1e-10)
+                 step_entry@slopes$meanval[[idxE1]] + log1p(.1), tolerance = 1e-10)
 
     owner_mat <- ownerToMatrix(step_merger, preMerger = FALSE)
     idxProd1 <- match("Prod1", step_merger@labels)

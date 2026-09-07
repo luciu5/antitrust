@@ -177,6 +177,47 @@
     if (is.list(slopes) && !is.null(slopes[[name]])) slopes[[name]] else default
 }
 
+## Bargaining power is a conduct primitive, rather than a demand slope.  A
+## demand translation must still carry it when the source and target conduct
+## both use bargaining; otherwise the target constructor silently falls back
+## to its historical .5 default.  If a target bargaining path does not have a
+## source value, require it explicitly instead of inventing one.
+.translation_conduct_arguments <- function(fit, target, supplied) {
+    target_bargaining <- target$conduct %in% c("bargaining", "bargaining2nd")
+    supplied_bargaining <- intersect(
+        names(supplied), c("bargpowerPre", "bargpowerPost")
+    )
+    if (!target_bargaining) {
+        if (length(supplied_bargaining)) {
+            stop("respecify() transition to '", target$conduct,
+                 "' does not accept transition-specific bargaining arguments")
+        }
+        return(list())
+    }
+
+    model <- fit@model
+    source_bargaining <- fit@spec$conduct %in% c("bargaining", "bargaining2nd")
+    bargpower_pre <- supplied$bargpowerPre
+    if (is.null(bargpower_pre) && source_bargaining &&
+        "bargpowerPre" %in% methods::slotNames(model)) {
+        bargpower_pre <- methods::slot(model, "bargpowerPre")
+    }
+    if (is.null(bargpower_pre)) {
+        stop("respecify() target bargaining conduct requires explicit 'bargpowerPre'")
+    }
+
+    bargpower_post <- supplied$bargpowerPost
+    if (is.null(bargpower_post) && source_bargaining &&
+        "bargpowerPost" %in% methods::slotNames(model)) {
+        bargpower_post <- methods::slot(model, "bargpowerPost")
+    }
+    if (is.null(bargpower_post)) bargpower_post <- bargpower_pre
+    list(
+        bargpowerPre = as.numeric(bargpower_pre),
+        bargpowerPost = as.numeric(bargpower_post)
+    )
+}
+
 .translation_reference <- function(state) {
     index <- as.integer(state$norm_index)[1]
     if (is.na(index) || index < 1L || index > length(state$prices)) 1L else index
@@ -306,12 +347,13 @@
 
 .translation_target_args <- function(state, target, parameters,
                                      target_shares, target_inside_size,
-                                     target_price_outside) {
+                                     target_price_outside,
+                                     conduct_arguments = list()) {
     n <- length(state$prices)
     if (target$demand %in% c("linear", "loglin")) {
         placeholder <- matrix(0.5 / max(1, n - 1), nrow = n, ncol = n)
         diag(placeholder) <- -1
-        return(list(
+        return(c(list(
             demand = target$demand,
             conduct = target$conduct,
             variant = target$variant,
@@ -323,7 +365,7 @@
             margins = rep(0, n),
             labels = state$labels,
             diversions = placeholder
-        ))
+        ), conduct_arguments))
     }
     args <- list(
         demand = target$demand,
@@ -342,15 +384,16 @@
     if (target$demand %in% c("logit_nests", "ces_nests")) {
         args$nests <- state$nests
     }
-    args
+    c(args, conduct_arguments)
 }
 
 .translation_build_antitrust <- function(state, target, parameters,
                                          target_shares, target_inside_size,
-                                         target_price_outside) {
+                                         target_price_outside,
+                                         conduct_arguments = list()) {
     args <- .translation_target_args(state, target, parameters,
                                      target_shares, target_inside_size,
-                                     target_price_outside)
+                                     target_price_outside, conduct_arguments)
     result <- do.call(specify, args)
     ## The target's observed margins are not transition primitives. The
     ## target demand slopes and ownership are already sufficient for calcMC();
@@ -585,6 +628,7 @@
 
 .translate_antitrust_demand <- function(fit, target, transition, supplied) {
     state <- .translation_source_state(fit)
+    conduct_arguments <- .translation_conduct_arguments(fit, target, supplied)
     state$source_demand <- fit@spec$demand
     translated <- .translation_transition_parameters(
         fit, state, target, transition, supplied
@@ -592,7 +636,8 @@
     if (!is.null(translated$nests)) state$nests <- translated$nests
     target_fit <- .translation_build_antitrust(
         state, target, translated$parameters, translated$shares,
-        translated$inside_size, translated$price_outside
+        translated$inside_size, translated$price_outside,
+        conduct_arguments
     )
     target_output <- isTRUE(.translation_slot(target_fit@model, "output", TRUE))
     if (!identical(target_output, state$output)) {
@@ -600,6 +645,7 @@
     }
     translated$fit <- target_fit
     translated$state <- state
+    translated$conduct_arguments <- conduct_arguments
     translated$diagnostics <- .translation_diagnostics(
         state, target_fit, target, transition, translated
     )

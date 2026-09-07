@@ -78,19 +78,22 @@ qa_skip_if_not_extended()
         margins <- numerator / firm_shares / prices
     } else if (conduct == "bargaining") {
         bargaining <- rep(.4, 3) / (1 - rep(.4, 3))
-        margin_system <- matrix(0, nrow = 3, ncol = 3)
-        right_hand_side <- numeric(3)
+        aggregate_shares <- as.vector(draw_shares %*% draw_weights)
+        derivative <- matrix(0, nrow = 3, ncol = 3)
+        buyer_surplus <- numeric(3)
         for (r in seq_along(alphas)) {
             s <- draw_shares[, r]
-            kernel <- -owner_matrix * rep(s, times = 3)
-            diag(kernel) <- diag(owner_matrix) + diag(kernel)
-            margin_system <- margin_system + draw_weights[r] * kernel
-            div <- s / (1 - s)
-            term <- log(1 - s) /
-                (alphas[r] * (bargaining * div - log(1 - s)))
-            right_hand_side <- right_hand_side + draw_weights[r] *
-                diag(owner_matrix) * term
+            derivative <- derivative + draw_weights[r] * alphas[r] *
+                (diag(s) - tcrossprod(s))
+            buyer_surplus <- buyer_surplus + draw_weights[r] *
+                log1p(-s) / alphas[r]
         }
+        normalized <- sweep(derivative, 2, aggregate_shares, "/")
+        margin_system <- owner_matrix * normalized
+        own_normalized <- diag(derivative) / aggregate_shares
+        right_hand_side <- own_normalized /
+            (-1 * (own_normalized - bargaining * aggregate_shares /
+                   buyer_surplus))
         margins <- as.vector(solve(t(margin_system), right_hand_side)) / prices
     } else {
         stop("unknown recovery conduct")

@@ -5,27 +5,23 @@
 ## post-counterfactual legacy result into the "pre" state for the next
 ## step (the Markov transition); `.expand_entrant()` grows a model's
 ## product dimension for a new single-product entrant; `.apply_quality()`
-## multiplies calibrated `meanval` by a product-level percentage shock.
+## applies a proportional attractiveness shock under each demand family's
+## normalization convention.
 ## These never call calibrate() and never touch structural parameters
-## (alpha/gamma/nests/...), only Pre/Post-paired economic state.
+## (alpha/gamma/nests/...), except for an explicitly requested quality shock.
 
 setGeneric(".promote_post_to_pre", function(model, step) {
     standardGeneric(".promote_post_to_pre")
 })
 
 ## Default: every "*Pre"/"*Post" slot pair on the object is promoted by
-## copying the Post value into Pre. `mcDelta` is deliberately NOT reset here:
-## calcMC() for Bertrand- and Cournot-family models always recomputes the
-## pre-shock marginal cost fresh from calibration constants (observed
-## prices/margins, or cost functions) and treats `mcDelta` as a one-shot
-## multiplier relative to that recomputed baseline -- it is never read back
-## from a promoted `mcPre`. So the *cumulative* proportional cost change is
-## the real persistent cost-environment state, and it must be compounded
-## across steps (see `.compound_costs()` in ModelArchitecture.R), not reset
-## to zero. `subset` (the exit mask) is intentionally left as-is by this
-## default method; sequential exit persistence is handled explicitly by the
-## simulate() loop so that later steps can extend the mask when new
-## products are exited or entered.
+## copying the Post value into Pre.  Structural cost state is stored as an
+## ordinary attribute by the architecture layer and therefore travels with
+## the copied S4 value; `mcDelta` remains the current cumulative shock supplied
+## by the simulation loop.  `subset` (the exit mask) is intentionally left as
+## is by this default method; sequential exit persistence is handled explicitly
+## by the simulate() loop so later steps can extend the mask when products are
+## exited or entered.
 setMethod(".promote_post_to_pre", "ANY", function(model, step) {
     slots <- methods::slotNames(model)
     post_slots <- grep("Post$", slots, value = TRUE)
@@ -46,12 +42,12 @@ setMethod(".promote_post_to_pre", "VertBargBertLogit", function(model, step) {
     model
 })
 
-## The four leaf classes verified safe for entry/quality: bare Logit, CES,
-## and their Cournot-conduct counterparts (which add no new slots beyond
-## Logit/CES -- conduct is dispatched separately by simulate(), not by
-## class structure). Every other Logit/CES descendant (LogitCap, LogitNests,
-## LogitBLP, Auction2ndLogit*, Bargaining*, VertBarg*) is deliberately
-## excluded until each is individually audited.
+## The flat Logit/CES classes verified safe for entry/quality include the
+## monopolistic-competition and Cournot descendants (which add no product
+## state beyond Logit/CES; conduct is dispatched separately). Every other
+## Logit/CES descendant (LogitCap, LogitNests, LogitBLP, Auction2ndLogit*,
+## Bargaining*, VertBarg*) is deliberately excluded until individually
+## audited.
 .entry_supported_classes <- c(
     "Logit", "LogitCournot", "CES", "CESCournot",
     "MonComLogit", "MonComCES"
@@ -75,16 +71,12 @@ setGeneric(".expand_entrant", function(model, entrant) {
     standardGeneric(".expand_entrant")
 })
 
-## calcMC() for the Bertrand family never reads mcPre/mcPost directly -- it
-## always DERIVES the pre-merger marginal cost from FOC-consistency with
-## the calibrated (margin, price, ownership) triple, ignoring whatever is
-## assigned to those slots directly. The entrant has no calibrated margin,
-## so its cost primitive cannot be set that way; the caller
-## (.apply_step_environment(), ModelArchitecture.R) instead computes the
-## proportional mcDelta needed so that calcMC()'s implied post-entry cost
-## equals entrant@cost, and threads it through the same mcDelta channel
-## used for ordinary cost counterfactuals so it is never silently
-## overwritten by the step's cost-resolution/compounding logic.
+## A calibrated Bertrand result keeps its inferred constant marginal-cost
+## level in the internal cost state.  This avoids re-identifying incumbent
+## costs after ownership or demand-state changes.  A direct legacy object
+## without that state still follows its historical calcMC() implementation.
+## Entry appends the supplied entrant cost to the same state; the entry cost is
+## therefore independent of incumbent margins and ownership.
 setMethod(".expand_entrant", "Logit", function(model, entrant) {
     .require_entry_supported(model, "entry")
     if (entrant@label %in% model@labels) {
@@ -106,8 +98,20 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     model@labels <- c(model@labels, entrant@label)
     model@pricePre <- c(model@pricePre, entrant@priceStart)
     model@pricePost <- c(model@pricePost, entrant@priceStart)
-    model@mcPre <- c(model@mcPre, NA_real_)
-    model@mcPost <- c(model@mcPost, NA_real_)
+    ## Entry supplies a new product's marginal-cost primitive directly.  Keep
+    ## it in the persistent cost state so incumbents remain tied to their
+    ## calibrated costs even though the entrant has no observed margin.
+    cost_state <- .cost_state(model)
+    if (!is.null(cost_state) && !is.null(cost_state$base)) {
+        cost_state$base <- c(cost_state$base, entrant@cost)
+        names(cost_state$base) <- model@labels
+        model <- .set_cost_state(model, cost_state)
+        model@mcPre <- c(model@mcPre, entrant@cost)
+        model@mcPost <- c(model@mcPost, entrant@cost)
+    } else {
+        model@mcPre <- c(model@mcPre, NA_real_)
+        model@mcPost <- c(model@mcPost, NA_real_)
+    }
     model@mcDelta <- c(model@mcDelta, 0)
     model@subset <- c(model@subset, TRUE)
     model@priceStart <- c(model@priceStart, entrant@priceStart)
@@ -135,11 +139,9 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     model
 })
 
-## The proportional mcDelta needed so that calcMC()'s FOC-implied marginal
-## cost at the entrant's position equals entrant@cost, evaluated using the
-## model's current ownership/elasticity structure (so it stays correct
-## whether entry happens against the original baseline or a promoted
-## post-merger state).
+## Compatibility helper for direct legacy objects that do not carry the
+## internal cost state.  The architecture path uses the supplied entrant cost
+## directly whenever that state is available.
 setGeneric(".entrant_cost_delta", function(model, entrant) {
     standardGeneric(".entrant_cost_delta")
 })
@@ -154,10 +156,10 @@ setMethod(".entrant_cost_delta", "Logit", function(model, entrant) {
     entrant@cost / implied_mc_pre - 1
 })
 
-## Multiply calibrated `meanval` by (1 + quality) for the named products.
-## `meanval` is a structural (not Pre/Post-paired) slot, so this shock
-## persists automatically across `.promote_post_to_pre()` and compounds
-## across sequential quality steps for free.
+## Apply a proportional attractiveness shock for the named products.  The
+## demand-specific methods below map that shock into each model's structural
+## mean-value normalization.  `meanval` is not a Pre/Post-paired slot, so the
+## change persists through promotion and compounds across sequential steps.
 setGeneric(".apply_quality", function(model, quality) {
     standardGeneric(".apply_quality")
 })
@@ -176,6 +178,41 @@ setMethod(".apply_quality", "Logit", function(model, quality) {
     if (length(exited)) {
         stop("'quality' references product(s) that are not active (exited or not yet entered): ",
              paste(exited, collapse = ", "))
+    }
+    if (any(quality <= -1)) {
+        stop("'quality' values must be greater than -1 for Logit demand")
+    }
+    meanval <- model@slopes$meanval
+    idx <- match(names(quality), model@labels)
+    ## Logit mean values are utilities and are only identified up to a
+    ## normalization.  A proportional change in positive choice weight is
+    ## therefore represented by an additive log(1 + quality) utility shift;
+    ## multiplying a possibly negative or zero utility is normalization
+    ## dependent and can reverse the intended attractiveness change.
+    meanval[idx] <- meanval[idx] + log1p(quality)
+    model@slopes$meanval <- meanval
+    model
+})
+
+## CES mean values enter as positive multiplicative demand weights, so retain
+## the proportional convention directly for that demand family.
+setMethod(".apply_quality", "CES", function(model, quality) {
+    .require_entry_supported(model, "quality")
+    if (is.null(names(quality)) || any(!nzchar(names(quality)))) {
+        stop("'quality' must be a named numeric vector (product label = proportional change)")
+    }
+    unknown <- setdiff(names(quality), model@labels)
+    if (length(unknown)) {
+        stop("'quality' references unknown product label(s): ", paste(unknown, collapse = ", "))
+    }
+    active_labels <- model@labels[model@subset]
+    exited <- setdiff(names(quality), active_labels)
+    if (length(exited)) {
+        stop("'quality' references product(s) that are not active (exited or not yet entered): ",
+             paste(exited, collapse = ", "))
+    }
+    if (any(!is.finite(quality) | quality <= -1)) {
+        stop("'quality' values must be finite and greater than -1")
     }
     meanval <- model@slopes$meanval
     idx <- match(names(quality), model@labels)

@@ -63,6 +63,25 @@ test_that("Gauss-Hermite shares agree with direct one-dimensional integration", 
 })
 
 
+test_that("flat BLP draw-level slopes reduce to the Logit derivative", {
+    nodes <- c(-1, 0, 1)
+    weights <- c(.2, .6, .2)
+    model <- blp_integration_test_model(
+        nodes, weights, alphaMean = -1.2, sigma = .3
+    )
+    shares_draw <- calcShares(model, preMerger = TRUE, aggregate = FALSE)
+    alpha <- model@slopes$alphas
+    expected <- matrix(0, nrow = nrow(shares_draw), ncol = nrow(shares_draw))
+    for (r in seq_along(alpha)) {
+        s <- shares_draw[, r]
+        expected <- expected + weights[r] * alpha[r] *
+            (diag(s) - tcrossprod(s))
+    }
+    expect_equal(unname(elast(model, preMerger = TRUE, partial = TRUE)),
+                 unname(expected), tolerance = 1e-12)
+})
+
+
 test_that("BLP dimension selection ignores empty demographics and mean-only characteristics", {
     expect_false(antitrust:::.blp_multidimensional(list(
         sigma = .1, piDemog = numeric(0), nDemog = 0
@@ -301,6 +320,16 @@ test_that("BLP repeated share and derivative evaluations are deterministic", {
 })
 
 
+test_that("legacy BLP retains wrong-sign draws under the explicit domain contract", {
+    model <- blp_integration_test_model(
+        nodes = c(-1, 0, 1), weights = rep(1 / 3, 3),
+        alphaMean = -1, sigma = 1.5
+    )
+    expect_warning({ model <- calcSlopes(model) }, "retained")
+    expect_equal(model@slopes$alphas, c(-2.5, -1, .5), tolerance = 0)
+})
+
+
 test_that("BLP fits reuse their integration rule across counterfactual simulations", {
     nodes <- c(-1.5, -.25, .75, 1.75)
     weights <- c(.05, .15, .30, .50)
@@ -337,6 +366,7 @@ test_that("BLP CV trimming uses integration-weighted quantiles and means", {
         nodes, weights, alphaMean = -1, sigma = .25,
         meanval = c(.2, .1, 0)
     )
+    expect_equal(model@mktSize, 1 / sum(model@shares), tolerance = 1e-14)
     model@pricePost <- model@pricePre + c(.2, .1, .3)
 
     alphas <- model@slopes$alphas
@@ -355,6 +385,7 @@ test_that("BLP CV trimming uses integration-weighted quantiles and means", {
     ## draws 2:4 survive lim = c(.5, 1).  Ordinary unweighted quantiles
     ## would instead start at the midpoint between alpha[2] and alpha[3].
     keep <- 2:4
-    expected <- sum(weights[keep] * cv_by_draw[keep]) / sum(weights[keep])
+    expected <- model@mktSize *
+        sum(weights[keep] * cv_by_draw[keep]) / sum(weights[keep])
     expect_equal(CV(model, lim = c(.5, 1)), expected, tolerance = 1e-13)
 })

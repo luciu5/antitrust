@@ -1,9 +1,9 @@
 # BLP calibration through the refactor architecture.
 #
 # This file intentionally contains only the observed-data calibration adapter
-# and the two small conduct-specific BLP subclasses needed by the existing
-# auction and bargaining methods.  The legacy S4 demand and conduct equations
-# remain the source of truth.
+# and conduct-specific BLP subclasses needed by the existing methods.  The
+# legacy S4 demand equations remain the source of truth; MonCom uses the
+# explicit atomistic integrated own derivative in MonComMethods.R.
 
 #' @rdname BertrandRUM-Classes
 #' @export
@@ -172,6 +172,7 @@ setClass(
     )
     class_name <- switch(conduct,
         bertrand = "LogitBLP",
+        moncom = "MonComBLP",
         cournot = "CournotBLP",
         auction2nd = "Auction2ndBLP",
         bargaining = "BargainingBLP",
@@ -182,7 +183,7 @@ setClass(
         margins = as.numeric(margins), normIndex = normIndex,
         shareInside = 1 - s0, weights = as.numeric(weights),
         priceOutside = as.numeric(priceOutside), insideSize = as.numeric(insideSize),
-        mktSize = 1, priceStart = as.numeric(prices),
+        mktSize = as.numeric(insideSize / (1 - s0)), priceStart = as.numeric(prices),
         mcDelta = rep(0, n), subset = rep(TRUE, n),
         ownerPre = ownerPre, ownerPost = ownerPre,
         pricePre = as.numeric(prices), pricePost = as.numeric(prices),
@@ -269,42 +270,57 @@ setMethod(
             owner <- object@ownerPost
             barg <- object@bargpowerPost
         }
+        active <- if (preMerger) rep(TRUE, length(object@shares)) else object@subset
+        prices <- prices[active]
+        owner <- owner[active, active, drop = FALSE]
         if (any(barg >= 1)) stop("Bargaining BLP requires bargaining power strictly below one.")
-        barg <- barg / (1 - barg)
+        barg <- barg[active] / (1 - barg[active])
         shares_draw <- calcShares(object, preMerger, revenue = FALSE,
                                   aggregate = FALSE)
+        shares_draw <- shares_draw[active, , drop = FALSE]
         draw_weights <- .blp_draw_weights(object, ncol(shares_draw))
         shares <- as.vector(shares_draw %*% draw_weights)
         alpha <- object@slopes$alphas
-        if (length(alpha) != ncol(shares_draw) || any(!is.finite(alpha))) {
+        if (length(alpha) != ncol(shares_draw) || any(!is.finite(alpha)) ||
+            any(alpha == 0)) {
             stop("BLP bargaining demand has invalid price-coefficient integration points.")
         }
 
-        ## Integrate the draw-level bargaining kernel.  Its homogeneous limit
-        ## is exactly the legacy BargainingLogit linear system, while each
-        ## heterogeneous type contributes its own surplus and substitution
-        ## terms before aggregation.
-        margin_matrix <- matrix(0, nrow = nrow(owner), ncol = ncol(owner))
-        term <- numeric(nrow(owner))
+        ## Build the aggregate demand Jacobian from the consumer draws.  A
+        ## draw-wise inverse followed by averaging is not the Nash bargaining
+        ## FOC for an aggregate market.
+        derivative <- matrix(0, nrow = nrow(shares_draw), ncol = nrow(shares_draw))
+        buyer_surplus <- numeric(nrow(shares_draw))
         for (r in seq_len(ncol(shares_draw))) {
             shares_r <- shares_draw[, r]
-            ## Match the row-wise share broadcasting used by the legacy
-            ## BargainingLogit FOC.  This is the orientation implied by its
-            ## demand derivative and is required for the sigma = 0 limit.
-            kernel <- -owner * rep(shares_r, times = nrow(owner))
-            diag(kernel) <- diag(owner) + diag(kernel)
-            margin_matrix <- margin_matrix + draw_weights[r] * kernel
-
-            div_r <- shares_r / (1 - shares_r)
-            term_r <- log(1 - shares_r) /
-                (-1 * output * alpha[r] *
-                     (barg * div_r - log(1 - shares_r)))
-            term <- term + draw_weights[r] * diag(owner) * term_r
+            derivative <- derivative + draw_weights[r] * alpha[r] *
+                (diag(shares_r) - tcrossprod(shares_r))
+            buyer_surplus <- buyer_surplus + draw_weights[r] *
+                log1p(-shares_r) / alpha[r]
         }
+        if (any(!is.finite(buyer_surplus)) || any(buyer_surplus == 0)) {
+            stop("BLP bargaining buyer surplus is not finite under the supplied price-coefficient draws.")
+        }
+
+        ## Normalize each price FOC by its aggregate product share.  In the
+        ## homogeneous case K reduces to alpha * owner * (I - s 1'), and the
+        ## right hand side below reduces exactly to the legacy
+        ## BargainingLogit formula.  With zero buyer bargaining power it is
+        ## the aggregate Bertrand FOC, K' m = output.
+        normalized <- sweep(derivative, 2, shares, "/")
+        margin_matrix <- owner * normalized
+        own_normalized <- diag(derivative) / shares
+        rhs <- own_normalized /
+            (output * (own_normalized - barg * shares / buyer_surplus))
+
         inverse_matrix <- try(solve(t(margin_matrix)), silent = TRUE)
-        if (inherits(inverse_matrix, "try-error")) inverse_matrix <- MASS::ginv(t(margin_matrix))
-        margins <- as.vector(inverse_matrix %*% term)
-        if (!level) margins <- margins / prices
+        if (inherits(inverse_matrix, "try-error")) {
+            inverse_matrix <- MASS::ginv(t(margin_matrix))
+        }
+        margins_active <- as.vector(inverse_matrix %*% rhs)
+        margins <- rep(NA_real_, length(object@shares))
+        margins[active] <- margins_active
+        if (!level) margins[active] <- margins[active] / prices[active]
         names(margins) <- object@labels
         as.vector(margins)
     }
@@ -360,9 +376,77 @@ setMethod(
 setMethod(
     f = "calcShares", signature = "Auction2ndBLP",
     definition = function(object, preMerger = TRUE, revenue = FALSE, aggregate = TRUE) {
-        methods::selectMethod("calcShares", "LogitBLP")(
-            object, preMerger = preMerger, revenue = revenue, aggregate = aggregate
+        nprods <- length(object@shares)
+        active <- if (preMerger) rep(TRUE, nprods) else object@subset
+        alpha <- as.numeric(object@slopes$alphas)
+        meanval <- as.numeric(object@slopes$meanval)
+        if (length(alpha) < 1L || length(meanval) != nprods ||
+            any(!is.finite(alpha)) || any(!is.finite(meanval))) {
+            stop("BLP auction demand requires finite mean utilities and price coefficients.")
+        }
+        draw_weights <- .blp_draw_weights(object, length(alpha))
+
+        ## BLP meanval is the utility index at zero price.  A second-score
+        ## allocation depends on values net of marginal cost, rather than on
+        ## the posted price.  Recover the auction value at the observed
+        ## pre-merger prices, then apply only cost shocks in the counterfactual.
+        baseline <- meanval + tcrossprod(
+            object@pricePre - object@priceOutside, alpha
         )
+        if (!preMerger) {
+            mc_delta_out <- if (is.na(object@normIndex)) {
+                object@priceOutside
+            } else {
+                object@mcDelta[object@normIndex]
+            }
+            baseline <- baseline + tcrossprod(
+                object@mcDelta - mc_delta_out, alpha
+            )
+        }
+        baseline[!active, ] <- -Inf
+
+        ## Stable softmax over the auction allocation values.  The outside
+        ## option remains available whenever the BLP object has an outside
+        ## share (normIndex = NA).
+        max_value <- apply(baseline, 2L, max)
+        outside <- is.na(object@normIndex)
+        if (outside) max_value <- pmax(0, max_value)
+        exp_value <- exp(sweep(baseline, 2L, max_value, "-"))
+        denominator <- colSums(exp_value)
+        if (outside) denominator <- denominator + exp(-max_value)
+        shares_draw <- sweep(exp_value, 2L, denominator, "/")
+        shares_draw[!active, ] <- NA_real_
+
+        if (aggregate) {
+            shares <- as.vector(shares_draw %*% draw_weights)
+            if (revenue) {
+                prices <- if (preMerger) object@pricePre else object@pricePost
+                total_inside <- sum(prices * shares, na.rm = TRUE)
+                total <- if (outside) {
+                    total_inside + object@priceOutside *
+                        (1 - sum(shares, na.rm = TRUE))
+                } else {
+                    total_inside
+                }
+                shares <- prices * shares / total
+            }
+            shares[!active] <- NA_real_
+            names(shares) <- object@labels
+            return(shares)
+        }
+        if (revenue) {
+            prices <- if (preMerger) object@pricePre else object@pricePost
+            total_inside <- colSums(prices * shares_draw, na.rm = TRUE)
+            total <- if (outside) {
+                total_inside + object@priceOutside *
+                    (1 - colSums(shares_draw, na.rm = TRUE))
+            } else {
+                total_inside
+            }
+            shares_draw <- sweep(prices * shares_draw, 2L, total, "/")
+        }
+        rownames(shares_draw) <- object@labels
+        shares_draw
     }
 )
 setMethod(
@@ -463,7 +547,7 @@ setMethod(
 
 .blp_logit_start <- function(context) {
     constructor <- switch(context$conduct,
-        bertrand = "logit", cournot = "logit.cournot",
+        bertrand = "logit", moncom = "logit", cournot = "logit.cournot",
         auction2nd = "auction2nd.logit", bargaining = "bargaining.logit"
     )
     args <- list(
@@ -516,6 +600,67 @@ setMethod(
         })
         as.data.frame(do.call(rbind, result), row.names = NULL)
     }
+}
+
+
+.blp_identification <- function(context, parameters, moment_index) {
+    ## A two-parameter BLP fit needs locally independent margin moments for
+    ## alphaMean and sigma.  This is a numerical rank diagnostic for the
+    ## observed-margin map, not a covariance or standard-error calculation.
+    parameters <- as.numeric(parameters)
+    if (length(parameters) != 2L || any(!is.finite(parameters))) {
+        return(list(status = "unavailable", identified = NA,
+                    rank = NA_integer_, singularValues = numeric(0)))
+    }
+    steps <- pmax(1e-6, abs(parameters) * 1e-5)
+    jacobian <- matrix(NA_real_, nrow = length(moment_index), ncol = 2L,
+                       dimnames = list(NULL, c("alphaMean", "sigma")))
+    for (column in seq_len(2L)) {
+        plus <- parameters
+        minus <- parameters
+        plus[column] <- plus[column] + steps[column]
+        minus[column] <- minus[column] - steps[column]
+        if (column == 2L && minus[column] < 0) {
+            minus[column] <- parameters[column]
+        }
+        plus_details <- try(.blp_objective(plus, context, details = TRUE),
+                            silent = TRUE)
+        minus_details <- try(.blp_objective(minus, context, details = TRUE),
+                             silent = TRUE)
+        plus_ok <- !inherits(plus_details, "try-error") &&
+            is.list(plus_details) && is.finite(plus_details$objective)
+        minus_ok <- !inherits(minus_details, "try-error") &&
+            is.list(minus_details) && is.finite(minus_details$objective)
+        if (plus_ok && minus_ok) {
+            jacobian[, column] <-
+                (plus_details$predicted[moment_index] -
+                     minus_details$predicted[moment_index]) /
+                (plus[column] - minus[column])
+        } else if (plus_ok) {
+            jacobian[, column] <-
+                (plus_details$predicted[moment_index] -
+                     context$margins[moment_index]) / steps[column]
+        } else if (minus_ok) {
+            jacobian[, column] <-
+                (context$margins[moment_index] -
+                     minus_details$predicted[moment_index]) /
+                steps[column]
+        }
+    }
+    if (any(!is.finite(jacobian))) {
+        return(list(status = "unavailable", identified = NA,
+                    rank = NA_integer_, singularValues = numeric(0),
+                    jacobian = jacobian))
+    }
+    singular_values <- svd(jacobian, nu = 0L, nv = 0L)$d
+    scale <- if (length(singular_values)) max(singular_values) else 0
+    tolerance <- max(dim(jacobian)) * sqrt(.Machine$double.eps) *
+        max(1, scale)
+    rank <- sum(singular_values > tolerance)
+    list(status = if (rank < 2L) "unidentified" else "identified",
+         identified = isTRUE(rank >= 2L), rank = as.integer(rank),
+         singularValues = singular_values, tolerance = tolerance,
+         jacobian = jacobian)
 }
 
 
@@ -622,6 +767,9 @@ setMethod(
     profile_grid <- unique(c(0, best$par[2], sigma_starts,
                              seq(0, max(2 * best$par[2], alpha_scale), length.out = 7)))
     profile_values <- profile(profile_grid)
+    identification <- .blp_identification(
+        context, best$par, context$moment_index
+    )
     diagnostics <- list(
         status = "completed", source = "calibrate", route = "calibrate",
         model_class = class(model)[[1]], calibration_args = calibration_args,
@@ -646,6 +794,7 @@ setMethod(
         profile_sigma_grid = profile_values$sigma,
         profile_sigma_values = profile_values$objective,
         profile_sigma = profile,
+        identification = identification,
         optimizer = list(method = "L-BFGS-B", convergence = best$convergence,
                          message = best$message)
     )
@@ -657,7 +806,10 @@ setMethod(
     new(
         "AntitrustFit", spec = spec, model = model, parameters = params,
         observed = list(prices = prices, shares = shares, margins = margins,
-                        ownerPre = ownerPre, s0 = s0), diagnostics = diagnostics
+                        ownerPre = ownerPre, s0 = s0),
+        diagnostics = c(diagnostics,
+                        if (identical(spec$conduct, "moncom"))
+                            .moncom_diagnostics(model) else list())
     )
 }
 
@@ -721,15 +873,19 @@ setMethod(
     new("AntitrustFit", spec = spec, model = model, parameters = params,
         observed = list(prices = prices, shares = shares, margins = margins,
                         ownerPre = ownerPre, s0 = s0),
-        diagnostics = list(status = "completed", source = "specified", route = "specify",
-                           model_class = class(model)[[1]], specification_args = specification_args,
-                           integration = list(rule = integration$rule, nodes = integration$draws,
-                                              weights = integration$weights),
-                           wrongSignProbability = if (sigma == 0) 0 else if (output) {
-                               1 - stats::pnorm(-alpha / sigma)
-                           } else {
-                               stats::pnorm(-alpha / sigma)
-                           }))
+        diagnostics = c(
+            list(status = "completed", source = "specified", route = "specify",
+                 model_class = class(model)[[1]], specification_args = specification_args,
+                 integration = list(rule = integration$rule, nodes = integration$draws,
+                                    weights = integration$weights),
+                 wrongSignProbability = if (sigma == 0) 0 else if (output) {
+                     1 - stats::pnorm(-alpha / sigma)
+                 } else {
+                     stats::pnorm(-alpha / sigma)
+                 }),
+            if (identical(spec$conduct, "moncom"))
+                .moncom_diagnostics(model) else list()
+        ))
 }
 
 

@@ -2,8 +2,12 @@
 #' @name MonCom-Functions
 #' @aliases moncom.logit moncom.ces
 #' @description Calibrate flat Logit or CES demand under differentiated-product
-#' monopolistic competition.  Each product uses its own demand derivative and
-#' does not internalize cross-product effects.
+#' monopolistic competition.  Each product uses its own perceived demand
+#' derivative and does not internalize cross-product effects.  For CES, the
+#' aggregate CES index is held fixed, so the perceived own elasticity is
+#' `-gamma`, rather than the full share-adjusted CES elasticity.  The BLP
+#' MonCom model is exposed through the general `calibrate()` and `specify()`
+#' lifecycle using the validated integration engine.
 #' @param prices A length-k vector of observed product prices.
 #' @param shares A length-k vector of quantity shares for Logit or revenue
 #'   shares for CES.
