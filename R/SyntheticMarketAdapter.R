@@ -74,8 +74,7 @@
 #' @param ... Additional arguments, including `alpha` and safeguards.
 #' @return A new realized `SyntheticMarket` with markups, costs, mean values,
 #'   recovered parameters, and FOC diagnostics.
-#' @importFrom iopolicy realize_market
-#' @exportS3Method iopolicy::realize_market
+#' @export
 realize_market.SyntheticMarket <- function(market, spec, alpha = NULL,
                                            allow_negative_costs = FALSE,
                                            foc_tolerance = 1e-8, ...) {
