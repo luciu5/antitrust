@@ -327,6 +327,15 @@ test_that("entrant can receive a later quality shock, cost shock, and merger", {
     expect_equal(owner_mat[idxProd1, idxE1], 1)
 })
 
+test_that("post-entry positional cost shocks cannot recycle across products", {
+    fit <- .seq_fit()
+    e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5,
+                  cost = 1, priceStart = 2)
+    cf <- counterfactual(entry = e1)
+    cf <- add_step(cf, costs = c(-.1, 0, 0))
+    expect_error(simulate(fit, cf), "match the current fitted market dimension")
+})
+
 test_that("two simultaneous entrants and two sequential entrants both work", {
     fit <- .seq_fit()
     e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)

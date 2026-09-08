@@ -108,6 +108,51 @@ test_that("Monte Carlo BLP integration defaults to 5000 draws", {
 })
 
 
+test_that("BLP specify forwards market metadata into the new builder", {
+    fit <- suppressWarnings(specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(2, 2.5, 3), shares = c(.2, .3, .25),
+        ownerPre = 1:3, insideSize = 75, priceOutside = 1,
+        labels = LETTERS[1:3],
+        parameters = list(alpha = -1.5, sigma = .1, integration = "auto")
+    ))
+    expect_equal(fit@model@insideSize, 75, tolerance = 0)
+    expect_equal(fit@model@mktSize, 100, tolerance = 0)
+    expect_equal(fit@model@priceOutside, 1, tolerance = 0)
+    expect_identical(fit@model@labels, LETTERS[1:3])
+})
+
+
+test_that("default BLP specify dispatches registered auction conduct", {
+    fit <- suppressWarnings(specify(
+        demand = "blp", conduct = "auction2nd",
+        prices = c(2, 2.5, 3), shares = c(.2, .3, .1),
+        ownerPre = 1:3,
+        parameters = list(
+            alpha = -1.5, sigma = 0,
+            meanval = log(c(.2, .3, .1) / .4) + 1.5 * c(2, 2.5, 3)
+        )
+    ))
+    expect_s4_class(fit@model, "Auction2ndBLP")
+    expect_identical(fit@model@slopes$integration, "gauss-hermite")
+})
+
+
+test_that("default BLP specify dispatches registered bargaining conduct", {
+    fit <- suppressWarnings(specify(
+        demand = "blp", conduct = "bargaining",
+        prices = c(2, 2.5, 3), shares = c(.2, .3, .1),
+        ownerPre = 1:3,
+        parameters = list(
+            alpha = -1.5, sigma = 0,
+            meanval = log(c(.2, .3, .1) / .4) + 1.5 * c(2, 2.5, 3)
+        )
+    ))
+    expect_s4_class(fit@model, "BargainingBLP")
+    expect_identical(fit@model@slopes$integration, "gauss-hermite")
+})
+
+
 test_that("one demographic with zero price sigma defaults to Gauss-Hermite", {
     RNGkind("Mersenne-Twister", "Inversion", "Rejection")
     set.seed(20260904)
@@ -200,6 +245,38 @@ test_that("PriceLeadershipBLP uses the shared integration rules", {
     expect_identical(monte_carlo@slopes$integration, "monte-carlo")
     expect_length(monte_carlo@slopes$consDraws, 15L)
     expect_equal(monte_carlo@slopes$drawWeights, rep(1 / 15, 15),
+                 tolerance = 0)
+})
+
+
+test_that("PriceLeadershipBLP uses shared Gauss-Hermite nodes for one demographic", {
+    shares <- c(.35, .25, .25, .15)
+    prices <- c(.93, .88, 1.10, 1.02)
+    common <- list(
+        prices = prices, shares = shares,
+        ownerPre = c("Bank1", "Bank2", "Bank3", "Fringe"),
+        ownerPost = c("Bank1", "Bank2", "Bank3", "Fringe"),
+        coalitionPre = 1:3, coalitionPost = 1:3,
+        insideSize = 1000,
+        slopes = list(
+            alphaMean = -5.767013, alpha = -5.767013, sigma = 0,
+            piDemog = .4, demogMean = .2,
+            demogCov = matrix(4, nrow = 1L, ncol = 1L),
+            meanval = c(0, log(shares[-1] / shares[1]) -
+                (-5.767013) * (prices[-1] - prices[1])), sigmaNest = 1
+        )
+    )
+    RNGkind("Mersenne-Twister", "Inversion", "Rejection")
+    set.seed(20260907)
+    before <- .Random.seed
+    fit <- suppressWarnings(do.call(ple.blp, common))
+    after <- .Random.seed
+    nodes <- antitrust:::.blp_normal_nodes(31L)$nodes
+
+    expect_identical(before, after)
+    expect_identical(fit@slopes$nDemog, 1L)
+    expect_identical(fit@slopes$integration, "gauss-hermite")
+    expect_equal(fit@slopes$demogDraws, matrix(.2 + 2 * nodes, ncol = 1L),
                  tolerance = 0)
 })
 
@@ -302,6 +379,32 @@ test_that("provided BLP points and weights are normalized without RNG use", {
     expect_equal(model@slopes$consDraws, nodes, tolerance = 0)
     expect_equal(model@slopes$drawWeights, weights / sum(weights),
                  tolerance = 0)
+})
+
+
+test_that("BLP consDraws and integrationWeights aliases are exact", {
+    nodes <- c(-1, 0, 1)
+    weights <- c(.2, .5, .3)
+    rule <- antitrust:::.blp_integration(list(
+        consDraws = nodes, integrationWeights = weights
+    ))
+    expect_identical(rule$rule, "provided")
+    expect_equal(rule$draws, nodes, tolerance = 0)
+    expect_equal(rule$weights, weights / sum(weights), tolerance = 0)
+
+    fit <- suppressWarnings(specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1), shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"),
+        parameters = list(
+            alpha = -1.2, sigma = .3, meanval = c(.5, .2, -.1),
+            consDraws = nodes, integrationWeights = weights
+        )
+    ))
+    expect_identical(fit@model@slopes$integration, "provided")
+    expect_equal(fit@model@slopes$consDraws, nodes, tolerance = 0)
+    expect_equal(fit@model@slopes$drawWeights,
+                 weights / sum(weights), tolerance = 0)
 })
 
 

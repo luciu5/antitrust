@@ -460,18 +460,28 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                "demogCov") %in% names(parameters)) &&
         (is.null(parameters$sigmaNest) ||
          isTRUE(as.numeric(parameters$sigmaNest) == 1))
-    blp_new_integration <- any(c(
-        "integration", "nNodes", "draws", "drawWeights",
-        "integrationWeights"
-    ) %in% c(names(parameters), names(dots)))
-    if (blp_price_only && blp_new_integration &&
+    if (blp_price_only &&
         spec$conduct %in% c("bertrand", "moncom", "cournot", "auction2nd", "bargaining")) {
+        ## These arguments are explicit formals of specify(), so they are not
+        ## present in `dots`.  Forward them to the BLP builder along with the
+        ## product labels used by the model slots and retained metadata.
+        blp_dots <- dots
+        if (!missing(priceOutside)) blp_dots$priceOutside <- priceOutside
+        if (!missing(priceStart)) blp_dots$priceStart <- priceStart
+        blp_dots$labels <- labels
         result <- .specify_blp_conduct_fit(
             spec = spec, prices = prices, parameters = parameters,
             ownerPre = ownerPre, shares = shares, margins = margins,
-            insideSize = insideSize, output = output, dots = dots,
+            insideSize = insideSize, output = output, dots = blp_dots,
             specification_args = specification_args
         )
+        if (!missing(priceStart)) {
+            if (!is.numeric(priceStart) || length(priceStart) != length(prices) ||
+                any(!is.finite(priceStart))) {
+                stop("'priceStart' must be a finite numeric vector with one value per product.")
+            }
+            result@model@priceStart <- as.numeric(priceStart)
+        }
         result@model <- .initialize_cost_state(result@model)
         result <- .retain_fit_metadata(result)
         return(result)
@@ -587,7 +597,18 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 ## passed through unchanged; vertical models are not entry/quality-
 ## supported, so dimension-changing named resolution never applies to them.
 .resolve_step_costs <- function(model, costs, is_vertical) {
-    if (is.null(costs) || is_vertical || is.null(names(costs))) return(costs)
+    if (is.null(costs) || is_vertical) return(costs)
+    expected <- if (methods::is(model, "Cournot")) {
+        nrow(model@quantities)
+    } else {
+        length(model@prices)
+    }
+    if (is.null(names(costs))) {
+        if (length(costs) != expected) {
+            stop("'costs' must match the current fitted market dimension; use a named vector after entry")
+        }
+        return(costs)
+    }
     .resolve_named_shock(costs, model@labels, model@subset, "costs", default = 0)
 }
 
@@ -604,6 +625,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     if (is.null(current)) current <- rep(0, length(step_shock))
     if (length(current) < length(step_shock)) {
         current <- c(current, rep(0, length(step_shock) - length(current)))
+    } else if (length(step_shock) < length(current)) {
+        stop("'costs' must match the current fitted market dimension; use a named vector after entry")
     }
     if (identical(mode, "additive")) {
         current + step_shock
@@ -1325,6 +1348,54 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
             auction_meanval_normalization <- "outside-good"
         } else {
             auction_meanval_normalization <- "source"
+        }
+    }
+
+    ## The legacy Auction2ndLogit object stores the value index at the
+    ## observed prices (and its calcShares method deliberately omits the
+    ## price term).  A target Logit-family object instead stores mean utility
+    ## at the outside-good price.  Undo that auction convention when moving
+    ## back to a price-based conduct model, including the no-outside-good
+    ## reference-product normalization.
+    if (identical(source$demand, "logit") &&
+        identical(source$conduct, "auction2nd") &&
+        identical(target$demand, "logit") &&
+        !identical(target$conduct, "auction2nd") &&
+        "meanval" %in% names(portable)) {
+        auction_prices <- as.numeric(fit@model@pricePre)
+        auction_shares <- as.numeric(fit@model@shares)
+        auction_alpha <- as.numeric(portable$alpha)[1L]
+        if (length(auction_prices) != length(auction_shares) ||
+            length(auction_prices) != length(portable$meanval) ||
+            !is.finite(auction_alpha) ||
+            any(!is.finite(auction_prices)) ||
+            any(!is.finite(auction_shares)) ||
+            any(auction_shares <= 0)) {
+            stop("auction-to-Logit respecification requires finite prices, shares, and alpha")
+        }
+        share_outside <- 1 - sum(auction_shares)
+        if (is.finite(share_outside) && share_outside >= 1e-10) {
+            price_outside <- if ("priceOutside" %in% methods::slotNames(fit@model)) {
+                as.numeric(fit@model@priceOutside)[1L]
+            } else {
+                0
+            }
+            if (!is.finite(price_outside)) price_outside <- 0
+            portable$meanval <- log(auction_shares) - log(share_outside) -
+                auction_alpha * (auction_prices - price_outside)
+            auction_meanval_normalization <- "outside-good-reverse"
+        } else {
+            reference <- if ("normIndex" %in% methods::slotNames(fit@model)) {
+                as.integer(fit@model@normIndex)[1L]
+            } else {
+                NA_integer_
+            }
+            if (is.na(reference) || reference < 1L ||
+                reference > length(auction_shares)) reference <- 1L
+            portable$meanval <- log(auction_shares / auction_shares[reference]) -
+                auction_alpha * (auction_prices - auction_prices[reference])
+            portable$meanval[reference] <- 0
+            auction_meanval_normalization <- "reference-product-reverse"
         }
     }
 

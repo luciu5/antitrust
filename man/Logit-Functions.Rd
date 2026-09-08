@@ -281,7 +281,8 @@ non-singleton nest is permitted to have its own value. Default is
 TRUE.}
 
 \item{capacitiesPre}{A length k vector of pre-merger product capacities. Capacities
-must be at least as great as shares * insideSize.}
+must be at least as great as shares * insideSize. A value of \code{Inf}
+denotes an unconstrained product.}
 
 \item{capacitiesPost}{A length k vector of post-merger product capacities.}
 }

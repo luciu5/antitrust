@@ -131,12 +131,19 @@ blp_conduct_expected_bargaining <- function(object) {
             log1p(-shares_r) / alpha[r]
     }
 
-    normalized <- sweep(derivative, 2, aggregate_shares, "/")
-    margin_system <- object@ownerPre * normalized
+    aggregate_elast <- derivative * outer(1 / aggregate_shares,
+                                          object@pricePre)
+    revenue <- object@pricePre * aggregate_shares
+    margin_system <- t(
+        diag(1 / revenue) %*%
+            (t(aggregate_elast * object@ownerPre) %*%
+                 diag(aggregate_shares))
+    )
     own_normalized <- diag(derivative) / aggregate_shares
     right_hand_side <- own_normalized /
         (output_sign * (own_normalized - barg * aggregate_shares /
                         buyer_surplus))
+    right_hand_side <- diag(object@ownerPre) * right_hand_side
 
     ## This is the aggregate Nash system: aggregate the demand Jacobian and
     ## buyer surplus first, then solve the ownership-adjusted FOCs.  Averaging
@@ -254,6 +261,30 @@ test_that("zero buyer bargaining power satisfies the aggregate Bertrand FOC", {
     ## without treating the legacy Bertrand margin method as a demand FOC
     ## oracle.
     expect_equal(observed, expected, tolerance = 1e-12)
+
+    fractional_owner <- matrix(c(
+        .7, .1, 0,
+        .1, .7, 0,
+        0, 0, .8
+    ), nrow = 3, byrow = TRUE)
+    bertrand_fractional <- suppressWarnings(antitrust:::.blp_model(
+        conduct = "bertrand", prices = prices, shares = shares,
+        margins = rep(.2, 3), ownerPre = fractional_owner,
+        alphaMean = alpha, sigma = sigma, meanval = delta,
+        draws = nodes, drawWeights = weights, s0 = s0
+    ))
+    bargaining_fractional <- suppressWarnings(antitrust:::.blp_model(
+        conduct = "bargaining", prices = prices, shares = shares,
+        margins = rep(.2, 3), ownerPre = fractional_owner,
+        alphaMean = alpha, sigma = sigma, meanval = delta,
+        draws = nodes, drawWeights = weights, s0 = s0,
+        bargpowerPre = rep(0, 3)
+    ))
+    expect_equal(
+        unname(calcMargins(bargaining_fractional, level = TRUE)),
+        unname(calcMargins(bertrand_fractional, level = TRUE)),
+        tolerance = 1e-12
+    )
 })
 
 

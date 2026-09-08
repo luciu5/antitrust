@@ -1,13 +1,6 @@
 #' @title (Nested) Logit Demand Calibration and Merger Simulation)
 #' @name Logit-Functions
-#' @aliases logit
-#' logit.nests
-#' logit.cournot
-#' logit.cournot.alm
-#' logit.nests.alm
-#' logit.cap
-#' logit.alm
-#' logit.cap.alm
+#' @aliases logit logit.nests logit.cournot logit.cournot.alm logit.nests.alm logit.cap logit.alm logit.cap.alm
 #' @description Calibrates consumer demand using (Nested) Logit
 #' and then simulates the price effect of a merger between two firms
 #' under the assumption that all firms in the market are playing a
@@ -26,7 +19,7 @@
 #' @param nests A length k vector identifying the nest that each
 #'   product belongs to.
 #' @param capacitiesPre A length k vector of pre-merger product capacities. Capacities
-#'   must be at least as great as shares * insideSize. A value of code{Inf}
+#'   must be at least as great as shares * insideSize. A value of \code{Inf}
 #'   denotes an unconstrained product.
 #' @param capacitiesPost A length k vector of post-merger product capacities.
 #' @param insideSize An integer equal to total pre-merger units sold.

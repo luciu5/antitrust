@@ -30,7 +30,10 @@ add_step(object, ...)
 
 \item{ownership}{Post-counterfactual ownership.}
 
-\item{costs}{Post-counterfactual marginal-cost changes.}
+\item{costs}{Post-counterfactual marginal-cost changes. Constant-cost
+Bertrand-family models apply these to their retained structural cost
+primitives; second-score Logit uses its legacy additive cost-level
+convention.}
 
 \item{exit}{Products to remove, or a logical active-product vector.}
 
@@ -46,8 +49,9 @@ add_step(object, ...)
 
 \item{products}{Post-counterfactual product structure for Stackelberg models.}
 
-\item{quality}{A named numeric vector of proportional changes to
-calibrated `meanval`, keyed by product label.}
+\item{quality}{A named numeric vector of proportional changes to product
+attractiveness, keyed by product label. Logit applies an additive
+`log1p(quality)` utility shift; CES applies a multiplicative change.}
 
 \item{entry}{An `Entrant` object, or a list of `Entrant` objects.}
 }

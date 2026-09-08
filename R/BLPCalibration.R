@@ -41,7 +41,7 @@ setClass(
 
 .blp_contract <- function(prices, shares, alphaMean, sigma, draws, weights,
                           s0, priceOutside = 0, tol = 1e-10,
-                          maxIter = 2000L, initial = NULL) {
+                          maxIter = 2000L, initial = NULL, dampFactor = 1) {
     alpha <- alphaMean + sigma * draws
     outside <- s0 > 0
     delta <- if (is.null(initial)) log(shares) else as.numeric(initial)
@@ -59,12 +59,27 @@ setClass(
         error <- log(shares) - log(predicted)
         max_error <- max(abs(error))
         delta_new <- delta + error
-        if (max_error < tol) {
+        if (isTRUE(dampFactor == 1)) {
+            if (max_error < tol) {
+                delta <- delta_new
+                converged <- TRUE
+                break
+            }
             delta <- delta_new
-            converged <- TRUE
-            break
+        } else {
+            ## The parameterized sim() compatibility path retains the legacy
+            ## damped fixed-point stopping rule and iteration count.  The
+            ## calibration path keeps the direct contraction above.
+            change <- delta_new - delta
+            abs_diff <- max(abs(change))
+            rel_diff <- max(abs(change / (abs(delta) + 1e-8)))
+            if (rel_diff < tol || abs_diff < tol * 1e-2) {
+                delta <- delta_new
+                converged <- TRUE
+                break
+            }
+            delta <- delta + dampFactor * change
         }
-        delta <- delta_new
     }
 
     if (!outside) delta <- delta - delta[1]
@@ -160,11 +175,18 @@ setClass(
     if (is.null(weights)) weights <- rep(1, n)
     normIndex <- if (s0 == 0) 1L else NA_integer_
     slopes <- list(
-        alpha = as.numeric(alphaMean), alphaMean = as.numeric(alphaMean),
-        sigma = as.numeric(sigma), meanval = as.numeric(meanval),
-        sigmaNest = 1, piDemog = numeric(0), nDemog = 0,
-        consDraws = as.numeric(draws), demogDraws = matrix(numeric(0), nrow = length(draws), ncol = 0),
+        ## Match the legacy LogitBLP slope representation so parameterized
+        ## sim() remains interchangeable with .sim_legacy().
+        alpha = as.numeric(alphaMean),
+        alphaMean = structure(as.numeric(alphaMean), names = "alphaMean"),
+        meanval = structure(as.numeric(meanval), names = as.character(labels)),
+        sigma = structure(as.numeric(sigma), names = "sigma"),
+        sigmaNest = structure(1, names = "sigmaNest"),
+        piDemog = numeric(0),
+        nDemog = 0,
         alphas = as.numeric(alphaMean + sigma * draws),
+        consDraws = as.numeric(draws),
+        demogDraws = NULL,
         drawWeights = as.numeric(drawWeights),
         integrationWeights = as.numeric(drawWeights),
         integration = integrationRule,
@@ -302,16 +324,29 @@ setMethod(
             stop("BLP bargaining buyer surplus is not finite under the supplied price-coefficient draws.")
         }
 
-        ## Normalize each price FOC by its aggregate product share.  In the
-        ## homogeneous case K reduces to alpha * owner * (I - s 1'), and the
-        ## right hand side below reduces exactly to the legacy
-        ## BargainingLogit formula.  With zero buyer bargaining power it is
-        ## the aggregate Bertrand FOC, K' m = output.
-        normalized <- sweep(derivative, 2, shares, "/")
-        margin_matrix <- owner * normalized
+        ## Normalize each price FOC by aggregate demand and revenue.  In the
+        ## homogeneous case the own derivative and buyer-surplus terms reduce
+        ## exactly to the legacy BargainingLogit formula.  With zero buyer
+        ## bargaining power it is the aggregate Bertrand FOC in level-margin
+        ## units.
+        ## Express the system in level-margin units using the same elasticity
+        ## normalization as the legacy Bertrand method.  Let E_ij be the
+        ## aggregate elasticity of share i with respect to price j.  The
+        ## legacy price FOC is
+        ##   diag(1/(p*s)) %*% t(E * owner) %*% diag(s) %*% margin
+        ##       = output * diag(owner).
+        ## This normalization makes bargpower = 0 exactly the Bertrand
+        ## boundary for ownership vectors and fractional ownership matrices.
+        aggregate_elast <- derivative * outer(1 / shares, prices)
+        revenue <- prices * shares
+        margin_matrix <- t(
+            diag(1 / revenue) %*%
+                (t(aggregate_elast * owner) %*% diag(shares))
+        )
         own_normalized <- diag(derivative) / shares
         rhs <- own_normalized /
             (output * (own_normalized - barg * shares / buyer_surplus))
+        rhs <- diag(owner) * rhs
 
         inverse_matrix <- try(solve(t(margin_matrix)), silent = TRUE)
         if (inherits(inverse_matrix, "try-error")) {
@@ -799,6 +834,11 @@ setMethod(
                          message = best$message)
     )
     params <- model@slopes
+    ## Calibration returns scalar structural parameters as plain numeric
+    ## values, matching the established fit@parameters contract.  The model
+    ## slots themselves retain the legacy names used by parameterized sim().
+    params$alphaMean <- unname(params$alphaMean)
+    params$sigma <- unname(params$sigma)
     if (spec$conduct == "bargaining") {
         params$bargpowerPre <- model@bargpowerPre
         params$bargpowerPost <- model@bargpowerPost
@@ -837,14 +877,33 @@ setMethod(
     .blp_validate_inputs(prices, shares, if (is.null(margins)) rep(1 / length(prices), length(prices)) else margins,
                          ownerPre, s0, output)
     delta <- parameters$meanval
+    contraction_messages <- character()
     if (is.null(delta)) {
+        contraction_tol <- if (is.null(dots[["contractionTol"]])) {
+            1e-10
+        } else {
+            dots[["contractionTol"]]
+        }
+        contraction_max_iter <- if (is.null(dots[["contractionMaxIter"]])) {
+            1200L
+        } else {
+            dots[["contractionMaxIter"]]
+        }
         contracted <- .blp_contract(
             prices, shares, alpha, sigma, integration$draws,
             integration$weights, s0,
-            priceOutside = if (is.null(dots$priceOutside)) 0 else dots$priceOutside
+            priceOutside = if (is.null(dots[["priceOutside"]])) 0 else dots[["priceOutside"]],
+            tol = contraction_tol, maxIter = contraction_max_iter,
+            dampFactor = .5
         )
         if (!contracted$converged) stop("BLP supplied-parameter contraction did not converge.")
         delta <- contracted$delta
+        contraction_messages <- c(
+            "Note: 'meanval' (delta) not provided for BLP. It will be recovered via BLP contraction from observed shares/prices.",
+            paste0("Running BLP contraction (tol=", sprintf("%.0e", contraction_tol),
+                   ", maxIter=", contraction_max_iter, ")..."),
+            paste0("BLP contraction converged in ", contracted$iterations, " iterations")
+        )
     } else if (!is.numeric(delta) || length(delta) != length(prices) || any(!is.finite(delta))) {
         stop("BLP 'meanval' must be a finite length-k vector when supplied.")
     }
@@ -876,6 +935,7 @@ setMethod(
         diagnostics = c(
             list(status = "completed", source = "specified", route = "specify",
                  model_class = class(model)[[1]], specification_args = specification_args,
+                 messages = contraction_messages,
                  integration = list(rule = integration$rule, nodes = integration$draws,
                                     weights = integration$weights),
                  wrongSignProbability = if (sigma == 0) 0 else if (output) {

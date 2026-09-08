@@ -22,7 +22,10 @@ counterfactual(
 \arguments{
 \item{ownership}{Post-counterfactual ownership.}
 
-\item{costs}{Post-counterfactual marginal-cost changes.}
+\item{costs}{Post-counterfactual marginal-cost changes. Constant-cost
+Bertrand-family models apply these to their retained structural cost
+primitives; second-score Logit uses its legacy additive cost-level
+convention.}
 
 \item{exit}{Products to remove, or a logical active-product vector.}
 
@@ -38,9 +41,11 @@ counterfactual(
 
 \item{products}{Post-counterfactual product structure for Stackelberg models.}
 
-\item{quality}{A named numeric vector of proportional changes to
-calibrated `meanval`, keyed by product label. `meanval_new <-
-meanval_current * (1 + quality)`.}
+\item{quality}{A named numeric vector of proportional changes to product
+attractiveness, keyed by product label. For Logit demand this is a
+proportional choice-weight change, represented as
+`meanval_new <- meanval_current + log1p(quality)`; CES retains its
+multiplicative mean-value convention.}
 
 \item{entry}{An `Entrant` object, or a list of `Entrant` objects, each
 describing a new single-product firm to add to the market.}

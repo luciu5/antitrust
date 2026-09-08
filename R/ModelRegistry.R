@@ -468,14 +468,14 @@ print.antitrust_model_spec <- function(x, ...) {
     !is.null(entry) && isTRUE(entry[[operation]])
 }
 
-## Quality and entry are verified only for the four leaf classes whose
+## Quality and entry are verified only for the six leaf classes whose
 ## product-dimensional slots are byte-identical Logit/CES vectors: bare
-## Logit, CES, and their Cournot-conduct counterparts (which add no new
-## slots -- conduct is dispatched separately from class structure). Every
-## other Logit/CES descendant (LogitCap, LogitNests, LogitBLP,
-## Auction2ndLogit*, Bargaining*, VertBarg*) is excluded until individually
-## audited; all non-Logit/CES demands (Linear, LogLin, AIDS, PCAIDS*,
-## Cournot, Stackelberg) are excluded outright.
+## Logit, CES, MonComLogit, MonComCES, and their Cournot-conduct
+## counterparts (which add no new slots -- conduct is dispatched separately
+## from class structure). Every other Logit/CES descendant (LogitCap,
+## LogitNests, LogitBLP, Auction2ndLogit*, Bargaining*, VertBarg*) is
+## excluded until individually audited; all non-Logit/CES demands (Linear,
+## LogLin, AIDS, PCAIDS*, Cournot, Stackelberg) are excluded outright.
 .entry_quality_supported_classes <- c(
     "Logit", "LogitCournot", "CES", "CESCournot",
     "MonComLogit", "MonComCES"

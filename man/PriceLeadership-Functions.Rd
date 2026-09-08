@@ -144,8 +144,8 @@ when \code{sigma = 0}; it uses fixed-draw Monte Carlo otherwise.}
 
 \item{nDraws}{Number of Monte Carlo draws used for BLP demand. It selects
 \code{integration = "monte-carlo"} when no integration rule is supplied,
-preserving legacy BLP calls; it defaults to 5000 when Monte Carlo is selected;
-it is not a quadrature-node count.}
+preserving legacy BLP calls; it defaults to 5000 when Monte Carlo is
+selected; it is not a quadrature-node count.}
 
 \item{consDraws}{Optional supplied BLP integration points.}
 

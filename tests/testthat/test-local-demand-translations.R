@@ -89,6 +89,21 @@ test_that("flat Logit and CES translations require and use target primitives", {
     expect_equal(source@parameters, source_parameters, tolerance = 0)
 })
 
+test_that("demand translations retain bargaining primitives", {
+    source <- specify(
+        "logit", "bargaining", prices = c(1.8, 2, 2.2),
+        shares = c(.30, .20, .10), ownerPre = c("A", "B", "C"),
+        parameters = list(alpha = -2, meanval = c(.6, .4, .2)),
+        insideSize = 100, bargpowerPre = c(.1, .2, .3),
+        bargpowerPost = c(.4, .5, .6)
+    )
+    target <- respecify(source, demand = "ces", gamma = 2)
+
+    expect_equal(target@model@bargpowerPre, c(.1, .2, .3), tolerance = 0)
+    expect_equal(target@model@bargpowerPost, c(.4, .5, .6), tolerance = 0)
+    translation_assertions(source, target, "ces")
+})
+
 test_that("flat Logit/CES translations retain Cournot conduct", {
     source <- flat_logit_fit("cournot")
     target <- respecify(source, demand = "ces", gamma = 2)
@@ -130,6 +145,31 @@ test_that("Logit auction2nd respecification retains mean utilities without an ou
                  tolerance = 0)
     expect_equal(target@diagnostics$transition$meanval_normalization,
                  "source")
+})
+
+test_that("auction2nd to Logit reconstructs price-dependent mean utilities", {
+    shares <- c(.30, .20, .10)
+    prices <- c(1.8, 2, 2.2)
+    alpha <- 2
+    source <- specify(
+        "logit", "auction2nd", prices = prices,
+        shares = shares, ownerPre = c("A", "B", "C"),
+        parameters = list(
+            alpha = alpha,
+            meanval = log(shares / (1 - sum(shares)))
+        ), insideSize = 100, output = FALSE
+    )
+
+    target <- respecify(source, conduct = "bertrand")
+    expected_meanval <- log(shares / (1 - sum(shares))) -
+        alpha * (prices - source@model@priceOutside)
+
+    expect_equal(
+        unname(calcShares(target@model, preMerger = TRUE)), shares,
+        tolerance = 1e-12
+    )
+    expect_equal(unname(target@model@slopes$meanval),
+                 unname(expected_meanval), tolerance = 1e-12)
 })
 
 test_that("nested-to-flat transitions are structural restrictions", {

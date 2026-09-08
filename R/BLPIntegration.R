@@ -5,15 +5,15 @@
 # same aggregation path.
 
 .blp_single_demographic_dimension <- function(dots) {
-    sigma <- dots$sigma
-    n_demog <- dots$nDemog
-    if (is.null(n_demog)) n_demog <- length(dots$piDemog)
+    sigma <- dots[["sigma"]]
+    n_demog <- dots[["nDemog"]]
+    if (is.null(n_demog)) n_demog <- length(dots[["piDemog"]])
     is_single_demog <- length(n_demog) == 1L && is.numeric(n_demog) &&
         is.finite(n_demog) && n_demog == 1L
     is_zero_sigma <- length(sigma) == 1L && is.numeric(sigma) &&
         is.finite(sigma) && as.numeric(sigma) == 0
-    no_random_characteristics <- is.null(dots$sigmaChar) ||
-        length(dots$sigmaChar) == 0L
+    no_random_characteristics <- is.null(dots[["sigmaChar"]]) ||
+        length(dots[["sigmaChar"]]) == 0L
     is_single_demog && is_zero_sigma && no_random_characteristics
 }
 
@@ -22,12 +22,12 @@
     ## A price random coefficient and each demographic draw are independent
     ## normal dimensions.  A single demographic with sigma = 0 is therefore
     ## still a one-dimensional problem and can use Gauss-Hermite quadrature.
-    sigma <- dots$sigma
+    sigma <- dots[["sigma"]]
     price_dimension <- !is.null(sigma) && length(sigma) == 1L &&
         is.finite(sigma) && as.numeric(sigma) != 0
 
-    n_demog <- dots$nDemog
-    if (is.null(n_demog)) n_demog <- length(dots$piDemog)
+    n_demog <- dots[["nDemog"]]
+    if (is.null(n_demog)) n_demog <- length(dots[["piDemog"]])
     if (length(n_demog) != 1L || !is.numeric(n_demog) ||
         !is.finite(n_demog) || n_demog < 0 || n_demog != as.integer(n_demog)) {
         return(Inf)
@@ -38,10 +38,10 @@
     ## loads existing demographic draws, so it adds no dimension when
     ## nDemog is positive; a malformed pi without demographics remains a
     ## conservative Monte Carlo case.
-    has_random_characteristics <- !is.null(dots$sigmaChar) &&
-        length(dots$sigmaChar) > 0L
-    has_unmapped_demographics <- !is.null(dots$pi) &&
-        length(dots$pi) > 0L && n_demog == 0L
+    has_random_characteristics <- !is.null(dots[["sigmaChar"]]) &&
+        length(dots[["sigmaChar"]]) > 0L
+    has_unmapped_demographics <- !is.null(dots[["pi"]]) &&
+        length(dots[["pi"]]) > 0L && n_demog == 0L
     if (has_random_characteristics || has_unmapped_demographics) return(Inf)
 
     as.integer(price_dimension) + n_demog
@@ -70,9 +70,9 @@
 }
 
 
-.blp_draw_weights <- function(object, nDraws = length(object@slopes$alphas)) {
-    weights <- object@slopes$drawWeights
-    if (is.null(weights)) weights <- object@slopes$integrationWeights
+.blp_draw_weights <- function(object, nDraws = length(object@slopes[["alphas"]])) {
+    weights <- object@slopes[["drawWeights"]]
+    if (is.null(weights)) weights <- object@slopes[["integrationWeights"]]
     if (is.null(weights)) weights <- rep(1 / nDraws, nDraws)
     .blp_validate_points(seq_len(nDraws), weights)$weights
 }
@@ -119,12 +119,26 @@
 
 
 .blp_integration <- function(dots) {
-    supplied_draws <- dots$draws
-    if (is.null(supplied_draws)) supplied_draws <- dots$consDraws
-    supplied_weights <- dots$integrationWeights
-    if (is.null(supplied_weights)) supplied_weights <- dots$drawWeights
+    ## Use exact list lookup throughout this adapter.  In particular,
+    ## `$integration` partially matches `integrationWeights` when callers
+    ## omit the optional integration rule.
+    supplied_draws <- dots[["draws"]]
+    if (is.null(supplied_draws)) supplied_draws <- dots[["consDraws"]]
+    supplied_weights <- dots[["integrationWeights"]]
+    if (is.null(supplied_weights)) supplied_weights <- dots[["drawWeights"]]
 
-    requested <- dots$integration
+    ## Validate nDraws even when caller-supplied points take precedence.  The
+    ## legacy BLP boundary treats nDraws as a required positive scalar, and
+    ## silently accepting zero here leaves an invalid parameter object in the
+    ## migrated path.
+    supplied_n <- dots[["nDraws"]]
+    if (!is.null(supplied_n) &&
+        (!is.numeric(supplied_n) || length(supplied_n) != 1L ||
+         !is.finite(supplied_n) || supplied_n < 1)) {
+        stop("'nDraws' must be a positive scalar.")
+    }
+
+    requested <- dots[["integration"]]
     if (is.null(requested)) requested <- "auto"
     requested <- match.arg(requested,
                            c("auto", "gauss-hermite", "monte-carlo", "provided"))
@@ -155,13 +169,13 @@
     }
 
     if (identical(method, "gauss-hermite")) {
-        n <- if (!is.null(dots$nNodes)) dots$nNodes else 31L
+        n <- if (!is.null(dots[["nNodes"]])) dots[["nNodes"]] else 31L
         rule <- .blp_normal_nodes(n)
         return(list(draws = rule$nodes, weights = rule$weights,
                     rule = "gauss-hermite"))
     }
 
-    n <- if (is.null(dots$nDraws)) 5000L else dots$nDraws
+    n <- if (is.null(dots[["nDraws"]])) 5000L else dots[["nDraws"]]
     if (length(n) != 1L || !is.finite(n) || n < 1 || n != as.integer(n)) {
         stop("'nDraws' must be a positive integer for Monte Carlo integration.")
     }
@@ -173,8 +187,8 @@
 
 .blp_object_integration <- function(object, legacy_default = "monte-carlo") {
     slopes <- object@slopes
-    has_points <- !is.null(slopes$draws) || !is.null(slopes$consDraws)
-    requested <- slopes$integration
+    has_points <- !is.null(slopes[["draws"]]) || !is.null(slopes[["consDraws"]])
+    requested <- slopes[["integration"]]
     if (has_points) requested <- "provided"
     if (is.null(requested)) {
         ## Legacy objects retain their Monte Carlo default, except when the
@@ -190,26 +204,26 @@
     }
     result <- .blp_integration(list(
         integration = requested,
-        nNodes = slopes$nNodes,
+        nNodes = slopes[["nNodes"]],
         nDraws = object@nDraws,
-        draws = slopes$draws,
-        consDraws = slopes$consDraws,
-        integrationWeights = slopes$integrationWeights,
-        drawWeights = slopes$drawWeights,
-        prodChar = slopes$prodChar,
-        sigmaChar = slopes$sigmaChar,
-        sigma = slopes$sigma,
-        pi = slopes$pi,
-        piDemog = slopes$piDemog,
-        nDemog = slopes$nDemog,
-        demogMean = slopes$demogMean,
-        demogCov = slopes$demogCov
+        draws = slopes[["draws"]],
+        consDraws = slopes[["consDraws"]],
+        integrationWeights = slopes[["integrationWeights"]],
+        drawWeights = slopes[["drawWeights"]],
+        prodChar = slopes[["prodChar"]],
+        sigmaChar = slopes[["sigmaChar"]],
+        sigma = slopes[["sigma"]],
+        pi = slopes[["pi"]],
+        piDemog = slopes[["piDemog"]],
+        nDemog = slopes[["nDemog"]],
+        demogMean = slopes[["demogMean"]],
+        demogCov = slopes[["demogCov"]]
     ))
     ## A fitted object records the rule used to create its stored points.  The
     ## points/weights remain authoritative when re-used by a downstream path.
-    if (!is.null(slopes$integration) &&
-        slopes$integration %in% c("gauss-hermite", "monte-carlo", "provided")) {
-        result$rule <- slopes$integration
+    if (!is.null(slopes[["integration"]]) &&
+        slopes[["integration"]] %in% c("gauss-hermite", "monte-carlo", "provided")) {
+        result$rule <- slopes[["integration"]]
     }
     result
 }

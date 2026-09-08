@@ -690,11 +690,20 @@ setMethod(
         if(!is.matrix(demogCov) || !identical(dim(demogCov), c(nDemog, nDemog))) {
           stop("'demogCov' must be an nDemog by nDemog matrix.")
         }
-        demog_chol <- tryCatch(chol(demogCov), error = function(e)
-          stop("'demogCov' must be positive definite: ", e$message))
-        z_demog <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
-        ## chol() is upper triangular in R; row draws use Z %*% chol(Sigma).
-        demogDraws <- sweep(z_demog %*% demog_chol, 2, demogMean, "+")
+        if (identical(integration$rule, "gauss-hermite")) {
+          ## A one-dimensional demographic with sigma = 0 is integrated on
+          ## the shared Gauss-Hermite nodes.  Reuse those nodes here instead
+          ## of drawing a second random sample for the same rule.
+          demogDraws <- .blp_quadrature_demog_draws(
+            consDraws, nDemog, demogMean, demogCov
+          )
+        } else {
+          demog_chol <- tryCatch(chol(demogCov), error = function(e)
+            stop("'demogCov' must be positive definite: ", e$message))
+          z_demog <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
+          ## chol() is upper triangular in R; row draws use Z %*% chol(Sigma).
+          demogDraws <- sweep(z_demog %*% demog_chol, 2, demogMean, "+")
+        }
         demogEffect <- (demogDraws - matrix(demogMean,
                                             nrow = nDraws, ncol = nDemog,
                                             byrow = TRUE)) %*% piDemog

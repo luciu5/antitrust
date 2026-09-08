@@ -88,12 +88,18 @@ qa_skip_if_not_extended()
             buyer_surplus <- buyer_surplus + draw_weights[r] *
                 log1p(-s) / alphas[r]
         }
-        normalized <- sweep(derivative, 2, aggregate_shares, "/")
-        margin_system <- owner_matrix * normalized
+        aggregate_elast <- derivative * outer(1 / aggregate_shares, prices)
+        revenue <- prices * aggregate_shares
+        margin_system <- t(
+            diag(1 / revenue) %*%
+                (t(aggregate_elast * owner_matrix) %*%
+                     diag(aggregate_shares))
+        )
         own_normalized <- diag(derivative) / aggregate_shares
         right_hand_side <- own_normalized /
             (-1 * (own_normalized - bargaining * aggregate_shares /
                    buyer_surplus))
+        right_hand_side <- diag(owner_matrix) * right_hand_side
         margins <- as.vector(solve(t(margin_system), right_hand_side)) / prices
     } else {
         stop("unknown recovery conduct")

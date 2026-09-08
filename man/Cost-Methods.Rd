@@ -52,10 +52,12 @@ For Auction2ndCap, calcMC calculates (constant) marginal cost for each
 product. For those classes that do not require prices, returns a
 length-k vector of NAs when prices are not supplied.
 
-For Bertrand, calcMC computes either pre- or post-merger marginal costs. Marginal costs
-are assumed to be constant. Post-merger marginal costs are equal to
-pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a length-k
-vector of marginal cost changes. \sQuote{mcDelta} will typically be between 0 and 1.
+For Bertrand, calcMC computes either pre- or post-merger marginal costs.
+Marginal costs are assumed to be constant. Post-merger marginal costs are
+equal to pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a
+length-k vector of marginal cost changes. \sQuote{mcDelta} will typically
+be between 0 and 1. The second-score Logit auction retains its legacy
+additive cost-level interpretation of \sQuote{mcDelta}.
 
 For Auction2ndLogit, calcMC computes constant marginal costs impied by the model.
 
