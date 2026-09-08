@@ -634,6 +634,7 @@ setMethod(
       owner <- owner[subset, subset]
       mc <- mc[subset]
       priceStart <- priceStart[subset]
+      barg <- barg[subset]
     }
 
     priceEst <- rep(NA, nprods)
