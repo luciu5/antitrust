@@ -29,3 +29,12 @@ ANTITRUST_TEST_TIER=extended Rscript ai/package_audit/run_qa.R . qa-output-exten
 Before deleting or merging an assertion, update this table or the relevant
 test comment to identify the surviving canonical owner.  Historical regression
 tests retain their named context even when their implementation is consolidated.
+
+## CI source provenance
+
+The antitrust workflow records the resolved `git rev-parse HEAD` and the
+`ANTITRUST_TEST_TIER` value in each job summary and QA artifact.  The
+`refactor` branch name is a mutable development default; a recorded commit SHA
+is required when the source revision itself must be reproducible.  Trade's CI
+accepts that antitrust SHA (or another explicit revision) through its manual
+`antitrust_ref` input and records the resolved core and trade SHAs together.

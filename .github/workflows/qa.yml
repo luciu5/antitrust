@@ -10,6 +10,8 @@ on:
 jobs:
   formal-tests:
     name: R ${{ matrix.r }}
+    env:
+      ANTITRUST_TEST_TIER: fast
     strategy:
       fail-fast: false
       matrix:
@@ -19,6 +21,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Record source revision and test tier
+        shell: bash
+        run: |
+          core_sha="$(git rev-parse HEAD)"
+          provenance_file="${RUNNER_TEMP}/antitrust-source-revisions.txt"
+          {
+            echo "core_sha=${core_sha}"
+            echo "test_tier=${ANTITRUST_TEST_TIER}"
+          } | tee "${provenance_file}"
+          {
+            echo "### Source provenance"
+            echo
+            echo "- core SHA: \`${core_sha}\`"
+            echo "- test tier: \`${ANTITRUST_TEST_TIER}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: ${{ matrix.r }}
@@ -32,13 +49,32 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: qa-r-${{ matrix.r }}
-          path: qa-output
+          path: |
+            qa-output
+            ${{ runner.temp }}/antitrust-source-revisions.txt
 
   canonical-check:
     name: Canonical R 4.6.1 check --as-cran
+    env:
+      ANTITRUST_TEST_TIER: fast
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Record source revision and test tier
+        shell: bash
+        run: |
+          core_sha="$(git rev-parse HEAD)"
+          provenance_file="${RUNNER_TEMP}/antitrust-source-revisions.txt"
+          {
+            echo "core_sha=${core_sha}"
+            echo "test_tier=${ANTITRUST_TEST_TIER}"
+          } | tee "${provenance_file}"
+          {
+            echo "### Source provenance"
+            echo
+            echo "- core SHA: \`${core_sha}\`"
+            echo "- test tier: \`${ANTITRUST_TEST_TIER}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.6.1'
@@ -57,7 +93,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: qa-canonical-r-4.6.1
-          path: qa-output
+          path: |
+            qa-output
+            ${{ runner.temp }}/antitrust-source-revisions.txt
 
   extended-qa:
     name: Extended parity QA (nightly/manual)
@@ -67,6 +105,21 @@ jobs:
       ANTITRUST_TEST_TIER: extended
     steps:
       - uses: actions/checkout@v4
+      - name: Record source revision and test tier
+        shell: bash
+        run: |
+          core_sha="$(git rev-parse HEAD)"
+          provenance_file="${RUNNER_TEMP}/antitrust-source-revisions.txt"
+          {
+            echo "core_sha=${core_sha}"
+            echo "test_tier=${ANTITRUST_TEST_TIER}"
+          } | tee "${provenance_file}"
+          {
+            echo "### Source provenance"
+            echo
+            echo "- core SHA: \`${core_sha}\`"
+            echo "- test tier: \`${ANTITRUST_TEST_TIER}\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.6.1'
@@ -85,4 +138,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: qa-extended-r-4.6.1
-          path: qa-output-extended
+          path: |
+            qa-output-extended
+            ${{ runner.temp }}/antitrust-source-revisions.txt
