@@ -9,7 +9,8 @@ sim(
   prices,
   shares = NULL,
   margins = NULL,
-  supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+  supply = c("bertrand", "moncom", "cournot", "auction2nd", "bargaining",
+    "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
     "LogitCap", "BLP", "LogitBLP", "CournotBLP"),
   demand.param,
@@ -38,7 +39,7 @@ calibrate costs from observed margins. Ignored for \sQuote{BLP} demand, where ma
 recovered from observed prices and the estimated demand system.}
 
 \item{supply}{A character string indicating how firms compete with one another. Valid
-values are "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
+values are "moncom" (differentiated-product monopolistic competition), "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
 (2nd score auction), "bargaining", or "bargaining2nd".}
 
 \item{demand}{A character string indicating the type of demand system
@@ -117,6 +118,17 @@ Let k denote the number of products produced by all firms below.
 Using user-supplied demand parameters,
 \code{sim} simulates the effects of a merger in a market where
 firms are playing a differentiated products pricing game.
+Under \sQuote{supply = "moncom"}, each product uses its own demand
+response and does not internalize strategic cross-product effects. Pure
+ownership changes therefore have no strategic price effect, while cost,
+demand, and product-set changes remain model-specific counterfactuals.
+For flat CES, the direct perceived own elasticity is `-gamma`, not the
+full share-adjusted diagonal returned by `elast()`. For BLP, the direct
+perceived derivative is integrated over the existing consumer draws as
+`sum_r w_r * alpha_r * s_jr`. Nested Logit/CES, Linear, LogLinear, AIDS,
+and PCAIDS remain rejected because their package-specific nest,
+expenditure, or quantity-game objects do not yet have a complete validated
+MonCom lifecycle.
 
 The \sQuote{supply} parameter determines the type of competition.
 When \sQuote{supply} equals \sQuote{cournot}, firms compete on quantities
@@ -171,7 +183,7 @@ If \sQuote{demand} equals \sQuote{BLP}, then
   for demographic variables. Default is identity matrix (unit variance, independent).
   Should match the variance structure of demographics in your data. For a single
   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
-  \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
+  \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 5000.}
   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
   \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}

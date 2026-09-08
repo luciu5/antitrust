@@ -191,7 +191,7 @@ setClass(
       if(length(object@nDraws) > 0 && !is.na(object@nDraws)){
         object@slopes$nDraws <- object@nDraws
       } else {
-        object@slopes$nDraws <- 500  # Default
+        object@slopes$nDraws <- 5000  # Default Monte Carlo draw count
       }
     }
 

@@ -63,6 +63,147 @@ test_that("Gauss-Hermite shares agree with direct one-dimensional integration", 
 })
 
 
+test_that("flat BLP draw-level slopes reduce to the Logit derivative", {
+    nodes <- c(-1, 0, 1)
+    weights <- c(.2, .6, .2)
+    model <- blp_integration_test_model(
+        nodes, weights, alphaMean = -1.2, sigma = .3
+    )
+    shares_draw <- calcShares(model, preMerger = TRUE, aggregate = FALSE)
+    alpha <- model@slopes$alphas
+    expected <- matrix(0, nrow = nrow(shares_draw), ncol = nrow(shares_draw))
+    for (r in seq_along(alpha)) {
+        s <- shares_draw[, r]
+        expected <- expected + weights[r] * alpha[r] *
+            (diag(s) - tcrossprod(s))
+    }
+    expect_equal(unname(elast(model, preMerger = TRUE, partial = TRUE)),
+                 unname(expected), tolerance = 1e-12)
+})
+
+
+test_that("BLP dimension selection ignores empty demographics and mean-only characteristics", {
+    expect_false(antitrust:::.blp_multidimensional(list(
+        sigma = .1, piDemog = numeric(0), nDemog = 0
+    )))
+    expect_identical(
+        antitrust:::.blp_integration(list(
+            sigma = .1, piDemog = numeric(0), nDemog = 0
+        ))$rule,
+        "gauss-hermite"
+    )
+    expect_false(antitrust:::.blp_multidimensional(list(
+        sigma = .1, prodChar = matrix(1, nrow = 3, ncol = 1),
+        beta = 1, nDemog = 0
+    )))
+})
+
+
+test_that("Monte Carlo BLP integration defaults to 5000 draws", {
+    set.seed(20260906)
+    rule <- antitrust:::.blp_integration(list(integration = "monte-carlo"))
+    expect_identical(rule$rule, "monte-carlo")
+    expect_length(rule$draws, 5000L)
+    expect_equal(rule$weights, rep(1 / 5000, 5000), tolerance = 0)
+})
+
+
+test_that("one demographic with zero price sigma defaults to Gauss-Hermite", {
+    RNGkind("Mersenne-Twister", "Inversion", "Rejection")
+    set.seed(20260904)
+    before <- .Random.seed
+    first <- qa_value(sim(
+        prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .20),
+        supply = "bertrand", demand = "BLP",
+        demand.param = list(
+            alpha = -1, sigma = 0, piDemog = .1,
+            demogMean = .3, demogCov = matrix(.25, nrow = 1, ncol = 1),
+            meanval = c(.5, .3, .1)
+        ),
+        ownerPre = c("A", "B", "C"),
+        ownerPost = c("A", "A", "C"),
+        insideSize = 100
+    ), "one-dimensional demographic BLP")
+    after <- .Random.seed
+
+    expect_identical(before, after)
+    expect_identical(first@slopes$integration, "gauss-hermite")
+    expect_length(first@slopes$consDraws, 31L)
+    expect_equal(
+        first@slopes$demogDraws[, 1],
+        .3 + .5 * first@slopes$consDraws,
+        tolerance = 1e-14
+    )
+})
+
+
+test_that("price-only BLP simulation selects the requested integration rule", {
+    args <- list(
+        prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .20),
+        supply = "bertrand", demand = "BLP",
+        demand.param = list(
+            alpha = -1, sigma = .1, meanval = c(.5, .3, .1),
+            integration = "auto"
+        ),
+        ownerPre = c("A", "B", "C"),
+        ownerPost = c("A", "A", "C"),
+        insideSize = 100
+    )
+    quadrature <- suppressWarnings(do.call(sim, c(args, list(nNodes = 15L))))
+    expect_identical(quadrature@slopes$integration, "gauss-hermite")
+    expect_length(quadrature@slopes$consDraws, 15L)
+    expect_equal(sum(quadrature@slopes$drawWeights), 1, tolerance = 1e-14)
+
+    set.seed(918273)
+    mc_args <- args
+    mc_args$demand.param$integration <- "monte-carlo"
+    monte_carlo <- suppressWarnings(do.call(sim, c(mc_args, list(nDraws = 15L))))
+    expect_identical(monte_carlo@slopes$integration, "monte-carlo")
+    expect_length(monte_carlo@slopes$consDraws, 15L)
+    expect_equal(monte_carlo@slopes$drawWeights, rep(1 / 15, 15),
+                 tolerance = 0)
+})
+
+
+test_that("PriceLeadershipBLP uses the shared integration rules", {
+    shares <- c(.35, .25, .25, .15)
+    prices <- c(.93, .88, 1.10, 1.02)
+    alpha <- -5.767013
+    common <- list(
+        prices = prices, shares = shares,
+        ownerPre = c("Bank1", "Bank2", "Bank3", "Fringe"),
+        ownerPost = c("Bank1", "Bank2", "Bank3", "Fringe"),
+        coalitionPre = 1:3, coalitionPost = 1:3,
+        insideSize = 1000,
+        slopes = list(
+            alphaMean = alpha, alpha = alpha, sigma = .5,
+            meanval = c(0, log(shares[-1] / shares[1]) -
+                alpha * (prices[-1] - prices[1])), sigmaNest = 1
+        )
+    )
+    default_rule <- suppressWarnings(do.call(ple.blp, common))
+    expect_identical(default_rule@slopes$integration, "gauss-hermite")
+    expect_length(default_rule@slopes$consDraws, 31L)
+
+    quadrature <- suppressWarnings(do.call(
+        ple.blp, c(common, list(integration = "gauss-hermite", nNodes = 15L))
+    ))
+    expect_identical(quadrature@slopes$integration, "gauss-hermite")
+    expect_length(quadrature@slopes$consDraws, 15L)
+    expect_equal(sum(quadrature@slopes$drawWeights), 1, tolerance = 1e-14)
+
+    monte_carlo <- suppressWarnings(do.call(
+        ple.blp, c(common, list(integration = "monte-carlo", nDraws = 15L))
+    ))
+    expect_identical(monte_carlo@slopes$integration, "monte-carlo")
+    expect_length(monte_carlo@slopes$consDraws, 15L)
+    expect_equal(monte_carlo@slopes$drawWeights, rep(1 / 15, 15),
+                 tolerance = 0)
+})
+
+
 test_that("BLP aggregate derivatives pass a finite-difference check", {
     nodes <- c(-1.5, -.25, .75, 1.75)
     weights <- c(.05, .15, .30, .50)
@@ -90,7 +231,7 @@ test_that("integration node and weight validation is strict", {
     )), "non-negative")
     expect_error(antitrust:::.blp_integration(list(
         integration = "gauss-hermite", nNodes = 5,
-        prodChar = matrix(1, nrow = 3, ncol = 1)
+        sigmaChar = .2
     )), "one-dimensional")
 })
 
@@ -179,6 +320,16 @@ test_that("BLP repeated share and derivative evaluations are deterministic", {
 })
 
 
+test_that("legacy BLP retains wrong-sign draws under the explicit domain contract", {
+    model <- blp_integration_test_model(
+        nodes = c(-1, 0, 1), weights = rep(1 / 3, 3),
+        alphaMean = -1, sigma = 1.5
+    )
+    expect_warning({ model <- calcSlopes(model) }, "retained")
+    expect_equal(model@slopes$alphas, c(-2.5, -1, .5), tolerance = 0)
+})
+
+
 test_that("BLP fits reuse their integration rule across counterfactual simulations", {
     nodes <- c(-1.5, -.25, .75, 1.75)
     weights <- c(.05, .15, .30, .50)
@@ -215,6 +366,7 @@ test_that("BLP CV trimming uses integration-weighted quantiles and means", {
         nodes, weights, alphaMean = -1, sigma = .25,
         meanval = c(.2, .1, 0)
     )
+    expect_equal(model@mktSize, 1 / sum(model@shares), tolerance = 1e-14)
     model@pricePost <- model@pricePre + c(.2, .1, .3)
 
     alphas <- model@slopes$alphas
@@ -233,6 +385,7 @@ test_that("BLP CV trimming uses integration-weighted quantiles and means", {
     ## draws 2:4 survive lim = c(.5, 1).  Ordinary unweighted quantiles
     ## would instead start at the midpoint between alpha[2] and alpha[3].
     keep <- 2:4
-    expected <- sum(weights[keep] * cv_by_draw[keep]) / sum(weights[keep])
+    expected <- model@mktSize *
+        sum(weights[keep] * cv_by_draw[keep]) / sum(weights[keep])
     expect_equal(CV(model, lim = c(.5, 1)), expected, tolerance = 1e-13)
 })

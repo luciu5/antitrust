@@ -708,7 +708,12 @@ setMethod(
     piDemog <- object@slopes$piDemog
     if (is.null(piDemog)) piDemog <- numeric(0)
     nDemog <- object@slopes$nDemog
-    if (is.null(nDemog)) nDemog <- 0
+    if (is.null(nDemog)) nDemog <- length(piDemog)
+    if (length(nDemog) != 1L || !is.finite(nDemog) || nDemog < 0 ||
+        nDemog != as.integer(nDemog)) {
+      stop("'nDemog' must be a non-negative integer.")
+    }
+    nDemog <- as.integer(nDemog)
     sigmaNest <- object@slopes$sigmaNest
     if (is.null(sigmaNest)) sigmaNest <- 1
 
@@ -734,7 +739,9 @@ setMethod(
     nDraws <- length(consDraws)
 
     # Generate demographic draws (if present) over the same consumer points.
-    drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
+    drawsExist <- "consDraws" %in% names(object@slopes) &&
+      !is.null(object@slopes$consDraws) &&
+      (nDemog == 0 || !is.null(object@slopes$demogDraws))
 
     if (drawsExist) {
       demogDraws <- object@slopes$demogDraws
@@ -744,7 +751,14 @@ setMethod(
         demogMean <- object@slopes$demogMean
         demogCov <- object@slopes$demogCov
 
-        if (!is.null(demogMean) && !is.null(demogCov)) {
+        if (identical(integration$rule, "gauss-hermite")) {
+          ## With sigma = 0 and one demographic, use the stored quadrature
+          ## nodes for that single normal dimension rather than drawing a
+          ## separate Monte Carlo demographic sample.
+          demogDraws <- .blp_quadrature_demog_draws(
+            consDraws, nDemog, demogMean, demogCov
+          )
+        } else if (!is.null(demogMean) && !is.null(demogCov)) {
           # Sample from actual market distribution using multivariate normal
           # Sample from N(demogMean, demogCov) using Cholesky decomposition
           # Avoid MASS dependency: X = mu + chol(Sigma) * Z where Z ~ N(0,I)
@@ -760,8 +774,10 @@ setMethod(
           # Generate standard normal draws
           z_draws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
 
-          # Transform: X = mu + Z * chol(Sigma)^T
-          demogDraws <- sweep(z_draws %*% t(demogCov_chol), 2, demogMean, "+")
+          # R's chol() returns an upper-triangular factor U with
+          # t(U) %*% U = Sigma.  Row draws therefore use Z %*% U (not
+          # Z %*% t(U)) to obtain covariance Sigma.
+          demogDraws <- sweep(z_draws %*% demogCov_chol, 2, demogMean, "+")
 
           if (nDemog == 1) {
             demogDraws <- matrix(demogDraws, ncol = 1)
@@ -796,15 +812,8 @@ setMethod(
       warning(
         wrongSigns, " out of ", length(alphas),
         " individual price coefficients have wrong sign. ",
-        "Clipping them to enforce correct sign (",
-        ifelse(output, "negative", "positive"), ")."
+        "They are retained under the supplied random-coefficient distribution."
       )
-
-      if (output) {
-        alphas <- pmin(alphas, -1e-2)
-      } else {
-        alphas <- pmax(alphas, 1e-2)
-      }
     }
 
     nprods <- length(shares)

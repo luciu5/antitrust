@@ -125,6 +125,9 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
     if (!is.numeric(quality) || is.null(names(quality)) || any(!nzchar(names(quality)))) {
         stop("'quality' must be a named numeric vector (product label = proportional change)")
     }
+    if (any(!is.finite(quality) | quality <= -1)) {
+        stop("'quality' values must be finite and greater than -1")
+    }
     if (anyDuplicated(names(quality))) {
         stop("'quality' contains duplicate product labels")
     }
@@ -156,7 +159,10 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
 #' changes. Use `add_step()` to append further, sequential steps.
 #'
 #' @param ownership Post-counterfactual ownership.
-#' @param costs Post-counterfactual marginal-cost changes.
+#' @param costs Post-counterfactual marginal-cost changes. Constant-cost
+#'   Bertrand-family models apply these to their retained structural cost
+#'   primitives; second-score Logit uses its legacy additive cost-level
+#'   convention.
 #' @param exit Products to remove, or a logical active-product vector.
 #' @param capacity Post-counterfactual capacities.
 #' @param tariff A tariff change, unsupported by antitrust models.
@@ -164,9 +170,11 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
 #' @param bargaining Post-counterfactual bargaining parameters.
 #' @param leader Post-counterfactual leader indicators for Stackelberg models.
 #' @param products Post-counterfactual product structure for Stackelberg models.
-#' @param quality A named numeric vector of proportional changes to
-#'   calibrated `meanval`, keyed by product label. `meanval_new <-
-#'   meanval_current * (1 + quality)`.
+#' @param quality A named numeric vector of proportional changes to product
+#'   attractiveness, keyed by product label. For Logit demand this is a
+#'   proportional choice-weight change, represented as
+#'   `meanval_new <- meanval_current + log1p(quality)`; CES retains its
+#'   multiplicative mean-value convention.
 #' @param entry An `Entrant` object, or a list of `Entrant` objects, each
 #'   describing a new single-product firm to add to the market.
 #' @param ... Reserved; model specification fields are rejected.
@@ -199,7 +207,10 @@ counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
 #'
 #' @param object A `Counterfactual` object.
 #' @param ownership Post-counterfactual ownership.
-#' @param costs Post-counterfactual marginal-cost changes.
+#' @param costs Post-counterfactual marginal-cost changes. Constant-cost
+#'   Bertrand-family models apply these to their retained structural cost
+#'   primitives; second-score Logit uses its legacy additive cost-level
+#'   convention.
 #' @param exit Products to remove, or a logical active-product vector.
 #' @param capacity Post-counterfactual capacities.
 #' @param tariff A tariff change, unsupported by antitrust models.
@@ -207,8 +218,9 @@ counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
 #' @param bargaining Post-counterfactual bargaining parameters.
 #' @param leader Post-counterfactual leader indicators for Stackelberg models.
 #' @param products Post-counterfactual product structure for Stackelberg models.
-#' @param quality A named numeric vector of proportional changes to
-#'   calibrated `meanval`, keyed by product label.
+#' @param quality A named numeric vector of proportional changes to product
+#'   attractiveness, keyed by product label. Logit applies an additive
+#'   `log1p(quality)` utility shift; CES applies a multiplicative change.
 #' @param entry An `Entrant` object, or a list of `Entrant` objects.
 #' @param ... Reserved; model specification fields are rejected.
 #' @return A `Counterfactual` object with the new step appended.

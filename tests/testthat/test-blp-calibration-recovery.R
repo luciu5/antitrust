@@ -5,6 +5,10 @@
 # by calcMargins(), so the recovery tests do not merely reproduce the method
 # under test by construction.
 
+# Multi-start BLP recovery is intentionally extended: the fast integration
+# tests still protect nodes, weights, derivatives, and deterministic reuse.
+qa_skip_if_not_extended()
+
 .blp_recovery_fixture <- function(conduct, alpha = -5, sigma = .8) {
     prices <- c(1.5, 2, 2.6)
     owner <- c("A", "A", "B")
@@ -74,19 +78,22 @@
         margins <- numerator / firm_shares / prices
     } else if (conduct == "bargaining") {
         bargaining <- rep(.4, 3) / (1 - rep(.4, 3))
-        margin_system <- matrix(0, nrow = 3, ncol = 3)
-        right_hand_side <- numeric(3)
+        aggregate_shares <- as.vector(draw_shares %*% draw_weights)
+        derivative <- matrix(0, nrow = 3, ncol = 3)
+        buyer_surplus <- numeric(3)
         for (r in seq_along(alphas)) {
             s <- draw_shares[, r]
-            kernel <- -owner_matrix * rep(s, times = 3)
-            diag(kernel) <- diag(owner_matrix) + diag(kernel)
-            margin_system <- margin_system + draw_weights[r] * kernel
-            div <- s / (1 - s)
-            term <- log(1 - s) /
-                (alphas[r] * (bargaining * div - log(1 - s)))
-            right_hand_side <- right_hand_side + draw_weights[r] *
-                diag(owner_matrix) * term
+            derivative <- derivative + draw_weights[r] * alphas[r] *
+                (diag(s) - tcrossprod(s))
+            buyer_surplus <- buyer_surplus + draw_weights[r] *
+                log1p(-s) / alphas[r]
         }
+        normalized <- sweep(derivative, 2, aggregate_shares, "/")
+        margin_system <- owner_matrix * normalized
+        own_normalized <- diag(derivative) / aggregate_shares
+        right_hand_side <- own_normalized /
+            (-1 * (own_normalized - bargaining * aggregate_shares /
+                   buyer_surplus))
         margins <- as.vector(solve(t(margin_system), right_hand_side)) / prices
     } else {
         stop("unknown recovery conduct")
@@ -172,4 +179,85 @@ test_that("BLP diagnostics expose the fixed outside share and contraction state"
     expect_lt(fit@diagnostics$contraction$maxError, 1e-9)
     expect_true(is.finite(fit@diagnostics$wrongSignProbability))
     expect_true(is.function(fit@diagnostics$profile_sigma))
+})
+
+
+test_that("no-demographics price-random-coefficient calibration works under both integration rules", {
+    make_fixture <- function(nodes, weights) {
+        prices <- c(1.5, 2, 2.6)
+        owner <- c("A", "A", "B")
+        alpha <- -5
+        sigma <- .8
+        base_delta <- c(.7, .35, .05)
+        target_s0 <- .2
+        aggregate_share <- function(delta) {
+            antitrust:::.blp_stable_shares(
+                delta, prices, alpha + sigma * nodes,
+                nodes, weights, outside = TRUE
+            )$aggregate
+        }
+        shift <- uniroot(
+            function(value) {
+                sum(aggregate_share(base_delta + value)) - (1 - target_s0)
+            },
+            c(-10, 10), tol = 1e-12
+        )$root
+        delta <- base_delta + shift
+        shares <- aggregate_share(delta)
+        model <- suppressWarnings(antitrust:::.blp_model(
+            conduct = "bertrand", prices = prices, shares = shares,
+            margins = rep(.2, length(prices)), ownerPre = owner,
+            alphaMean = alpha, sigma = sigma, meanval = delta,
+            draws = nodes, drawWeights = weights, s0 = 1 - sum(shares),
+            output = TRUE
+        ))
+        draw_shares <- calcShares(model, aggregate = FALSE)
+        alphas <- model@slopes$alphas
+        derivative <- matrix(0, nrow = 3, ncol = 3)
+        for (r in seq_along(alphas)) {
+            s <- draw_shares[, r]
+            derivative <- derivative + weights[r] * alphas[r] *
+                (diag(s) - tcrossprod(s))
+        }
+        elasticity <- derivative * outer(1 / shares, prices)
+        revenue <- prices * shares / sum(prices * shares)
+        margins <- -as.vector(
+            solve(t(elasticity) * model@ownerPre) %*%
+                (revenue * diag(model@ownerPre))
+        ) / revenue
+        list(prices = prices, shares = shares, margins = margins,
+             ownerPre = owner, s0 = 1 - sum(shares), alpha = alpha,
+             sigma = sigma)
+    }
+
+    for (rule in c("gauss-hermite", "monte-carlo")) {
+        if (identical(rule, "gauss-hermite")) {
+            quadrature <- antitrust:::.blp_normal_nodes(15L)
+            fixture <- make_fixture(quadrature$nodes, quadrature$weights)
+            integration_args <- list(integration = rule, nNodes = 15L)
+        } else {
+            set.seed(20260906)
+            nodes <- rnorm(15L)
+            fixture <- make_fixture(nodes, rep(1 / 15, 15))
+            set.seed(20260906)
+            integration_args <- list(integration = rule, nDraws = 15L)
+        }
+        fit <- do.call(calibrate, c(list(
+            demand = "blp", conduct = "bertrand",
+            prices = fixture$prices, shares = fixture$shares,
+            margins = fixture$margins, ownerPre = fixture$ownerPre,
+            s0 = fixture$s0, output = TRUE,
+            optimizer_control = list(maxit = 150, factr = 1e3, pgtol = 1e-8)
+        ), integration_args))
+
+        expect_equal(fit@parameters$alphaMean, fixture$alpha, tolerance = 2e-3,
+                     info = rule)
+        expect_equal(fit@parameters$sigma, fixture$sigma, tolerance = 2e-3,
+                     info = rule)
+        expect_identical(fit@diagnostics$integration$rule, rule)
+        expect_length(fit@diagnostics$integration$nodes, 15L)
+        expect_equal(unname(calcShares(fit@model, preMerger = TRUE)),
+                     fixture$shares, tolerance = 2e-10, info = rule)
+        expect_lt(fit@diagnostics$maxAbsResidual, 2e-5)
+    }
 })

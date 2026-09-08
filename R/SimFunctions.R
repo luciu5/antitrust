@@ -14,7 +14,7 @@
 #' calibrate costs from observed margins. Ignored for \sQuote{BLP} demand, where marginal costs are
 #' recovered from observed prices and the estimated demand system.
 #' @param supply A character string indicating how firms compete with one another. Valid
-#' values are "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
+#' values are "moncom" (differentiated-product monopolistic competition), "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
 #' (2nd score auction), "bargaining", or "bargaining2nd".
 #' @param demand A character string indicating the type of demand system
 #'   to be used in the merger simulation. Supported demand systems are
@@ -64,6 +64,17 @@
 #' @details Using user-supplied demand parameters,
 #' \code{sim} simulates the effects of a merger in a market where
 #' firms are playing a differentiated products pricing game.
+#' Under \sQuote{supply = "moncom"}, each product uses its own demand
+#' response and does not internalize strategic cross-product effects. Pure
+#' ownership changes therefore have no strategic price effect, while cost,
+#' demand, and product-set changes remain model-specific counterfactuals.
+#' For flat CES, the direct perceived own elasticity is `-gamma`, not the
+#' full share-adjusted diagonal returned by `elast()`. For BLP, the direct
+#' perceived derivative is integrated over the existing consumer draws as
+#' `sum_r w_r * alpha_r * s_jr`. Nested Logit/CES, Linear, LogLinear, AIDS,
+#' and PCAIDS remain rejected because their package-specific nest,
+#' expenditure, or quantity-game objects do not yet have a complete validated
+#' MonCom lifecycle.
 #'
 #' The \sQuote{supply} parameter determines the type of competition.
 #' When \sQuote{supply} equals \sQuote{cournot}, firms compete on quantities
@@ -118,7 +129,7 @@
 #'   for demographic variables. Default is identity matrix (unit variance, independent).
 #'   Should match the variance structure of demographics in your data. For a single
 #'   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
-#'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 1000.}
+#'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 5000.}
 #'   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
 #'   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
 #'   \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}
@@ -287,7 +298,7 @@ NULL
 .sim_legacy <- function(prices,
 shares = NULL,
                 margins = NULL,
-                supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+                supply = c("bertrand", "moncom", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
                 demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP", "LogitBLP", "CournotBLP"), demand.param,
                 ownerPre, ownerPost, nests, capacities,
                 mcDelta = rep(0, length(prices)),
@@ -323,6 +334,7 @@ shares = NULL,
 
   # Validate supply/demand combinations
   valid_combinations <- list(
+    moncom = c("Logit", "CES", "BLP"),
     bertrand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"),
     cournot = c("Logit", "CES", "BLP"),
     auction2nd = c("Logit", "CES"),
@@ -403,8 +415,8 @@ shares = NULL,
       message("Note: 'meanval' (delta) not provided for BLP. It will be recovered via BLP contraction from observed shares/prices.")
     }
     if (!("nDraws" %in% names(demand.param))) {
-      demand.param$nDraws <- 1000
-      message("'nDraws' not provided for BLP. Defaulting to 1000 draws.")
+      demand.param$nDraws <- 5000
+      message("'nDraws' not provided for BLP. Defaulting to 5000 draws.")
     }
     if (!("piDemog" %in% names(demand.param))) {
       demand.param$piDemog <- numeric(0)
@@ -776,6 +788,8 @@ shares = NULL,
     # Determine class based on supply type
     if (supply == "cournot") {
       demandClass <- "CournotBLP"
+    } else if (supply == "moncom") {
+      demandClass <- "MonComBLP"
     } else {
       demandClass <- "LogitBLP"
     }
@@ -801,6 +815,22 @@ shares = NULL,
     )
   } else if (demand %in% c("Logit", "CES")) {
     result <- switch(supply,
+      moncom = new(paste0("MonCom", demand),
+        prices = prices, shares = shares,
+        margins = margins,
+        weights = sim_weights,
+        normIndex = normIndex,
+        mcDelta = mcDelta,
+        insideSize = insideSize,
+        subset = subset,
+        ownerPre = ownerPre,
+        ownerPost = ownerPost,
+        priceStart = priceStart,
+        priceOutside = priceOutside,
+        shareInside = shareInside,
+        output = outputFlag,
+        labels = labels
+      ),
       bertrand = new(demand,
         prices = prices, shares = shares,
         margins = margins,
@@ -1020,7 +1050,7 @@ shares = NULL,
 sim <- function(prices,
                 shares = NULL,
                 margins = NULL,
-                supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+                supply = c("bertrand", "moncom", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
                 demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP", "LogitBLP", "CournotBLP"),
                 demand.param,
                 ownerPre, ownerPost, nests, capacities,
@@ -1075,7 +1105,7 @@ sim <- function(prices,
             is.null(demand.param$consDraws)) {
             dots$integration <- "monte-carlo"
             if (is.null(dots$nDraws) && is.null(demand.param$nDraws)) {
-                dots$nDraws <- 1000L
+                dots$nDraws <- 5000L
             }
         }
         specify_args <- list(

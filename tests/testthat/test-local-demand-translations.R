@@ -97,6 +97,41 @@ test_that("flat Logit/CES translations retain Cournot conduct", {
     expect_equal(target@spec$conduct, "cournot")
 })
 
+test_that("Logit auction2nd respecification uses outside-good mean utilities", {
+    source <- specify(
+        "logit", "bertrand", prices = c(1.8, 2, 2.2),
+        shares = c(.30, .20, .10), ownerPre = c("A", "B", "C"),
+        parameters = list(alpha = 2, meanval = c(.6, .4, .2)),
+        insideSize = 100, output = FALSE
+    )
+
+    target <- respecify(source, conduct = "auction2nd")
+    expected_meanval <- log(source@model@shares) -
+        log(1 - sum(source@model@shares))
+
+    expect_equal(unname(target@parameters$meanval),
+                 unname(expected_meanval), tolerance = 1e-12)
+    expect_equal(target@diagnostics$transition$meanval_normalization,
+                 "outside-good")
+    expect_false(target@model@output)
+})
+
+test_that("Logit auction2nd respecification retains mean utilities without an outside good", {
+    source <- specify(
+        "logit", "bertrand", prices = c(1.8, 2, 2.2),
+        shares = c(.40, .30, .30), ownerPre = c("A", "B", "C"),
+        parameters = list(alpha = 2, meanval = c(.6, .4, .2)),
+        insideSize = 100, output = FALSE
+    )
+
+    target <- respecify(source, conduct = "auction2nd")
+
+    expect_equal(target@parameters$meanval, source@parameters$meanval,
+                 tolerance = 0)
+    expect_equal(target@diagnostics$transition$meanval_normalization,
+                 "source")
+})
+
 test_that("nested-to-flat transitions are structural restrictions", {
     logit_source <- nested_logit_fit()
     logit_target <- respecify(logit_source, demand = "logit")

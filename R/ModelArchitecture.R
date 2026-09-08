@@ -83,8 +83,21 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
              mktElast = mktElast, s0 = s0),
         dots
     )
-    forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset",
-                                           "isLeaderPost"))
+    forbidden <- intersect(names(dots), c(
+        "ownerPost", "mcDelta", "subset", "pricePost", "mcPre", "mcPost",
+        "reservePost", "isLeaderPost", "productsPost", "mcfunPost",
+        "vcfunPost", "dmcfunPost", "bargpowerPost", "capacitiesPost"
+    ))
+    ## LogitCap requires a post-capacity slot even at calibration time to
+    ## satisfy the legacy class contract; it is a structural input there.
+    if (identical(spec$demand, "logit_cap")) {
+        forbidden <- setdiff(forbidden, "capacitiesPost")
+    }
+    if (spec$conduct %in% c("bargaining", "bargaining2nd")) {
+        ## Legacy bargaining constructors require a post bargaining-power
+        ## vector as part of their object contract; simulate() may replace it.
+        forbidden <- setdiff(forbidden, "bargpowerPost")
+    }
     if (length(forbidden)) {
         stop("'", forbidden[[1]], "' is a simulation scenario; supply it to simulate().")
     }
@@ -288,11 +301,14 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
         )
     }
     if (identical(spec$demand, "blp")) {
-        return(.calibrate_blp_fit(
+        result <- .calibrate_blp_fit(
             spec = spec, prices = prices, shares = shares, margins = margins,
             ownerPre = ownerPre, s0 = s0, dots = dots,
             calibration_args = calibration_args
-        ))
+        )
+        result@model <- .initialize_cost_state(result@model)
+        result <- .retain_fit_metadata(result)
+        return(result)
     }
     duplicate_core <- intersect(names(dots), names(constructor_args))
     if (length(duplicate_core)) {
@@ -303,11 +319,11 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
     captured <- .capture_architecture_conditions(
         do.call(.legacy_constructor(entry$calibrator), constructor_args)
     )
-    model <- captured$value
+    model <- .initialize_cost_state(captured$value)
     solver <- if (spec$conduct %in% c("bertrand", "bargaining") &&
                   !is.null(dots$solver)) dots$solver else "nleqslv"
 
-    new(
+    fit <- new(
         "AntitrustFit",
         spec = spec,
         model = model,
@@ -318,8 +334,25 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
             margins = margins,
             ownerPre = ownerPre
         ), observed_extra,
-        if (!is.null(quantities)) list(quantities = quantities) else list()),
-            diagnostics = list(
+        if (!is.null(quantities)) list(quantities = quantities) else list(),
+        if ("labels" %in% methods::slotNames(model)) {
+            list(labels = model@labels)
+        } else list(),
+        if ("priceOutside" %in% methods::slotNames(model)) {
+            list(priceOutside = model@priceOutside)
+        } else list(),
+        if ("priceStart" %in% methods::slotNames(model) &&
+            length(model@priceStart)) {
+            list(priceStart = model@priceStart)
+        } else list(),
+        if ("output" %in% methods::slotNames(model)) {
+            list(output = model@output)
+        } else list(),
+        if ("insideSize" %in% methods::slotNames(model) &&
+            length(model@insideSize)) {
+            list(insideSize = model@insideSize)
+        } else list()),
+            diagnostics = c(list(
                 status = "completed",
                 model_class = class(model)[[1]],
                 solver = solver,
@@ -331,9 +364,10 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
                 TRUE
             },
             warnings = captured$warnings,
-            messages = captured$messages
-        )
+                messages = captured$messages
+        ), if (spec$conduct == "moncom") .moncom_diagnostics(model) else list())
     )
+    .retain_fit_metadata(fit)
 }
 
 
@@ -383,11 +417,36 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
              ownerPre = ownerPre, shares = shares, margins = margins,
              quantities = quantities, insideSize = insideSize,
              variant = spec$variant, output = output),
+        if (!missing(priceOutside)) list(priceOutside = priceOutside) else list(),
+        if (!missing(priceStart)) list(priceStart = priceStart) else list(),
+        list(labels = labels),
         dots
     )
-    forbidden <- intersect(names(dots), c("ownerPost", "mcDelta", "subset"))
+    forbidden <- intersect(names(dots), c(
+        "ownerPost", "mcDelta", "subset", "pricePost", "mcPre", "mcPost",
+        "reservePost", "productsPost", "mcfunPost", "vcfunPost",
+        "dmcfunPost", "bargpowerPost", "capacitiesPost"
+    ))
+    if (identical(spec$demand, "logit_cap")) {
+        forbidden <- setdiff(forbidden, "capacitiesPost")
+    }
+    if (spec$conduct %in% c("bargaining", "bargaining2nd")) {
+        ## Preserve the legacy parameterized bargaining constructor boundary.
+        forbidden <- setdiff(forbidden, "bargpowerPost")
+    }
     if (length(forbidden)) {
         stop("'", forbidden[[1]], "' is a simulation scenario; supply it to simulate().")
+    }
+    vertical_post <- intersect(names(dots), c("ownerPostUp", "ownerPostDown",
+                                              "mcDeltaUp", "mcDeltaDown"))
+    if (length(vertical_post)) {
+        stop("'", vertical_post[[1]], "' is a vertical simulation scenario; supply it to simulate().")
+    }
+    stack_post <- intersect(names(dots), c("productsPost", "mcfunPost",
+                                           "vcfunPost", "dmcfunPost",
+                                           "isLeaderPost"))
+    if (length(stack_post)) {
+        stop("'", stack_post[[1]], "' is a Stackelberg simulation scenario; supply it to simulate().")
     }
     if (spec$demand %in% c("linear", "loglin") && is.null(quantities)) {
         stop("'quantities' must be supplied when specifying Linear or LogLin demand.")
@@ -406,13 +465,16 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         "integrationWeights"
     ) %in% c(names(parameters), names(dots)))
     if (blp_price_only && blp_new_integration &&
-        spec$conduct %in% c("bertrand", "cournot", "auction2nd", "bargaining")) {
-        return(.specify_blp_conduct_fit(
+        spec$conduct %in% c("bertrand", "moncom", "cournot", "auction2nd", "bargaining")) {
+        result <- .specify_blp_conduct_fit(
             spec = spec, prices = prices, parameters = parameters,
             ownerPre = ownerPre, shares = shares, margins = margins,
             insideSize = insideSize, output = output, dots = dots,
             specification_args = specification_args
-        ))
+        )
+        result@model <- .initialize_cost_state(result@model)
+        result <- .retain_fit_metadata(result)
+        return(result)
     }
     sim_shares <- if (spec$demand %in% c("linear", "loglin")) {
         quantities / sum(quantities)
@@ -465,19 +527,24 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         model@pricePost <- calcPrices(model, preMerger = FALSE,
                                       subset = rep(TRUE, length(prices)))
     }
-    new(
+    model <- .initialize_cost_state(model)
+    fit <- new(
         "AntitrustFit",
         spec = spec,
         model = model,
         parameters = .model_parameters(model),
-        observed = list(
+        observed = c(list(
             prices = prices,
             shares = shares,
             margins = margins,
             quantities = quantities,
-            ownerPre = ownerPre
+            ownerPre = ownerPre,
+            labels = labels
         ),
-        diagnostics = list(
+        if (!missing(priceOutside)) list(priceOutside = priceOutside) else list(),
+        if (!missing(priceStart)) list(priceStart = priceStart) else list(),
+        if (!is.null(output)) list(output = output) else list()),
+        diagnostics = c(list(
             status = "completed",
             source = "specified",
             route = "specify",
@@ -487,8 +554,9 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
             specification_args = specification_args,
             warnings = captured$warnings,
             messages = captured$messages
-        )
+        ), if (spec$conduct == "moncom") .moncom_diagnostics(model) else list())
     )
+    .retain_fit_metadata(fit)
 }
 
 
@@ -523,61 +591,60 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     .resolve_named_shock(costs, model@labels, model@subset, "costs", default = 0)
 }
 
-## calcMC() for every supported model family always recomputes the
-## pre-shock marginal cost fresh from immutable calibration constants
-## (observed prices/margins, or cost functions) and applies `mcDelta` as a
-## one-shot wedge relative to that fixed baseline -- it never reads a
-## promoted `mcPre`.  So the cumulative cost change (not a single step's
-## shock) is the real persistent cost-environment state, and successive
-## steps' cost shocks must compound.  Most families apply mcDelta
-## multiplicatively (`mc*(1+delta)`), so shocks compound as ratios:
-## (1+cumulative) <- (1+cumulative)*(1+shock).  The second-score-auction
-## family (Auction2ndLogit and its descendants Auction2ndCES/
-## Bargaining2nd*, see .mc_delta_is_additive()) applies mcDelta as an
-## additive level wedge (`mc+delta`), so shocks there compound by simple
-## addition instead.  `current` may be shorter than `step_shock` when a
-## prior step added an entrant; pad with 0 (no prior shock for a product
-## that did not yet exist).
-.compound_costs <- function(current, step_shock, additive = FALSE) {
+## Cost state separates a calibrated structural primitive from the current
+## result slots.  Constant-cost models use the retained baseline and apply
+## cumulative `mcDelta`; quantity-dependent Cournot/Stackelberg models keep
+## their cost-function closures and evaluate them at the current quantities.
+## Bertrand-family cost shocks compound multiplicatively except for the legacy
+## additive second-score auction convention.  `current` may be shorter than
+## `step_shock` when a prior step added an entrant; pad with 0 (no prior shock
+## for a product that did not yet exist).
+.compound_costs <- function(current, step_shock, mode = "multiplicative") {
     if (is.null(step_shock)) return(current)
     if (is.null(current)) current <- rep(0, length(step_shock))
     if (length(current) < length(step_shock)) {
         current <- c(current, rep(0, length(step_shock) - length(current)))
     }
-    if (additive) return(current + step_shock)
-    (1 + current) * (1 + step_shock) - 1
+    if (identical(mode, "additive")) {
+        current + step_shock
+    } else {
+        (1 + current) * (1 + step_shock) - 1
+    }
 }
 
-## calcMC() cannot be given an entrant's marginal cost directly (see
-## .entrant_cost_delta(), CounterfactualPromotion.R): it always derives the
-## pre-merger marginal cost from FOC-consistency with calibrated margins,
-## which the entrant does not have.  Fold each newly added entrant's
-## implied cost delta into this step's cost-shock vector -- composed
-## (additively or multiplicatively, matching the model's mcDelta
-## semantics) with any ordinary cost change the same step also targets at
-## the entrant's label, so the two channels combine rather than one
-## silently overwriting the other.
+## Entry-expanded supported models carry the entrant's supplied marginal
+## cost in their persistent cost state.  The fallback delta calculation below
+## remains for direct legacy objects that do not carry that state.
 .merge_entry_cost_deltas <- function(model, entrants, step_shock) {
     if (is.null(entrants)) return(step_shock)
+    ## Entry-expanded supported models carry each entrant's supplied cost in
+    ## the persistent cost state.  Applying an inferred delta on top would
+    ## re-identify that cost from a synthetic margin and can also move every
+    ## incumbent when ownership has changed.  Legacy objects without the
+    ## state attribute retain the compatibility calculation below.
+    if (!is.null(.cost_state(model)) && !is.null(.cost_state(model)$base)) {
+        return(step_shock)
+    }
     if (is.null(step_shock)) step_shock <- rep(0, length(model@labels))
-    additive <- .mc_delta_is_additive(model)
     for (one_entrant in entrants) {
         idx <- match(one_entrant@label, model@labels)
         delta <- .entrant_cost_delta(model, one_entrant)
-        step_shock[idx] <- if (additive) {
-            step_shock[idx] + delta
-        } else {
-            (1 + step_shock[idx]) * (1 + delta) - 1
-        }
+        step_shock[idx] <- (1 + step_shock[idx]) * (1 + delta) - 1
     }
     step_shock
 }
 
-.compound_vertical_costs <- function(current, step_shock) {
+.compound_vertical_costs <- function(current, step_shock, model = NULL) {
     if (is.null(step_shock)) return(current)
+    modes <- list(up = "multiplicative", down = "multiplicative")
+    if (!is.null(model)) {
+        state <- .cost_state(model)
+        if (!is.null(state$up$mode)) modes$up <- state$up$mode
+        if (!is.null(state$down$mode)) modes$down <- state$down$mode
+    }
     list(
-        up = .compound_costs(current$up, step_shock$up),
-        down = .compound_costs(current$down, step_shock$down)
+        up = .compound_costs(current$up, step_shock$up, mode = modes$up),
+        down = .compound_costs(current$down, step_shock$down, mode = modes$down)
     )
 }
 
@@ -877,10 +944,20 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         if (!is_vertical) {
             step_shock <- .merge_entry_cost_deltas(state, changes$entry, step_shock)
         }
-        cumulative_costs <- if (is_vertical) {
-            .compound_vertical_costs(cumulative_costs, step_shock)
+        cost_mode <- if (is_vertical) {
+            "multiplicative"
         } else {
-            .compound_costs(cumulative_costs, step_shock, additive = .mc_delta_is_additive(state))
+            state_cost <- .cost_state(state)
+            if (!is.null(state_cost) && !is.null(state_cost$mode)) {
+                state_cost$mode
+            } else {
+                "multiplicative"
+            }
+        }
+        cumulative_costs <- if (is_vertical) {
+            .compound_vertical_costs(cumulative_costs, step_shock, model = state)
+        } else {
+            .compound_costs(cumulative_costs, step_shock, mode = cost_mode)
         }
         dots <- list()
         if (!is.null(changes$leader)) dots$isLeaderPost <- changes$leader
@@ -1086,6 +1163,12 @@ update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
         if (is.null(names(replacements)) || any(!nzchar(names(replacements)))) {
             stop("update() arguments must be named calibration or model-specification arguments")
         }
+        specification_replacements <- intersect(
+            names(replacements), c("demand", "conduct", "variant")
+        )
+        if (length(specification_replacements)) {
+            stop("update() reruns the same demand, conduct, and variant calibration; use respecify() for registered model transitions")
+        }
         calibration_args[names(replacements)] <- replacements
     }
     if (!isTRUE(evaluate)) {
@@ -1126,7 +1209,8 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
         (is.null(names(extras)) || any(!nzchar(names(extras))))) {
         stop("respecify() transition arguments must be named")
     }
-    allowed_extras <- c("alpha", "gamma", "nests", "sigma")
+    allowed_extras <- c("alpha", "gamma", "nests", "sigma",
+                        "bargpowerPre", "bargpowerPost")
     unsupported_extras <- setdiff(names(extras), allowed_extras)
     if (length(unsupported_extras)) {
         stop("unsupported respecify() transition argument(s): ",
@@ -1143,9 +1227,19 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
         stop("respecify() requires a different registered model specification")
     }
     transition <- .model_transition_entry(source, target)
-    if (identical(transition$handler, "portable") && length(extras)) {
-        stop("respecify() transition from '", source$id, "' to '",
-             target$id, "' does not accept transition-specific demand arguments")
+    if (identical(transition$handler, "portable")) {
+        missing_required <- setdiff(transition$required_arguments, names(extras))
+        if (length(missing_required)) {
+            stop("respecify() transition from '", source$id, "' to '",
+                 target$id, "' requires explicit target primitive(s): ",
+                 paste(missing_required, collapse = ", "))
+        }
+        unexpected <- setdiff(names(extras), transition$required_arguments)
+        if (length(unexpected)) {
+            stop("respecify() transition from '", source$id, "' to '",
+                 target$id, "' does not accept transition-specific argument(s): ",
+                 paste(unexpected, collapse = ", "))
+        }
     }
 
     if (identical(transition$handler, "demand")) {
@@ -1160,6 +1254,19 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
             quantities = translated$state$quantities,
             ownerPre = translated$state$owner
         )
+        ## Demand translation builds a target fit through specify(), then
+        ## replaces the identifying observations with the translated state.
+        ## Keep the source baseline metadata alongside that state so a target
+        ## fit remains usable by update/respecify adapters without losing
+        ## product labels, orientation, outside-good price, or start values.
+        result <- .retain_fit_metadata(result)
+        source_metadata <- fit@observed
+        for (name in c("labels", "priceOutside", "priceStart", "output",
+                       "insideSize")) {
+            if (!is.null(source_metadata[[name]])) {
+                result@observed[[name]] <- source_metadata[[name]]
+            }
+        }
         result@diagnostics$source <- "respecify"
         result@diagnostics$route <- "respecify"
         result@diagnostics$transition <- list(
@@ -1203,6 +1310,24 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
              paste(missing_portable, collapse = ", "))
     }
 
+    ## The legacy second-price auction constructor interprets Logit mean
+    ## utilities relative to the outside good.  Preserve that convention when
+    ## moving a fitted Logit model into auction2nd so conduct comparisons remain
+    ## numerically compatible with the established simulation workflow.
+    auction_meanval_normalization <- NULL
+    if (identical(source$demand, "logit") &&
+        identical(target$demand, "logit") &&
+        identical(target$conduct, "auction2nd") &&
+        "meanval" %in% names(portable)) {
+        share_outside <- 1 - sum(fit@model@shares)
+        if (is.finite(share_outside) && share_outside >= 1e-10) {
+            portable$meanval <- log(fit@model@shares) - log(share_outside)
+            auction_meanval_normalization <- "outside-good"
+        } else {
+            auction_meanval_normalization <- "source"
+        }
+    }
+
     baseline <- fit@diagnostics$calibration_args
     if (!is.list(baseline)) baseline <- fit@diagnostics$specification_args
     if (!is.list(baseline)) {
@@ -1230,7 +1355,7 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
         if (!is.null(baseline[[name]])) specify_args[[name]] <- baseline[[name]]
     }
 
-    result <- do.call(specify, specify_args)
+    result <- do.call(specify, c(specify_args, extras))
     result@parameters <- portable
     result@observed <- fit@observed
     result@diagnostics$source <- "respecify"
@@ -1247,6 +1372,10 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
             invalidated = transition$invalidate,
             calibration_required = transition$calibration_required
     )
+    if (!is.null(auction_meanval_normalization)) {
+        result@diagnostics$transition$meanval_normalization <-
+            auction_meanval_normalization
+    }
     ## A portable respecification is not a calibration under the target
     ## specification.  Keep any source call as provenance only.
     result@diagnostics$source_calibration_args <-
@@ -1270,6 +1399,41 @@ respecify <- function(fit, demand = NULL, conduct = NULL,
     } else {
         model_spec(demand = demand, conduct = conduct, variant = variant)
     }
+}
+
+
+## BLP calibration/specification has a dedicated adapter that returns its
+## AntitrustFit directly.  Normalize its observed metadata to the same
+## baseline contract as the ordinary legacy-constructor route so updates,
+## respecifications, and downstream adapters can recover labels, orientation,
+## outside-good price, and starting values without inspecting implementation
+## details of the BLP helper.
+.retain_fit_metadata <- function(fit) {
+    model <- fit@model
+    observed <- fit@observed
+    if (!is.list(observed)) observed <- list()
+    ## Vertical bargaining keeps the downstream Logit/Auction object in a
+    ## nested slot, so its ordinary product metadata is not present on the
+    ## outer container.  Use the downstream side as the generic baseline
+    ## orientation and retain the upstream observations separately above.
+    metadata_models <- list(model)
+    if (methods::is(model, "VertBargBertLogit")) {
+        metadata_models <- c(metadata_models, list(model@down, model@up))
+    }
+    for (slot_name in c("labels", "priceOutside", "priceStart", "output",
+                        "insideSize")) {
+        for (metadata_model in metadata_models) {
+            if (slot_name %in% methods::slotNames(metadata_model)) {
+                value <- methods::slot(metadata_model, slot_name)
+                if (length(value)) {
+                    observed[[slot_name]] <- value
+                    break
+                }
+            }
+        }
+    }
+    fit@observed <- observed
+    fit
 }
 
 

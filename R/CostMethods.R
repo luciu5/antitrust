@@ -21,10 +21,12 @@
 #' product. For those classes that do not require prices, returns a
 #' length-k vector of NAs when prices are not supplied.
 #'
-#' For Bertrand, calcMC computes either pre- or post-merger marginal costs. Marginal costs
-#' are assumed to be constant. Post-merger marginal costs are equal to
-#' pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a length-k
-#' vector of marginal cost changes. \sQuote{mcDelta} will typically be between 0 and 1.
+#' For Bertrand, calcMC computes either pre- or post-merger marginal costs.
+#' Marginal costs are assumed to be constant. Post-merger marginal costs are
+#' equal to pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a
+#' length-k vector of marginal cost changes. \sQuote{mcDelta} will typically
+#' be between 0 and 1. The second-score Logit auction retains its legacy
+#' additive cost-level interpretation of \sQuote{mcDelta}.
 #'
 #' For Auction2ndLogit, calcMC computes constant marginal costs impied by the model.
 #'
@@ -74,6 +76,90 @@ setGeneric(
   }
 )
 
+## A calibrated model has two different kinds of cost information.  The
+## legacy `mcPre` slot is the value implied by the calibration observations,
+## while a counterfactual needs the structural cost primitive that remains
+## fixed when ownership, quality, or the active product set changes.  Keep the
+## latter as an ordinary attribute so the public S4 classes and their mature
+## constructors do not change.  The attribute is copied by S4 value
+## semantics, including when a result is promoted into the next path step.
+.cost_state_attribute <- "antitrust_cost_state"
+
+.cost_state <- function(object) {
+  attr(object, .cost_state_attribute, exact = TRUE)
+}
+
+.cost_state_mode <- function(object) {
+  ## The second-score Logit family historically treats `mcDelta` as an
+  ## additive cost level.  All other constant-cost demand classes use the
+  ## documented proportional change.  Keep that one-step convention intact.
+  if (methods::is(object, "Auction2ndLogit") &&
+      !methods::is(object, "Auction2ndCES")) {
+    "additive"
+  } else {
+    "multiplicative"
+  }
+}
+
+.set_cost_state <- function(object, state) {
+  attr(object, .cost_state_attribute) <- state
+  object
+}
+
+## Capture the calibrated cost level after a legacy constructor has completed.
+## For Cournot/Stackelberg the cost functions themselves are the structural
+## primitive; their realized value remains quantity-dependent and is therefore
+## deliberately not frozen here.
+.initialize_cost_state <- function(object) {
+  if (methods::is(object, "VertBargBertLogit")) {
+    up <- .initialize_cost_state(object@up)
+    down <- .initialize_cost_state(object@down)
+    ## Slot assignment must happen explicitly: assigning a nested S4 slot
+    ## does not mutate the original object in place, and leaving the inner
+    ## attributes off would let vertical calcMC() fall back to re-inference.
+    object@up <- up
+    object@down <- down
+    state <- list(up = .cost_state(up), down = .cost_state(down))
+    return(.set_cost_state(object, state))
+  }
+  ## Cournot and Stackelberg marginal costs are functions of equilibrium
+  ## quantities.  Their function closures and derivative closures already
+  ## live in the S4 slots and are promoted with the quantity state; freezing
+  ## the calibration-time evaluation here would change their economics.
+  if (methods::is(object, "Cournot")) return(object)
+  slots <- methods::slotNames(object)
+  if (!"mcPre" %in% slots) return(object)
+  base <- methods::slot(object, "mcPre")
+  if (!is.numeric(base) || !length(base)) return(object)
+  state <- list(
+    base = as.numeric(base),
+    mode = .cost_state_mode(object)
+  )
+  .set_cost_state(object, state)
+}
+
+## Return a persistent cost level when the model carries one.  A NULL return
+## means that the object is a direct legacy S4 object, for which calcMC keeps
+## its original inference behavior.
+.persistent_mc <- function(object, preMerger) {
+  state <- .cost_state(object)
+  if (is.null(state) || is.null(state$base)) return(NULL)
+  base <- state$base
+  if (!is.numeric(base) || !length(base)) return(NULL)
+  if (!preMerger) {
+    delta <- if ("mcDelta" %in% methods::slotNames(object)) object@mcDelta else NULL
+    if (is.null(delta) || length(delta) != length(base)) return(NULL)
+    if (identical(state$mode, "additive")) {
+      base <- base + delta
+    } else {
+      base <- base * (1 + delta)
+    }
+  }
+  names(base) <- if ("labels" %in% methods::slotNames(object) &&
+                     is.character(object@labels)) object@labels else names(base)
+  base
+}
+
 ## Create a method to recover marginal cost using
 ## demand parameters and supplied prices
 #' @rdname Cost-Methods
@@ -82,6 +168,15 @@ setMethod(
   f = "calcMC",
   signature = "Bertrand",
   definition = function(object, preMerger = TRUE) {
+    persistent <- .persistent_mc(object, preMerger)
+    if (!is.null(persistent)) {
+      isNegMC <- persistent < 0
+      if (preMerger && any(isNegMC, na.rm = TRUE)) {
+        warning(paste("Negative marginal costs were calibrated for the following firms:",
+                      paste(object@labels[isNegMC], collapse = ",")))
+      }
+      return(persistent)
+    }
     output <- object@output
 
     object@pricePre <- object@prices
@@ -120,6 +215,19 @@ setMethod(
   f = "calcMC",
   signature = "VertBargBertLogit",
   definition = function(object, preMerger = TRUE) {
+    persistent <- .cost_state(object)
+    if (!is.null(persistent) && !is.null(persistent$up) &&
+        !is.null(persistent$down)) {
+      mc_up <- .persistent_mc(object@up, preMerger)
+      mc_down <- .persistent_mc(object@down, preMerger)
+      if (!is.null(mc_up) && !is.null(mc_down)) {
+        mc_up <- as.vector(mc_up)
+        mc_down <- as.vector(mc_down)
+        names(mc_up) <- object@up@labels
+        names(mc_down) <- object@down@labels
+        return(list(up = mc_up, down = mc_down))
+      }
+    }
     up <- object@up
     down <- object@down
 
@@ -295,6 +403,14 @@ setMethod(
   f = "calcMC",
   signature = "Auction2ndLogit",
   definition = function(object, preMerger = TRUE, exAnte = FALSE) {
+    persistent <- .persistent_mc(object, preMerger)
+    if (!is.null(persistent)) {
+      ## Auction2ndLogit's public legacy method reports the conditional cost
+      ## level by default and multiplies by the product share for exAnte.
+      mc <- persistent
+      if (exAnte) mc <- mc * calcShares(object, preMerger = preMerger)
+      return(as.vector(mc))
+    }
     prices <- object@prices
     output <- object@output
 
@@ -334,6 +450,8 @@ setMethod(
   f = "calcMC",
   signature = "Auction2ndCES",
   definition = function(object, preMerger = TRUE) {
+    persistent <- .persistent_mc(object, preMerger)
+    if (!is.null(persistent)) return(as.vector(persistent))
     prices <- object@prices
     output <- object@output
 

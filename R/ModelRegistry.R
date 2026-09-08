@@ -179,16 +179,27 @@ supportedModels <- function() {
 .model_transition_entry <- function(from, to) {
     if (!identical(from$conduct, to$conduct) ||
         !identical(from$variant, to$variant)) {
-        ## Existing conduct transitions are structural restrictions that retain
-        ## the portable demand primitives.  They remain explicit below.
+        ## Conduct transitions retain portable demand primitives and rebuild
+        ## the target supply state.  Target-specific conduct primitives are
+        ## never inferred by this dispatcher.
+        conduct_required <- if (to$conduct %in% c("bargaining", "bargaining2nd") &&
+                                !identical(from$conduct, to$conduct)) {
+            "bargpowerPre"
+        } else {
+            character()
+        }
         entries <- list(
-            list(from = "logit", to = "logit", kind = "structural-restriction",
-                 required_arguments = character(), retain = c("alpha", "meanval"),
-                 derived = character(), discarded = character(),
+            list(from = "logit", to = "logit", kind = "conduct_change",
+                 required_arguments = conduct_required,
+                 retain = c("alpha", "meanval"),
+                 derived = character(),
+                 discarded = c("source conduct-specific supply state"),
                  recompute = c("marginal costs", "target supply state")),
-            list(from = "ces", to = "ces", kind = "structural-restriction",
-                 required_arguments = character(), retain = c("gamma", "alpha", "meanval", "shareInside"),
-                 derived = character(), discarded = character(),
+            list(from = "ces", to = "ces", kind = "conduct_change",
+                 required_arguments = conduct_required,
+                 retain = c("gamma", "alpha", "meanval", "shareInside"),
+                 derived = character(),
+                 discarded = c("source conduct-specific supply state"),
                  recompute = c("marginal costs", "target supply state")))
     } else {
         entries <- .model_transition_registry()
@@ -260,6 +271,8 @@ print.antitrust_model_spec <- function(x, ...) {
         bargaining = "bargaining",
         bargaining2nd = "bargaining2nd",
         bargaining2 = "bargaining2nd",
+        moncom = "moncom",
+        monopolisticcompetition = "moncom",
         stackelberg = "stackelberg",
         stack = "stackelberg",
         vertical = "vertical_bargaining",
@@ -309,6 +322,9 @@ print.antitrust_model_spec <- function(x, ...) {
         list(id = "logit::bertrand", demand = "logit", conduct = "bertrand",
              class = "Logit", calibrator = "logit", calibrate = TRUE,
              specify = TRUE, simulate = TRUE),
+        list(id = "logit::moncom", demand = "logit", conduct = "moncom",
+             class = "MonComLogit", calibrator = "moncom.logit",
+             calibrate = TRUE, specify = TRUE, simulate = TRUE),
         list(id = "logit::cournot", demand = "logit", conduct = "cournot",
              class = "LogitCournot", calibrator = "logit.cournot", calibrate = TRUE,
              specify = TRUE, simulate = TRUE),
@@ -324,6 +340,9 @@ print.antitrust_model_spec <- function(x, ...) {
         list(id = "ces::bertrand", demand = "ces", conduct = "bertrand",
              class = "CES", calibrator = "ces", calibrate = TRUE,
              specify = TRUE, simulate = TRUE),
+        list(id = "ces::moncom", demand = "ces", conduct = "moncom",
+             class = "MonComCES", calibrator = "moncom.ces",
+             calibrate = TRUE, specify = TRUE, simulate = TRUE),
         list(id = "ces::cournot", demand = "ces", conduct = "cournot",
              class = "CESCournot", calibrator = "ces.cournot", calibrate = TRUE,
              specify = TRUE, simulate = TRUE),
@@ -354,6 +373,9 @@ print.antitrust_model_spec <- function(x, ...) {
              specify = FALSE, simulate = TRUE),
         list(id = "blp::bertrand", demand = "blp", conduct = "bertrand",
              class = "LogitBLP", calibrator = "blp", calibrate = TRUE,
+             specify = TRUE, simulate = TRUE),
+        list(id = "blp::moncom", demand = "blp", conduct = "moncom",
+             class = "MonComBLP", calibrator = "blp", calibrate = TRUE,
              specify = TRUE, simulate = TRUE),
         list(id = "blp::cournot", demand = "blp", conduct = "cournot",
              class = "CournotBLP", calibrator = "blp", calibrate = TRUE,
@@ -446,45 +468,18 @@ print.antitrust_model_spec <- function(x, ...) {
     !is.null(entry) && isTRUE(entry[[operation]])
 }
 
-## Quality and entry are verified for every registered Logit/CES-family
-## class: bare Logit/CES, their Cournot and ALM variants, nested Logit/CES
-## (+ALM), LogitCap(+ALM), second-score auction (Auction2ndLogit/CES,
-## +ALM), and bargaining/bargaining2nd (+ALM). Each has been calibrated and
-## shocked directly to confirm a meanval quality shock moves shares in the
-## right direction and the post-shock FOC residual is at machine precision
-## or ~1e-9. Two families remain excluded:
-##   * BLP (LogitBLP/CournotBLP): its @slopes list also carries random-
-##     coefficient structure (sigma/sigmaNest); scaling meanval alone is a
-##     different, unverified experiment.
-##   * Vertical bargaining (VertBargBertLogit*): product-dimensional state
-##     lives in @up/@down sub-objects, so a container-level meanval shock
-##     or single-product entrant is ill-defined.
-## All non-Logit/CES demands (Linear, LogLin, AIDS, PCAIDS*, Cournot,
-## Stackelberg) are excluded outright -- they have no meanval slot at all.
-.quality_entry_supported_classes <- c(
-    "Logit", "LogitALM", "LogitCournot", "LogitCournotALM",
-    "CES", "CESALM", "CESCournot", "CESCournotALM",
-    "LogitNests", "LogitNestsALM", "CESNests",
-    "LogitCap", "LogitCapALM",
-    "Auction2ndLogit", "Auction2ndLogitALM", "Auction2ndCES", "Auction2ndCESALM",
-    "BargainingLogit", "BargainingLogitALM", "BargainingCES", "BargainingCESALM",
-    "Bargaining2ndLogit", "Bargaining2ndCES"
+## Quality and entry are verified only for the four leaf classes whose
+## product-dimensional slots are byte-identical Logit/CES vectors: bare
+## Logit, CES, and their Cournot-conduct counterparts (which add no new
+## slots -- conduct is dispatched separately from class structure). Every
+## other Logit/CES descendant (LogitCap, LogitNests, LogitBLP,
+## Auction2ndLogit*, Bargaining*, VertBarg*) is excluded until individually
+## audited; all non-Logit/CES demands (Linear, LogLin, AIDS, PCAIDS*,
+## Cournot, Stackelberg) are excluded outright.
+.entry_quality_supported_classes <- c(
+    "Logit", "LogitCournot", "CES", "CESCournot",
+    "MonComLogit", "MonComCES"
 )
-
-## Exit (the subset mask) is supported for every class in
-## .quality_entry_supported_classes plus every other pre-existing
-## non-Auction2ndCap class. BargainingLogit/BargainingLogitALM's
-## calcPrices()/calcMargins() methods previously operated on full-length
-## vectors/matrices without ever dropping excluded products -- unlike
-## every other family's calcMargins(), which subsets owner/shares/prices
-## before the linear algebra and re-expands to NA afterward (see the
-## Bertrand method). That let an excluded product's degenerate FOC term
-## (0 * NaN) poison every other product's result through the matrix
-## multiply, on top of a separate un-subsetted `bargpower` vector causing
-## an outright length-mismatch error in calcPrices(). Both methods now
-## subset/re-expand consistently with the rest of the package; fixed and
-## verified (FOC ~1e-9-1e-10) rather than worked around.
-.exit_unsupported_classes <- c("Auction2ndCap")
 
 .model_counterfactual_capabilities <- function(spec) {
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
@@ -493,14 +488,14 @@ print.antitrust_model_spec <- function(x, ...) {
     c(
         ownership = TRUE,
         costs = TRUE,
-        exit = !(cls %in% .exit_unsupported_classes),
+        exit = cls != "Auction2ndCap",
         capacity = cls %in% c("LogitCap", "LogitCapALM", "Stackelberg"),
         bargaining = spec$conduct %in% c("bargaining", "bargaining2nd"),
         leader = cls == "Stackelberg",
         products = cls == "Stackelberg",
         tariff = FALSE,
         quota = FALSE,
-        quality = cls %in% .quality_entry_supported_classes,
-        entry = cls %in% .quality_entry_supported_classes
+        quality = cls %in% .entry_quality_supported_classes,
+        entry = cls %in% .entry_quality_supported_classes
     )
 }

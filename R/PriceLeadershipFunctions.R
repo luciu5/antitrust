@@ -28,7 +28,20 @@
  #'   binds, all firm-specific timing parameters are estimated and saved.
 #' @param insideSize An integer equal to total pre-merger units sold.
 #'   If shares sum to one, this also equals the size of the market.
-#' @param nDraws Number of consumer draws used for BLP demand.
+#' @param integration BLP integration rule: \code{"auto"} (the default),
+#'   \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
+#'   Automatic integration uses one-dimensional Gauss-Hermite quadrature for a
+#'   price-only BLP specification, or for a single demographic price dimension
+#'   when \code{sigma = 0}; it uses fixed-draw Monte Carlo otherwise.
+#' @param nNodes Number of Gauss-Hermite nodes. Defaults to 31 when
+#'   \code{integration = "gauss-hermite"}.
+#' @param nDraws Number of Monte Carlo draws used for BLP demand. It selects
+#'   \code{integration = "monte-carlo"} when no integration rule is supplied,
+#'   preserving legacy BLP calls; it defaults to 5000 when Monte Carlo is
+#'   selected; it is not a quadrature-node count.
+#' @param consDraws Optional supplied BLP integration points.
+#' @param integrationWeights Optional non-negative weights for supplied BLP
+#'   integration points. They are normalized to sum to one.
 #' @param slopes A list of pre-calibrated BLP demand parameters.
  #' @param normIndex An integer equalling the index (position) of the
  #'   inside product whose mean valuation will be normalized to 1. Default
@@ -236,7 +249,11 @@ ple.blp <- function(
   priceOutside = 0,
   priceStart = prices,
   isMax = FALSE,
-  nDraws = 500,
+  integration = c("auto", "gauss-hermite", "monte-carlo", "provided"),
+  nNodes = NULL,
+  nDraws = NULL,
+  consDraws = NULL,
+  integrationWeights = NULL,
   slopes,
   control.slopes,
   control.equ,
@@ -245,6 +262,56 @@ ple.blp <- function(
 ){
 
   nprods <- length(prices)
+  integration_missing <- missing(integration)
+  integration <- match.arg(integration)
+
+  if (!is.list(slopes)) {
+    stop("'slopes' must be a list of BLP demand parameters.")
+  }
+  if (!missing(nDraws) && identical(integration, "auto")) {
+    ## Preserve the historical meaning of nDraws in the legacy public API.
+    integration <- "monte-carlo"
+  }
+  if (!is.null(nDraws) && !identical(integration, "monte-carlo")) {
+    stop("'nDraws' is only valid with integration = 'monte-carlo'; use 'nNodes' for Gauss-Hermite.")
+  }
+  if (!is.null(nNodes) && !identical(integration, "gauss-hermite")) {
+    stop("'nNodes' is only valid with integration = 'gauss-hermite'.")
+  }
+  if (!is.null(consDraws) &&
+      (!is.null(slopes$consDraws) || !is.null(slopes$draws))) {
+    stop("BLP integration points were supplied both in 'slopes' and 'consDraws'.")
+  }
+  if (!is.null(integrationWeights) &&
+      (!is.null(slopes$integrationWeights) || !is.null(slopes$drawWeights))) {
+    stop("BLP integration weights were supplied both in 'slopes' and 'integrationWeights'.")
+  }
+
+  if (!is.null(consDraws)) slopes$consDraws <- consDraws
+  if (!is.null(integrationWeights)) slopes$integrationWeights <- integrationWeights
+  if (!is.null(nNodes)) slopes$nNodes <- nNodes
+  if (!is.null(nDraws)) slopes$nDraws <- nDraws
+  supplied_points <- if (!is.null(slopes$draws)) slopes$draws else slopes$consDraws
+  if (!is.null(slopes$nDraws) && !is.null(supplied_points) &&
+      slopes$nDraws != length(supplied_points)) {
+    stop("'nDraws' must equal the number of supplied BLP integration points.")
+  }
+  if (!is.null(slopes$nDraws) && isTRUE(integration_missing) &&
+      is.null(slopes$consDraws) && is.null(slopes$draws)) {
+    integration <- "monte-carlo"
+  }
+  slopes$integration <- integration
+  integration_result <- .blp_integration(slopes)
+  slopes$consDraws <- integration_result$draws
+  slopes$drawWeights <- integration_result$weights
+  slopes$integrationWeights <- integration_result$weights
+  slopes$integration <- integration_result$rule
+  slopes$nNodes <- if (identical(integration_result$rule, "gauss-hermite")) {
+    length(integration_result$draws)
+  } else {
+    NULL
+  }
+  nDraws <- length(integration_result$draws)
 
   ## Check post-merger coalition
   ## Logit's parent validity requires a finite margin vector even though
@@ -575,7 +642,12 @@ setMethod(
     piDemog      <-  object@slopes$piDemog
     if(is.null(piDemog)) piDemog <- numeric(0)
     nDemog       <-  object@slopes$nDemog
-    if(is.null(nDemog)) nDemog <- 0
+    if(is.null(nDemog)) nDemog <- length(piDemog)
+    if(length(nDemog) != 1L || !is.finite(nDemog) || nDemog < 0 ||
+       nDemog != as.integer(nDemog)) {
+      stop("'nDemog' must be a non-negative integer.")
+    }
+    nDemog <- as.integer(nDemog)
     sigmaNest    <-  object@slopes$sigmaNest
 
     # Check if meanval (delta) is already provided
@@ -590,25 +662,45 @@ setMethod(
     nDraws <- length(consDraws)
 
     # Check if demographic draws already exist (to ensure consistency across calls)
-    drawsExist <- "consDraws" %in% names(object@slopes) && !is.null(object@slopes$consDraws)
+    drawsExist <- "consDraws" %in% names(object@slopes) &&
+      !is.null(object@slopes$consDraws) &&
+      (nDemog == 0L || !is.null(object@slopes$demogDraws))
 
     if(drawsExist) {
       # Reuse existing draws
       consDraws <- object@slopes$consDraws
       demogDraws <- object@slopes$demogDraws
-      if(!is.null(demogDraws) && ncol(demogDraws) > 0) {
-        demogEffect <- demogDraws %*% piDemog
+      if(nDemog > 0L && !is.null(demogDraws) && ncol(demogDraws) > 0) {
+        demogMean <- object@slopes$demogMean
+        if(is.null(demogMean)) demogMean <- rep(0, nDemog)
+        demogEffect <- (demogDraws - matrix(demogMean,
+                                            nrow = nrow(demogDraws),
+                                            ncol = nDemog, byrow = TRUE)) %*%
+          piDemog
       } else {
-        demogEffect <- 0
+        demogEffect <- numeric(nDraws)
       }
     } else {
       # Generate demographic draws (observed heterogeneity)
-      if(!is.null(nDemog) && nDemog > 0){
-        demogDraws <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
-        demogEffect <- demogDraws %*% piDemog
+      if(nDemog > 0L){
+        demogMean <- object@slopes$demogMean
+        if(is.null(demogMean)) demogMean <- rep(0, nDemog)
+        demogCov <- object@slopes$demogCov
+        if(is.null(demogCov)) demogCov <- diag(nDemog)
+        if(!is.matrix(demogCov) || !identical(dim(demogCov), c(nDemog, nDemog))) {
+          stop("'demogCov' must be an nDemog by nDemog matrix.")
+        }
+        demog_chol <- tryCatch(chol(demogCov), error = function(e)
+          stop("'demogCov' must be positive definite: ", e$message))
+        z_demog <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
+        ## chol() is upper triangular in R; row draws use Z %*% chol(Sigma).
+        demogDraws <- sweep(z_demog %*% demog_chol, 2, demogMean, "+")
+        demogEffect <- (demogDraws - matrix(demogMean,
+                                            nrow = nDraws, ncol = nDemog,
+                                            byrow = TRUE)) %*% piDemog
       } else {
         demogDraws <- matrix(nrow=nDraws, ncol=0)
-        demogEffect <- 0
+        demogEffect <- numeric(nDraws)
         piDemog <- numeric(0)
         nDemog <- 0
       }
@@ -617,6 +709,40 @@ setMethod(
     # Compute individual-specific price coefficients
     # alpha_i = alphaMean + sigma * nu_i + pi * d_i
     alphas <- alphaMean + sigma * consDraws + demogEffect
+
+    ## Characteristic-only random coefficients are an independent integration
+    ## component; they do not imply a demographic dimension.
+    prodChar <- object@slopes$prodChar
+    beta <- object@slopes$beta
+    sigmaChar <- object@slopes$sigmaChar
+    pi <- object@slopes$pi
+    hasChar <- is.matrix(prodChar) && nrow(prodChar) == length(shares)
+    nChar <- if(hasChar) ncol(prodChar) else 0L
+    char_random <- matrix(0, nrow = nDraws, ncol = length(shares))
+    if(hasChar) {
+      if(!is.null(sigmaChar)) {
+        if(length(sigmaChar) != nChar || any(!is.finite(sigmaChar))) {
+          stop("'sigmaChar' must be finite and match the characteristic count.")
+        }
+        charDraws <- object@slopes$charDraws
+        if(is.null(charDraws) || !is.matrix(charDraws) ||
+           !identical(dim(charDraws), c(nDraws, nChar))) {
+          charDraws <- matrix(rnorm(nDraws * nChar), nrow=nDraws, ncol=nChar)
+        }
+        char_random <- char_random +
+          sweep(charDraws, 2, sigmaChar, "*") %*% t(prodChar)
+      } else {
+        charDraws <- NULL
+      }
+      if(nDemog > 0L && !is.null(pi)) {
+        if(!is.matrix(pi) || !identical(dim(pi), c(nDemog, nChar))) {
+          stop("'pi' must have dimensions nDemog by the characteristic count.")
+        }
+        char_random <- char_random + demogDraws %*% pi %*% t(prodChar)
+      }
+    } else {
+      charDraws <- NULL
+    }
 
     # Use output slot to verify sign consistency
     output <- object@output
@@ -662,8 +788,25 @@ setMethod(
     if (deltaProvided) {
       delta <- object@slopes$meanval
       message("Using provided meanval (delta) for BLP - skipping contraction mapping")
-    }
-    else {
+    } else if (sigmaNest == 1 && nDemog == 0L && !hasChar) {
+      ## Keep PriceLeadershipBLP on the same flat-Logit contraction path as
+      ## the observed-data BLP adapter.  The branch below remains for nested
+      ## and characteristic-rich legacy objects.
+      contracted <- .blp_contract(
+        prices = prices, shares = shares, alphaMean = alphaMean,
+        sigma = sigma, draws = consDraws, weights = drawWeights,
+        s0 = if (is.na(idx)) 1 - shareInside else 0,
+        priceOutside = idxPrice,
+        tol = ifelse(!is.null(object@slopes$contractionTol),
+                     object@slopes$contractionTol, 1e-12),
+        maxIter = ifelse(!is.null(object@slopes$contractionMaxIter),
+                         object@slopes$contractionMaxIter, 1000L)
+      )
+      if (!contracted$converged) {
+        warning("BLP contraction mapping did not converge within the configured iteration limit.")
+      }
+      delta <- contracted$delta
+    } else {
       # Pre-compute constant price term for efficiency
       price_diff <- prices - object@priceOutside
 
@@ -672,6 +815,9 @@ setMethod(
         # Compute utilities: nDraws x nProducts matrix
         utilities <- outer(alphas, price_diff, "*")
         utilities <- sweep(utilities, 2, delta, "+")
+        if (hasChar) {
+          utilities <- utilities + char_random
+        }
 
         # Prevent numeric overflow
         maxUtil <- 700
@@ -756,6 +902,14 @@ setMethod(
     object@slopes$integrationWeights <- drawWeights
     object@slopes$integration <- integration$rule
     object@slopes$nNodes <- if(identical(integration$rule, "gauss-hermite")) nDraws else NULL
+    if(hasChar) {
+      object@slopes$prodChar <- prodChar
+      object@slopes$beta <- beta
+      object@slopes$char_random <- char_random
+      if(!is.null(sigmaChar)) object@slopes$sigmaChar <- sigmaChar
+      if(!is.null(charDraws)) object@slopes$charDraws <- charDraws
+      if(!is.null(pi)) object@slopes$pi <- pi
+    }
 
     return(object)
   }

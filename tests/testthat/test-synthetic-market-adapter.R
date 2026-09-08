@@ -1,18 +1,20 @@
 test_that("multi-product Bertrand Logit realizes a known-primitives market", {
-  skip_if_not_installed("iopolicy")
-  market <- iopolicy::fake_market(
+  market <- fake_market(
     mode = "primitives", n_firms = 2, n_products = 2,
     dirichlet_alpha = c(2, 3, 4, 5), outside_beta = c(3, 5),
     price_level = 100, parameters = list(alpha = -1), seed = 101
   )
   source_products <- market$products
-  realized <- iopolicy::realize_market(market, model_spec("logit", "bertrand"))
+  realized <- realize_market(market, model_spec("logit", "bertrand"))
 
   expect_s3_class(realized, "SyntheticMarket")
   expect_equal(realized$diagnostics$equilibrium_status, "realized")
   expect_lt(realized$diagnostics$foc_residual, 1e-8)
   expect_equal(realized$diagnostics$recovered_parameters$alpha, -1,
                tolerance = 1e-12)
+  expect_equal(realized$diagnostics$foc_rank, length(market$shares))
+  expect_lt(realized$diagnostics$foc_condition_number,
+            realized$diagnostics$foc_condition_limit)
   expect_equal(realized$products$cost,
                realized$prices - realized$products$markup, tolerance = 1e-12)
   expect_equal(realized$products$mean_value[realized$design$reference_product], 0,
@@ -21,14 +23,25 @@ test_that("multi-product Bertrand Logit realizes a known-primitives market", {
   expect_true(all(is.na(market$products$cost)))
 })
 
+test_that("singular ownership-adjusted systems are rejected", {
+  market <- fake_market(
+    mode = "primitives", n_firms = 2, n_products = c(1, 2),
+    parameters = list(alpha = -1), price_level = 100, seed = 505
+  )
+  market$ownership[,] <- 1
+  expect_error(
+    realize_market(market, model_spec("logit", "bertrand")),
+    "singular or ill-conditioned"
+  )
+})
+
 test_that("observed reference markup identifies alpha with the full ownership system", {
-  skip_if_not_installed("iopolicy")
-  market <- iopolicy::fake_market(
+  market <- fake_market(
     mode = "observed", n_firms = 3, dirichlet_alpha = rep(1, 3),
     outside_beta = c(4, 4), price_level = 100,
     observed_markup = 20, seed = 202
   )
-  realized <- iopolicy::realize_market(market, model_spec("logit", "bertrand"))
+  realized <- realize_market(market, model_spec("logit", "bertrand"))
   ref <- market$design$reference_product
   expected_alpha <- -1 / (market$observed$reference_markup * (1 - market$shares[ref]))
 
@@ -40,13 +53,12 @@ test_that("observed reference markup identifies alpha with the full ownership sy
 })
 
 test_that("full multi-product FOCs differ from the one-product shortcut", {
-  skip_if_not_installed("iopolicy")
-  market <- iopolicy::fake_market(
+  market <- fake_market(
     mode = "observed", n_firms = 2, n_products = 2,
     dirichlet_alpha = c(3, 2, 4, 5), outside_beta = c(3, 7),
     price_level = 100, observed_markup = 20, seed = 303
   )
-  realized <- iopolicy::realize_market(market, model_spec("logit", "bertrand"))
+  realized <- realize_market(market, model_spec("logit", "bertrand"))
   shares <- market$shares
   ownership <- market$ownership
   d_unit <- diag(shares) - tcrossprod(shares, shares)
@@ -62,13 +74,12 @@ test_that("full multi-product FOCs differ from the one-product shortcut", {
 })
 
 test_that("known-primitive QA records parameter error and mean-share recovery", {
-  skip_if_not_installed("iopolicy")
-  market <- iopolicy::fake_market(
+  market <- fake_market(
     mode = "primitives", n_firms = 2, n_products = 2,
     dirichlet_alpha = c(1, 4, 2, 3), price_level = 100,
     parameters = list(alpha = -0.75), seed = 404
   )
-  realized <- iopolicy::realize_market(market, model_spec("logit", "bertrand"))
+  realized <- realize_market(market, model_spec("logit", "bertrand"))
   expect_equal(realized$diagnostics$parameter_error$alpha, 0,
                tolerance = 1e-12)
   expect_lt(realized$diagnostics$share_residual, 1e-12)

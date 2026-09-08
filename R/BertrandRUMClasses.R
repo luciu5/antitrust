@@ -250,7 +250,7 @@ setClass(
     nDraws = "numeric"
   ),
   prototype = prototype(
-    nDraws = 1000
+    nDraws = 5000
   ),
   validity = function(object) {
     # nDraws must be a single positive numeric value

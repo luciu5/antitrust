@@ -12,7 +12,7 @@ Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com
                   )
 Maintainer: Charles Taragin <ctaragin+antitrustr@gmail.com>
 Author: Charles Taragin [aut, cre], Michael Sandfort [aut], Shlok Goyal [ctb]
-Imports: iopolicy (>= 0.0.0.9000), methods, BB, numDeriv, nleqslv, SQUAREM
+Imports: methods, BB, numDeriv, nleqslv, SQUAREM
 Suggests: MASS, ggplot2, knitr, bookdown, rmarkdown, competitiontoolbox, testthat
 Encoding: UTF-8
 Description: A collection of tools for antitrust practitioners, including the ability to calibrate different consumer demand systems and simulate the effects of mergers under different competitive regimes.
@@ -71,12 +71,19 @@ Collate:
     'ModelArchitecture.R'
     'ModelRegistry.R'
     'ModelTranslations.R'
+    'MonComClasses.R'
+    'MonComFunctions.R'
+    'MonComMethods.R'
     'PriceLeadershipClasses.R'
     'PriceLeadershipFunctions.R'
     'SimFunctions.R'
+    'SyntheticMarket.R'
     'SyntheticMarketAdapter.R'
+    'SyntheticMarketClass.R'
+    'SyntheticMarketDesign.R'
     'VerticalFunctions.R'
     'antitrust-deprecated.R'
+    'realize_market.R'
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 Config/antitrust/qa-canonical-r: 4.6.1

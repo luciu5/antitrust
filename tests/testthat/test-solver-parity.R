@@ -1,3 +1,7 @@
+# Alternative-solver matrices are a nightly/manual parity gate.  Focused AG
+# regressions remain in test-audit-regressions.R.
+qa_skip_if_not_extended()
+
 test_that("Pre- and post-merger equilibria match between nleqslv and AG solvers on Logit package examples", {
   prices <- c(2.0, 2.2, 2.5)
   shares <- c(0.35, 0.25, 0.20)
@@ -77,4 +81,33 @@ test_that("Pre- and post-merger equilibria match on Bargaining Logit models", {
   expect_equal(unname(fit_ag@pricePre), unname(fit_nleqslv@pricePre), tolerance = 1e-4)
   expect_equal(unname(fit_ag@pricePost), unname(fit_nleqslv@pricePost), tolerance = 1e-4)
   expect_equal(unname(calcPriceDelta(fit_ag)), unname(calcPriceDelta(fit_nleqslv)), tolerance = 1e-4)
+})
+
+
+test_that("Speed-Nocke-Schutz Logit AG regression retains constructor parity", {
+  prices <- c(1.0, 1.0)
+  shares <- c(0.40, 0.30)
+  margins <- c(0.40, 0.30)
+  ownerPre <- c("A", "B")
+  ownerPost <- c("A", "A")
+
+  fit_std <- logit(prices = prices, shares = shares, margins = margins,
+                   ownerPre = ownerPre, ownerPost = ownerPost,
+                   solver = "nleqslv")
+  fit_ag <- logit(prices = prices, shares = shares, margins = margins,
+                  ownerPre = ownerPre, ownerPost = ownerPost, solver = "ag")
+
+  expect_equal(unname(calcPriceDelta(fit_ag)), unname(calcPriceDelta(fit_std)),
+               tolerance = 1e-4)
+})
+
+
+test_that("Speed-Nocke-Schutz bargaining CES AG regression remains finite", {
+  fit <- bargaining.ces(
+    prices = c(1.0, 1.0), shares = c(0.66, 0.34),
+    margins = c(0.30, 0.20), ownerPre = c("A", "B"),
+    ownerPost = c("A", "A"), solver = "ag"
+  )
+
+  expect_true(all(calcPriceDelta(fit) > 0))
 })

@@ -1,4 +1,5 @@
 test_that("all documented sim demand/supply combinations have formal coverage", {
+    qa_skip_if_not_extended()
     p <- c(2, 2.2, 2.5)
     op <- c("A", "B", "C")
     oo <- c("A", "A", "C")
