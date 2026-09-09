@@ -42,24 +42,50 @@ setMethod(".promote_post_to_pre", "VertBargBertLogit", function(model, step) {
     model
 })
 
-## The flat Logit/CES classes verified safe for entry/quality include the
-## monopolistic-competition and Cournot descendants (which add no product
-## state beyond Logit/CES; conduct is dispatched separately). Every other
-## Logit/CES descendant (LogitCap, LogitNests, LogitBLP, Auction2ndLogit*,
-## Bargaining*, VertBarg*) is deliberately excluded until individually
-## audited.
+## Entry and quality are implemented for the following concrete descendants.
+## The generic Logit/CES methods handle the demand state, while the entrant
+## expansion below carries each descendant's additional product primitive.
+## BLP and vertical bargaining remain excluded because their state is not a
+## flat product vector and their simulation methods have separate contracts.
 .entry_supported_classes <- c(
     "Logit", "LogitCournot", "CES", "CESCournot",
-    "MonComLogit", "MonComCES"
+    "MonComLogit", "MonComCES", "LogitNests", "CESNests",
+    "LogitCap", "Auction2ndLogit", "BargainingLogit",
+    "Bargaining2ndLogit", "Bargaining2ndCES", "LogitALM", "CESALM"
 )
 
-.require_entry_supported <- function(model, action = "entry") {
-    if (!(class(model)[[1L]] %in% .entry_supported_classes)) {
+.quality_supported_classes <- c(
+    .entry_supported_classes, "Auction2ndCES", "BargainingCES",
+    "LogitNestsALM", "LogitCapALM", "Auction2ndLogitALM",
+    "Auction2ndCESALM", "BargainingLogitALM", "BargainingCESALM"
+)
+
+## The legacy specialized Logit constructors store a positive demand index
+## in `meanval`, even though the flat Logit constructor stores utility.  Keep
+## their historical multiplicative quality convention while preserving the
+## utility shift for flat Logit and its Cournot/MonCom descendants.
+.quality_multiplicative_logit_classes <- c(
+    "LogitNests", "LogitNestsALM", "LogitCap", "LogitCapALM",
+    "Auction2ndLogit", "Auction2ndLogitALM",
+    "BargainingLogit", "Bargaining2ndLogit", "BargainingLogitALM",
+    "LogitALM"
+)
+
+.require_supported_transition <- function(model, supported, action) {
+    if (!(class(model)[[1L]] %in% supported)) {
         stop("'", action, "' is only supported for models of exact class ",
-             paste(.entry_supported_classes, collapse = ", "),
+             paste(supported, collapse = ", "),
              "; this fit is class '", class(model)[[1L]], "'")
     }
     invisible(model)
+}
+
+.require_entry_supported <- function(model, action = "entry") {
+    .require_supported_transition(model, .entry_supported_classes, action)
+}
+
+.require_quality_supported <- function(model, action = "quality") {
+    .require_supported_transition(model, .quality_supported_classes, action)
 }
 
 ## Expand a Logit/CES-family model's product dimension for one new
@@ -121,6 +147,56 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     model@slopes$meanval <- c(model@slopes$meanval, entrant@meanval)
     names(model@slopes$meanval) <- model@labels
 
+    ## Nested demand carries product-to-nest membership and a nest-level
+    ## curvature vector.  A nested entrant must state its nest explicitly;
+    ## a new singleton has the family-specific limiting curvature.
+    if (methods::is(model, "LogitNests") || methods::is(model, "CESNests")) {
+        nest <- entrant@extras$nest
+        if (is.null(nest) || length(nest) != 1L || is.na(nest) ||
+            !nzchar(as.character(nest))) {
+            stop("entry into nested models requires entrant extra 'nest'")
+        }
+        nest <- as.character(nest)
+        old_nests <- as.character(model@nests)
+        model@nests <- factor(c(old_nests, nest),
+                              levels = unique(c(levels(model@nests), nest)))
+        sigma <- model@slopes$sigma
+        if (is.null(sigma)) sigma <- numeric()
+        if (!(nest %in% names(sigma))) {
+            singleton_sigma <- if (methods::is(model, "CESNests")) 0 else 1
+            sigma <- c(sigma, stats::setNames(singleton_sigma, nest))
+        }
+        model@slopes$sigma <- sigma
+    }
+
+    ## Capacity-constrained Logit needs a capacity primitive for the new
+    ## product.  Do not infer it from a synthetic margin or price.
+    if (methods::is(model, "LogitCap")) {
+        capacity <- entrant@extras$capacity
+        if (is.null(capacity) || length(capacity) != 1L ||
+            !is.numeric(capacity) || is.na(capacity) || capacity < 0 ||
+            (is.infinite(capacity) && capacity < 0)) {
+            stop("entry into LogitCap requires entrant extra 'capacity'")
+        }
+        model@capacitiesPre <- c(model@capacitiesPre, as.numeric(capacity))
+        model@capacitiesPost <- c(model@capacitiesPost, as.numeric(capacity))
+    }
+
+    ## Bargaining classes require a product-level bargaining-power primitive;
+    ## the historical entry default is 0.5 and an entrant may override it.
+    ## The concrete Logit/CES bargaining classes contain their own bargaining
+    ## slots rather than inheriting the virtual `Bargaining` container.
+    if (all(c("bargpowerPre", "bargpowerPost") %in% methods::slotNames(model))) {
+        bargpower <- entrant@extras$bargpower
+        if (is.null(bargpower)) bargpower <- .5
+        if (length(bargpower) != 1L || !is.numeric(bargpower) ||
+            !is.finite(bargpower) || bargpower < 0 || bargpower > 1) {
+            stop("entrant extra 'bargpower' must be a finite number in [0, 1]")
+        }
+        model@bargpowerPre <- c(model@bargpowerPre, as.numeric(bargpower))
+        model@bargpowerPost <- c(model@bargpowerPost, as.numeric(bargpower))
+    }
+
     entrant_shares <- calcShares(model, preMerger = TRUE)
     model@shares <- entrant_shares
     model@shareInside <- ifelse(
@@ -165,7 +241,7 @@ setGeneric(".apply_quality", function(model, quality) {
 })
 
 setMethod(".apply_quality", "Logit", function(model, quality) {
-    .require_entry_supported(model, "quality")
+    .require_quality_supported(model, "quality")
     if (is.null(names(quality)) || any(!nzchar(names(quality)))) {
         stop("'quality' must be a named numeric vector (product label = proportional change)")
     }
@@ -184,12 +260,18 @@ setMethod(".apply_quality", "Logit", function(model, quality) {
     }
     meanval <- model@slopes$meanval
     idx <- match(names(quality), model@labels)
-    ## Logit mean values are utilities and are only identified up to a
-    ## normalization.  A proportional change in positive choice weight is
-    ## therefore represented by an additive log(1 + quality) utility shift;
-    ## multiplying a possibly negative or zero utility is normalization
-    ## dependent and can reverse the intended attractiveness change.
-    meanval[idx] <- meanval[idx] + log1p(quality)
+    if (class(model)[[1L]] %in% .quality_multiplicative_logit_classes) {
+        ## These specialized legacy constructors expose a positive demand
+        ## index under the historical meanval name.
+        meanval[idx] <- meanval[idx] * (1 + quality)
+    } else {
+        ## Flat Logit mean values are utilities and are only identified up to
+        ## a normalization.  A proportional change in positive choice weight
+        ## is represented by an additive log(1 + quality) utility shift;
+        ## multiplying a possibly negative or zero utility can reverse the
+        ## intended attractiveness change.
+        meanval[idx] <- meanval[idx] + log1p(quality)
+    }
     model@slopes$meanval <- meanval
     model
 })
@@ -197,7 +279,7 @@ setMethod(".apply_quality", "Logit", function(model, quality) {
 ## CES mean values enter as positive multiplicative demand weights, so retain
 ## the proportional convention directly for that demand family.
 setMethod(".apply_quality", "CES", function(model, quality) {
-    .require_entry_supported(model, "quality")
+    .require_quality_supported(model, "quality")
     if (is.null(names(quality)) || any(!nzchar(names(quality)))) {
         stop("'quality' must be a named numeric vector (product label = proportional change)")
     }

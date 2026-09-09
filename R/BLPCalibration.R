@@ -857,7 +857,6 @@ setMethod(
 .specify_blp_conduct_fit <- function(spec, prices, parameters, ownerPre,
                                      shares, margins, insideSize, output,
                                      dots, specification_args) {
-    if (is.null(shares)) stop("'shares' must be supplied for BLP parameter loading.")
     if (is.null(output)) output <- TRUE
     .blp_parameters_validate(parameters, output)
     alpha <- if (!is.null(parameters$alphaMean)) parameters$alphaMean else
@@ -873,11 +872,36 @@ setMethod(
         }
     }
     integration <- .blp_integration(integration_dots)
+    delta <- parameters$meanval
+    contraction_messages <- character()
+    price_outside <- if (is.null(dots[["priceOutside"]])) 0 else dots[["priceOutside"]]
+    if (is.null(shares) && is.null(delta)) {
+        stop("'shares' must be supplied for BLP parameter loading unless 'meanval' is supplied.")
+    }
+    if (is.null(shares)) {
+        ## A supplied mean utility already identifies the observed inside
+        ## shares, conditional on the supplied integration rule and outside
+        ## good.  Construct that market state directly; forcing callers to
+        ## repeat shares here would make specify() needlessly different from
+        ## the parameterized simulation boundary.
+        if (!is.numeric(delta) || length(delta) != length(prices) ||
+            any(!is.finite(delta))) {
+            stop("BLP 'meanval' must be a finite length-k vector when supplied.")
+        }
+        predicted <- .blp_stable_shares(
+            delta, prices, alpha + sigma * integration$draws,
+            integration$draws, integration$weights,
+            priceOutside = price_outside, outside = TRUE
+        )$aggregate
+        shares <- as.numeric(predicted)
+        names(shares) <- names(delta)
+    }
+    ## With observed shares, s0 retains the historical share-derived default;
+    ## with supplied meanval, shares were just constructed from the same
+    ## outside-good normalization and imply this identical value.
     s0 <- if (is.null(dots$s0)) 1 - sum(shares) else dots$s0
     .blp_validate_inputs(prices, shares, if (is.null(margins)) rep(1 / length(prices), length(prices)) else margins,
                          ownerPre, s0, output)
-    delta <- parameters$meanval
-    contraction_messages <- character()
     if (is.null(delta)) {
         contraction_tol <- if (is.null(dots[["contractionTol"]])) {
             1e-10
@@ -892,7 +916,7 @@ setMethod(
         contracted <- .blp_contract(
             prices, shares, alpha, sigma, integration$draws,
             integration$weights, s0,
-            priceOutside = if (is.null(dots[["priceOutside"]])) 0 else dots[["priceOutside"]],
+            priceOutside = price_outside,
             tol = contraction_tol, maxIter = contraction_max_iter,
             dampFactor = .5
         )
@@ -916,7 +940,8 @@ setMethod(
         margins = if (is.null(margins)) rep(1 / length(prices), length(prices)) else margins,
         ownerPre = ownerPre, alphaMean = alpha, sigma = sigma, delta = delta,
         integration = integration, s0 = s0, output = output,
-        dots = c(dots, list(insideSize = insideSize)),
+        dots = c(dots, list(insideSize = insideSize,
+                            priceOutside = price_outside)),
         bargpowerPre = barg_pre, bargpowerPost = dots$bargpowerPost,
         weights = dots$weights, validate = TRUE
     )
@@ -938,6 +963,7 @@ setMethod(
                  messages = contraction_messages,
                  integration = list(rule = integration$rule, nodes = integration$draws,
                                     weights = integration$weights),
+                 s0 = s0,
                  wrongSignProbability = if (sigma == 0) 0 else if (output) {
                      1 - stats::pnorm(-alpha / sigma)
                  } else {
