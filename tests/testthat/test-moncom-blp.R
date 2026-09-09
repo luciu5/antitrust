@@ -46,6 +46,7 @@ test_that("MonCom BLP uses the integrated draw-level own derivative", {
 
 
 test_that("MonCom BLP calibration uses the integrated own derivative", {
+    qa_skip_unless_tier("extended")
     known <- moncom_blp_specify(
         integration = "provided", sigma = .2,
         draws = c(-1, 0, 1), drawWeights = c(.2, .6, .2)
@@ -69,6 +70,7 @@ test_that("MonCom BLP calibration uses the integrated own derivative", {
 
 
 test_that("MonCom BLP preserves provided, Gauss-Hermite, and Monte Carlo integration", {
+    qa_skip_if_not_nightly()
     set.seed(20260907)
     fits <- list(
         provided = moncom_blp_specify(

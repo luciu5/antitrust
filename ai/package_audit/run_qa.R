@@ -18,8 +18,8 @@ if (length(missing)) stop("Missing QA packages: ", paste(missing, collapse = ", 
 
 test_tier <- tolower(trimws(Sys.getenv("ANTITRUST_TEST_TIER", "fast")))
 if (!nzchar(test_tier)) test_tier <- "fast"
-if (!test_tier %in% c("fast", "extended")) {
-    stop("ANTITRUST_TEST_TIER must be 'fast' or 'extended'.")
+if (!test_tier %in% c("fast", "extended", "nightly")) {
+    stop("ANTITRUST_TEST_TIER must be 'fast', 'extended', or 'nightly'.")
 }
 
 git_value <- function(...) {

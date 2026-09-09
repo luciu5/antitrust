@@ -6,10 +6,20 @@ on:
   schedule:
     - cron: '17 3 * * *'
   workflow_dispatch:
+    inputs:
+      test_tier:
+        description: 'Test tier for manual QA'
+        required: false
+        default: 'extended'
+        type: choice
+        options:
+          - extended
+          - nightly
 
 jobs:
   formal-tests:
     name: R ${{ matrix.r }}
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     env:
       ANTITRUST_TEST_TIER: fast
     strategy:
@@ -55,6 +65,7 @@ jobs:
 
   canonical-check:
     name: Canonical R 4.6.1 check --as-cran
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     env:
       ANTITRUST_TEST_TIER: fast
     runs-on: ubuntu-latest
@@ -97,12 +108,12 @@ jobs:
             qa-output
             ${{ runner.temp }}/antitrust-source-revisions.txt
 
-  extended-qa:
-    name: Extended parity QA (nightly/manual)
+  tiered-qa:
+    name: Tiered QA (scheduled/manual)
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     env:
-      ANTITRUST_TEST_TIER: extended
+      ANTITRUST_TEST_TIER: ${{ github.event_name == 'schedule' && 'nightly' || inputs.test_tier || 'extended' }}
     steps:
       - uses: actions/checkout@v4
       - name: Record source revision and test tier
@@ -127,17 +138,17 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown, any::competitiontoolbox
-      - name: Run extended reproducibility runner
-        run: Rscript ai/package_audit/run_qa.R . qa-output-extended
+      - name: Run selected reproducibility runner
+        run: Rscript ai/package_audit/run_qa.R . "qa-output-${ANTITRUST_TEST_TIER}"
       - name: Build package
         run: R CMD build --no-build-vignettes --no-manual --no-resave-data .
-      - name: Check package with extended tests
+      - name: Check package with selected tier
         run: R CMD check --as-cran antitrust_*.tar.gz
-      - name: Upload extended evidence
+      - name: Upload selected-tier evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: qa-extended-r-4.6.1
+          name: qa-${{ env.ANTITRUST_TEST_TIER }}-r-4.6.1
           path: |
-            qa-output-extended
+            qa-output-${{ env.ANTITRUST_TEST_TIER }}
             ${{ runner.temp }}/antitrust-source-revisions.txt

@@ -1,6 +1,8 @@
 # Exhaustive legacy parity is intentionally an extended-tier gate.  The fast
 # tier retains concise public API contracts in test-model-api-contracts.R.
-qa_skip_if_not_extended()
+# Exhaustive legacy parity is routed block-by-block so the small BLP boundary
+# and alias checks remain visible in fast and representative BLP checks remain
+# visible in extended.
 
 expect_logit_result_parity <- function(actual, expected) {
     expect_equal(class(actual), class(expected))
@@ -26,6 +28,7 @@ expect_logit_result_parity <- function(actual, expected) {
 }
 
 test_that("update genuinely recalibrates from stored baseline inputs", {
+    qa_skip_unless_tier("extended")
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
         margins = c(.40, .35, .30), ownerPre = c("A", "B", "C")
@@ -55,6 +58,7 @@ test_that("update genuinely recalibrates from stored baseline inputs", {
 })
 
 test_that("update reruns the same calibration while respecify changes conduct", {
+    qa_skip_unless_tier("extended")
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
         margins = c(.40, .35, .30), ownerPre = c("A", "B", "C")
@@ -90,6 +94,7 @@ test_that("update reruns the same calibration while respecify changes conduct", 
 })
 
 test_that("respecify transitions are explicit and do not mutate the source fit", {
+    qa_skip_unless_tier("extended")
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
         margins = c(.40, .35, .30), ownerPre = c("A", "B", "C")
@@ -112,6 +117,7 @@ test_that("respecify transitions are explicit and do not mutate the source fit",
 })
 
 test_that("legacy sim remains a wrapper for migrated Logit combinations", {
+    qa_skip_if_not_nightly()
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
         margins = c(.40, .35, .30), ownerPre = c("A", "B", "C"),
@@ -148,6 +154,7 @@ refactor_ces_result_parity <- function(actual, expected) {
 }
 
 test_that("CES Bertrand and Cournot retain distinct model-specific parity", {
+    qa_skip_if_not_nightly()
     common <- list(
         prices = c(1.5, 1.8, 2), shares = c(.30, .20, .10),
         margins = c(.30, .25, .20), ownerPre = c("A", "B", "C"),
@@ -169,6 +176,7 @@ test_that("CES Bertrand and Cournot retain distinct model-specific parity", {
 })
 
 test_that("legacy sim routes CES Bertrand and Cournot through the fit pipeline", {
+    qa_skip_if_not_nightly()
     common <- list(
         prices = c(1.5, 1.8, 2), shares = c(.30, .20, .10),
         margins = c(.30, .25, .20), ownerPre = c("A", "B", "C"),
@@ -188,6 +196,7 @@ test_that("legacy sim routes CES Bertrand and Cournot through the fit pipeline",
 })
 
 test_that("nested Logit and CES models retain model-specific calibration parity", {
+    qa_skip_if_not_nightly()
     common <- list(
         prices = c(1.8, 2, 2.2, 2.5),
         shares = c(.30, .20, .10, .05),
@@ -229,6 +238,7 @@ test_that("nested Logit and CES models retain model-specific calibration parity"
 })
 
 test_that("legacy sim routes nested Bertrand models through specify and simulate", {
+    qa_skip_if_not_nightly()
     common <- list(
         prices = c(1.8, 2, 2.2, 2.5),
         shares = c(.30, .20, .10, .05),
@@ -262,6 +272,7 @@ test_that("legacy sim routes nested Bertrand models through specify and simulate
 })
 
 test_that("LogitCap calibration and supplied parameters use the shared simulation boundary", {
+    qa_skip_if_not_nightly()
     prices <- c(2, 2.2, 2.5)
     shares <- c(.25, .20, .15)
     margins <- c(.30, .28, .25)
@@ -313,6 +324,7 @@ test_that("LogitCap calibration and supplied parameters use the shared simulatio
 })
 
 test_that("BLP supplied parameters reuse the existing Bertrand and Cournot solvers", {
+    qa_skip_unless_tier("extended")
     parameters <- qa_fixture_blp_parameters()
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
@@ -342,6 +354,7 @@ test_that("BLP supplied parameters reuse the existing Bertrand and Cournot solve
 })
 
 test_that("legacy BLP aliases preserve their conduct mapping", {
+    qa_skip_unless_tier("fast")
     parameters <- qa_fixture_blp_parameters()
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
@@ -365,6 +378,7 @@ test_that("legacy BLP aliases preserve their conduct mapping", {
 })
 
 test_that("legacy BLP simulation messages remain visible through sim", {
+    qa_skip_unless_tier("fast")
     parameters <- qa_fixture_blp_parameters()
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
@@ -390,6 +404,7 @@ test_that("legacy BLP simulation messages remain visible through sim", {
 })
 
 test_that("ALM model variants calibrate and simulate through their legacy methods", {
+    qa_skip_if_not_nightly()
     p <- c(2, 2.5, 3)
     s <- c(.40, .35, .25)
     m <- c(.45, .40, .35)
@@ -501,6 +516,7 @@ test_that("ALM model variants calibrate and simulate through their legacy method
 })
 
 test_that("second-score auction calibration and simulation retain model-specific parity", {
+    qa_skip_if_not_nightly()
     cases <- list(
         list(
             demand = "logit",
@@ -553,6 +569,7 @@ test_that("second-score auction calibration and simulation retain model-specific
 })
 
 test_that("legacy sim routes second-score auction models through specify and simulate", {
+    qa_skip_if_not_nightly()
     legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
     cases <- list(
         list(
@@ -593,6 +610,7 @@ test_that("legacy sim routes second-score auction models through specify and sim
 })
 
 test_that("bargaining calibration and simulation retain model-specific parity", {
+    qa_skip_if_not_nightly()
     cases <- list(
         list(
             demand = "logit",
@@ -682,6 +700,7 @@ test_that("bargaining calibration and simulation retain model-specific parity", 
 })
 
 test_that("bargaining AG solver selection is retained by calibrate and simulate", {
+    qa_skip_if_not_nightly()
     common <- list(
         prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .20),
@@ -707,6 +726,7 @@ test_that("bargaining AG solver selection is retained by calibrate and simulate"
 })
 
 test_that("legacy sim routes bargaining models through specify and simulate", {
+    qa_skip_if_not_nightly()
     legacy_sim <- getFromNamespace(".sim_legacy", "antitrust")
     cases <- list(
         list(
@@ -751,6 +771,7 @@ test_that("legacy sim routes bargaining models through specify and simulate", {
 })
 
 test_that("Linear, LogLin, and AIDS calibration preserve their Bertrand equations", {
+    qa_skip_if_not_nightly()
     prices <- c(2, 2.2, 2.5)
     quantities <- c(40, 35, 25)
     shares <- quantities / sum(quantities)
@@ -820,6 +841,7 @@ test_that("Linear, LogLin, and AIDS calibration preserve their Bertrand equation
 })
 
 test_that("supplied Linear, LogLin, and AIDS parameters use the shared simulation boundary", {
+    qa_skip_if_not_nightly()
     prices <- c(2, 2.2, 2.5)
     quantities <- c(.40, .35, .25)
     margins <- c(.40, .35, .30)
@@ -888,6 +910,7 @@ test_that("supplied Linear, LogLin, and AIDS parameters use the shared simulatio
 })
 
 test_that("BLP contraction matches its outside-good share equation", {
+    qa_skip_unless_tier("fast")
     prices <- c(10, 12, 11, 9)
     shares <- c(.35, .25, .20, .10)
     fit <- qa_value(sim(
@@ -925,6 +948,7 @@ test_that("BLP contraction matches its outside-good share equation", {
 })
 
 test_that("BLP contraction honors a no-outside-good normalization", {
+    qa_skip_unless_tier("fast")
     prices <- c(2, 2.5, 3, 3.5)
     shares <- c(.40, .30, .20, .10)
     fit <- qa_value(sim(
@@ -959,6 +983,7 @@ test_that("BLP contraction honors a no-outside-good normalization", {
 })
 
 test_that("PCAIDS calibration and simulation preserve legacy parity", {
+    qa_skip_if_not_nightly()
     prices <- c(2, 2.2, 2.5)
     shares <- c(.4, .35, .25)
     diversions <- qa_fixture_diversions()
@@ -1012,6 +1037,7 @@ test_that("PCAIDS calibration and simulation preserve legacy parity", {
 })
 
 test_that("nested PCAIDS calibration and simulation preserve legacy parity", {
+    qa_skip_if_not_nightly()
     prices <- c(2.9, 3.4, 2.2)
     shares <- c(.2, .3, .5)
     margins <- c(.33, .36, .44)
@@ -1063,6 +1089,7 @@ test_that("nested PCAIDS calibration and simulation preserve legacy parity", {
 })
 
 test_that("capacity-constrained auction calibration and simulation preserve parity", {
+    qa_skip_if_not_nightly()
     capacities <- c(.65, .30, .05)
     prices <- c(3.89, 3.79, 3.74)
     margins <- c(.228, .209, .197)
@@ -1140,6 +1167,7 @@ test_that("capacity-constrained auction calibration and simulation preserve pari
 })
 
 test_that("linear and log-linear Cournot calibration and simulation preserve parity", {
+    qa_skip_if_not_nightly()
     owner_pre <- diag(3)
     owner_post <- owner_pre
     owner_post[1, 2] <- owner_post[2, 1] <- 1
@@ -1229,6 +1257,7 @@ test_that("linear and log-linear Cournot calibration and simulation preserve par
 })
 
 test_that("linear Stackelberg calibration and simulation preserve parity", {
+    qa_skip_if_not_nightly()
     n <- 3
     cap <- c(.5, .6, .7)
     intercept <- 10
@@ -1289,6 +1318,7 @@ test_that("linear Stackelberg calibration and simulation preserve parity", {
 })
 
 test_that("log-linear Stackelberg calibration and simulation preserve parity", {
+    qa_skip_if_not_nightly()
     owner_pre <- diag(3)
     owner_post <- owner_pre
     owner_post[1, 2] <- owner_post[2, 1] <- 1
@@ -1336,6 +1366,7 @@ test_that("log-linear Stackelberg calibration and simulation preserve parity", {
 })
 
 test_that("vertical Bertrand calibration and simulation preserve parity", {
+    qa_skip_if_not_nightly()
     prices_down <- c(63.08158, 50.70465, 95.82960, 83.45267)
     shares_down <- c(.1293482, .1422541, .4631014, .2152962)
     margins_down <- c(13.04232, 13.04233, 29.53958, 29.53958) /
@@ -1399,6 +1430,7 @@ test_that("vertical Bertrand calibration and simulation preserve parity", {
 })
 
 test_that("vertical second-score calibration and simulation preserve parity", {
+    qa_skip_if_not_nightly()
     prices_down <- c(63.08158, 50.70465, 95.82960, 83.45267)
     shares_down <- c(.1293482, .1422541, .4631014, .2152962)
     margins_down <- c(13.04232, 13.04233, 29.53958, 29.53958) /
@@ -1459,6 +1491,7 @@ test_that("vertical second-score calibration and simulation preserve parity", {
 })
 
 test_that("nested vertical Bertrand calibration and simulation preserve parity", {
+    qa_skip_if_not_nightly()
     prices_down <- c(63.08158, 50.70465, 95.82960, 83.45267)
     shares_down <- c(.1293482, .1422541, .4631014, .2152962)
     margins_down <- c(13.04232, 13.04233, 29.53958, 29.53958) /

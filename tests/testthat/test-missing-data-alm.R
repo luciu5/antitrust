@@ -1,4 +1,5 @@
 test_that("logit.alm recovers unobserved outside share s0 from multiple margins", {
+  qa_skip_unless_tier("extended")
   prices <- c(2.0, 2.5, 3.0)
   shares_inside <- c(0.40, 0.35, 0.25) # Inside shares sum to 1.0
   margins <- c(0.45, 0.40, 0.35)       # 3 observed margins
@@ -18,6 +19,7 @@ test_that("logit.alm recovers unobserved outside share s0 from multiple margins"
 })
 
 test_that("ces.alm recovers unobserved outside share from multiple margins", {
+  qa_skip_unless_tier("extended")
   prices <- c(2.0, 2.5, 3.0)
   shares_inside <- c(0.40, 0.35, 0.25)
   margins <- c(0.45, 0.40, 0.35)
@@ -35,6 +37,7 @@ test_that("ces.alm recovers unobserved outside share from multiple margins", {
 })
 
 test_that("Partial margin calibration (N-1 missing margins) recovers implied margins for all products", {
+  qa_skip_unless_tier("extended")
   prices <- c(2.0, 2.5, 3.0, 2.8, 2.2)
   shares <- c(0.20, 0.15, 0.15, 0.10, 0.10) # Outside share s0 = 0.30
   margins <- c(0.40, NA, NA, NA, NA)         # Only 1 margin observed
@@ -58,6 +61,7 @@ test_that("Partial margin calibration (N-1 missing margins) recovers implied mar
 })
 
 test_that("bargaining.ces.alm estimates unobserved outside share under Nash Bargaining", {
+  qa_skip_unless_tier("extended")
   prices <- c(1.5, 2.0, 2.5)
   shares_inside <- c(0.50, 0.30, 0.20)
   margins <- c(0.30, 0.25, 0.20)

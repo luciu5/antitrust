@@ -34,6 +34,7 @@ test_that("public output, diagnostic, and ownership methods work on Bertrand fam
 })
 
 test_that("capacity, auction, and bargaining-specific methods have formal coverage", {
+    qa_skip_unless_tier("extended")
     f <- qa_fixture_market()
     cap <- qa_value(logit.cap(
         prices = f$prices, shares = f$shares, margins = f$margins,
@@ -72,6 +73,7 @@ test_that("capacity, auction, and bargaining-specific methods have formal covera
 })
 
 test_that("Cournot, Stackelberg, and vertical bargaining paths expose stable outputs", {
+    qa_skip_unless_tier("extended")
     n <- 3
     cap <- c(.5, .6, .7)
     intercept <- 10

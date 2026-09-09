@@ -29,6 +29,7 @@ test_that("price leadership examples construct finite equilibria", {
 })
 
 test_that("BLP price leadership handles omitted margins", {
+    qa_skip_unless_tier("extended")
     prices <- c(.93, .88, 1.10, 1.02)
     shares <- c(.35, .25, .25, .15)
     owner <- c("Bank1", "Bank2", "Bank3", "Fringe")

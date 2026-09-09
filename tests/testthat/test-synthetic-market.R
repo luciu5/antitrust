@@ -220,6 +220,7 @@ test_that("primitives mode uses specify and retains truth", {
 })
 
 test_that("known primitives can be hidden and recovered from the reference markup", {
+    qa_skip_unless_tier("extended")
     known <- synthetic_market(
         demand = "logit", supply = "bertrand", mode = "primitives",
         n_firms = 2, parameters = list(alpha = -0.05),

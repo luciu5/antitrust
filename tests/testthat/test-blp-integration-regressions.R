@@ -123,6 +123,25 @@ test_that("BLP specify forwards market metadata into the new builder", {
 })
 
 
+test_that("BLP specify derives no-outside shares from supplied meanval", {
+    prices <- c(2, 2.2, 2.5)
+    alpha <- -1.5
+    delta <- c(.2, .1, -.1)
+    expected <- exp(delta + alpha * prices)
+    expected <- expected / sum(expected)
+    fit <- suppressWarnings(specify(
+        demand = "blp", conduct = "bertrand", prices = prices,
+        ownerPre = c("A", "B", "C"), s0 = 0,
+        parameters = list(alpha = alpha, sigma = 0, meanval = delta,
+                          draws = 0, drawWeights = 1)
+    ))
+    expect_equal(unname(fit@model@shares), expected, tolerance = 1e-12)
+    expect_equal(sum(fit@model@shares), 1, tolerance = 1e-12)
+    expect_equal(fit@diagnostics$s0, 0, tolerance = 0)
+    expect_equal(fit@model@normIndex, 1, tolerance = 0)
+})
+
+
 test_that("default BLP specify dispatches registered auction conduct", {
     fit <- suppressWarnings(specify(
         demand = "blp", conduct = "auction2nd",
@@ -213,6 +232,7 @@ test_that("price-only BLP simulation selects the requested integration rule", {
 
 
 test_that("PriceLeadershipBLP uses the shared integration rules", {
+    qa_skip_unless_tier("extended")
     shares <- c(.35, .25, .25, .15)
     prices <- c(.93, .88, 1.10, 1.02)
     alpha <- -5.767013
@@ -250,6 +270,7 @@ test_that("PriceLeadershipBLP uses the shared integration rules", {
 
 
 test_that("PriceLeadershipBLP uses shared Gauss-Hermite nodes for one demographic", {
+    qa_skip_unless_tier("extended")
     shares <- c(.35, .25, .25, .15)
     prices <- c(.93, .88, 1.10, 1.02)
     common <- list(
@@ -434,6 +455,7 @@ test_that("legacy BLP retains wrong-sign draws under the explicit domain contrac
 
 
 test_that("BLP fits reuse their integration rule across counterfactual simulations", {
+    qa_skip_unless_tier("extended")
     nodes <- c(-1.5, -.25, .75, 1.75)
     weights <- c(.05, .15, .30, .50)
     fit <- specify(
@@ -463,6 +485,7 @@ test_that("BLP fits reuse their integration rule across counterfactual simulatio
 
 
 test_that("BLP CV trimming uses integration-weighted quantiles and means", {
+    qa_skip_unless_tier("extended")
     nodes <- c(-2, -.5, .5, 2)
     weights <- c(.05, .55, .20, .20)
     model <- blp_integration_test_model(

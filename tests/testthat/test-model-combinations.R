@@ -1,5 +1,5 @@
 test_that("all documented sim demand/supply combinations have formal coverage", {
-    qa_skip_if_not_extended()
+    qa_skip_if_not_nightly()
     p <- c(2, 2.2, 2.5)
     op <- c("A", "B", "C")
     oo <- c("A", "A", "C")
@@ -106,6 +106,7 @@ test_that("all documented sim demand/supply combinations have formal coverage", 
 })
 
 test_that("LogitCap solves binding-capacity KKT conditions", {
+    qa_skip_unless_tier("extended")
     prices <- c(2, 2.2, 2.5)
     capacities <- c(25, 20, 15)
     shares <- capacities / 100

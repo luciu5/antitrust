@@ -4,8 +4,6 @@
 ## simultaneous-vs-sequential distinction between combine_counterfactuals()
 ## and add_step().
 
-qa_skip_if_not_extended()
-
 .seq_fit <- function() {
     calibrate(
         "logit", "bertrand", prices = c(2, 2.2, 2.5),
@@ -218,6 +216,7 @@ test_that("quality is rejected for unsupported model families", {
 })
 
 test_that("quality works for Logit Cournot and CES Bertrand/Cournot", {
+    qa_skip_unless_tier("extended")
     fit_lc <- calibrate(
         "logit", "cournot", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -277,6 +276,7 @@ test_that("a cost shock to an exited product errors, not silently ignored", {
 ## ---- Entry -----------------------------------------------------------------
 
 test_that("one entrant increases product and firm count by one", {
+    qa_skip_unless_tier("extended")
     fit <- .seq_fit()
     e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5,
                   cost = 1, priceStart = 2)
@@ -296,6 +296,7 @@ test_that("one entrant increases product and firm count by one", {
 })
 
 test_that("entrant can receive a later quality shock, cost shock, and merger", {
+    qa_skip_if_not_nightly()
     fit <- .seq_fit()
     e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5,
                   cost = 1, priceStart = 2)
@@ -336,6 +337,7 @@ test_that("post-entry positional cost shocks cannot recycle across products", {
 })
 
 test_that("two simultaneous entrants and two sequential entrants both work", {
+    qa_skip_unless_tier("extended")
     fit <- .seq_fit()
     e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
     e2 <- entrant(label = "E2", meanval = fit@model@slopes$meanval[[1]] * .4, cost = 1.1, priceStart = 2)
@@ -409,6 +411,7 @@ test_that("combine_counterfactuals() is simultaneous (one step); add_step() is s
 ## ---- Path continuation (simulate(path, cf)) --------------------------------
 
 test_that("simulate() can resume from a CounterfactualPath's final state", {
+    qa_skip_unless_tier("extended")
     fit <- .seq_fit()
     cf1 <- counterfactual(ownership = c("A", "A", "C"))
     cf1 <- add_step(cf1, ownership = c("A", "A", "A"))
@@ -432,6 +435,7 @@ test_that("simulate() can resume from a CounterfactualPath's final state", {
 ## ---- Mixed sequence: entry -> quality -> merger -> exit -------------------
 
 test_that("a mixed entry, quality, merger, and exit sequence resolves and tracks labels", {
+    qa_skip_if_not_nightly()
     fit <- .seq_fit()
     e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5,
                   cost = 1, priceStart = 2)
@@ -477,6 +481,7 @@ test_that("a mixed entry, quality, merger, and exit sequence resolves and tracks
 }
 
 test_that("quality resolves cleanly for nested Logit and nested CES Bertrand", {
+    qa_skip_if_not_nightly()
     fn <- suppressWarnings(calibrate(
         "logit_nests", "bertrand", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -499,6 +504,7 @@ test_that("quality resolves cleanly for nested Logit and nested CES Bertrand", {
 })
 
 test_that("quality resolves cleanly for second-score auction Logit/CES", {
+    qa_skip_if_not_nightly()
     fa <- suppressWarnings(calibrate(
         "logit", "auction2nd", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -519,6 +525,7 @@ test_that("quality resolves cleanly for second-score auction Logit/CES", {
 })
 
 test_that("quality resolves cleanly for bargaining and bargaining2nd Logit/CES", {
+    qa_skip_if_not_nightly()
     fb <- suppressWarnings(calibrate(
         "logit", "bargaining", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -540,6 +547,7 @@ test_that("quality resolves cleanly for bargaining and bargaining2nd Logit/CES",
 })
 
 test_that("sequential cost shocks compound multiplicatively for nested and bargaining families", {
+    qa_skip_if_not_nightly()
     fn <- suppressWarnings(calibrate(
         "logit_nests", "bertrand", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -554,6 +562,7 @@ test_that("sequential cost shocks compound multiplicatively for nested and barga
 })
 
 test_that("sequential cost shocks compound additively for Auction2ndLogit but multiplicatively for Auction2ndCES", {
+    qa_skip_if_not_nightly()
     ## calcMC,Auction2ndLogit-method applies mcDelta additively ("mc <- mc +
     ## object@mcDelta"), but calcMC,Auction2ndCES-method applies it
     ## multiplicatively ("mc <- mc * (1 + object@mcDelta)") despite the
@@ -593,6 +602,7 @@ test_that("sequential cost shocks compound additively for Auction2ndLogit but mu
 })
 
 test_that("exit resolves cleanly for nested Logit/CES and second-score auction/bargaining2nd", {
+    qa_skip_if_not_nightly()
     fn <- suppressWarnings(calibrate(
         "logit_nests", "bertrand", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -620,6 +630,7 @@ test_that("exit resolves cleanly for nested Logit/CES and second-score auction/b
 })
 
 test_that("first-score bargaining Logit and CES both exit cleanly", {
+    qa_skip_if_not_nightly()
     ## BargainingLogit's calcPrices()/calcMargins() previously operated on
     ## full-length vectors without ever dropping excluded products -- an
     ## excluded product's degenerate FOC term (0 * NaN) poisoned every
@@ -648,6 +659,7 @@ test_that("first-score bargaining Logit and CES both exit cleanly", {
 })
 
 test_that("entry into second-score auction requires no extra primitive and mcPost matches cost via the additive wedge", {
+    qa_skip_if_not_nightly()
     fa <- suppressWarnings(calibrate(
         "logit", "auction2nd", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -661,6 +673,7 @@ test_that("entry into second-score auction requires no extra primitive and mcPos
 })
 
 test_that("entry into bargaining defaults bargpower to 0.5 or honors a supplied extras$bargpower", {
+    qa_skip_if_not_nightly()
     fb <- suppressWarnings(calibrate(
         "logit", "bargaining", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -679,6 +692,7 @@ test_that("entry into bargaining defaults bargpower to 0.5 or honors a supplied 
 })
 
 test_that("entry into a nested Logit/CES model requires extras$nest and joins or creates a nest", {
+    qa_skip_if_not_nightly()
     fn <- suppressWarnings(calibrate(
         "logit_nests", "bertrand", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -702,6 +716,7 @@ test_that("entry into a nested Logit/CES model requires extras$nest and joins or
 })
 
 test_that("entry into LogitCap requires extras$capacity", {
+    qa_skip_if_not_nightly()
     fc <- calibrate(
         "logit_cap", "bertrand", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -720,6 +735,7 @@ test_that("entry into LogitCap requires extras$capacity", {
 })
 
 test_that("quality is verified for LogitCap Bertrand", {
+    qa_skip_if_not_nightly()
     fc <- calibrate(
         "logit_cap", "bertrand", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -733,6 +749,7 @@ test_that("quality is verified for LogitCap Bertrand", {
 })
 
 test_that("BLP and vertical bargaining still reject quality and entry", {
+    qa_skip_unless_tier("extended")
     fit_blp <- suppressWarnings(specify(
         "blp", "bertrand", prices = c(2, 2.2, 2.5),
         parameters = list(alphaMean = -1, sigma = 1, meanval = c(0, .1, .2)),
@@ -747,6 +764,7 @@ test_that("BLP and vertical bargaining still reject quality and entry", {
 ## ---- Bargaining2ndCES -------------------------------------------------------
 
 test_that("entry and quality resolve cleanly for LogitALM and CESALM", {
+    qa_skip_if_not_nightly()
     p <- c(2, 2.5, 3); s <- c(.40, .35, .25); mgn <- c(.45, .40, .35)
 
     fit_l <- suppressWarnings(calibrate(
@@ -775,6 +793,7 @@ test_that("entry and quality resolve cleanly for LogitALM and CESALM", {
 })
 
 test_that("entry resolves cleanly for Cournot-conduct LogitCournot and CESCournot", {
+    qa_skip_if_not_nightly()
     fit_lc <- calibrate(
         "logit", "cournot", prices = c(2, 2.2, 2.5),
         shares = c(.35, .25, .2), margins = c(.4, .35, .3),
@@ -799,6 +818,7 @@ test_that("entry resolves cleanly for Cournot-conduct LogitCournot and CESCourno
 })
 
 test_that("entry into CESNests can join an existing nest or form a new one with the correct singleton sigma", {
+    qa_skip_if_not_nightly()
     ## CESNests' singleton-nest sigma normalization is 0, NOT 1 like
     ## LogitNests (verified against calcSlopes,CESNests-method: "sigma <-
     ## as.numeric(!isSingletonNest)"). CES's calcShares() raises
@@ -831,6 +851,7 @@ test_that("entry into CESNests can join an existing nest or form a new one with 
 })
 
 test_that("quality, entry, and exit resolve cleanly for Bargaining2ndCES", {
+    qa_skip_if_not_nightly()
     ## Uses the same non-degenerate calibration inputs as the existing
     ## bargaining2nd.ces parity test in test-model-architecture.R --
     ## prices=c(2,2.2,2.5)/shares=c(.35,.25,.2)/margins=c(.4,.35,.3) produce

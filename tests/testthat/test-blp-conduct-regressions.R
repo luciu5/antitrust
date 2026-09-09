@@ -6,9 +6,8 @@
 # demand primitives in this file; they do not call calcMargins() to create
 # their oracle.
 
-# Heterogeneous auction and bargaining conduct checks use independent kernels
-# and belong to the extended economics gate.
-qa_skip_if_not_extended()
+# Sigma-zero and zero-bargaining limits are deterministic fast checks.
+# Heterogeneous draw-level kernels are representative extended checks.
 
 blp_conduct_prices <- c(1.75, 2.10, 2.45)
 blp_conduct_shares <- c(.30, .25, .25)
@@ -193,6 +192,7 @@ test_that("sigma-zero BargainingBLP margins match homogeneous BargainingLogit", 
 
 
 test_that("Auction2ndBLP integrates heterogeneous firm winning margins draw by draw", {
+    qa_skip_unless_tier("extended")
     blp <- blp_conduct_make_blp(
         conduct = "auction2nd", sigma = .45,
         nodes = c(-1.5, -.25, .8, 1.75),
@@ -210,6 +210,7 @@ test_that("Auction2ndBLP integrates heterogeneous firm winning margins draw by d
 
 
 test_that("BargainingBLP solves the aggregate heterogeneous bargaining FOC", {
+    qa_skip_unless_tier("extended")
     blp <- blp_conduct_make_blp(
         conduct = "bargaining", sigma = .35,
         nodes = c(-1.5, -.25, .8, 1.75),

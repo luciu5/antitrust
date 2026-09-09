@@ -43,13 +43,38 @@ test_that("registered core counterfactual capabilities have behavior-backed anch
     cap_spec <- model_spec("logit_cap", "bertrand")
     cap_capabilities <- capabilities(cap_spec)
     expect_true(isTRUE(cap_capabilities[["capacity"]]))
-    expect_false(isTRUE(cap_capabilities[["quality"]]))
-    expect_false(isTRUE(cap_capabilities[["entry"]]))
+    expect_true(isTRUE(cap_capabilities[["quality"]]))
+    expect_true(isTRUE(cap_capabilities[["entry"]]))
+
+    cap_fit <- suppressWarnings(specify(
+        "logit_cap", "bertrand", prices = c(2, 2.2, 2.5),
+        parameters = list(alpha = -1, meanval = c(.4, .2, .1),
+                          mktSize = 200),
+        ownerPre = c("A", "B", "C"), insideSize = 200,
+        capacities = c(50, 50, 50), margins = c(.4, .35, .3)
+    ))
+    cap_quality <- simulate(cap_fit,
+                            counterfactual(quality = c(Prod1 = .1)))
+    expect_equal(cap_quality@slopes$meanval[[1]], .4 * 1.1,
+                 tolerance = 1e-12)
+    cap_entry <- simulate(cap_fit, counterfactual(entry = entrant(
+        "E1", meanval = .2, cost = 1, priceStart = 2, capacity = 50
+    )))
+    expect_true("E1" %in% cap_entry@labels)
+    expect_equal(cap_entry@capacitiesPre[[4]], 50, tolerance = 0)
 
     bargaining_spec <- model_spec("logit", "bargaining")
     bargaining_capabilities <- capabilities(bargaining_spec)
     expect_true(isTRUE(bargaining_capabilities[["bargaining"]]))
-    expect_false(isTRUE(bargaining_capabilities[["quality"]]))
+    expect_true(isTRUE(bargaining_capabilities[["quality"]]))
+
+    bargaining <- respecify(fit, conduct = "bargaining",
+                            bargpowerPre = rep(.5, length(fit@model@labels)))
+    bargaining_quality <- simulate(
+        bargaining, counterfactual(quality = c(Prod1 = .1))
+    )
+    expect_equal(bargaining_quality@slopes$meanval[[1]],
+                 fit@model@slopes$meanval[[1]] * 1.1, tolerance = 1e-12)
 
     stackelberg_spec <- model_spec("linear", "stackelberg")
     stackelberg_capabilities <- capabilities(stackelberg_spec)

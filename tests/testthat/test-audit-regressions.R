@@ -52,6 +52,7 @@ test_that("sim initializes BLP, CES, and bargaining2nd CES correctly", {
 })
 
 test_that("bargaining CES ALM and second-score calibration respect bargaining power", {
+  qa_skip_unless_tier("extended")
   prices <- c(2, 2.5, 3)
   shares <- c(0.4, 0.35, 0.25)
   ownerPre <- c("A", "B", "C")
@@ -90,6 +91,7 @@ test_that("bargaining CES ALM and second-score calibration respect bargaining po
 })
 
 test_that("AG solver honors post-merger subsets", {
+  qa_skip_unless_tier("extended")
   args <- list(
     prices = c(2, 2.2, 2.5),
     shares = c(0.35, 0.25, 0.20),
@@ -105,6 +107,7 @@ test_that("AG solver honors post-merger subsets", {
 })
 
 test_that("AG CES and second-score wrappers preserve model-specific equations", {
+  qa_skip_unless_tier("extended")
   common <- list(
     prices = c(1.5, 1.8, 2), shares = c(0.30, 0.20, 0.10),
     margins = c(0.30, 0.25, 0.20), ownerPre = c("A", "B", "C"),

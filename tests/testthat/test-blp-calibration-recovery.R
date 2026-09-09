@@ -5,9 +5,9 @@
 # by calcMargins(), so the recovery tests do not merely reproduce the method
 # under test by construction.
 
-# Multi-start BLP recovery is intentionally extended: the fast integration
-# tests still protect nodes, weights, derivatives, and deterministic reuse.
-qa_skip_if_not_extended()
+# Recovery is split by cost: deterministic integration contracts remain in
+# fast tests elsewhere, representative calibrated boundaries run in
+# extended, and the all-conduct/multi-rule recovery grids run nightly.
 
 .blp_recovery_fixture <- function(conduct, alpha = -5, sigma = .8) {
     prices <- c(1.5, 2, 2.6)
@@ -115,6 +115,7 @@ qa_skip_if_not_extended()
 
 
 test_that("BLP calibration recovers price heterogeneity under all supported conducts", {
+    qa_skip_if_not_nightly()
     for (conduct in c("bertrand", "cournot", "auction2nd", "bargaining")) {
         fixture <- .blp_recovery_fixture(conduct)
         fit <- calibrate(
@@ -147,6 +148,7 @@ test_that("BLP calibration recovers price heterogeneity under all supported cond
 
 
 test_that("BLP calibration retains the sigma-zero boundary", {
+    qa_skip_unless_tier("extended")
     for (conduct in c("bertrand", "cournot", "auction2nd", "bargaining")) {
         fixture <- .blp_recovery_fixture(conduct, sigma = 0)
         fit <- calibrate(
@@ -169,6 +171,7 @@ test_that("BLP calibration retains the sigma-zero boundary", {
 
 
 test_that("BLP diagnostics expose the fixed outside share and contraction state", {
+    qa_skip_unless_tier("extended")
     fixture <- .blp_recovery_fixture("bertrand")
     fit <- calibrate(
         demand = "blp", conduct = "bertrand",
@@ -189,6 +192,7 @@ test_that("BLP diagnostics expose the fixed outside share and contraction state"
 
 
 test_that("no-demographics price-random-coefficient calibration works under both integration rules", {
+    qa_skip_if_not_nightly()
     make_fixture <- function(nodes, weights) {
         prices <- c(1.5, 2, 2.6)
         owner <- c("A", "A", "B")
