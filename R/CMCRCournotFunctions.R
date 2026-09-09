@@ -1,8 +1,6 @@
 #' @title Compensating Marginal Cost Reductions and Upwards Pricing Pressure (Cournot)
 #' @name CMCRCournot-Functions
-#' @aliases cmcr.cournot 
-#' cmcr.cournot2
-#' upp.cournot
+#' @aliases cmcr.cournot cmcr.cournot2 upp.cournot
 #' @description Calculate the marginal cost reductions necessary to restore
 #' premerger prices (CMCR), or the net Upwards Pricing Pressure (UPP) in a
 #' merger involving firms playing a 

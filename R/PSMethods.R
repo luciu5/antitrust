@@ -1,12 +1,7 @@
 #' @title Producer Surplus Methods
 #' @name PS-methods
 #' @docType methods
-#' @aliases calcProducerSurplus
-#' calcProducerSurplus,ANY-method
-#' calcProducerSurplus,Bertrand-method
-#' calcProducerSurplus,Cournot-method
-#' calcProducerSurplus,VertBargBertLogit-method
-#' calcProducerSurplusGrimTrigger
+#' @aliases calcProducerSurplus calcProducerSurplus,ANY-method calcProducerSurplus,Bertrand-method calcProducerSurplus,Cournot-method calcProducerSurplus,VertBargBertLogit-method calcProducerSurplusGrimTrigger
 #'
 #' @description In the following methods, \code{calcProducerSurplus} computes the expected profits of each supplier
 #' with the game depending on the class. The available classes are: Bertrand, Cournot, and Auction2ndCap.

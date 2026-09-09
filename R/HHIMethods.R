@@ -2,11 +2,7 @@
 #' @name HHI-Methods
 #' @docType methods
 
-#' @aliases hhi
-#' hhi,ANY-method
-#' hhi,Bertrand-method
-#' hhi,Cournot-method
-#' hhi,VertBargBertLogit-method
+#' @aliases hhi hhi,ANY-method hhi,Bertrand-method hhi,Cournot-method hhi,VertBargBertLogit-method
 #'
 #' @description Computes the  Herfindahl-Hirschman Index (HHI) using simulated market
 #' shares and either pre- or post-merger ownership information.

@@ -2,27 +2,7 @@
 #' @name MarginsAG-Methods
 #' @docType methods
 #'
-#' @aliases calcMarginsAG calcPricesAG
-#' calcMarginsAG,ANY-method
-#' calcPricesAG,ANY-method
-#' calcMarginsAG,Logit-method
-#' calcMarginsAG,CES-method
-#' calcMarginsAG,BargainingLogit-method
-#' calcMarginsAG,BargainingCES-method
-#' calcMarginsAG,Cournot-method
-#' calcPricesAG,Logit-method
-#' calcPricesAG,CES-method
-#' calcPricesAG,BargainingLogit-method
-#' calcPricesAG,BargainingCES-method
-#' calcMarginsAG,Auction2ndLogit-method
-#' calcPricesAG,Auction2ndLogit-method
-#' calcMarginsAG,Auction2ndCES-method
-#' calcPricesAG,Auction2ndCES-method
-#' calcMarginsAG,Bargaining2ndLogit-method
-#' calcPricesAG,Bargaining2ndLogit-method
-#' calcMarginsAG,Bargaining2ndCES-method
-#' calcPricesAG,Bargaining2ndCES-method
-#' calcPricesAG,Cournot-method
+#' @aliases calcMarginsAG calcPricesAG calcMarginsAG,ANY-method calcPricesAG,ANY-method calcMarginsAG,Logit-method calcMarginsAG,CES-method calcMarginsAG,BargainingLogit-method calcMarginsAG,BargainingCES-method calcMarginsAG,Cournot-method calcPricesAG,Logit-method calcPricesAG,CES-method calcPricesAG,BargainingLogit-method calcPricesAG,BargainingCES-method calcMarginsAG,Auction2ndLogit-method calcPricesAG,Auction2ndLogit-method calcMarginsAG,Auction2ndCES-method calcPricesAG,Auction2ndCES-method calcMarginsAG,Bargaining2ndLogit-method calcPricesAG,Bargaining2ndLogit-method calcMarginsAG,Bargaining2ndCES-method calcPricesAG,Bargaining2ndCES-method calcPricesAG,Cournot-method
 #'
 #' @description Computes equilibrium product margins and prices using the aggregative games technique described in
 #' Nocke and Schutz (2018). Assumes that firms are playing a

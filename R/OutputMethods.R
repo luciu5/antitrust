@@ -2,38 +2,7 @@
 #' @name Output-Methods
 #' @docType methods
 #'
-#' @aliases calcQuantities
-#' calcQuantities,ANY-method
-#' calcQuantities,Logit-method
-#' calcQuantities,CES-method
-#' calcQuantities,Linear-method
-#' calcQuantities,LogLin-method
-#' calcQuantities,LogitCap-method
-#' calcQuantities,Logit-method
-#' calcQuantities,Cournot-method
-#' calcQuantities,Stackelberg-method
-#' calcQuantities,AIDS-method
-#' calcShares
-#' calcShares,ANY-method
-#' calcShares,AIDS-method
-#' calcShares,CES-method
-#' calcShares,CESNests-method
-#' calcShares,Linear-method
-#' calcShares,Logit-method
-#' calcShares,LogitNests-method
-#' calcShares,Auction2ndLogit-method
-#' calcShares,Auction2ndLogitNests-method
-#' calcShares,Cournot-method
-#' calcShares,LogitBLP-method
-#' calcShares,Auction2ndBLP-method
-#' calcShares,BargainingBLP-method
-#' calcRevenues
-#' calcRevenues,ANY-method
-#' calcRevenues,Bertrand-method
-#' calcRevenues,CES-method
-#' calcRevenues,AIDS-method
-#' calcRevenues,Cournot-method
-#' calcRevenues,VertBargBertLogit-method
+#' @aliases calcQuantities calcQuantities,ANY-method calcQuantities,Logit-method calcQuantities,CES-method calcQuantities,Linear-method calcQuantities,LogLin-method calcQuantities,LogitCap-method calcQuantities,Logit-method calcQuantities,Cournot-method calcQuantities,Stackelberg-method calcQuantities,AIDS-method calcShares calcShares,ANY-method calcShares,AIDS-method calcShares,CES-method calcShares,CESNests-method calcShares,Linear-method calcShares,Logit-method calcShares,LogitNests-method calcShares,Auction2ndLogit-method calcShares,Auction2ndLogitNests-method calcShares,Cournot-method calcShares,LogitBLP-method calcShares,Auction2ndBLP-method calcShares,BargainingBLP-method calcRevenues calcRevenues,ANY-method calcRevenues,Bertrand-method calcRevenues,CES-method calcRevenues,AIDS-method calcRevenues,Cournot-method calcRevenues,VertBargBertLogit-method
 #'
 #' @description This section contains three types of methods: calcShares, calcQuantities, and calcRevenues.
 #'  calcShares computes equilibrium product shares assuming that firms are playing a

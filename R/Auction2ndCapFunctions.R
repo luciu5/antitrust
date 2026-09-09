@@ -1,7 +1,6 @@
 #' @title (Capacity Constrained) 2nd Price Auction Model
 #' @name Auction2ndCap-Functions
-#' @aliases Auction2ndCap
-#' auction2nd.cap
+#' @aliases Auction2ndCap auction2nd.cap
 #'
 #' @description Calibrates the parameters of bidder cost distributions and
 #' then simulates the price effect of a merger between two firms

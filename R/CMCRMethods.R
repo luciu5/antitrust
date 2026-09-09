@@ -2,12 +2,7 @@
 #' @name CMCR-Methods
 #' @docType methods
 
-#' @aliases cmcr-methods
-#' cmcr,ANY-method
-#' cmcr,Bertrand-method
-#' cmcr,Auction2ndLogit-method
-#' cmcr,Cournot-method
-#' cmcr,AIDS-method
+#' @aliases cmcr-methods cmcr,ANY-method cmcr,Bertrand-method cmcr,Auction2ndLogit-method cmcr,Cournot-method cmcr,AIDS-method
 #'
 #' @description   Calculate the marginal cost reductions necessary to restore
 #' premerger prices in a merger, or the Upwards Pricing Pressure Index

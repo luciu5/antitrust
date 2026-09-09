@@ -1,8 +1,6 @@
 #' @title (Nested) AIDS Calibration and Merger Simulation
 #' @name AIDS-Functions
-#' @aliases aids
-#' pcaids
-#' pcaids.nests
+#' @aliases aids pcaids pcaids.nests
 #' @description Calibrates consumer demand using (nested) AIDS and then
 #' simulates the price effect of a merger between two firms
 #' under the assumption that all firms in the market are playing

@@ -6,10 +6,7 @@
 #' @importFrom SQUAREM squarem
 #' @title \dQuote{Antitrust} Classes
 #' @name Antitrust-Class
-#' @aliases Antitrust-class
-#' matrixOrList-class
-#' matrixOrVector-class
-#' characterOrList-class
+#' @aliases Antitrust-class matrixOrList-class matrixOrVector-class characterOrList-class
 #' @description The \dQuote{Antitrust} class is a building block used to create other classes
 #' in this package. As such, it is most likely to be useful for developers
 #' who wish to code their own calibration/simulation routines.

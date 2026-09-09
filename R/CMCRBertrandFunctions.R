@@ -1,9 +1,6 @@
 #' @title Compensating Marginal Cost Reductions and Upwards Pricing Pressure (Bertrand)
 #' @name CMCRBertrand-Functions
-#' @aliases cmcr.bertrand
-#' upp.bertrand
-#' upp
-#' cmcr
+#' @aliases cmcr.bertrand upp.bertrand upp cmcr
 #'
 #' @description Calculate the marginal cost reductions necessary to restore
 #' premerger prices (CMCR), or the net Upwards Pricing Pressure (UPP) in a

@@ -2,12 +2,7 @@
 #' @name Diversion-Methods
 #' @docType methods
 #'
-#' @aliases diversion-methods
-#' diversion
-#' diversion,ANY-method
-#' diversion,AIDS-method
-#' diversion,Bertrand-method
-#' diversion,VertBargBertLogit-method
+#' @aliases diversion-methods diversion diversion,ANY-method diversion,AIDS-method diversion,Bertrand-method diversion,VertBargBertLogit-method
 #'
 #' @description Calculate the diversion matrix between any two products in the market.
 #' @param object An instance of one of the classes listed above.

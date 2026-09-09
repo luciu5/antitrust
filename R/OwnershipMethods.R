@@ -1,8 +1,7 @@
 #' @title Methods for Manipulating Ownership Matrices
 #' @name Ownership-methods
 #' @docType methods
-#' @aliases ownerToMatrix
-#' ownerToVec
+#' @aliases ownerToMatrix ownerToVec
 #' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @examples showMethods(classes="Antitrust") # show all methods defined for the class
 #'

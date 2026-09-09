@@ -2,13 +2,7 @@
 #' @name PriceDelta-Methods
 #' @docType methods
 
-#' @aliases calcPriceDelta
-#' calcPriceDelta,ANY-method
-#' calcPriceDelta,Antitrust-method
-#' calcPriceDelta,AIDS-method
-#' calcPriceDelta,Auction2ndLogit-method
-#' calcPriceDelta,Cournot-method
-#' calcPriceDelta,VertBargBertLogit-method
+#' @aliases calcPriceDelta calcPriceDelta,ANY-method calcPriceDelta,Antitrust-method calcPriceDelta,AIDS-method calcPriceDelta,Auction2ndLogit-method calcPriceDelta,Cournot-method calcPriceDelta,VertBargBertLogit-method
 #'
 #' @description For Antitrust, the method computes equilibrium price changes
 #' due to a merger assuming that firms are playing a

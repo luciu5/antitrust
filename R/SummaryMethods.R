@@ -4,13 +4,7 @@
 #' @name summary-methods
 #' @docType methods
 #'
-#' @aliases summary,ANY-method
-#' summary,AIDS-method
-#' summary,Bertrand-method
-#' summary,Auction2ndLogit-method
-#' summary,Cournot-method
-#' summary,Auction2ndCap-method
-#' summary,VertBargBertLogit-method
+#' @aliases summary,ANY-method summary,AIDS-method summary,Bertrand-method summary,Auction2ndLogit-method summary,Cournot-method summary,Auction2ndCap-method summary,VertBargBertLogit-method
 #'
 #' @param object an instance of class  \code{Bertrand}, \code{Auction2ndCap}, \code{Cournot}, or \code{Auction2ndLogit}
 #' @param revenue When TRUE, returns revenues, when FALSE returns quantitities. Default is TRUE.

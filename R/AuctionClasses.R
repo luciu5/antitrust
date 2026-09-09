@@ -1,12 +1,7 @@
 #' @title Class \dQuote{Auction}
 #' @name Auction-Classes
 
-#' @aliases Auction2ndCap-class
-#' Auction2ndLogit-class
-#' Auction2ndLogitNests-class
-#' Auction2ndLogitALM-class
-#' Auction2ndCES-class
-#' Auction2ndCESALM-class
+#' @aliases Auction2ndCap-class Auction2ndLogit-class Auction2ndLogitNests-class Auction2ndLogitALM-class Auction2ndCES-class Auction2ndCESALM-class
 # Auction2ndLogitNestsALM-class
 #' @description The \dQuote{Auction2ndCap} class contains all the information needed to
 #' calibrate a 2nd price auction with capacity constraints

@@ -2,21 +2,7 @@
 #' @name CV-Methods
 #' @docType methods
 #'
-#' @aliases CV-methods
-#' CV
-#' CV,ANY-method
-#' CV,AIDS-method
-#' CV,CES-method
-#' CV,CESNests-method
-#' CV,Linear-method
-#' CV,LogLin-method
-#' CV,Logit-method
-#' CV,LogitBLP-method
-#' CV,LogitNests-method
-#' CV,Auction2ndLogit-method
-#' CV,VertBargBertLogit-method
-#' CV,VertBarg2ndLogit-method
-#' CV,Cournot-method
+#' @aliases CV-methods CV CV,ANY-method CV,AIDS-method CV,CES-method CV,CESNests-method CV,Linear-method CV,LogLin-method CV,Logit-method CV,LogitBLP-method CV,LogitNests-method CV,Auction2ndLogit-method CV,VertBargBertLogit-method CV,VertBarg2ndLogit-method CV,Cournot-method
 #'
 #' @description Calculate the amount of money a consumer would need to
 #' be paid to be just as well off as they were before the merger.

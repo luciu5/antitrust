@@ -1,7 +1,6 @@
 #' @title Linear and Log-Linear Demand Calibration and Merger Simulation
 #' @name Linear-Functions
-#' @aliases linear
-#' loglinear
+#' @aliases linear loglinear
 #' @description Calibrates consumer demand using either a
 #' linear or log-linear demand system and then simulates
 #' the prices effect of a merger between two firms

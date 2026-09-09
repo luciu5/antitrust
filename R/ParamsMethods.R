@@ -2,42 +2,7 @@
 #' @name Params-Methods
 #' @docType methods
 
-#' @aliases calcSlopes
-#' calcSlopes,ANY-method
-#' calcSlopes,AIDS-method
-#' calcSlopes,CES-method
-#' calcSlopes,CESNests-method
-#' calcSlopes,Linear-method
-#' calcSlopes,LogLin-method
-#' calcSlopes,Logit-method
-#' calcSlopes,LogitALM-method
-#' calcSlopes,CESALM-method
-#' calcSlopes,LogitCap-method
-#' calcSlopes,LogitCapALM-method
-#' calcSlopes,LogitNests-method
-#' calcSlopes,LogitNestsALM-method
-#' calcSlopes,PCAIDS-method
-#' calcSlopes,PCAIDSNests-method
-#' calcSlopes,Auction2ndLogit-method
-#' calcSlopes,Auction2ndLogitNests-method
-#' calcSlopes,Auction2ndLogitALM-method
-#' calcSlopes,Cournot-method
-#' calcSlopes,Stackelberg-method
-#' calcSlopes,VertBargBertLogit-method
-#' calcSlopes,LogitBLP-method
-#' calcSlopes,BargainingLogit-method
-#' calcSlopes,Bargaining2ndLogit-method
-#' getParms
-#' getParms,ANY-method
-#' getParms,Bertrand-method
-#' getParms,VertBargBertLogit-method
-#' getNestsParms
-#' getNestsParms,PCAIDSNests-method
-#' getNestsParms,LogitNests-method
-#' getNestsParms,Auction2ndLogitNests-method
-#' getNestsParms,CESNests-method
-#' getNestsParms,VertBargBertLogitNests-method
-#' getNestsParms,VertBarg2ndLogitNests-method
+#' @aliases calcSlopes calcSlopes,ANY-method calcSlopes,AIDS-method calcSlopes,CES-method calcSlopes,CESNests-method calcSlopes,Linear-method calcSlopes,LogLin-method calcSlopes,Logit-method calcSlopes,LogitALM-method calcSlopes,CESALM-method calcSlopes,LogitCap-method calcSlopes,LogitCapALM-method calcSlopes,LogitNests-method calcSlopes,LogitNestsALM-method calcSlopes,PCAIDS-method calcSlopes,PCAIDSNests-method calcSlopes,Auction2ndLogit-method calcSlopes,Auction2ndLogitNests-method calcSlopes,Auction2ndLogitALM-method calcSlopes,Cournot-method calcSlopes,Stackelberg-method calcSlopes,VertBargBertLogit-method calcSlopes,LogitBLP-method calcSlopes,BargainingLogit-method calcSlopes,Bargaining2ndLogit-method getParms getParms,ANY-method getParms,Bertrand-method getParms,VertBargBertLogit-method getNestsParms getNestsParms,PCAIDSNests-method getNestsParms,LogitNests-method getNestsParms,Auction2ndLogitNests-method getNestsParms,CESNests-method getNestsParms,VertBargBertLogitNests-method getNestsParms,VertBarg2ndLogitNests-method
 #'
 #' @description The calcSlopes methods calculate demand parameters assuming that firms are playing
 #' a differentitated product Nash-Bertrand pricing game or

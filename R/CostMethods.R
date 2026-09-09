@@ -2,19 +2,7 @@
 #' @name Cost-Methods
 #' @docType methods
 #'
-#' @aliases calcMC
-#' calcMC,ANY-method
-#' calcMC,Bertrand-method
-#' calcMC,VertBargBertLogit-method
-#' calcMC,Auction2ndLogit-method
-#' calcMC,Cournot-method
-#' calcMC,Auction2ndCap-method
-#' calcdMC
-#' calcdMC,ANY-method
-#' calcdMC,Stackelberg-method
-#' calcVC
-#' calcVC,ANY-method
-#' calcVC,Cournot-method
+#' @aliases calcMC calcMC,ANY-method calcMC,Bertrand-method calcMC,VertBargBertLogit-method calcMC,Auction2ndLogit-method calcMC,Cournot-method calcMC,Auction2ndCap-method calcdMC calcdMC,ANY-method calcdMC,Stackelberg-method calcVC calcVC,ANY-method calcVC,Cournot-method
 #'
 #' @description
 #' For Auction2ndCap, calcMC calculates (constant) marginal cost for each

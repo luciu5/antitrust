@@ -1,20 +1,7 @@
 #' @title \dQuote{Calculating Prices} Methods
 #' @name Prices-Methods
 #' @docType methods
-#' @aliases calcPrices,ANY-method
-#' calcPrices,Auction2ndCap-method
-#' calcPrices,Cournot-method
-#' calcPrices,Linear-method
-#' calcPrices,Logit-method
-#' calcPrices,LogitBLP-method
-#' calcPrices,LogLin-method
-#' calcPrices,AIDS-method
-#' calcPrices,LogitCap-method
-#' calcPrices,Auction2ndLogit-method
-#' calcPrices,BargainingBLP-method
-#' calcPrices,VertBargBertLogit-method
-#' calcPrices,VertBarg2ndLogit-method
-#' calcPrices
+#' @aliases calcPrices,ANY-method calcPrices,Auction2ndCap-method calcPrices,Cournot-method calcPrices,Linear-method calcPrices,Logit-method calcPrices,LogitBLP-method calcPrices,LogLin-method calcPrices,AIDS-method calcPrices,LogitCap-method calcPrices,Auction2ndLogit-method calcPrices,BargainingBLP-method calcPrices,VertBargBertLogit-method calcPrices,VertBarg2ndLogit-method calcPrices
 #' @param object An instance of the respective class (see description for the classes)
 #' @param  preMerger If TRUE, the pre-merger ownership structure is used. If FALSE, the post-merger ownership structure is used.
 #' Default is TRUE.
