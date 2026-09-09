@@ -63,10 +63,19 @@ test_that("AntitrustFit survives an RDS round trip", {
 
 
 test_that("StructuralFit has no broad simulation fallback", {
-    expect_false(methods::isGeneric("simulate"))
+    expect_true(methods::isGeneric("simulate"))
+
+    setClass("StructuralFitNoFallbackDummy", contains = "StructuralFit")
+    on.exit(removeClass("StructuralFitNoFallbackDummy"), add = TRUE)
+    dummy <- methods::new("StructuralFitNoFallbackDummy")
+
     expect_error(
-        simulate(list(), ownerPost = c("A", "A")),
-        "must be an AntitrustFit"
+        simulate(dummy, ownerPost = c("A", "A")),
+        "no simulate\\(\\) method is defined"
+    )
+    expect_error(
+        respecify(dummy),
+        "no respecify\\(\\) method is defined"
     )
     expect_error(
         methods::new("StructuralFit"),
