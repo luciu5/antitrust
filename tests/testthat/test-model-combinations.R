@@ -126,6 +126,32 @@ test_that("LogitCap solves binding-capacity KKT conditions", {
     testthat::expect_true(max(abs(calcQuantities(fit, FALSE) - capacities)) > 1e-3)
 })
 
+test_that("LogitCap direct simulation accepts structurally consistent meanval", {
+    capacities <- c(30, 25, 20)
+    market_size <- 150
+    shares <- capacities / market_size
+    prices <- c(10, 11, 9)
+    meanval <- log(shares / (1 - sum(shares))) - (-1) * prices
+
+    result <- qa_value(sim(
+        prices = prices,
+        margins = c(.30, .25, .20),
+        demand = "LogitCap",
+        demand.param = list(alpha = -1, meanval = meanval,
+                            mktSize = market_size),
+        ownerPre = c("A", "B", "C"),
+        ownerPost = c("A", "A", "C"),
+        capacities = capacities
+    ), "LogitCap direct simulation")
+
+    testthat::expect_s4_class(result, "LogitCap")
+    qa_assert_close(result@shares, shares, tolerance = 1e-12,
+                    message = "LogitCap shares")
+    testthat::expect_equal(result@insideSize, sum(capacities),
+                           tolerance = 1e-12)
+    qa_assert_finite(result@pricePost, "LogitCap post-merger prices")
+})
+
 test_that("unsupported sim combinations fail explicitly", {
     qa_expect_error(sim(
         c(2, 2.2), supply = "cournot", demand = "Linear",
