@@ -55,6 +55,7 @@ Collate:
     'Auction2ndLogitFunctions.R'
     'BLPCalibration.R'
     'BLPIntegration.R'
+    'BLPMeanval.R'
     'BargainingCESFunctions.R'
     'BargainingLogitFunctions.R'
     'BertrandFunctions.R'
