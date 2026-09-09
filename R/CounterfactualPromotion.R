@@ -51,14 +51,14 @@ setMethod(".promote_post_to_pre", "VertBargBertLogit", function(model, step) {
     "Logit", "LogitCournot", "CES", "CESCournot",
     "MonComLogit", "MonComCES", "LogitNests", "CESNests",
     "LogitCap", "Auction2ndLogit", "BargainingLogit",
-    "Bargaining2ndLogit", "Bargaining2ndCES", "LogitALM", "CESALM"
+    "Bargaining2ndLogit", "Auction2ndCES", "BargainingCES",
+    "LogitALM", "LogitCournotALM", "CESALM", "CESCournotALM",
+    "LogitNestsALM", "LogitCapALM", "Auction2ndLogitALM",
+    "Auction2ndCESALM", "BargainingLogitALM", "BargainingCESALM",
+    "Bargaining2ndCES"
 )
 
-.quality_supported_classes <- c(
-    .entry_supported_classes, "Auction2ndCES", "BargainingCES",
-    "LogitNestsALM", "LogitCapALM", "Auction2ndLogitALM",
-    "Auction2ndCESALM", "BargainingLogitALM", "BargainingCESALM"
-)
+.quality_supported_classes <- .entry_supported_classes
 
 ## The legacy specialized Logit constructors store a positive demand index
 ## in `meanval`, even though the flat Logit constructor stores utility.  Keep
@@ -68,7 +68,7 @@ setMethod(".promote_post_to_pre", "VertBargBertLogit", function(model, step) {
     "LogitNests", "LogitNestsALM", "LogitCap", "LogitCapALM",
     "Auction2ndLogit", "Auction2ndLogitALM",
     "BargainingLogit", "Bargaining2ndLogit", "BargainingLogitALM",
-    "LogitALM"
+    "LogitALM", "LogitCournotALM"
 )
 
 .require_supported_transition <- function(model, supported, action) {

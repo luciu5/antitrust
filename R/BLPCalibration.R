@@ -875,6 +875,16 @@ setMethod(
     delta <- parameters$meanval
     contraction_messages <- character()
     price_outside <- if (is.null(dots[["priceOutside"]])) 0 else dots[["priceOutside"]]
+    requested_s0 <- dots[["s0"]]
+    ## With no supplied s0, preserve the historical outside-good default.
+    ## An explicit s0 = 0 instead selects the no-outside-good normalization
+    ## when reconstructing shares from supplied meanval.
+    outside <- if (is.null(requested_s0)) {
+        TRUE
+    } else {
+        is.numeric(requested_s0) && length(requested_s0) == 1L &&
+            is.finite(requested_s0) && requested_s0 > 0
+    }
     if (is.null(shares) && is.null(delta)) {
         stop("'shares' must be supplied for BLP parameter loading unless 'meanval' is supplied.")
     }
@@ -891,7 +901,7 @@ setMethod(
         predicted <- .blp_stable_shares(
             delta, prices, alpha + sigma * integration$draws,
             integration$draws, integration$weights,
-            priceOutside = price_outside, outside = TRUE
+            priceOutside = price_outside, outside = outside
         )$aggregate
         shares <- as.numeric(predicted)
         names(shares) <- names(delta)
