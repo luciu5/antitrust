@@ -1143,7 +1143,7 @@ sim <- function(prices,
             }
         }
         simulate_args <- list(
-            fit = fit,
+            object = fit,
             ownerPost = ownerPost,
             mcDelta = mcDelta,
             subset = subset

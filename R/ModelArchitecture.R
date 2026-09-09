@@ -1040,12 +1040,19 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 #' with \code{\link{add_step}}), each step is solved in turn, promoting the
 #' previous step's solved equilibrium into the next step's starting state,
 #' and a `CounterfactualPath` recording every step's result is returned.
-#' `fit` may also be a `CounterfactualPath`, in which case simulation
+#' `object` may also be a `CounterfactualPath`, in which case simulation
 #' resumes from that path's final solved state and the returned path's
 #' history includes the earlier steps.
 #'
-#' @param fit An \code{AntitrustFit} returned by \code{\link{calibrate}}, or
-#'   a `CounterfactualPath` to resume from.
+#' `simulate()` is an S4 generic that extends \code{\link[stats]{simulate}}.
+#' Objects that are not an `AntitrustFit` or `CounterfactualPath` (including
+#' ordinary models such as `lm`) continue to dispatch to
+#' \code{\link[stats]{simulate}} exactly as before antitrust was attached.
+#' Other `StructuralFit` subclasses (e.g. from a sibling package) must supply
+#' their own method and fail explicitly otherwise.
+#'
+#' @param object An \code{AntitrustFit} returned by \code{\link{calibrate}},
+#'   or a `CounterfactualPath` to resume from.
 #' @param ownerPost Post-counterfactual ownership vector or matrix, or a
 #' `Counterfactual` object. For
 #'   vertical bargaining, use a list with \code{up} and \code{down} ownership
@@ -1064,6 +1071,12 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 #' @param solver Optional solver override.  The calibration solver is reused
 #'   by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.
 #' @param isMax Whether to run the existing local profit-maximum check.
+#' @param nsim For objects that are not an `AntitrustFit` or
+#'   `CounterfactualPath`, the number of simulated response vectors passed on
+#'   to \code{\link[stats]{simulate}}.
+#' @param seed For objects that are not an `AntitrustFit` or
+#'   `CounterfactualPath`, an optional random seed passed on to
+#'   \code{\link[stats]{simulate}}.
 #' @param ... Additional arguments passed to the existing price solver.
 #'   For Stackelberg fits, \code{isLeaderPost}, \code{productsPost},
 #'   \code{mcfunPost}, \code{vcfunPost}, and \code{dmcfunPost} may be supplied as counterfactual
@@ -1072,8 +1085,40 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 #' @return For a one-step counterfactual, an existing S4 simulation-result
 #'   object, such as \code{Logit} or \code{LogitCournot}. For a multi-step
 #'   counterfactual, a `CounterfactualPath`.
+#' @importFrom stats simulate
 #' @export
-simulate <- function(fit, ownerPost = NULL,
+setGeneric("simulate", function(object, ...) standardGeneric("simulate"))
+
+.simulate_fit_method <- function(object, ownerPost = NULL, mcDelta = NULL,
+                                 subset = NULL, priceStart,
+                                 capacitiesPost = NULL, bargpowerPost = NULL,
+                                 solver = NULL, isMax = FALSE, ...) {
+    args <- c(
+        list(fit = object, ownerPost = ownerPost, mcDelta = mcDelta,
+             subset = subset),
+        if (!missing(priceStart)) list(priceStart = priceStart),
+        list(capacitiesPost = capacitiesPost, bargpowerPost = bargpowerPost,
+             solver = solver, isMax = isMax),
+        list(...)
+    )
+    do.call(.simulate_antitrust_fit, args)
+}
+
+#' @rdname simulate
+#' @export
+setMethod("simulate", "AntitrustFit", .simulate_fit_method)
+
+#' @rdname simulate
+#' @export
+setMethod("simulate", "CounterfactualPath", .simulate_fit_method)
+
+#' @rdname simulate
+#' @export
+setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
+    stats::simulate(object, nsim = nsim, seed = seed, ...)
+})
+
+.simulate_antitrust_fit <- function(fit, ownerPost = NULL,
                      mcDelta = NULL,
                      subset = NULL,
                      priceStart, capacitiesPost = NULL,
@@ -1244,7 +1289,12 @@ update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
 #' are required explicitly. No transition calibrates from source margins or
 #' minimizes an elasticity-distance objective.
 #'
-#' @param fit An `AntitrustFit` returned by `calibrate()` or `specify()`.
+#' `respecify()` is an S4 generic. The `AntitrustFit` method below preserves
+#' the transition contract exactly; other `StructuralFit` subclasses (e.g.
+#' from a sibling package) must supply their own method and fail explicitly
+#' otherwise, rather than silently running antitrust economics.
+#'
+#' @param object An `AntitrustFit` returned by `calibrate()` or `specify()`.
 #' @param demand Optional target demand-system name.
 #' @param conduct Optional target conduct name.
 #' @param variant Optional target model variant.
@@ -1254,11 +1304,19 @@ update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
 #' @return A newly constructed `AntitrustFit` under the target specification.
 #' @seealso [`specify()`], [`update.AntitrustFit()`]
 #' @export
-respecify <- function(fit, demand = NULL, conduct = NULL,
+setGeneric("respecify", function(object, ...) standardGeneric("respecify"))
+
+#' @rdname respecify
+#' @export
+setMethod("respecify", "AntitrustFit", function(object, demand = NULL,
+                                                conduct = NULL, variant = NULL,
+                                                ...) {
+    .respecify_antitrust_fit(object, demand = demand, conduct = conduct,
+                             variant = variant, ...)
+})
+
+.respecify_antitrust_fit <- function(fit, demand = NULL, conduct = NULL,
                       variant = NULL, ...) {
-    if (!methods::is(fit, "AntitrustFit")) {
-        stop("'fit' must be an AntitrustFit returned by calibrate() or specify().")
-    }
     extras <- list(...)
     if (length(extras) &&
         (is.null(names(extras)) || any(!nzchar(names(extras))))) {

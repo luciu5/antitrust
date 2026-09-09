@@ -2,11 +2,12 @@
 #' @name Diagnostics-Methods
 #' @docType methods
 #'
-#' @aliases calcDiagnostics calcDiagnostics,ANY-method calcDiagnostics,Bertrand-method calcDiagnostics,Cournot-method calcDiagnostics,VertBargBertLogit-method
+#' @aliases calcDiagnostics calcDiagnostics,ANY-method calcDiagnostics,Bertrand-method calcDiagnostics,Cournot-method calcDiagnostics,VertBargBertLogit-method calcDiagnostics,AntitrustFit-method
 #' @description Computes the percentage difference between predicted and observed pre-merger prices, shares,
 #' margins and market elasticities (if supplied) . \sQuote{labels} is used to specify row labels.
 #' @param object An instance of one of the classes listed above.
 #' @param labels A length-k vector of product labels. Default is object@labels.
+#' @param ... Passed to the underlying model's \code{calcDiagnostics} method.
 #'
 #' @include CVMethods.R
 #' @keywords methods
