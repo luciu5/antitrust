@@ -1,3 +1,37 @@
+#' A shared structural fit contract
+#'
+#' `StructuralFit` is the minimal common representation for fitted structural
+#' models.  It is virtual so concrete model families must supply their own
+#' lifecycle and economic methods; the class intentionally provides no
+#' simulation or respecification behavior.
+#'
+#' @slot spec A normalized structural model specification.
+#' @slot model The fitted model state.
+#' @slot parameters Structural parameters recovered by calibration or supplied
+#'   directly by the caller.
+#' @slot observed The observed pre-merger inputs.
+#' @slot diagnostics Calibration, construction, and dispatch metadata.
+#' @export
+#' @exportClass StructuralFit
+setClass(
+    Class = "StructuralFit",
+    representation = representation(
+        spec = "ANY",
+        model = "ANY",
+        parameters = "list",
+        observed = "list",
+        diagnostics = "list"
+    ),
+    prototype = prototype(
+        spec = list(),
+        parameters = list(),
+        observed = list(),
+        diagnostics = list()
+    ),
+    contains = "VIRTUAL"
+)
+
+
 #' A calibrated structural model
 #'
 #' `AntitrustFit` is a lightweight wrapper around an existing antitrust S4
@@ -13,13 +47,7 @@
 #' @exportClass AntitrustFit
 setClass(
     Class = "AntitrustFit",
-    representation = representation(
-        spec = "ANY",
-        model = "ANY",
-        parameters = "list",
-        observed = "list",
-        diagnostics = "list"
-    ),
+    contains = "StructuralFit",
     prototype = prototype(
         spec = list(),
         parameters = list(),

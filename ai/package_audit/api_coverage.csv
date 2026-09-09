@@ -159,6 +159,7 @@
 "S4 class","PriceLeadership","","documented-exclusion","ai/package_audit/audit_report.md","Abstract/container class or specialized plant-level fixture; inherited behavior is covered by child classes."
 "S4 class","PriceLeadershipBLP","","documented-exclusion","ai/package_audit/audit_report.md","Abstract/container class or specialized plant-level fixture; inherited behavior is covered by child classes."
 "S4 class","Stackelberg","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
+"S4 class","StructuralFit","","formal-test","tests/testthat/test-structural-fit.R",""
 "S4 class","VertBarg2ndLogit","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "S4 class","VertBarg2ndLogitNests","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "S4 class","VertBargBertLogit","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
