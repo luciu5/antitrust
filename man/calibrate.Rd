@@ -53,6 +53,11 @@ must lie in \code{[0, 1)} and product shares must sum to \code{1 - s0}.}
 \item{...}{Additional options accepted by the model-specific legacy
 calibration constructor. For vertical bargaining, supply the upstream
 inputs \code{pricesUp}, \code{marginsUp}, and \code{ownerPreUp} here.}
+
+\item{multistart}{BLP calibration search strategy: \code{"adaptive"}
+evaluates a deterministic pilot and escalates to the full retained grid
+when its convergence diagnostics are inconclusive; \code{"exhaustive"}
+evaluates all 12 retained starts.}
 }
 \value{
 An \code{AntitrustFit} object.

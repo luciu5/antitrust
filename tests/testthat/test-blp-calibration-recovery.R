@@ -191,6 +191,69 @@ test_that("BLP diagnostics expose the fixed outside share and contraction state"
 })
 
 
+test_that("adaptive BLP multistart is economically identical to exhaustive mode", {
+    qa_skip_if_not_nightly()
+    fixture <- .blp_recovery_fixture("bertrand")
+    args <- list(
+        demand = "blp", conduct = "bertrand",
+        prices = fixture$prices, shares = fixture$shares,
+        margins = fixture$margins, ownerPre = fixture$ownerPre,
+        s0 = fixture$s0, output = TRUE,
+        integration = "provided", draws = fixture$nodes,
+        integrationWeights = fixture$weights,
+        optimizer_control = list(maxit = 100, factr = 1e3, pgtol = 1e-8)
+    )
+    adaptive <- do.call(calibrate, c(args, list(multistart = "adaptive")))
+    exhaustive <- do.call(calibrate, c(args, list(multistart = "exhaustive")))
+
+    expect_equal(adaptive@parameters$alphaMean,
+                 exhaustive@parameters$alphaMean, tolerance = 2e-6)
+    expect_equal(adaptive@parameters$sigma, exhaustive@parameters$sigma,
+                 tolerance = 2e-6)
+    expect_equal(adaptive@diagnostics$objective,
+                 exhaustive@diagnostics$objective, tolerance = 1e-10)
+    expect_equal(unname(calcShares(adaptive@model)),
+                 unname(calcShares(exhaustive@model)), tolerance = 1e-10)
+    expect_equal(adaptive@diagnostics$preMergerFOCResidual,
+                 exhaustive@diagnostics$preMergerFOCResidual, tolerance = 1e-10)
+
+    adaptive_post <- simulate(adaptive, ownerPost = c("A", "A", "C"))
+    exhaustive_post <- simulate(exhaustive, ownerPost = c("A", "A", "C"))
+    expect_equal(adaptive_post@pricePost, exhaustive_post@pricePost,
+                 tolerance = 2e-7)
+    expect_equal(CV(adaptive_post), CV(exhaustive_post), tolerance = 2e-7)
+    expect_lt(adaptive@diagnostics$multistart$evaluatedStarts,
+              exhaustive@diagnostics$multistart$evaluatedStarts)
+    expect_identical(exhaustive@diagnostics$multistart$strategy, "exhaustive")
+    expect_equal(exhaustive@diagnostics$multistart$evaluatedStarts, 12L)
+    expect_null(adaptive@diagnostics$profile_sigma_grid)
+    expect_null(adaptive@diagnostics$profile_sigma_values)
+
+    profiled <- profileBLP(adaptive, c(0, fixture$sigma))
+    expect_equal(nrow(profiled), 2L)
+    expect_true(is.finite(profiled$objective[[1L]]))
+    expect_true(is.list(attr(profiled, "performance")))
+})
+
+
+test_that("BLP contraction reuses a price utility component without changing shares", {
+    nodes <- c(-1, 0, 1)
+    weights <- c(.2, .5, .3)
+    prices <- c(1.5, 2, 2.6)
+    alpha <- c(-4.8, -5, -5.2)
+    delta <- c(.4, .2, -.1)
+    expected <- antitrust:::.blp_stable_shares(
+        delta, prices, alpha, nodes, weights, outside = TRUE
+    )
+    reused <- antitrust:::.blp_stable_shares(
+        delta, prices, alpha, nodes, weights, outside = TRUE,
+        priceUtility = outer(alpha, prices)
+    )
+    expect_equal(reused$draw, expected$draw, tolerance = 0)
+    expect_equal(reused$aggregate, expected$aggregate, tolerance = 0)
+})
+
+
 test_that("no-demographics price-random-coefficient calibration works under both integration rules", {
     qa_skip_if_not_nightly()
     make_fixture <- function(nodes, weights) {

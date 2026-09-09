@@ -54,6 +54,10 @@ setClass(
 #' @param mktElast A known market own-price elasticity for PCAIDS calibration.
 #' @param s0 A known outside-good share for price-only BLP calibration. It
 #'   must lie in \code{[0, 1)} and product shares must sum to \code{1 - s0}.
+#' @param multistart BLP calibration search strategy: \code{"adaptive"}
+#'   evaluates a deterministic pilot and escalates to the full retained grid
+#'   when its convergence diagnostics are inconclusive; \code{"exhaustive"}
+#'   evaluates all 12 retained starts.
 #' @param ... Additional options accepted by the model-specific legacy
 #'   calibration constructor. For vertical bargaining, supply the upstream
 #'   inputs \code{pricesUp}, \code{marginsUp}, and \code{ownerPreUp} here.

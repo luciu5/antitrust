@@ -69,6 +69,67 @@ margin_reference <- -as.vector(
         (revenue * diag(owner_matrix))
 ) / revenue
 
+## A calibration benchmark reports phase costs and contraction work rather than
+## only elapsed time.  The retained profile is invoked explicitly here to
+## reproduce the former eager-grid cost while keeping calibrate() on its
+## on-demand path.
+benchmark_profile_grid <- function(fit) {
+    alpha_scale <- max(abs(alpha_mean), 1e-4)
+    sigma_fit <- fit@parameters$sigma
+    sigma_starts <- c(0, .10, .25, .50) * alpha_scale
+    unique(c(0, sigma_fit, sigma_starts,
+             seq(0, max(2 * sigma_fit, alpha_scale), length.out = 7)))
+}
+
+benchmark_calibration <- function(n, strategy = c("adaptive", "exhaustive")) {
+    strategy <- match.arg(strategy)
+    started <- proc.time()[["elapsed"]]
+    fit <- calibrate(
+        demand = "blp", conduct = "bertrand", prices = prices,
+        shares = share_reference, margins = margin_reference,
+        ownerPre = owner, s0 = s0, integration = "gauss-hermite",
+        nNodes = n, multistart = strategy,
+        optimizer_control = list(maxit = 100, factr = 1e3, pgtol = 1e-8)
+    )
+    calibration_elapsed <- proc.time()[["elapsed"]] - started
+    before <- fit@diagnostics$performance$metrics
+    profile_started <- proc.time()[["elapsed"]]
+    profile <- profileBLP(fit, benchmark_profile_grid(fit))
+    profile_elapsed <- proc.time()[["elapsed"]] - profile_started
+    after <- attr(profile, "performance")$metrics
+    metric_delta <- function(name) {
+        before_value <- if (is.null(before[[name]])) 0 else before[[name]]
+        after_value <- if (is.null(after[[name]])) 0 else after[[name]]
+        after_value - before_value
+    }
+    post <- simulate(fit, ownerPost = c("A", "A", "C"))
+    data.frame(
+        nNodes = n, strategy = strategy,
+        runtime_seconds = calibration_elapsed,
+        multistart_seconds = fit@diagnostics$performance$multistartSeconds,
+        identification_seconds = fit@diagnostics$performance$identificationSeconds,
+        profile_seconds = profile_elapsed,
+        evaluated_starts = fit@diagnostics$multistart$evaluatedStarts,
+        convergence_count = fit@diagnostics$multistart$convergedStarts,
+        fallback = fit@diagnostics$multistart$fallback,
+        objective_evaluations_multistart = fit@diagnostics$performance$objectiveEvaluationsMultistart,
+        objective_evaluations_identification = fit@diagnostics$performance$objectiveEvaluationsIdentification,
+        objective_evaluations_profile = metric_delta("objective_evaluations_profile"),
+        contraction_calls_multistart = fit@diagnostics$performance$metrics$contraction_calls_multistart,
+        contraction_calls_profile = metric_delta("contraction_calls_profile"),
+        contraction_iterations_multistart = fit@diagnostics$performance$metrics$contraction_iterations_multistart,
+        contraction_iterations_identification = fit@diagnostics$performance$metrics$contraction_iterations_identification,
+        contraction_iterations_profile = metric_delta("contraction_iterations_profile"),
+        alpha_error = fit@parameters$alphaMean - alpha_mean,
+        sigma_error = fit@parameters$sigma - sigma,
+        objective = fit@diagnostics$objective,
+        post_price_1 = post@pricePost[[1L]],
+        post_price_2 = post@pricePost[[2L]],
+        post_price_3 = post@pricePost[[3L]],
+        cv = CV(post)
+    )
+}
+
 measure_rule <- function(n) {
     rule <- .blp_normal_nodes(n)
     shares <- vapply(seq_along(prices), function(j) {
@@ -119,6 +180,17 @@ calibration_result <- function(n) {
 calibration_results <- do.call(rbind, lapply(c(10L, 20L, 30L, 40L),
                                              calibration_result))
 print(calibration_results)
+
+## Exhaustive mode is intentionally opt-in for this expensive comparison.
+## Set the tier variable when producing the before/after report; ordinary
+## development runs retain the smaller integration-rule benchmark above.
+if (identical(Sys.getenv("ANTITRUST_BLP_BENCHMARK_TIER"), "nightly")) {
+    benchmark_results <- do.call(rbind, list(
+        benchmark_calibration(10L, "adaptive"),
+        benchmark_calibration(10L, "exhaustive")
+    ))
+    print(benchmark_results)
+}
 
 mc_measure <- function(n, seed = 20260903) {
     started <- proc.time()[["elapsed"]]

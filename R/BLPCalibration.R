@@ -25,8 +25,17 @@ setClass(
 
 
 .blp_stable_shares <- function(delta, prices, alpha, draws, weights,
-                               priceOutside = 0, outside = TRUE) {
-    utility <- outer(alpha, prices - priceOutside, "*")
+                               priceOutside = 0, outside = TRUE,
+                               priceUtility = NULL) {
+    ## `priceUtility` is an optional precomputed alpha-by-price matrix.  The
+    ## public/internal call retains the historical calculation when it is not
+    ## supplied; contraction can reuse this fixed component on every draw
+    ## iteration.
+    utility <- if (is.null(priceUtility)) {
+        outer(alpha, prices - priceOutside, "*")
+    } else {
+        priceUtility
+    }
     utility <- sweep(utility, 2, delta, "+")
     max_utility <- apply(utility, 1, max)
     max_utility <- if (outside) pmax(0, max_utility) else max_utility
@@ -41,8 +50,23 @@ setClass(
 
 .blp_contract <- function(prices, shares, alphaMean, sigma, draws, weights,
                           s0, priceOutside = 0, tol = 1e-10,
-                          maxIter = 2000L, initial = NULL, dampFactor = 1) {
+                          maxIter = 2000L, initial = NULL, dampFactor = 1,
+                          metrics = NULL, phase = NULL) {
     alpha <- alphaMean + sigma * draws
+    price_utility <- outer(alpha, prices - priceOutside, "*")
+    if (is.environment(metrics)) {
+        metrics$contraction_calls <- if (is.null(metrics$contraction_calls)) 1L else
+            metrics$contraction_calls + 1L
+        if (!is.null(phase)) {
+            call_name <- paste0("contraction_calls_", phase)
+            metrics[[call_name]] <- if (is.null(metrics[[call_name]])) 1L else
+                metrics[[call_name]] + 1L
+        }
+        if (is.null(metrics$contraction_iterations)) metrics$contraction_iterations <- 0L
+        metric_name <- if (is.null(phase)) "contraction_iterations" else
+            paste0("contraction_iterations_", phase)
+        if (is.null(metrics[[metric_name]])) metrics[[metric_name]] <- 0L
+    }
     outside <- s0 > 0
     delta <- if (is.null(initial)) log(shares) else as.numeric(initial)
     if (length(delta) != length(shares) || any(!is.finite(delta))) {
@@ -53,7 +77,8 @@ setClass(
     max_error <- Inf
     for (iter in seq_len(as.integer(maxIter))) {
         predicted <- .blp_stable_shares(
-            delta, prices, alpha, draws, weights, priceOutside, outside
+            delta, prices, alpha, draws, weights, priceOutside, outside,
+            priceUtility = price_utility
         )$aggregate
         if (any(!is.finite(predicted)) || any(predicted <= 0)) break
         error <- log(shares) - log(predicted)
@@ -82,9 +107,26 @@ setClass(
         }
     }
 
+    if (is.environment(metrics)) {
+        metric_name <- if (is.null(phase)) "contraction_iterations" else
+            paste0("contraction_iterations_", phase)
+        iterations <- if (exists("iter")) as.integer(iter) else 0L
+        metrics$contraction_iterations <- metrics$contraction_iterations + iterations
+        if (!identical(metric_name, "contraction_iterations")) {
+            metrics[[metric_name]] <- metrics[[metric_name]] + iterations
+        }
+        if (!is.null(initial)) {
+            warm_name <- if (is.null(phase)) "warm_contractions" else
+                paste0("warm_contractions_", phase)
+            if (is.null(metrics[[warm_name]])) metrics[[warm_name]] <- 0L
+            metrics[[warm_name]] <- metrics[[warm_name]] + 1L
+        }
+    }
+
     if (!outside) delta <- delta - delta[1]
     final <- .blp_stable_shares(
-        delta, prices, alpha, draws, weights, priceOutside, outside
+        delta, prices, alpha, draws, weights, priceOutside, outside,
+        priceUtility = price_utility
     )
     list(
         delta = delta,
@@ -310,16 +352,15 @@ setMethod(
 
         ## Build the aggregate demand Jacobian from the consumer draws.  A
         ## draw-wise inverse followed by averaging is not the Nash bargaining
-        ## FOC for an aggregate market.
-        derivative <- matrix(0, nrow = nrow(shares_draw), ncol = nrow(shares_draw))
-        buyer_surplus <- numeric(nrow(shares_draw))
-        for (r in seq_len(ncol(shares_draw))) {
-            shares_r <- shares_draw[, r]
-            derivative <- derivative + draw_weights[r] * alpha[r] *
-                (diag(shares_r) - tcrossprod(shares_r))
-            buyer_surplus <- buyer_surplus + draw_weights[r] *
-                log1p(-shares_r) / alpha[r]
-        }
+        ## FOC for an aggregate market.  With S indexed by product x draw,
+        ## a = w * alpha gives the same aggregate as the legacy draw loop:
+        ## D = diag(S %*% a) - (S * a) %*% t(S).
+        a <- draw_weights * alpha
+        derivative <- diag(drop(shares_draw %*% a),
+                           nrow = nrow(shares_draw), ncol = nrow(shares_draw)) -
+            sweep(shares_draw, 2L, a, "*") %*% t(shares_draw)
+        buyer_surplus <- drop(log1p(-shares_draw) %*%
+                              (draw_weights / alpha))
         if (any(!is.finite(buyer_surplus)) || any(buyer_surplus == 0)) {
             stop("BLP bargaining buyer surplus is not finite under the supplied price-coefficient draws.")
         }
@@ -355,7 +396,8 @@ setMethod(
         margins_active <- as.vector(inverse_matrix %*% rhs)
         margins <- rep(NA_real_, length(object@shares))
         margins[active] <- margins_active
-        if (!level) margins[active] <- margins[active] / prices[active]
+        ## `prices` is already restricted to the active products above.
+        if (!level) margins[active] <- margins[active] / prices
         names(margins) <- object@labels
         as.vector(margins)
     }
@@ -529,7 +571,15 @@ setMethod(
 }
 
 
-.blp_objective <- function(par, context, details = FALSE) {
+.blp_objective <- function(par, context, details = FALSE, initial = NULL) {
+    if (is.environment(context$metrics)) {
+        context$metrics$objective_evaluations <- if (is.null(context$metrics$objective_evaluations)) 1L else
+            context$metrics$objective_evaluations + 1L
+        metric_name <- if (is.null(context$phase)) "objective_evaluations" else
+            paste0("objective_evaluations_", context$phase)
+        if (is.null(context$metrics[[metric_name]])) context$metrics[[metric_name]] <- 0L
+        context$metrics[[metric_name]] <- context$metrics[[metric_name]] + 1L
+    }
     alpha <- par[1]
     sigma <- par[2]
     if (!is.finite(alpha) || !is.finite(sigma) || sigma < 0) return(1e100)
@@ -539,7 +589,8 @@ setMethod(
         alphaMean = alpha, sigma = sigma, draws = context$integration$draws,
         weights = context$integration$weights, s0 = context$s0,
         priceOutside = context$priceOutside, tol = context$contractionTol,
-        maxIter = context$contractionMaxIter
+        maxIter = context$contractionMaxIter, initial = initial,
+        metrics = context$metrics, phase = context$phase
     ), silent = TRUE)
     if (inherits(contracted, "try-error") || !contracted$converged ||
         any(!is.finite(contracted$delta))) return(1e100)
@@ -573,10 +624,98 @@ setMethod(
     objective <- sum(context$weights[context$moment_index] *
                          residuals[context$moment_index]^2)
     if (!is.finite(objective)) objective <- 1e100
-    if (!details) return(objective)
+    if (!details) {
+        ## Preserve a numeric scalar for optim() while allowing the owning
+        ## optimizer closure to carry the converged delta to its next call.
+        return(structure(objective, blp_delta = contracted$delta))
+    }
     list(objective = objective, model = model, delta = contracted$delta,
          predicted = predicted, residuals = residuals,
          contraction = contracted)
+}
+
+
+## An optimizer run owns its contraction warm start.  A warm contraction is
+## only an initial value: if it fails to meet the regular stopping rule, retry
+## from log(shares), and never return the unconverged warm result.
+.blp_objective_runner <- function(context) {
+    warm <- NULL
+    function(par, details = FALSE) {
+        first <- .blp_objective(par, context, details = details, initial = warm)
+        invalid <- if (details) {
+            !is.list(first) || !is.list(first$contraction) ||
+                !isTRUE(first$contraction$converged)
+        } else {
+            !is.finite(first) || isTRUE(first >= 1e100)
+        }
+        if (invalid && !is.null(warm)) {
+            if (is.environment(context$metrics)) {
+                name <- if (is.null(context$phase)) "cold_retries" else
+                    paste0("cold_retries_", context$phase)
+                if (is.null(context$metrics[[name]])) context$metrics[[name]] <- 0L
+                context$metrics[[name]] <- context$metrics[[name]] + 1L
+            }
+            first <- .blp_objective(par, context, details = details, initial = NULL)
+        }
+        usable <- if (details) {
+            is.list(first) && is.list(first$contraction) &&
+                isTRUE(first$contraction$converged) &&
+                all(is.finite(first$delta))
+        } else {
+            is.finite(first) && isTRUE(first < 1e100)
+        }
+        if (usable) {
+            warm <<- if (details) first$delta else attr(first, "blp_delta")
+        } else if (is.environment(context$metrics)) {
+            name <- if (is.null(context$phase)) "invalid_evaluations" else
+                paste0("invalid_evaluations_", context$phase)
+            if (is.null(context$metrics[[name]])) context$metrics[[name]] <- 0L
+            context$metrics[[name]] <- context$metrics[[name]] + 1L
+        }
+        first
+    }
+}
+
+
+.blp_multistart_decision <- function(convergence_count, objective_values,
+                                     artificial_boundary = FALSE,
+                                     invalid_evaluations = 0L,
+                                     strategy = c("adaptive", "exhaustive")) {
+    strategy <- match.arg(strategy)
+    if (identical(strategy, "exhaustive")) {
+        return(list(fallback = FALSE, reasons = character(),
+                    convergence_count = as.integer(convergence_count),
+                    objective_agreement = NA,
+                    artificial_boundary = isTRUE(artificial_boundary),
+                    invalid_evaluations = as.integer(invalid_evaluations)))
+    }
+    finite_values <- objective_values[is.finite(objective_values)]
+    objective_agreement <- if (length(finite_values) >= 2L) {
+        max(finite_values) - min(finite_values) <= 1e-10 +
+            1e-4 * max(abs(finite_values))
+    } else {
+        NA
+    }
+    reasons <- character()
+    if (convergence_count < 2L) {
+        reasons <- c(reasons, "fewer than two converged pilot starts")
+    }
+    if (!isTRUE(objective_agreement)) {
+        reasons <- c(reasons, "pilot objectives do not agree")
+    }
+    if (isTRUE(artificial_boundary)) {
+        reasons <- c(reasons,
+                     "pilot solution contacts an artificial parameter bound")
+    }
+    if (invalid_evaluations > 0L) {
+        reasons <- c(reasons,
+                     "pilot encountered an invalid contraction or diagnostic evaluation")
+    }
+    list(fallback = length(reasons) > 0L, reasons = reasons,
+         convergence_count = as.integer(convergence_count),
+         objective_agreement = objective_agreement,
+         artificial_boundary = isTRUE(artificial_boundary),
+         invalid_evaluations = as.integer(invalid_evaluations))
 }
 
 
@@ -625,15 +764,26 @@ setMethod(
             any(sigma_grid < 0)) stop("'sigma_grid' must be non-negative and finite.")
         result <- lapply(as.numeric(sigma_grid), function(sigma) {
             start <- .blp_logit_start(context)
-            fit <- optim(
+            profile_context <- context
+            profile_context$phase <- "profile"
+            runner <- .blp_objective_runner(profile_context)
+            fit <- try(optim(
                 par = start,
-                fn = function(alpha) .blp_objective(c(alpha, sigma), context),
+                fn = function(alpha) runner(c(alpha, sigma)),
                 method = "L-BFGS-B", lower = alpha_bounds[1], upper = alpha_bounds[2]
-            )
+            ), silent = TRUE)
+            if (inherits(fit, "try-error") || !isTRUE(fit$convergence == 0) ||
+                !is.finite(fit$value) || fit$value >= 1e100) {
+                stop("BLP profile optimization did not converge at sigma = ", sigma, ".")
+            }
             c(sigma = sigma, alphaMean = fit$par, objective = fit$value,
               convergence = fit$convergence)
         })
-        as.data.frame(do.call(rbind, result), row.names = NULL)
+        result <- as.data.frame(do.call(rbind, result), row.names = NULL)
+        ## Keep profiling's lightweight measurement available to the
+        ## development benchmark without changing its data-frame contract.
+        attr(result, "performance") <- list(metrics = as.list(context$metrics))
+        result
     }
 }
 
@@ -647,6 +797,8 @@ setMethod(
         return(list(status = "unavailable", identified = NA,
                     rank = NA_integer_, singularValues = numeric(0)))
     }
+    identification_context <- context
+    identification_context$phase <- "identification"
     steps <- pmax(1e-6, abs(parameters) * 1e-5)
     jacobian <- matrix(NA_real_, nrow = length(moment_index), ncol = 2L,
                        dimnames = list(NULL, c("alphaMean", "sigma")))
@@ -658,9 +810,9 @@ setMethod(
         if (column == 2L && minus[column] < 0) {
             minus[column] <- parameters[column]
         }
-        plus_details <- try(.blp_objective(plus, context, details = TRUE),
+        plus_details <- try(.blp_objective(plus, identification_context, details = TRUE),
                             silent = TRUE)
-        minus_details <- try(.blp_objective(minus, context, details = TRUE),
+        minus_details <- try(.blp_objective(minus, identification_context, details = TRUE),
                              silent = TRUE)
         plus_ok <- !inherits(plus_details, "try-error") &&
             is.list(plus_details) && is.finite(plus_details$objective)
@@ -733,7 +885,8 @@ setMethod(
         contractionTol = if (is.null(dots$contractionTol)) 1e-10 else dots$contractionTol,
         contractionMaxIter = if (is.null(dots$contractionMaxIter)) 2000L else dots$contractionMaxIter,
         bargpowerPre = barg_pre,
-        bargpowerPost = if (is.null(dots$bargpowerPost)) barg_pre else dots$bargpowerPost
+        bargpowerPost = if (is.null(dots$bargpowerPost)) barg_pre else dots$bargpowerPost,
+        metrics = new.env(parent = emptyenv()), phase = "multistart"
     )
     if (!is.numeric(context$weights) || length(context$weights) != length(prices) ||
         any(!is.finite(context$weights)) || any(context$weights < 0) ||
@@ -760,22 +913,85 @@ setMethod(
         ## a nearby local plateau as the best multi-start solution.
         optimizer_control <- list(factr = 1e3, pgtol = 1e-8)
     }
-    fits <- lapply(seq_len(nrow(starts)), function(i) {
+    ## The original grid is retained verbatim. Adaptive mode starts from a
+    ## deterministic pilot including the sigma-zero boundary and two moderate
+    ## heterogeneous starts. The first argument to `expand.grid()` varies
+    ## fastest, so these are retained rows 2, 5, and 8. The larger-heterogeneity
+    ## starts remain available whenever the pilot is inconclusive.
+    if (!is.null(dots$blp_multistart) || !is.null(dots$exhaustive)) {
+        stop("use the documented 'multistart' option; aliases are unsupported.")
+    }
+    multistart_option <- dots$multistart
+    if (is.null(multistart_option)) multistart_option <- "adaptive"
+    if (!is.character(multistart_option) || length(multistart_option) != 1L ||
+        !multistart_option %in% c("adaptive", "exhaustive")) {
+        stop("'multistart' must be either 'adaptive' or 'exhaustive'.")
+    }
+    strategy <- multistart_option
+    n_starts <- nrow(starts)
+    pilot_indices <- c(2L, 5L, 8L)
+    pilot_indices <- pilot_indices[pilot_indices <= n_starts]
+    evaluated_indices <- if (identical(strategy, "exhaustive")) {
+        seq_len(n_starts)
+    } else {
+        pilot_indices
+    }
+    fits <- vector("list", n_starts)
+    multistart_started <- proc.time()[["elapsed"]]
+    evaluate_start <- function(i) {
         opt <- try(optim(
             par = c(starts$alpha[i], starts$sigma[i]),
-            fn = function(par) .blp_objective(par, context),
+            fn = .blp_objective_runner(context),
             method = "L-BFGS-B", lower = c(alpha_bounds[1], 0),
             upper = c(alpha_bounds[2], sigma_upper),
             control = optimizer_control
         ), silent = TRUE)
         if (inherits(opt, "try-error")) return(NULL)
         list(optim = opt, converged = isTRUE(opt$convergence == 0), value = opt$value)
-    })
-    valid <- vapply(fits, function(x) !is.null(x) && x$converged && is.finite(x$value), logical(1))
+    }
+    fits[evaluated_indices] <- lapply(evaluated_indices, evaluate_start)
+    valid <- vapply(fits, function(x) !is.null(x) && x$converged &&
+                        is.finite(x$value) && x$value < 1e100, logical(1))
+
+    pilot_convergence_count <- sum(valid[evaluated_indices])
+    pilot_values <- vapply(fits[evaluated_indices], function(x) {
+        if (is.null(x) || !is.finite(x$value) || x$value >= 1e100) NA_real_ else x$value
+    }, numeric(1))
+    pilot_values <- pilot_values[is.finite(pilot_values)]
+    boundary_tolerance <- 1e-6
+    artificial_boundary <- any(vapply(fits[evaluated_indices], function(x) {
+        if (is.null(x) || !isTRUE(x$converged) || length(x$optim$par) != 2L) return(FALSE)
+        alpha_contact <- any(abs(x$optim$par[1] - alpha_bounds) <= boundary_tolerance *
+                                 pmax(1, abs(alpha_bounds)))
+        sigma_contact <- abs(x$optim$par[2] - sigma_upper) <= boundary_tolerance *
+            max(1, abs(sigma_upper))
+        isTRUE(alpha_contact || sigma_contact)
+    }, logical(1)))
+    invalid_count <- context$metrics$invalid_evaluations_multistart
+    if (is.null(invalid_count)) invalid_count <- 0L
+    decision <- .blp_multistart_decision(
+        convergence_count = pilot_convergence_count,
+        objective_values = pilot_values,
+        artificial_boundary = artificial_boundary,
+        invalid_evaluations = invalid_count,
+        strategy = strategy
+    )
+    fallback_reasons <- decision$reasons
+    if (identical(strategy, "adaptive") && decision$fallback) {
+        if (length(fallback_reasons)) {
+            remaining <- setdiff(seq_len(n_starts), evaluated_indices)
+            fits[remaining] <- lapply(remaining, evaluate_start)
+            evaluated_indices <- sort(unique(c(evaluated_indices, remaining)))
+            valid <- vapply(fits, function(x) !is.null(x) && x$converged &&
+                                is.finite(x$value) && x$value < 1e100, logical(1))
+        }
+    }
     if (!any(valid)) stop("BLP calibration did not converge from any deterministic starting value.")
+    multistart_elapsed <- proc.time()[["elapsed"]] - multistart_started
     values <- vapply(fits[valid], `[[`, numeric(1), "value")
     best_index <- which(valid)[which.min(values)]
     best <- fits[[best_index]]$optim
+    context$phase <- "final"
     details <- .blp_objective(best$par, context, details = TRUE)
     model <- details$model
     ## Candidate models are not validity-checked inside the outer optimizer;
@@ -787,9 +1003,9 @@ setMethod(
     model@pricePost <- as.numeric(prices)
 
     starts_report <- data.frame(
-        alphaMean = starts$alpha, sigma = starts$sigma,
-        objective = vapply(fits, function(x) if (is.null(x)) NA_real_ else x$value, numeric(1)),
-        convergence = vapply(fits, function(x) if (is.null(x)) NA_integer_ else x$optim$convergence, integer(1))
+        alphaMean = starts$alpha[evaluated_indices], sigma = starts$sigma[evaluated_indices],
+        objective = vapply(fits[evaluated_indices], function(x) if (is.null(x)) NA_real_ else x$value, numeric(1)),
+        convergence = vapply(fits[evaluated_indices], function(x) if (is.null(x)) NA_integer_ else x$optim$convergence, integer(1))
     )
     residuals <- details$residuals
     rmse <- sqrt(mean((residuals[context$moment_index])^2))
@@ -799,12 +1015,14 @@ setMethod(
         pnorm((0 - best$par[1]) / best$par[2])
     }
     profile <- .blp_profile_function(context, alpha_bounds)
-    profile_grid <- unique(c(0, best$par[2], sigma_starts,
-                             seq(0, max(2 * best$par[2], alpha_scale), length.out = 7)))
-    profile_values <- profile(profile_grid)
+    identification_started <- proc.time()[["elapsed"]]
     identification <- .blp_identification(
         context, best$par, context$moment_index
     )
+    identification_elapsed <- proc.time()[["elapsed"]] - identification_started
+    metric_snapshot <- as.list(context$metrics)
+    final_convergence_count <- sum(valid[evaluated_indices])
+    fallback <- identical(strategy, "adaptive") && length(fallback_reasons) > 0L
     diagnostics <- list(
         status = "completed", source = "calibrate", route = "calibrate",
         model_class = class(model)[[1]], calibration_args = calibration_args,
@@ -826,10 +1044,36 @@ setMethod(
         wrongSignProbability = wrong_sign,
         sigmaOnBoundary = isTRUE(all.equal(best$par[2], 0)),
         starts = starts_report,
-        profile_sigma_grid = profile_values$sigma,
-        profile_sigma_values = profile_values$objective,
+        multistart = list(
+            strategy = strategy,
+            evaluatedStarts = length(evaluated_indices),
+            totalStarts = n_starts,
+            pilotStarts = length(pilot_indices),
+            pilotConvergedStarts = pilot_convergence_count,
+            convergedStarts = final_convergence_count,
+            pilotObjectiveAgreement = decision$objective_agreement,
+            pilotArtificialBoundaryContact = artificial_boundary,
+            pilotInvalidEvaluationCount = invalid_count,
+            fallback = fallback,
+            fallbackReason = if (length(fallback_reasons)) fallback_reasons else NA_character_
+        ),
+        ## The default profile is intentionally on demand. These retained
+        ## placeholders keep the historical diagnostic names without storing
+        ## an unevaluated grid.
+        profile_sigma_grid = NULL,
+        profile_sigma_values = NULL,
         profile_sigma = profile,
         identification = identification,
+        performance = list(
+            multistartSeconds = multistart_elapsed,
+            identificationSeconds = identification_elapsed,
+            objectiveEvaluations = metric_snapshot$objective_evaluations,
+            objectiveEvaluationsMultistart = metric_snapshot$objective_evaluations_multistart,
+            objectiveEvaluationsIdentification = metric_snapshot$objective_evaluations_identification,
+            contractionCalls = metric_snapshot$contraction_calls,
+            contractionIterations = metric_snapshot$contraction_iterations,
+            metrics = metric_snapshot
+        ),
         optimizer = list(method = "L-BFGS-B", convergence = best$convergence,
                          message = best$message)
     )
