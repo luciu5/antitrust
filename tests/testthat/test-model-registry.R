@@ -115,3 +115,33 @@ test_that("demand transition registry is explicit and non-duplicated", {
     expect_true(any(keys == "aids->loglin"))
     expect_true(any(keys == "logit_nests->logit"))
 })
+
+test_that("model_transition exposes the registered transition record", {
+    from <- model_spec("logit", "bertrand")
+    to <- model_spec("ces", "bertrand")
+
+    transition <- model_transition(from, to)
+
+    expect_type(transition, "list")
+    expect_equal(transition$from, from$id)
+    expect_equal(transition$to, to$id)
+    expect_equal(transition$kind, "algebraic-translation")
+    expect_equal(transition$required_arguments, "gamma")
+    expect_equal(
+        transition,
+        getFromNamespace(".model_transition_entry", "antitrust")(from, to)
+    )
+})
+
+test_that("model_transition requires valid antitrust model specifications", {
+    spec <- model_spec("logit", "bertrand")
+
+    expect_error(model_transition(list(), spec), "antitrust_model_spec")
+    expect_error(model_transition(spec, list()), "antitrust_model_spec")
+    malformed <- structure(
+        list(demand = "logit", conduct = "bertrand",
+             variant = "standard", id = "wrong"),
+        class = c("antitrust_model_spec", "list")
+    )
+    expect_error(model_transition(malformed, spec), "valid antitrust_model_spec")
+})

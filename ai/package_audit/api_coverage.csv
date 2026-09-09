@@ -79,6 +79,7 @@
 "export","loglinear","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","market_design","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","model_spec","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
+"export","model_transition","","formal-test","tests/testthat/test-model-registry.R",""
 "export","moncom.ces","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","moncom.logit","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","ownerToMatrix","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""

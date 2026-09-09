@@ -228,6 +228,50 @@ supportedModels <- function() {
 }
 
 
+#' Look up a registered structural model transition
+#'
+#' @param from An \code{antitrust_model_spec} returned by
+#'   \code{\link{model_spec}} that
+#'   identifies the source model.
+#' @param to An \code{antitrust_model_spec} returned by
+#'   \code{\link{model_spec}} that
+#'   identifies the target model.
+#' @return The registered transition record, including its transition kind,
+#'   required arguments, retained and derived primitives, and recomputation
+#'   requirements.
+#' @export
+model_transition <- function(from, to) {
+    .validate_model_spec(from, "from")
+    .validate_model_spec(to, "to")
+    .model_transition_entry(from, to)
+}
+
+.validate_model_spec <- function(spec, argument) {
+    valid_shape <- inherits(spec, "antitrust_model_spec") &&
+        is.list(spec) &&
+        identical(names(spec), c("demand", "conduct", "variant", "id")) &&
+        all(vapply(spec, function(value) {
+            is.character(value) && length(value) == 1L &&
+                !is.na(value) && nzchar(value)
+        }, logical(1)))
+    if (!valid_shape) {
+        stop("'", argument,
+             "' must be an antitrust_model_spec returned by model_spec().",
+             call. = FALSE)
+    }
+    canonical <- try(
+        model_spec(spec$demand, spec$conduct, spec$variant),
+        silent = TRUE
+    )
+    if (inherits(canonical, "try-error") || !identical(canonical, spec)) {
+        stop("'", argument,
+             "' must be a valid antitrust_model_spec returned by model_spec().",
+             call. = FALSE)
+    }
+    invisible(spec)
+}
+
+
 #' @export
 print.antitrust_model_spec <- function(x, ...) {
     cat("antitrust model specification\n")
