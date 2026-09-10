@@ -982,6 +982,41 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 }
 
 
+#' Resolve a sequence of counterfactual steps for a fitted structural model
+#'
+#' `simulate_steps()` is the extension point a `CounterfactualPath` resume
+#' uses to solve newly appended steps: given a fitted `object`, the legacy
+#' S4 result the path last landed on, and the new `steps` to solve, it
+#' returns a `list(results = <list of per-step legacy S4 results>)`. Each
+#' fit family owns how state persists between steps (antitrust promotes
+#' every `*Post` slot into `*Pre` and compounds cost shocks; other families
+#' may use a different, equally valid convention) and may attach whatever
+#' extra bookkeeping its own resume needs as additional list elements
+#' alongside `results` -- `simulate(CounterfactualPath, ...)` only inspects
+#' `results` and forwards the rest into `diagnostics` unchanged.
+#'
+#' @param object A fitted structural model, such as an `AntitrustFit`.
+#' @param last_result The legacy S4 result the path last landed on.
+#' @param steps The ordered `CounterfactualStep` objects to solve next.
+#' @param cumulative_costs For `AntitrustFit`, the compounded cost shock
+#'   carried over from the path's previous steps.
+#' @param ... Additional family-specific resume state.
+#' @return A list whose `results` element is a list of legacy S4 results,
+#'   one per step, in order. Additional elements are family-specific.
+#' @export
+setGeneric("simulate_steps", function(object, last_result, steps, ...) {
+    standardGeneric("simulate_steps")
+})
+
+#' @rdname simulate_steps
+#' @export
+setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
+                                                     cumulative_costs = NULL, ...) {
+    last_step <- steps[[1L]]
+    state <- .promote_post_to_pre(last_result, last_step)
+    .model_simulate_steps(object, state, steps, initial_costs = cumulative_costs)
+})
+
 ## Solve every step of a multi-step Counterfactual in order, promoting the
 ## solved state between steps so step t+1 begins from step t's equilibrium
 ## (never resetting to the originally calibrated baseline).  Returns a list
@@ -1110,7 +1145,13 @@ setMethod("simulate", "AntitrustFit", .simulate_fit_method)
 
 #' @rdname simulate
 #' @export
-setMethod("simulate", "CounterfactualPath", .simulate_fit_method)
+setMethod("simulate", "CounterfactualPath", function(object, ownerPost = NULL, ...) {
+    cf <- if (methods::is(ownerPost, "Counterfactual")) ownerPost else NULL
+    if (is.null(cf)) {
+        stop("simulate() on a CounterfactualPath requires a Counterfactual as its second argument.")
+    }
+    .resume_counterfactual_path(object, cf)
+})
 
 #' @rdname simulate
 #' @export
@@ -1118,43 +1159,42 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
     stats::simulate(object, nsim = nsim, seed = seed, ...)
 })
 
+## Resume a CounterfactualPath by dispatching the new steps to whichever
+## fit family originally produced it (via simulate_steps()), then splicing
+## the results onto the path.  Family-specific resume state lives entirely
+## in `diagnostics` -- every field but `fit` is forwarded into simulate_steps()
+## by name, and whatever simulate_steps() returns beyond `results` becomes
+## the new path's diagnostics, so this function never needs to know what
+## that state means for any particular family.
+.resume_counterfactual_path <- function(resume_path, cf) {
+    base_fit <- resume_path@diagnostics$fit
+    if (is.null(base_fit)) {
+        stop("'fit' CounterfactualPath does not retain enough diagnostics to resume simulation.")
+    }
+    .validate_counterfactual(cf, base_fit@spec)
+    extra_state <- resume_path@diagnostics[setdiff(names(resume_path@diagnostics), "fit")]
+    solved <- do.call(simulate_steps, c(
+        list(base_fit, final_result(resume_path), cf@steps), extra_state
+    ))
+    new(
+        "CounterfactualPath",
+        initial = resume_path@initial,
+        steps = c(resume_path@steps, cf@steps),
+        results = c(resume_path@results, solved$results),
+        diagnostics = c(list(fit = base_fit),
+                        solved[setdiff(names(solved), "results")])
+    )
+}
+
 .simulate_antitrust_fit <- function(fit, ownerPost = NULL,
                      mcDelta = NULL,
                      subset = NULL,
                      priceStart, capacitiesPost = NULL,
                      bargpowerPost = NULL,
                      solver = NULL, isMax = FALSE, ...) {
-    resume_path <- if (methods::is(fit, "CounterfactualPath")) fit else NULL
-    if (!is.null(resume_path)) fit <- NULL
-
     dots <- list(...)
     cf <- if (methods::is(ownerPost, "Counterfactual")) ownerPost else NULL
 
-    if (!is.null(resume_path)) {
-        if (is.null(cf)) {
-            stop("simulate() on a CounterfactualPath requires a Counterfactual as its second argument.")
-        }
-        base_fit <- resume_path@diagnostics$fit
-        if (is.null(base_fit)) {
-            stop("'fit' CounterfactualPath does not retain enough diagnostics to resume simulation.")
-        }
-        .validate_counterfactual(cf, base_fit@spec)
-        last_step <- resume_path@steps[[length(resume_path@steps)]]
-        state <- .promote_post_to_pre(final_result(resume_path), last_step)
-        solved <- .model_simulate_steps(base_fit, state, cf@steps,
-                                        initial_costs = resume_path@diagnostics$cumulative_costs)
-        return(new(
-            "CounterfactualPath",
-            initial = resume_path@initial,
-            steps = c(resume_path@steps, cf@steps),
-            results = c(resume_path@results, solved$results),
-            diagnostics = list(fit = base_fit, cumulative_costs = solved$cumulative_costs)
-        ))
-    }
-
-    if (!methods::is(fit, "AntitrustFit")) {
-        stop("'fit' must be an AntitrustFit returned by calibrate() or specify(), or a CounterfactualPath.")
-    }
     if (!.model_registry_supports(fit@spec, "simulate")) {
         stop("simulate() currently supports Linear, LogLin, AIDS, and PCAIDS Bertrand models; Logit/CES Bertrand, Cournot, Stackelberg, auction, and bargaining models; nested Logit/CES Bertrand models; LogitCap-Bertrand; and BLP simulations.")
     }

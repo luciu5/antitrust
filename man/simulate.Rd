@@ -23,18 +23,7 @@ simulate(object, ...)
   ...
 )
 
-\S4method{simulate}{CounterfactualPath}(
-  object,
-  ownerPost = NULL,
-  mcDelta = NULL,
-  subset = NULL,
-  priceStart,
-  capacitiesPost = NULL,
-  bargpowerPost = NULL,
-  solver = NULL,
-  isMax = FALSE,
-  ...
-)
+\S4method{simulate}{CounterfactualPath}(object, ownerPost = NULL, ...)
 
 \S4method{simulate}{ANY}(object, nsim = 1, seed = NULL, ...)
 

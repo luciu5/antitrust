@@ -92,6 +92,7 @@
 "export","sim","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","simulate","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","simulate_markets","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
+"export","simulate_steps","","formal-test","tests/testthat/test-s4-lifecycle-dispatch.R; tests/testthat/test-sequential-counterfactuals.R",""
 "export","specify","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","stackelberg","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","summary","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
