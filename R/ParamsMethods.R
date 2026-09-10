@@ -703,80 +703,34 @@ setMethod(
     drawWeights <- integration$weights
     nDraws <- length(consDraws)
 
-    # Generate demographic draws (if present) over the same consumer points.
-    drawsExist <- "consDraws" %in% names(object@slopes) &&
-      !is.null(object@slopes$consDraws) &&
-      (nDemog == 0 || !is.null(object@slopes$demogDraws))
-
-    if (drawsExist) {
-      demogDraws <- object@slopes$demogDraws
-    } else {
-      if (nDemog > 0) {
-        # Check if market-specific demographic distribution is provided
-        demogMean <- object@slopes$demogMean
-        demogCov <- object@slopes$demogCov
-
-        if (identical(integration$rule, "gauss-hermite")) {
-          ## With sigma = 0 and one demographic, use the stored quadrature
-          ## nodes for that single normal dimension rather than drawing a
-          ## separate Monte Carlo demographic sample.
-          demogDraws <- .blp_quadrature_demog_draws(
-            consDraws, nDemog, demogMean, demogCov
-          )
-        } else if (!is.null(demogMean) && !is.null(demogCov)) {
-          # Sample from actual market distribution using multivariate normal
-          # Sample from N(demogMean, demogCov) using Cholesky decomposition
-          # Avoid MASS dependency: X = mu + chol(Sigma) * Z where Z ~ N(0,I)
-          demogCov_chol <- tryCatch(
-            {
-              chol(demogCov)
-            },
-            error = function(e) {
-              stop("demogCov must be positive definite for sampling. Error: ", e$message)
-            }
-          )
-
-          # Generate standard normal draws
-          z_draws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
-
-          # R's chol() returns an upper-triangular factor U with
-          # t(U) %*% U = Sigma.  Row draws therefore use Z %*% U (not
-          # Z %*% t(U)) to obtain covariance Sigma.
-          demogDraws <- sweep(z_draws %*% demogCov_chol, 2, demogMean, "+")
-
-          if (nDemog == 1) {
-            demogDraws <- matrix(demogDraws, ncol = 1)
-          }
-        } else {
-          # Legacy behavior: sample from standard normal
-          demogDraws <- matrix(rnorm(nDraws * nDemog), nrow = nDraws, ncol = nDemog)
-        }
-      } else {
-        demogDraws <- matrix(0, nrow = nDraws, ncol = 0)
-      }
-    }
-
-    # Compute individual-specific price coefficients
-    alphas <- alphaMean + sigma * consDraws
-    if (nDemog > 0 && length(piDemog) > 0) {
-      # Apply demographic coefficients
-      # If demogMean=0, data is demeaned; if demogMean!=0, data is raw
-      # Either way, piDemog is applied to (demogDraws - demogMean)
-      demogMean <- object@slopes$demogMean
-      if (is.null(demogMean)) demogMean <- rep(0, nDemog)
-
-      demogDraws_centered <- sweep(demogDraws, 2, demogMean, "-")
-      alphas <- alphas + as.vector(demogDraws_centered %*% piDemog)
-    }
+    materialized <- .blp_materialize_draws(
+      integration = integration, alphaMean = alphaMean, sigma = sigma,
+      nDemog = nDemog, piDemog = piDemog,
+      demogMean = object@slopes$demogMean,
+      demogCov = object@slopes$demogCov,
+      prodChar = prodChar, sigmaChar = object@slopes$sigmaChar,
+      pi = object@slopes$pi, output = object@output,
+      storedDemogDraws = object@slopes$demogDraws,
+      storedCharDraws = object@slopes$charDraws
+    )
+    consDraws <- materialized$consDraws
+    drawWeights <- materialized$weights
+    nDraws <- length(drawWeights)
+    demogDraws <- materialized$demogDraws
+    alphas <- materialized$alphas
+    charDraws <- materialized$charDraws
+    char_random <- materialized$char_random
 
     # Ensure correct sign for alphas based on market type
     output <- object@output
     expectedSign <- ifelse(output, -1, 1)
     wrongSigns <- if (expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
-    if (wrongSigns > 0) {
+    wrongSignMass <- materialized$wrongSignMass
+    if (wrongSignMass > 0) {
       warning(
         wrongSigns, " out of ", length(alphas),
-        " individual price coefficients have wrong sign. ",
+        " individual price coefficients (weighted mass ",
+        format(wrongSignMass, digits = 6), ") have wrong sign. ",
         "They are retained under the supplied random-coefficient distribution."
       )
     }
@@ -786,35 +740,6 @@ setMethod(
       idxPrice <- object@priceOutside
     } else {
       idxPrice <- prices[idx]
-    }
-
-    # Generate random coefficients for characteristics (if any)
-    if (hasChar && !is.null(sigmaChar)) {
-      charDraws <- matrix(rnorm(nDraws * nChar), nrow = nDraws, ncol = nChar)
-    } else {
-      charDraws <- NULL
-    }
-
-    # Compute RANDOM DEVIATIONS for characteristics (not mean effects!)
-    # Mean effects (? * X) will be absorbed in delta
-    if (hasChar && ((!is.null(sigmaChar) && !is.null(charDraws)) || (nDemog > 0 && !is.null(pi)))) {
-      # Individual-specific deviations from mean: (?_k * ?_ik + ?_k * D_i)
-      charCoeffs_deviations <- matrix(0, nrow = nDraws, ncol = nChar)
-
-      # Add random coefficient component: ?_k * ?_ik
-      if (!is.null(sigmaChar) && !is.null(charDraws)) {
-        charCoeffs_deviations <- sweep(charDraws, 2, sigmaChar, "*")
-      }
-
-      # Add demographic interactions: ?_k * D_i
-      if (nDemog > 0 && !is.null(pi)) {
-        charCoeffs_deviations <- charCoeffs_deviations + demogDraws %*% pi
-      }
-
-      # Compute random utility deviations: (?_k * ?_ik + ?_k * D_i) * X_jk
-      char_random <- charCoeffs_deviations %*% t(prodChar) # nDraws x k
-    } else {
-      char_random <- matrix(0, nrow = nDraws, ncol = nprods)
     }
 
     if (deltaProvided) {
@@ -923,13 +848,27 @@ setMethod(
       sigmaNest = sigmaNest,
       piDemog = piDemog,
       nDemog = nDemog,
+      demogMean = if (nDemog > 0L) {
+        if (is.null(object@slopes$demogMean)) rep(0, nDemog) else
+          object@slopes$demogMean
+      } else numeric(0),
+      demogCov = if (nDemog > 0L) {
+        if (is.null(object@slopes$demogCov)) diag(nDemog) else
+          object@slopes$demogCov
+      } else matrix(numeric(0), 0L, 0L),
       alphas = as.numeric(alphas),
       consDraws = consDraws,
       demogDraws = demogDraws,
       drawWeights = drawWeights,
       integrationWeights = drawWeights,
+      integrationWeightsNormalized = TRUE,
       integration = integration$rule,
-      nNodes = if (identical(integration$rule, "gauss-hermite")) nDraws else NULL
+      integrationPoints = integration$integrationPoints,
+      factorOrder = integration$factorOrder,
+      nodesPerAxis = integration$nodesPerAxis,
+      nNodes = if (identical(integration$rule, "gauss-hermite")) {
+        integration$nodesPerAxis
+      } else NULL
     )
 
     # Add characteristic parameters if they exist
@@ -944,6 +883,7 @@ setMethod(
     }
 
     object@slopes <- slopes_list
+    object@nDraws <- as.numeric(nDraws)
     object@priceOutside <- idxPrice
     object@pricePre <- object@prices
     object@mktSize <- object@insideSize / sum(calcShares(object, preMerger = TRUE))

@@ -51,7 +51,6 @@ setMethod(
     if(is.null(sigma)){
       stop("calcBLPDelta: missing 'sigma' in slopes.")
     }
-    nDraws       <-  object@nDraws
     piDemog      <-  object@slopes$piDemog
     if(is.null(piDemog)) piDemog <- numeric(0)
     nDemog       <-  object@slopes$nDemog
@@ -66,105 +65,32 @@ setMethod(
     # Check if meanval (delta) is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
 
-    ## Reuse the same node/weight abstraction as the main BLP path. A legacy
-    ## PriceLeadershipBLP object without stored points retains its historical
-    ## Monte Carlo default.
+    ## Reuse the canonical integration and materialization paths.  In
+    ## particular, a tensor quadrature matrix represents rows of consumer
+    ## draws, rather than length(integration$draws) scalar draws.
     integration <- .blp_object_integration(object, legacy_default = "monte-carlo")
-    consDraws <- integration$draws
-    drawWeights <- integration$weights
-    nDraws <- length(consDraws)
-
-    # Check if demographic draws already exist (to ensure consistency across calls)
-    drawsExist <- "consDraws" %in% names(object@slopes) &&
-      !is.null(object@slopes$consDraws) &&
-      (nDemog == 0L || !is.null(object@slopes$demogDraws))
-
-    if(drawsExist) {
-      # Reuse existing draws
-      consDraws <- object@slopes$consDraws
-      demogDraws <- object@slopes$demogDraws
-      if(nDemog > 0L && !is.null(demogDraws) && ncol(demogDraws) > 0) {
-        demogMean <- object@slopes$demogMean
-        if(is.null(demogMean)) demogMean <- rep(0, nDemog)
-        demogEffect <- (demogDraws - matrix(demogMean,
-                                            nrow = nrow(demogDraws),
-                                            ncol = nDemog, byrow = TRUE)) %*%
-          piDemog
-      } else {
-        demogEffect <- numeric(nDraws)
-      }
-    } else {
-      # Generate demographic draws (observed heterogeneity)
-      if(nDemog > 0L){
-        demogMean <- object@slopes$demogMean
-        if(is.null(demogMean)) demogMean <- rep(0, nDemog)
-        demogCov <- object@slopes$demogCov
-        if(is.null(demogCov)) demogCov <- diag(nDemog)
-        if(!is.matrix(demogCov) || !identical(dim(demogCov), c(nDemog, nDemog))) {
-          stop("'demogCov' must be an nDemog by nDemog matrix.")
-        }
-        if (identical(integration$rule, "gauss-hermite")) {
-          ## A one-dimensional demographic with sigma = 0 is integrated on
-          ## the shared Gauss-Hermite nodes.  Reuse those nodes here instead
-          ## of drawing a second random sample for the same rule.
-          demogDraws <- .blp_quadrature_demog_draws(
-            consDraws, nDemog, demogMean, demogCov
-          )
-        } else {
-          demog_chol <- tryCatch(chol(demogCov), error = function(e)
-            stop("'demogCov' must be positive definite: ", e$message))
-          z_demog <- matrix(rnorm(nDraws * nDemog), nrow=nDraws, ncol=nDemog)
-          ## chol() is upper triangular in R; row draws use Z %*% chol(Sigma).
-          demogDraws <- sweep(z_demog %*% demog_chol, 2, demogMean, "+")
-        }
-        demogEffect <- (demogDraws - matrix(demogMean,
-                                            nrow = nDraws, ncol = nDemog,
-                                            byrow = TRUE)) %*% piDemog
-      } else {
-        demogDraws <- matrix(nrow=nDraws, ncol=0)
-        demogEffect <- numeric(nDraws)
-        piDemog <- numeric(0)
-        nDemog <- 0
-      }
-    }
-
-    # Compute individual-specific price coefficients
-    # alpha_i = alphaMean + sigma * nu_i + pi * d_i
-    alphas <- alphaMean + sigma * consDraws + demogEffect
-
-    ## Characteristic-only random coefficients are an independent integration
-    ## component; they do not imply a demographic dimension.
     prodChar <- object@slopes$prodChar
     beta <- object@slopes$beta
     sigmaChar <- object@slopes$sigmaChar
     pi <- object@slopes$pi
     hasChar <- is.matrix(prodChar) && nrow(prodChar) == length(shares)
-    nChar <- if(hasChar) ncol(prodChar) else 0L
-    char_random <- matrix(0, nrow = nDraws, ncol = length(shares))
-    if(hasChar) {
-      if(!is.null(sigmaChar)) {
-        if(length(sigmaChar) != nChar || any(!is.finite(sigmaChar))) {
-          stop("'sigmaChar' must be finite and match the characteristic count.")
-        }
-        charDraws <- object@slopes$charDraws
-        if(is.null(charDraws) || !is.matrix(charDraws) ||
-           !identical(dim(charDraws), c(nDraws, nChar))) {
-          charDraws <- matrix(rnorm(nDraws * nChar), nrow=nDraws, ncol=nChar)
-        }
-        char_random <- char_random +
-          sweep(charDraws, 2, sigmaChar, "*") %*% t(prodChar)
-      } else {
-        charDraws <- NULL
-      }
-      if(nDemog > 0L && !is.null(pi)) {
-        if(!is.matrix(pi) || !identical(dim(pi), c(nDemog, nChar))) {
-          stop("'pi' must have dimensions nDemog by the characteristic count.")
-        }
-        char_random <- char_random + demogDraws %*% pi %*% t(prodChar)
-      }
-    } else {
-      charDraws <- NULL
-    }
+    materialized <- .blp_materialize_draws(
+      integration = integration, alphaMean = alphaMean, sigma = sigma,
+      nDemog = nDemog, piDemog = piDemog,
+      demogMean = object@slopes$demogMean,
+      demogCov = object@slopes$demogCov,
+      prodChar = prodChar, sigmaChar = sigmaChar, pi = pi,
+      output = object@output,
+      storedDemogDraws = object@slopes$demogDraws,
+      storedCharDraws = object@slopes$charDraws
+    )
+    consDraws <- materialized$consDraws
+    drawWeights <- materialized$weights
+    nDraws <- length(drawWeights)
+    demogDraws <- materialized$demogDraws
+    alphas <- materialized$alphas
+    charDraws <- materialized$charDraws
+    char_random <- materialized$char_random
 
     # Use output slot to verify sign consistency
     output <- object@output
@@ -319,11 +245,18 @@ setMethod(
     object@slopes$nDemog <- nDemog
     object@slopes$alphas <- as.numeric(alphas)
     object@slopes$consDraws <- consDraws
+    object@slopes$priceDraws <- materialized$priceDraws
     object@slopes$demogDraws <- demogDraws
     object@slopes$drawWeights <- drawWeights
     object@slopes$integrationWeights <- drawWeights
+    object@slopes$integrationWeightsNormalized <- TRUE
     object@slopes$integration <- integration$rule
-    object@slopes$nNodes <- if(identical(integration$rule, "gauss-hermite")) nDraws else NULL
+    object@slopes$integrationPoints <- integration$integrationPoints
+    object@slopes$factorOrder <- integration$factorOrder
+    object@slopes$nodesPerAxis <- integration$nodesPerAxis
+    object@slopes$nNodes <- if(identical(integration$rule, "gauss-hermite")) {
+      integration$nodesPerAxis
+    } else NULL
     if(hasChar) {
       object@slopes$prodChar <- prodChar
       object@slopes$beta <- beta
@@ -332,6 +265,7 @@ setMethod(
       if(!is.null(charDraws)) object@slopes$charDraws <- charDraws
       if(!is.null(pi)) object@slopes$pi <- pi
     }
+    object@nDraws <- as.numeric(nDraws)
 
     return(object)
   }

@@ -10,14 +10,16 @@ calcBLPintegration(slopes)
 \item{slopes}{A list of BLP demand parameters. Recognized elements include
 \code{integration} (\code{"auto"}, \code{"gauss-hermite"},
 \code{"monte-carlo"}, or \code{"provided"}), \code{nNodes}, \code{nDraws},
-\code{consDraws}/\code{draws}, \code{integrationWeights}/\code{drawWeights},
+\code{integrationPoints}, \code{consDraws}/\code{draws},
+\code{integrationWeights}/\code{drawWeights},
 \code{sigma}, \code{nDemog}, \code{piDemog}, \code{sigmaChar}, and
 \code{pi}.}
 }
 \value{
-A list with elements \code{draws} (numeric integration points),
-  \code{weights} (normalized weights summing to one), and \code{rule} (the
-  selected rule as a string).
+A list containing \code{draws}, \code{weights} (normalized to sum
+  to one), and \code{rule}. Two-dimensional rules additionally return an
+  \code{integrationPoints} matrix, canonical \code{factorOrder}, and
+  \code{nodesPerAxis} for Gauss-Hermite quadrature.
 }
 \description{
 Public entry point that selects the integration points and

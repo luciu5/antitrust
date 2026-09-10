@@ -492,6 +492,10 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                "demogCov") %in% names(parameters)) &&
         (is.null(parameters$sigmaNest) ||
          isTRUE(as.numeric(parameters$sigmaNest) == 1))
+    if (identical(spec$demand, "blp") && !blp_price_only &&
+        spec$conduct %in% c("auction2nd", "bargaining")) {
+        stop("Multidimensional BLP specification currently supports Bertrand, Cournot, and MonCom conduct. BLP auction and bargaining remain price-random-coefficient-only.")
+    }
     if (blp_price_only &&
         spec$conduct %in% c("bertrand", "moncom", "cournot", "auction2nd", "bargaining")) {
         ## These arguments are explicit formals of specify(), so they are not

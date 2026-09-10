@@ -258,8 +258,8 @@ test_that("integration node and weight validation is strict", {
     )), "non-negative")
     expect_error(antitrust:::.blp_integration(list(
         integration = "gauss-hermite", nNodes = 5,
-        sigmaChar = .2
-    )), "one-dimensional")
+        sigma = .2, nDemog = 2L, piDemog = c(.1, .2)
+    )), "at most two active dimensions")
 })
 
 

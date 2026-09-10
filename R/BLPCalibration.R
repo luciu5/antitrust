@@ -231,6 +231,9 @@ setClass(
         demogDraws = NULL,
         drawWeights = as.numeric(drawWeights),
         integrationWeights = as.numeric(drawWeights),
+        integrationWeightsNormalized = isTRUE(all.equal(
+            sum(drawWeights), 1, tolerance = 1e-12
+        )),
         integration = integrationRule,
         nNodes = if (identical(integrationRule, "gauss-hermite")) length(draws) else NULL
     )
@@ -557,7 +560,7 @@ setMethod(
                            output, dots, bargpowerPre = NULL,
                            bargpowerPost = NULL, weights = NULL,
                            validate = TRUE) {
-    .blp_model(
+    model <- .blp_model(
         conduct = conduct, prices = prices, shares = shares, margins = margins,
         ownerPre = ownerPre, alphaMean = alphaMean, sigma = sigma,
         meanval = delta, draws = integration$draws,
@@ -568,6 +571,9 @@ setMethod(
         bargpowerPost = bargpowerPost, weights = weights,
         integrationRule = integration$rule, validate = validate
     )
+    model@slopes$factorOrder <- integration$factorOrder
+    model@slopes$nodesPerAxis <- integration$nodesPerAxis
+    model
 }
 
 
@@ -856,6 +862,14 @@ setMethod(
     if (is.null(shares) || is.null(margins)) {
         stop("BLP calibration requires observed 'shares' and 'margins'.")
     }
+    advanced_heterogeneity <- !is.null(dots[["integrationPoints"]]) ||
+        .blp_integration_dimensions(dots) > 1L ||
+        (!is.null(dots[["piDemog"]]) && any(dots[["piDemog"]] != 0)) ||
+        (!is.null(dots[["pi"]]) && any(dots[["pi"]] != 0)) ||
+        (!is.null(dots[["sigmaChar"]]) && any(dots[["sigmaChar"]] != 0))
+    if (isTRUE(advanced_heterogeneity)) {
+        stop("BLP calibrate() currently estimates only price random-coefficient heterogeneity; use specify() with supplied demographic or characteristic parameters for multidimensional integration.")
+    }
     output <- if (is.null(dots$output)) TRUE else dots$output
     .blp_validate_inputs(prices, shares, margins, ownerPre, s0, output)
     alpha_start <- .blp_logit_start(list(
@@ -1108,7 +1122,7 @@ setMethod(
     sigma <- parameters$sigma
     integration_dots <- dots
     for (name in intersect(names(parameters), c(
-        "draws", "consDraws", "drawWeights", "integrationWeights",
+        "integrationPoints", "draws", "consDraws", "drawWeights", "integrationWeights",
         "integration", "nNodes", "nDraws"
     ))) {
         if (is.null(integration_dots[[name]])) {

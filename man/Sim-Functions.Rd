@@ -184,11 +184,22 @@ If \sQuote{demand} equals \sQuote{BLP}, then
   Should match the variance structure of demographics in your data. For a single
   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 5000.}
+  \item{integration}{Integration rule: \code{"auto"},
+  \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
+  Automatic integration uses Gauss-Hermite for at most two active Gaussian
+  factors and Monte Carlo otherwise.}
+  \item{nNodes}{Gauss-Hermite nodes per axis: 31 by default in one
+  dimension and 15 by 15 in two dimensions.}
+  \item{integrationPoints}{Optional numeric matrix of supplied standardized
+  points for two-dimensional integration, one point per row.}
   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
   \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}
   \item{pi}{Optional: nDemog x L matrix of demographic interactions with characteristics.}
 }
+Two-dimensional BLP integration is available for Bertrand, Cournot, and
+MonCom supply. BLP auction and bargaining currently accept price
+random-coefficient heterogeneity only.
 
 Note: The \sQuote{shares} argument is only used with \sQuote{BLP} demand.
 If supplied for any other demand system, a warning will be issued but the function will proceed
