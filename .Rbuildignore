@@ -15,3 +15,7 @@
 ^\.Rhistory$
 ^antitrust_.*[.]tar[.]gz$
 ^cran-comments\.md$
+^qa-output$
+^qa-output-.*$
+^tests/testthat/qa-output$
+^tests/testthat/qa-output-.*$
