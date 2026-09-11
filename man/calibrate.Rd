@@ -16,7 +16,6 @@ calibrate(
   knownElast = NULL,
   mktElast = NULL,
   s0 = NULL,
-  multistart = NULL,
   ...
 )
 }
@@ -51,13 +50,13 @@ general Cournot/Stackelberg calibration.}
 \item{s0}{A known outside-good share for price-only BLP calibration. It
 must lie in \code{[0, 1)} and product shares must sum to \code{1 - s0}.}
 
+\item{...}{Additional options accepted by the model-specific legacy
+calibration constructor.}
+
 \item{multistart}{BLP calibration search strategy: \code{"adaptive"}
 evaluates a deterministic pilot and escalates to the full retained grid
 when its convergence diagnostics are inconclusive; \code{"exhaustive"}
 evaluates all 12 retained starts.}
-
-\item{...}{Additional options accepted by the model-specific legacy
-calibration constructor.}
 }
 \value{
 An \code{AntitrustFit} object.
