@@ -1007,6 +1007,41 @@ setMethod(
     values <- vapply(fits[valid], `[[`, numeric(1), "value")
     best_index <- which(valid)[which.min(values)]
     best <- fits[[best_index]]$optim
+
+    ## The sigma = 0 face is a genuine nested calibration problem.  An
+    ## optimizer run constrained to sigma >= 0 can stop at a small positive
+    ## value even when the profiled boundary is the (weakly) better solution.
+    ## Evaluate that face explicitly for every conduct, and select it only on
+    ## the objective comparison; never reinterpret an arbitrary small sigma
+    ## estimate as a boundary solution.
+    boundary_context <- context
+    boundary_context$phase <- "sigma_boundary"
+    boundary_runner <- .blp_objective_runner(boundary_context)
+    boundary_interval <- sort(pmin(
+        pmax(alpha_start * c(.1, 10), alpha_bounds[1]),
+        alpha_bounds[2]
+    ))
+    boundary_opt <- try(optimize(
+        f = function(alpha) boundary_runner(c(as.numeric(alpha), 0)),
+        interval = boundary_interval, tol = 1e-10
+    ), silent = TRUE)
+    boundary_fit <- if (inherits(boundary_opt, "try-error")) boundary_opt else list(
+        par = boundary_opt$minimum, value = boundary_opt$objective,
+        convergence = 0L, message = "profiled sigma = 0 boundary"
+    )
+    boundary_valid <- !inherits(boundary_fit, "try-error") &&
+        isTRUE(boundary_fit$convergence == 0) &&
+        is.finite(boundary_fit$value) && boundary_fit$value < 1e100
+    boundary_selected <- FALSE
+    if (boundary_valid && isTRUE(boundary_fit$value <= best$value)) {
+        best <- list(
+            par = c(as.numeric(boundary_fit$par), 0),
+            value = boundary_fit$value,
+            convergence = boundary_fit$convergence,
+            message = boundary_fit$message
+        )
+        boundary_selected <- TRUE
+    }
     context$phase <- "final"
     details <- .blp_objective(best$par, context, details = TRUE)
     model <- details$model
@@ -1058,7 +1093,13 @@ setMethod(
         marginMoments = length(context$moment_index), weights = context$weights,
         s0 = s0, alphaMean = best$par[1], sigma = best$par[2],
         wrongSignProbability = wrong_sign,
-        sigmaOnBoundary = isTRUE(all.equal(best$par[2], 0)),
+        sigmaOnBoundary = isTRUE(best$par[2] == 0),
+        sigmaBoundary = list(
+            evaluated = isTRUE(boundary_valid),
+            alphaMean = if (boundary_valid) as.numeric(boundary_fit$par) else NA_real_,
+            objective = if (boundary_valid) boundary_fit$value else NA_real_,
+            selected = boundary_selected
+        ),
         starts = starts_report,
         multistart = list(
             strategy = strategy,
@@ -1123,11 +1164,16 @@ setMethod(
         if (!is.null(parameters$alpha)) parameters$alpha else parameters$alpha_mean
     sigma <- parameters$sigma
     integration_dots <- dots
+    ## The integration selector needs the structural factor parameters to
+    ## identify the active dimensions.  Keep the supplied-parameter aliases
+    ## here as well, with explicit `dots` values taking precedence over the
+    ## parameter list just as they do at the legacy boundary.
     for (name in intersect(names(parameters), c(
         "integrationPoints", "draws", "consDraws", "drawWeights", "integrationWeights",
-        "integration", "nNodes", "nDraws"
+        "integration", "nNodes", "nDraws", "sigma", "piDemog", "pi",
+        "nDemog", "sigmaChar", "demogMean", "demogCov"
     ))) {
-        if (is.null(integration_dots[[name]])) {
+        if (!(name %in% names(integration_dots))) {
             integration_dots[[name]] <- parameters[[name]]
         }
     }
@@ -1219,6 +1265,45 @@ setMethod(
     model@mcPost <- calcMC(model, FALSE)
     model@pricePre <- prices
     model@pricePost <- prices
+    ## Keep the canonical legacy BLP slope metadata available to both the
+    ## returned fit and its parameterized simulation boundary.  In
+    ## particular, a supplied one-dimensional state still carries an empty
+    ## demographic draw matrix and named demographic defaults, while 2D GH
+    ## records nodes per axis rather than the flattened matrix length.
+    n_demog <- integration_dots[["nDemog"]]
+    if (is.null(n_demog)) n_demog <- length(integration_dots[["piDemog"]])
+    if (is.null(n_demog)) n_demog <- 0L
+    n_demog <- as.integer(n_demog)
+    model@slopes$demogMean <- if (n_demog > 0L) {
+        if (is.null(integration_dots[["demogMean"]])) rep(0, n_demog) else
+            integration_dots[["demogMean"]]
+    } else numeric(0)
+    model@slopes$demogCov <- if (n_demog > 0L) {
+        if (is.null(integration_dots[["demogCov"]])) diag(n_demog) else
+            integration_dots[["demogCov"]]
+    } else matrix(numeric(0), 0L, 0L)
+    model@slopes$demogDraws <- matrix(
+        0, nrow = integration$nDraws, ncol = n_demog
+    )
+    ## Preserve named NULL entries from the legacy slope list.  `$<- NULL`
+    ## removes a list element, so use single-bracket assignment explicitly.
+    model@slopes["integrationPoints"] <- list(integration$integrationPoints)
+    model@slopes["nNodes"] <- list(if (identical(integration$rule,
+                                                   "gauss-hermite")) {
+        integration$nodesPerAxis
+    } else NULL)
+    model@slopes["nodesPerAxis"] <- list(integration$nodesPerAxis)
+    canonical_slope_order <- c(
+        "alpha", "alphaMean", "meanval", "sigma", "sigmaNest",
+        "piDemog", "nDemog", "demogMean", "demogCov", "alphas",
+        "consDraws", "demogDraws", "drawWeights", "integrationWeights",
+        "integrationWeightsNormalized", "integration", "integrationPoints",
+        "factorOrder", "nodesPerAxis", "nNodes"
+    )
+    model@slopes <- model@slopes[c(
+        canonical_slope_order,
+        setdiff(names(model@slopes), canonical_slope_order)
+    )]
     params <- model@slopes
     if (spec$conduct == "bargaining") {
         params$bargpowerPre <- model@bargpowerPre
