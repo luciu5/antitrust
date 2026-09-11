@@ -51,12 +51,11 @@ general Cournot/Stackelberg calibration.}
 must lie in \code{[0, 1)} and product shares must sum to \code{1 - s0}.}
 
 \item{...}{Additional options accepted by the model-specific legacy
-calibration constructor.}
-
-\item{multistart}{BLP calibration search strategy: \code{"adaptive"}
-evaluates a deterministic pilot and escalates to the full retained grid
-when its convergence diagnostics are inconclusive; \code{"exhaustive"}
-evaluates all 12 retained starts.}
+calibration constructor. For BLP calibration,
+\code{multistart = "adaptive"}
+evaluates a deterministic pilot and escalates to the retained grid when
+convergence diagnostics are inconclusive;
+\code{multistart = "exhaustive"} evaluates all 12 retained starts.}
 }
 \value{
 An \code{AntitrustFit} object.
