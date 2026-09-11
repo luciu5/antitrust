@@ -23,8 +23,10 @@ nested PCAIDS), LogLin, Logit, CES, nested Logit/CES, LogitCap, BLP, Cournot,
 second-score auction, bargaining, and second-score bargaining where the legacy
 package supports those pairings. Linear and log-linear general Cournot and
 Stackelberg are also registered as complete quantity-game entries. Standard
-Logit vertical bargaining is registered as complete two-sided model entries for
-both downstream Bertrand and downstream second-score conduct.
+Vertical bargaining is no longer registered in `antitrust`. Its complete
+two-sided models, including downstream Bertrand and downstream second-score
+conduct, are registered by the sibling `vertical` package, which depends
+directly on `antitrust`.
 The capacity-constrained second-score auction
 is registered as a complete specialized model entry, rather than as a demand
 module mechanically combined with auction conduct. PCAIDS is registered as its own Bertrand
@@ -32,9 +34,9 @@ demand family even though its result classes inherit from AIDS; its
 known-elasticity and nested-parameter calibration remains in the existing
 PCAIDS-specific methods.
 ALM entries point to their complete legacy model-specific implementations;
-they are not assembled from a generic supply module. Nested vertical
-second-score variants remain outside this generalized registry and retain
-their legacy APIs.
+they are not assembled from a generic supply module. The sibling `vertical`
+package preserves the existing restriction that nested downstream demand is
+not supported with second-score vertical bargaining.
 
 ## Fitted state
 
@@ -175,11 +177,11 @@ method.  The dispatch preserves important differences:
 * AIDS and PCAIDS recompute their ownership-dependent price-delta equation at
   simulation time; nested PCAIDS retains its model-specific nesting
   calibration.
-* Logit vertical bargaining updates upstream/downstream ownership,
+* The sibling `vertical` package updates upstream/downstream ownership,
   integration-dependent bargaining power, and two-sided cost deltas before
-  invoking its existing vertical price system. The downstream second-score
-  entry retains the separate `VertBarg2ndLogit` price and share methods.
-  Nested vertical second-score remains legacy-only.
+  invoking its vertical price system. It also owns the separate downstream
+  second-score price and share methods. `antitrust` supplies only the shared
+  structural generics and state hooks used by that lifecycle.
 
 There is no generic supply module that mechanically combines arbitrary demand
 and conduct modules.  The registry selects a complete existing model

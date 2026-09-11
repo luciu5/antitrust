@@ -34,8 +34,6 @@ existing S4 classes.
 | PCAIDS | Bertrand | `PCAIDS` | yes | simulate only | `pcaids()` |
 | Nested PCAIDS | Bertrand | `PCAIDSNests` | yes | simulate only | `pcaids.nests()` |
 | Capacity-constrained second-score auction | specialized auction | `Auction2ndCap` | yes | simulate only | `auction2nd.cap()` |
-| Logit | vertical bargaining | `VertBargBertLogit` | yes | simulate only | `vertical.barg()` |
-| Logit | vertical bargaining, downstream second-score | `VertBarg2ndLogit` | yes (`variant = "auction2nd"`) | simulate only | `vertical.barg()` |
 | BLP | Bertrand | `LogitBLP` | yes (`s0`, price-RC margins) | yes | `sim()` |
 | BLP | Cournot | `CournotBLP` | yes (`s0`, price-RC margins) | yes | `sim()` |
 | BLP | second-score auction | `Auction2ndBLP` | yes (`s0`, price-RC margins) | yes | `sim()` |
@@ -79,7 +77,9 @@ then invokes the legacy Stackelberg quantity solver. Direct `specify()` is not
 exposed because the legacy constructor identifies plant cost parameters from
 margins.
 
-Logit vertical bargaining is migrated as complete two-sided model entries.
+Logit vertical bargaining was subsequently extracted into the sibling
+`vertical` package as complete two-sided model entries and is no longer part
+of the `antitrust` registry.
 The default entry uses downstream Bertrand conduct; `variant = "auction2nd"`
 selects the separate downstream second-score implementation. `calibrate()`
 delegates downstream demand and upstream/downstream bargaining-power
@@ -88,8 +88,8 @@ identification to `vertical.barg()` using pre-merger ownership on both sides.
 updates integration-dependent bargaining power and both cost-delta vectors,
 and invokes the existing model-specific vertical price system. Nested vertical
 Bertrand is registered separately so its nested demand calibration and margin
-methods remain distinct. Nested vertical second-score remains legacy-only
-because that combination is not implemented by the legacy constructor.
+methods remain distinct. Nested vertical second-score is unsupported because
+that combination is not implemented by the legacy constructor.
 
 BLP observed-data calibration is implemented for the four registered
 price-random-coefficient paths above. It uses known outside share `s0`, fixed
@@ -224,10 +224,10 @@ oddities were observed and intentionally left unchanged:
   reached through a migrated `sim()` path, R's diagnostic call header names
   the internal legacy constructor rather than `sim()`; the error text and
   exit status are unchanged.
-* Specialized ALM and nested vertical second-score constructors are not
-  generalized `sim()` demand/conduct entries.  Their legacy functions were
-  not removed or mechanically wrapped.  General linear and log-linear
-  Cournot/Stackelberg and Logit vertical bargaining are registered
-  for the new fit pipeline, while the legacy `sim()` route remains unchanged.
+* Specialized ALM constructors are not generalized `sim()` demand/conduct
+  entries. Their legacy functions were not removed or mechanically wrapped.
+  General linear and log-linear Cournot/Stackelberg remain registered for the
+  antitrust fit pipeline. Vertical bargaining is registered and implemented
+  by the sibling `vertical` package.
 
 These are migration notes, not economic corrections.
