@@ -6,13 +6,10 @@
 \alias{ownerToMatrix}
 \alias{ownerToVec}
 \alias{ownerToMatrix,Antitrust-method}
-\alias{ownerToMatrix,VertBargBertLogit-method}
 \alias{ownerToVec,Antitrust-method}
 \title{Methods for Manipulating Ownership Matrices}
 \usage{
 \S4method{ownerToMatrix}{Antitrust}(object, preMerger = TRUE)
-
-\S4method{ownerToMatrix}{VertBargBertLogit}(object, preMerger = TRUE)
 
 \S4method{ownerToVec}{Antitrust}(object, preMerger = TRUE)
 }

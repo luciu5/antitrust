@@ -1,7 +1,7 @@
 #' @title Methods For Implementing The Hypothetical Monopolist Test
 #' @name defineMarketTools-methods
 #' @docType methods
-#' @aliases HypoMonTest HypoMonTest,ANY-method HypoMonTest,Bertrand-method HypoMonTest,VertBargBertLogit-method calcPricesHypoMon calcPricesHypoMon,ANY-method calcPricesHypoMon,AIDS-method calcPricesHypoMon,Linear-method calcPricesHypoMon,LogLin-method calcPricesHypoMon,Logit-method calcPricesHypoMon,LogitCap-method calcPricesHypoMon,Auction2ndLogit-method calcPricesHypoMon,Cournot-method calcPriceDeltaHypoMon calcPriceDeltaHypoMon,ANY-method calcPriceDeltaHypoMon,AIDS-method calcPriceDeltaHypoMon,Bertrand-method calcPriceDeltaHypoMon,Cournot-method diversionHypoMon diversionHypoMon,ANY-method diversionHypoMon,AIDS-method diversionHypoMon,Bertrand-method
+#' @aliases HypoMonTest HypoMonTest,ANY-method HypoMonTest,Bertrand-method calcPricesHypoMon calcPricesHypoMon,ANY-method calcPricesHypoMon,AIDS-method calcPricesHypoMon,Linear-method calcPricesHypoMon,LogLin-method calcPricesHypoMon,Logit-method calcPricesHypoMon,LogitCap-method calcPricesHypoMon,Auction2ndLogit-method calcPricesHypoMon,Cournot-method calcPriceDeltaHypoMon calcPriceDeltaHypoMon,ANY-method calcPriceDeltaHypoMon,AIDS-method calcPriceDeltaHypoMon,Bertrand-method calcPriceDeltaHypoMon,Cournot-method diversionHypoMon diversionHypoMon,ANY-method diversionHypoMon,AIDS-method diversionHypoMon,Bertrand-method
 #'
 #' @description An Implementation of the Hypothetical Monopolist Test described in either the 2023 or 2010 Merger Guidelines.
 #' @description \code{\link{HypoMonTest}} implements the Hypothetical Monopolist Test for a given \sQuote{ssnip}.
@@ -138,26 +138,6 @@ setMethod(
   }
 
 )
-
-
-setMethod(
-  f= "HypoMonTest",
-  signature= "VertBargBertLogit",
-  
-  definition=function(object,prodIndex,ssnip,hmg=c("2023","2010"),...){
-    
-    if(missing(ssnip)){
-      ssnip <- ifelse(object@down@output,.05,-.05)}
-    
-    hmg=match.arg(hmg)
-    down <- object@down
-    down@ownerPre <- ownerToMatrix(down,preMerger=TRUE)
-    down@ownerPost <- ownerToMatrix(down,preMerger=FALSE)
-    down@pricePre <- calcPrices(down,preMerger=TRUE)
-    
-    HypoMonTest(object=down,prodIndex=prodIndex,ssnip=ssnip,hmg=hmg,...)
-    
-  })
 
 #'@rdname defineMarketTools-methods
 #'@export
@@ -634,4 +614,3 @@ setMethod(
     return(deltaPrice[prodIndex])
 
   })
-

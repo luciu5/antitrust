@@ -8,15 +8,12 @@
 \alias{calcDiagnostics,ANY-method}
 \alias{calcDiagnostics,Bertrand-method}
 \alias{calcDiagnostics,Cournot-method}
-\alias{calcDiagnostics,VertBargBertLogit-method}
 \alias{calcDiagnostics,AntitrustFit-method}
 \alias{calcDiagnostics,MonComLogit-method}
 \alias{calcDiagnostics,MonComCES-method}
 \title{Methods for Calculating Diagnostics}
 \usage{
 \S4method{calcDiagnostics}{Bertrand}(object, labels = object@labels)
-
-\S4method{calcDiagnostics}{VertBargBertLogit}(object, labels = object@down@labels)
 
 \S4method{calcDiagnostics}{Cournot}(object)
 

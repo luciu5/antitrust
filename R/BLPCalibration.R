@@ -5,6 +5,8 @@
 # legacy S4 demand equations remain the source of truth; MonCom uses the
 # explicit atomistic integrated own derivative in MonComMethods.R.
 
+#' @include BargainingClasses.R
+
 #' @rdname BertrandRUM-Classes
 #' @export
 setClass(

@@ -14,8 +14,6 @@
 \alias{calcPrices,LogitCap-method}
 \alias{calcPrices,Auction2ndLogit-method}
 \alias{calcPrices,BargainingBLP-method}
-\alias{calcPrices,VertBargBertLogit-method}
-\alias{calcPrices,VertBarg2ndLogit-method}
 \alias{calcPrices}
 \alias{calcPrices,Auction2ndCES-method}
 \alias{calcPrices,BargainingLogit-method}
@@ -42,10 +40,6 @@
 \S4method{calcPrices}{AIDS}(object, preMerger = TRUE, ...)
 
 \S4method{calcPrices}{BargainingLogit}(object, preMerger = TRUE, isMax = FALSE, subset, ...)
-
-\S4method{calcPrices}{VertBargBertLogit}(object, preMerger = TRUE, ...)
-
-\S4method{calcPrices}{VertBarg2ndLogit}(object, preMerger = TRUE, ...)
 
 \S4method{calcPrices}{LogitBLP}(object, preMerger = TRUE, isMax = FALSE, ...)
 

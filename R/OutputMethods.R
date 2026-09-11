@@ -2,7 +2,7 @@
 #' @name Output-Methods
 #' @docType methods
 #'
-#' @aliases calcQuantities calcQuantities,ANY-method calcQuantities,Logit-method calcQuantities,CES-method calcQuantities,Linear-method calcQuantities,LogLin-method calcQuantities,LogitCap-method calcQuantities,Logit-method calcQuantities,Cournot-method calcQuantities,Stackelberg-method calcQuantities,AIDS-method calcShares calcShares,ANY-method calcShares,AIDS-method calcShares,CES-method calcShares,CESNests-method calcShares,Linear-method calcShares,Logit-method calcShares,LogitNests-method calcShares,Auction2ndLogit-method calcShares,Auction2ndLogitNests-method calcShares,Cournot-method calcShares,LogitBLP-method calcShares,Auction2ndBLP-method calcShares,BargainingBLP-method calcRevenues calcRevenues,ANY-method calcRevenues,Bertrand-method calcRevenues,CES-method calcRevenues,AIDS-method calcRevenues,Cournot-method calcRevenues,VertBargBertLogit-method
+#' @aliases calcQuantities calcQuantities,ANY-method calcQuantities,Logit-method calcQuantities,CES-method calcQuantities,Linear-method calcQuantities,LogLin-method calcQuantities,LogitCap-method calcQuantities,Logit-method calcQuantities,Cournot-method calcQuantities,Stackelberg-method calcQuantities,AIDS-method calcShares calcShares,ANY-method calcShares,AIDS-method calcShares,CES-method calcShares,CESNests-method calcShares,Linear-method calcShares,Logit-method calcShares,LogitNests-method calcShares,Auction2ndLogit-method calcShares,Auction2ndLogitNests-method calcShares,Cournot-method calcShares,LogitBLP-method calcShares,Auction2ndBLP-method calcShares,BargainingBLP-method calcRevenues calcRevenues,ANY-method calcRevenues,Bertrand-method calcRevenues,CES-method calcRevenues,AIDS-method calcRevenues,Cournot-method
 #'
 #' @description This section contains three types of methods: calcShares, calcQuantities, and calcRevenues.
 #'  calcShares computes equilibrium product shares assuming that firms are playing a
@@ -410,16 +410,6 @@ setMethod(
 
 
 ## compute product revenues
-#' @rdname Output-Methods
-#' @export
-setMethod(
-  f = "calcRevenues",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE, market = FALSE) {
-    result <- calcRevenues(object@down, preMerger = preMerger, market = market)
-    return(result)
-  }
-)
 
 #' @rdname Output-Methods
 #' @export
@@ -556,63 +546,6 @@ setMethod(
     } else {
       return(quantities / sum(quantities))
     }
-  }
-)
-
-
-#' @rdname Output-Methods
-#' @export
-setMethod(
-  f = "calcQuantities",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE, market = FALSE) {
-    down <- object@down
-
-    result <- calcQuantities(down, preMerger = preMerger, market = market)
-
-    return(result)
-  }
-)
-
-
-#' @rdname Output-Methods
-#' @export
-setMethod(
-  f = "calcShares",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE, revenue = FALSE) {
-    down <- object@down
-
-    result <- calcShares(down, preMerger = preMerger, revenue = revenue)
-    return(result)
-  }
-)
-
-
-#' @rdname Output-Methods
-#' @export
-setMethod(
-  f = "calcShares",
-  signature = "VertBarg2ndLogit",
-  definition = function(object, preMerger = TRUE, revenue = FALSE) {
-    down <- object@down
-    up <- object@up
-
-    priceOutside <- down@priceOutside
-
-    if (preMerger) {
-      upPrice <- up@pricePre
-    } else {
-      upPrice <- up@pricePost
-    }
-
-
-    meanval <- down@slopes$meanval
-    alpha <- down@slopes$alpha
-
-    down@slopes$meanval <- meanval + alpha * (upPrice - priceOutside)
-    result <- calcShares(down, preMerger = preMerger, revenue = revenue)
-    return(result)
   }
 )
 

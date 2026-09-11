@@ -56,6 +56,36 @@ setClass(
     )
 )
 
+#' Validate a counterfactual against a fitted model
+#'
+#' @param object A fitted structural model.
+#' @param counterfactual A `Counterfactual` object.
+#' @return The validated counterfactual, invisibly.
+#' @export
+setGeneric(
+    "validate_counterfactual",
+    function(object, counterfactual) standardGeneric("validate_counterfactual")
+)
+
+#' @rdname validate_counterfactual
+#' @export
+setMethod(
+    "validate_counterfactual", "AntitrustFit",
+    function(object, counterfactual) {
+        .validate_counterfactual_spec(counterfactual, object@spec)
+    }
+)
+
+#' @rdname validate_counterfactual
+#' @export
+setMethod(
+    "validate_counterfactual", "StructuralFit",
+    function(object, counterfactual) {
+        stop("no validate_counterfactual() method is defined for objects of class '",
+             class(object)[[1]], "'.")
+    }
+)
+
 
 #' Calibrate a structural antitrust model
 #'
@@ -77,7 +107,7 @@ setClass(
 #'   Linear or LogLin calibration, or an n-by-k plant-quantity matrix for
 #'   general Cournot/Stackelberg calibration.
 #' @param variant A model-specific calibration variant, such as `"alm"` or
-#'   `"auction2nd"` for downstream second-score vertical bargaining.
+#'   `"auction2nd"` for second-score auction models.
 #' @param knownElast A known own-price elasticity for PCAIDS calibration.
 #' @param mktElast A known market own-price elasticity for PCAIDS calibration.
 #' @param s0 A known outside-good share for price-only BLP calibration. It
@@ -87,8 +117,7 @@ setClass(
 #'   when its convergence diagnostics are inconclusive; \code{"exhaustive"}
 #'   evaluates all 12 retained starts.
 #' @param ... Additional options accepted by the model-specific legacy
-#'   calibration constructor. For vertical bargaining, supply the upstream
-#'   inputs \code{pricesUp}, \code{marginsUp}, and \code{ownerPreUp} here.
+#'   calibration constructor.
 #' @return An \code{AntitrustFit} object.
 #' @export
 calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
@@ -133,14 +162,6 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
     if (length(forbidden)) {
         stop("'", forbidden[[1]], "' is a simulation scenario; supply it to simulate().")
     }
-    if (identical(spec$conduct, "vertical_bargaining")) {
-        vertical_post <- intersect(names(dots), c("ownerPostUp",
-                                                  "ownerPostDown",
-                                                  "mcDeltaUp", "mcDeltaDown"))
-        if (length(vertical_post)) {
-            stop("'", vertical_post[[1]], "' is a vertical simulation scenario; supply it to simulate().")
-        }
-    }
     if (identical(spec$conduct, "stackelberg")) {
         stack_post <- intersect(names(dots), c("productsPost", "mcfunPost",
                                                "vcfunPost", "dmcfunPost",
@@ -163,62 +184,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
 
     observed_extra <- list()
 
-    if (identical(spec$conduct, "vertical_bargaining")) {
-        if (is.null(shares) || is.null(margins)) {
-            stop("'shares' and 'margins' must be supplied for vertical bargaining calibration.")
-        }
-        vertical_required <- c("pricesUp", "marginsUp", "ownerPreUp")
-        missing_vertical <- vertical_required[
-            vapply(vertical_required, function(x) is.null(dots[[x]]), logical(1))
-        ]
-        if (length(missing_vertical)) {
-            stop("'", missing_vertical[[1]], "' must be supplied for vertical bargaining calibration.")
-        }
-        prices_up <- dots$pricesUp
-        margins_up <- dots$marginsUp
-        owner_pre_up <- dots$ownerPreUp
-        vertical_supply <- if (identical(spec$variant, "auction2nd")) {
-            "2nd"
-        } else {
-            "bertrand"
-        }
-        if (!is.null(dots$supplyDown)) {
-            requested_supply <- match.arg(dots$supplyDown, c("bertrand", "2nd"))
-            if (!identical(requested_supply, vertical_supply)) {
-                stop("'supplyDown' conflicts with the selected vertical bargaining variant.")
-            }
-        }
-        dots$pricesUp <- NULL
-        dots$marginsUp <- NULL
-        dots$ownerPreUp <- NULL
-        dots$supplyDown <- NULL
-        has_nests <- !is.null(dots$nests) && any(!is.na(dots$nests))
-        if (identical(spec$demand, "logit_nests") && !has_nests) {
-            stop("'nests' must be supplied for nested vertical bargaining calibration.")
-        }
-        if (!identical(spec$demand, "logit_nests") && has_nests) {
-            stop("'nests' is only supported for nested vertical bargaining calibration.")
-        }
-        constructor_args <- list(
-            supplyDown = vertical_supply,
-            sharesDown = shares,
-            pricesDown = prices,
-            marginsDown = margins,
-            ownerPreDown = ownerPre,
-            ownerPostDown = ownerPre,
-            pricesUp = prices_up,
-            marginsUp = margins_up,
-            ownerPreUp = owner_pre_up,
-            ownerPostUp = owner_pre_up,
-            mcDeltaDown = rep(0, length(prices)),
-            mcDeltaUp = rep(0, length(prices_up))
-        )
-        observed_extra <- list(
-            pricesUp = prices_up,
-            marginsUp = margins_up,
-            ownerPreUp = owner_pre_up
-        )
-    } else if (spec$demand %in% c("linear", "loglin") &&
+    if (spec$demand %in% c("linear", "loglin") &&
         identical(spec$conduct, "bertrand")) {
         if (is.null(quantities)) {
             stop("'quantities' must be supplied when calibrating Linear or LogLin demand.")
@@ -409,8 +375,7 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
 #'   \code{\link{model_spec}}.
 #' @param conduct A conduct name.  Omit it when `demand` is a model
 #'   specification object.
-#' @param variant A model-specific calibration variant, such as `"alm"` or
-#'   `"auction2nd"` for downstream second-score vertical bargaining.
+#' @param variant A model-specific calibration variant, such as `"alm"`.
 #' @param output Logical indicator for an output (`TRUE`) or input (`FALSE`)
 #'   market when the selected model supports both orientations.
 #' @param prices A length-k vector of observed product prices.
@@ -468,11 +433,6 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     }
     if (length(forbidden)) {
         stop("'", forbidden[[1]], "' is a simulation scenario; supply it to simulate().")
-    }
-    vertical_post <- intersect(names(dots), c("ownerPostUp", "ownerPostDown",
-                                              "mcDeltaUp", "mcDeltaDown"))
-    if (length(vertical_post)) {
-        stop("'", vertical_post[[1]], "' is a vertical simulation scenario; supply it to simulate().")
     }
     stack_post <- intersect(names(dots), c("productsPost", "mcfunPost",
                                            "vcfunPost", "dmcfunPost",
@@ -628,12 +588,9 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 ## `costs` may be supplied as a plain positional vector (existing,
 ## fixed-dimension behavior) or, once the market has changed dimension via
 ## entry/exit, as a named vector resolved against the model's current
-## active labels.  Vertical bargaining's `costs` is always a list with
-## `up`/`down` numeric vectors (not itself a "named shock" vector) and is
-## passed through unchanged; vertical models are not entry/quality-
-## supported, so dimension-changing named resolution never applies to them.
-.resolve_step_costs <- function(model, costs, is_vertical) {
-    if (is.null(costs) || is_vertical) return(costs)
+## active labels.
+.resolve_step_costs <- function(model, costs) {
+    if (is.null(costs)) return(costs)
     expected <- if (methods::is(model, "Cournot")) {
         nrow(model@quantities)
     } else {
@@ -693,20 +650,6 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     step_shock
 }
 
-.compound_vertical_costs <- function(current, step_shock, model = NULL) {
-    if (is.null(step_shock)) return(current)
-    modes <- list(up = "multiplicative", down = "multiplicative")
-    if (!is.null(model)) {
-        state <- .cost_state(model)
-        if (!is.null(state$up$mode)) modes$up <- state$up$mode
-        if (!is.null(state$down$mode)) modes$down <- state$down$mode
-    }
-    list(
-        up = .compound_costs(current$up, step_shock$up, mode = modes$up),
-        down = .compound_costs(current$down, step_shock$down, mode = modes$down)
-    )
-}
-
 ## Solve one equilibrium: apply ownership/cost/capacity/bargaining/exit
 ## changes to the (already environment-adjusted) `model` and return the
 ## legacy S4 result.  This is the extracted core of the original one-step
@@ -716,102 +659,35 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                                  exit = NULL, subset = NULL, priceStart = NULL,
                                  capacitiesPost = NULL, bargpowerPost = NULL,
                                  solver = NULL, isMax = FALSE, dots = list()) {
-    is_vertical <- methods::is(model, "VertBargBertLogit")
-    if (is.null(ownerPost)) {
-        ownerPost <- if (is_vertical) {
-            list(up = model@up@ownerPre, down = model@down@ownerPre)
-        } else {
-            model@ownerPre
-        }
-    }
-    nprods <- if (is_vertical) length(model@down@prices) else length(model@prices)
-    has_subset_slot <- is_vertical || "subset" %in% methods::slotNames(model)
-    current_subset <- if (is_vertical) {
-        model@down@subset
-    } else if (has_subset_slot) {
+    if (is.null(ownerPost)) ownerPost <- model@ownerPre
+    nprods <- length(model@prices)
+    has_subset_slot <- "subset" %in% methods::slotNames(model)
+    current_subset <- if (has_subset_slot) {
         model@subset
     } else {
         rep(TRUE, nprods)
     }
     if (length(current_subset) != nprods) current_subset <- rep(TRUE, nprods)
     if (!is.null(exit)) {
-        labels <- if (is_vertical) model@down@labels else model@labels
-        subset <- current_subset & .counterfactual_subset(exit, nprods, labels)
+        subset <- current_subset & .counterfactual_subset(
+            exit, nprods, model@labels
+        )
     }
     if (is.null(subset)) subset <- current_subset
-    nmc <- if (is_vertical) {
-        NA_integer_
-    } else if (methods::is(model, "Cournot")) {
+    nmc <- if (methods::is(model, "Cournot")) {
         nrow(model@quantities)
     } else {
         nprods
     }
-    if (is_vertical) {
-        if (is.null(mcDelta)) {
-            mcDelta <- list(
-                up = rep(0, length(model@up@prices)),
-                down = rep(0, length(model@down@prices))
-            )
-        }
-        if (!is.list(mcDelta) ||
-            !all(c("up", "down") %in% names(mcDelta)) ||
-            !is.numeric(mcDelta$up) || !is.numeric(mcDelta$down) ||
-            length(mcDelta$up) != length(model@up@prices) ||
-            length(mcDelta$down) != length(model@down@prices) ||
-            anyNA(mcDelta$up) || anyNA(mcDelta$down)) {
-            stop("For vertical bargaining, 'mcDelta' must be a list with numeric 'up' and 'down' vectors matching the fitted markets and no NAs.")
-        }
-    } else {
-        if (is.null(mcDelta)) mcDelta <- rep(0, nmc)
-        if (!is.numeric(mcDelta) || length(mcDelta) != nmc || anyNA(mcDelta)) {
-            stop("'mcDelta' must be a numeric vector with the same length as the fitted cost units and no NAs.")
-        }
+    if (is.null(mcDelta)) mcDelta <- rep(0, nmc)
+    if (!is.numeric(mcDelta) || length(mcDelta) != nmc || anyNA(mcDelta)) {
+        stop("'mcDelta' must be a numeric vector with the same length as the fitted cost units and no NAs.")
     }
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
         stop("'subset' must be a logical vector the same length as the fitted prices with at least one TRUE value.")
     }
-    if ((!is_vertical && any(mcDelta > 0, na.rm = TRUE)) ||
-        (is_vertical && (any(mcDelta$up > 0, na.rm = TRUE) ||
-                         any(mcDelta$down > 0, na.rm = TRUE)))) {
+    if (any(mcDelta > 0, na.rm = TRUE)) {
         warning("positive values of 'mcDelta' imply an INCREASE in marginal costs")
-    }
-
-    if (is_vertical) {
-        if (!is.list(ownerPost) ||
-            !all(c("up", "down") %in% names(ownerPost))) {
-            stop("For vertical bargaining, 'ownerPost' must be a list with 'up' and 'down' ownership vectors.")
-        }
-        if (length(ownerPost$up) != length(model@up@prices) ||
-            length(ownerPost$down) != length(model@down@prices)) {
-            stop("Vertical 'ownerPost' ownership vectors must match the fitted upstream and downstream markets.")
-        }
-        model@up@ownerPost <- ownerPost$up
-        model@down@ownerPost <- ownerPost$down
-        model@up@mcDelta <- mcDelta$up
-        model@down@mcDelta <- mcDelta$down
-        model@down@subset <- subset
-        ## The vertical constructor fixes bargaining power at one for any
-        ## newly integrated upstream/downstream product.  Recreate that
-        ## post-merger state from the calibrated bargaining powers without
-        ## rerunning the pre-merger calibration optimizer.
-        model@up@bargpowerPost <- model@up@bargpowerPre
-        integrated_post <- ownerPost$up == ownerPost$down
-        model@up@bargpowerPost[integrated_post] <- 1
-        pre_vertical <- model@up@ownerPre == model@down@ownerPre
-        post_vertical <- model@up@ownerPost == model@down@ownerPost
-        model@isHorizontal <- !any(!pre_vertical & post_vertical)
-        is_upstream_horizontal <- !isTRUE(all.equal(
-            model@up@ownerPre, model@up@ownerPost, check.attributes = FALSE
-        ))
-        model@isUpstream <- model@isHorizontal && is_upstream_horizontal
-        model <- ownerToMatrix(model, preMerger = FALSE)
-        mc_post <- calcMC(model, preMerger = FALSE)
-        model@up@mcPost <- mc_post$up
-        model@down@mcPost <- mc_post$down
-        prices_post <- do.call(calcPrices, c(list(model, preMerger = FALSE), dots))
-        model@up@pricePost <- prices_post$up
-        model@down@pricePost <- prices_post$down
-        return(model)
     }
 
     if (methods::is(model, "Auction2ndCap")) {
@@ -1033,26 +909,19 @@ setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
         step <- steps[[i]]
         state <- .apply_step_environment(state, step)
         changes <- step@changes
-        is_vertical <- methods::is(state, "VertBargBertLogit")
-        step_shock <- .resolve_step_costs(state, changes$costs, is_vertical)
-        if (!is_vertical) {
-            step_shock <- .merge_entry_cost_deltas(state, changes$entry, step_shock)
-        }
-        cost_mode <- if (is_vertical) {
+        step_shock <- .resolve_step_costs(state, changes$costs)
+        step_shock <- .merge_entry_cost_deltas(
+            state, changes$entry, step_shock
+        )
+        state_cost <- .cost_state(state)
+        cost_mode <- if (!is.null(state_cost) && !is.null(state_cost$mode)) {
+            state_cost$mode
+        } else {
             "multiplicative"
-        } else {
-            state_cost <- .cost_state(state)
-            if (!is.null(state_cost) && !is.null(state_cost$mode)) {
-                state_cost$mode
-            } else {
-                "multiplicative"
-            }
         }
-        cumulative_costs <- if (is_vertical) {
-            .compound_vertical_costs(cumulative_costs, step_shock, model = state)
-        } else {
-            .compound_costs(cumulative_costs, step_shock, mode = cost_mode)
-        }
+        cumulative_costs <- .compound_costs(
+            cumulative_costs, step_shock, mode = cost_mode
+        )
         dots <- list()
         if (!is.null(changes$leader)) dots$isLeaderPost <- changes$leader
         if (!is.null(changes$products)) dots$productsPost <- changes$products
@@ -1093,13 +962,10 @@ setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
 #' @param object An \code{AntitrustFit} returned by \code{\link{calibrate}},
 #'   or a `CounterfactualPath` to resume from.
 #' @param ownerPost Post-counterfactual ownership vector or matrix, or a
-#' `Counterfactual` object. For
-#'   vertical bargaining, use a list with \code{up} and \code{down} ownership
-#'   vectors.
+#'   `Counterfactual` object.
 #' @param mcDelta A model-specific vector of proportional cost changes, with
 #'   one element per product for most models and one element per plant for
-#'   general Cournot models. For vertical bargaining, use a list with numeric
-#'   \code{up} and \code{down} vectors.
+#'   general Cournot models.
 #' @param subset A length-k logical vector selecting products in the
 #'   counterfactual equilibrium.
 #' @param priceStart Optional price starting values.
@@ -1175,7 +1041,7 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
     if (is.null(base_fit)) {
         stop("'fit' CounterfactualPath does not retain enough diagnostics to resume simulation.")
     }
-    .validate_counterfactual(cf, base_fit@spec)
+    validate_counterfactual(base_fit, cf)
     extra_state <- resume_path@diagnostics[setdiff(names(resume_path@diagnostics), "fit")]
     solved <- do.call(simulate_steps, c(
         list(base_fit, final_result(resume_path), cf@steps), extra_state
@@ -1204,10 +1070,9 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
     }
 
     model <- fit@model
-    is_vertical <- methods::is(model, "VertBargBertLogit")
 
     if (!is.null(cf)) {
-        .validate_counterfactual(cf, fit@spec)
+        validate_counterfactual(fit, cf)
         conflicts <- c(
             if (!is.null(mcDelta)) "mcDelta",
             if (!is.null(subset)) "subset",
@@ -1238,10 +1103,10 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
         changes <- step@changes
         if (!is.null(changes$leader)) dots$isLeaderPost <- changes$leader
         if (!is.null(changes$products)) dots$productsPost <- changes$products
-        step_mc_delta <- .resolve_step_costs(model, changes$costs, is_vertical)
-        if (!is_vertical) {
-            step_mc_delta <- .merge_entry_cost_deltas(model, changes$entry, step_mc_delta)
-        }
+        step_mc_delta <- .resolve_step_costs(model, changes$costs)
+        step_mc_delta <- .merge_entry_cost_deltas(
+            model, changes$entry, step_mc_delta
+        )
         result <- .model_simulate_step(
             fit, model,
             ownerPost = changes$ownership,
@@ -1617,14 +1482,7 @@ setMethod("respecify", "AntitrustFit", function(object, demand = NULL,
     model <- fit@model
     observed <- fit@observed
     if (!is.list(observed)) observed <- list()
-    ## Vertical bargaining keeps the downstream Logit/Auction object in a
-    ## nested slot, so its ordinary product metadata is not present on the
-    ## outer container.  Use the downstream side as the generic baseline
-    ## orientation and retain the upstream observations separately above.
     metadata_models <- list(model)
-    if (methods::is(model, "VertBargBertLogit")) {
-        metadata_models <- c(metadata_models, list(model@down, model@up))
-    }
     for (slot_name in c("labels", "priceOutside", "priceStart", "output",
                         "insideSize")) {
         for (metadata_model in metadata_models) {
@@ -1677,10 +1535,6 @@ setMethod("respecify", "AntitrustFit", function(object, demand = NULL,
     } else if (methods::is(model, "Stackelberg")) {
         list(slopes = model@slopes, intercepts = model@intercepts,
              mktElast = model@mktElast, isLeaderPre = model@isLeaderPre)
-    } else if (methods::is(model, "VertBargBertLogit")) {
-        list(down = model@down@slopes,
-             bargpowerPre = model@up@bargpowerPre,
-             bargpowerPost = model@up@bargpowerPost)
     } else if (methods::is(model, "Cournot")) {
         list(slopes = model@slopes, intercepts = model@intercepts,
              mktElast = model@mktElast)

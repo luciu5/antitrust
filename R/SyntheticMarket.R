@@ -17,8 +17,7 @@
                                               reference_price) {
     ## antitrust's standard output-market demand calibrators use proportional
     ## margins. Auction and bargaining calibrators use level margins.
-    level_conduct <- conduct %in% c("auction2nd", "bargaining", "bargaining2nd",
-                                    "vertical_bargaining")
+    level_conduct <- conduct %in% c("auction2nd", "bargaining", "bargaining2nd")
     if (level_conduct) markup else markup / reference_price
 }
 

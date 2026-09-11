@@ -23,15 +23,3 @@ setMethod(
     return(NULL)
   }
 )
-#'@rdname Show-Methods
-#'@export
-setMethod(
-  f= "show",
-  signature= "VertBargBertLogit",
-  definition=function(object){
-    
-    res <- summary(object,market=TRUE)
-    
-    return(NULL)
-  }
-)

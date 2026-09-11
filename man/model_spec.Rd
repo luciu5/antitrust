@@ -15,8 +15,7 @@ or \code{"cournot"}.}
 
 \item{variant}{A model-specific calibration variant. The default is
 \code{"standard"}; \code{"alm"} selects the existing unknown-market-
-elasticity calibration where supported, and \code{"auction2nd"} selects
-downstream second-score vertical bargaining.}
+elasticity calibration where supported.}
 }
 \value{
 A small object of class \code{antitrust_model_spec} containing

@@ -40,14 +40,11 @@ structure; the remaining arguments are passed to the existing quantity
 solver.}
 
 \item{ownerPost}{Post-counterfactual ownership vector or matrix, or a
-`Counterfactual` object. For
-  vertical bargaining, use a list with \code{up} and \code{down} ownership
-  vectors.}
+`Counterfactual` object.}
 
 \item{mcDelta}{A model-specific vector of proportional cost changes, with
 one element per product for most models and one element per plant for
-general Cournot models. For vertical bargaining, use a list with numeric
-\code{up} and \code{down} vectors.}
+general Cournot models.}
 
 \item{subset}{A length-k logical vector selecting products in the
 counterfactual equilibrium.}

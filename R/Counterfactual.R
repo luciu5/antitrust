@@ -340,7 +340,7 @@ combine_counterfactuals <- function(...) {
     active
 }
 
-.validate_counterfactual_step <- function(step, spec) {
+.validate_counterfactual_spec_step <- function(step, spec) {
     capabilities <- .model_counterfactual_capabilities(spec)
     unsupported <- names(step@changes)[!vapply(names(step@changes), function(name) {
         isTRUE(capabilities[[name]])
@@ -352,8 +352,8 @@ combine_counterfactuals <- function(...) {
     invisible(step)
 }
 
-.validate_counterfactual <- function(cf, spec) {
-    for (step in cf@steps) .validate_counterfactual_step(step, spec)
+.validate_counterfactual_spec <- function(cf, spec) {
+    for (step in cf@steps) .validate_counterfactual_spec_step(step, spec)
     invisible(cf)
 }
 

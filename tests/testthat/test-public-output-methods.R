@@ -72,7 +72,7 @@ test_that("capacity, auction, and bargaining-specific methods have formal covera
                      "bargaining producer surplus")
 })
 
-test_that("Cournot, Stackelberg, and vertical bargaining paths expose stable outputs", {
+test_that("Cournot and Stackelberg paths expose stable outputs", {
     qa_skip_unless_tier("extended")
     n <- 3
     cap <- c(.5, .6, .7)
@@ -106,25 +106,4 @@ test_that("Cournot, Stackelberg, and vertical bargaining paths expose stable out
         qa_assert_finite(hhi(fit, TRUE), "quantity-game HHI")
     }
 
-    pD <- c(63.08158, 50.70465, 95.82960, 83.45267)
-    sD <- c(.1293482, .1422541, .4631014, .2152962)
-    pU <- c(58.109, 53.31135, 58.109, 53.31135)
-    mD <- c(13.04232, 13.04233, 29.53958, 29.53958) / pD
-    mU <- c(23.31, 14.78715, 23.31, 14.78715) / pU
-    down_owner <- paste0("D", rep(c(1, 2), each = 2))
-    up_owner <- paste0("U", rep(c(1, 2), 2))
-    vertical_fit <- qa_value(vertical.barg(
-        sharesDown = sD, pricesDown = pD, marginsDown = mD,
-        ownerPreDown = down_owner, ownerPostDown = down_owner,
-        pricesUp = pU, marginsUp = mU, ownerPreUp = up_owner,
-        ownerPostUp = rep("U1", 4), priceOutside = 10
-    ), "vertical bargaining methods")
-    qa_assert_finite(vertical_fit@down@pricePost, "vertical downstream prices")
-    qa_assert_finite(vertical_fit@up@pricePost, "vertical upstream prices")
-    qa_assert_finite(hhi(vertical_fit, TRUE), "vertical HHI")
-    vertical_owner <- qa_value(ownerToMatrix(vertical_fit, TRUE),
-                               "vertical ownership transformation")
-    testthat::expect_true(is(vertical_owner, "VertBargBertLogit"))
-    testthat::expect_equal(dim(vertical_owner@ownerDownPre), c(4L, 4L))
-    testthat::expect_true(is.list(calcDiagnostics(vertical_fit)))
 })

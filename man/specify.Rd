@@ -49,8 +49,7 @@ specification object.}
 
 \item{labels}{Product labels.}
 
-\item{variant}{A model-specific calibration variant, such as `"alm"` or
-`"auction2nd"` for downstream second-score vertical bargaining.}
+\item{variant}{A model-specific calibration variant, such as `"alm"`.}
 
 \item{output}{Logical indicator for an output (`TRUE`) or input (`FALSE`)
 market when the selected model supports both orientations.}

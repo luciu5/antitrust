@@ -2,7 +2,7 @@
 #' @name Params-Methods
 #' @docType methods
 
-#' @aliases calcSlopes calcSlopes,ANY-method calcSlopes,AIDS-method calcSlopes,CES-method calcSlopes,CESNests-method calcSlopes,Linear-method calcSlopes,LogLin-method calcSlopes,Logit-method calcSlopes,LogitALM-method calcSlopes,CESALM-method calcSlopes,LogitCap-method calcSlopes,LogitCapALM-method calcSlopes,LogitNests-method calcSlopes,LogitNestsALM-method calcSlopes,PCAIDS-method calcSlopes,PCAIDSNests-method calcSlopes,Auction2ndLogit-method calcSlopes,Auction2ndLogitNests-method calcSlopes,Auction2ndLogitALM-method calcSlopes,Cournot-method calcSlopes,Stackelberg-method calcSlopes,VertBargBertLogit-method calcSlopes,LogitBLP-method calcSlopes,BargainingLogit-method calcSlopes,Bargaining2ndLogit-method getParms getParms,ANY-method getParms,Bertrand-method getParms,VertBargBertLogit-method getNestsParms getNestsParms,PCAIDSNests-method getNestsParms,LogitNests-method getNestsParms,Auction2ndLogitNests-method getNestsParms,CESNests-method getNestsParms,VertBargBertLogitNests-method getNestsParms,VertBarg2ndLogitNests-method
+#' @aliases calcSlopes calcSlopes,ANY-method calcSlopes,AIDS-method calcSlopes,CES-method calcSlopes,CESNests-method calcSlopes,Linear-method calcSlopes,LogLin-method calcSlopes,Logit-method calcSlopes,LogitALM-method calcSlopes,CESALM-method calcSlopes,LogitCap-method calcSlopes,LogitCapALM-method calcSlopes,LogitNests-method calcSlopes,LogitNestsALM-method calcSlopes,PCAIDS-method calcSlopes,PCAIDSNests-method calcSlopes,Auction2ndLogit-method calcSlopes,Auction2ndLogitNests-method calcSlopes,Auction2ndLogitALM-method calcSlopes,Cournot-method calcSlopes,Stackelberg-method calcSlopes,LogitBLP-method calcSlopes,BargainingLogit-method calcSlopes,Bargaining2ndLogit-method getParms getParms,ANY-method getParms,Bertrand-method getNestsParms getNestsParms,PCAIDSNests-method getNestsParms,LogitNests-method getNestsParms,Auction2ndLogitNests-method getNestsParms,CESNests-method
 #'
 #' @description The calcSlopes methods calculate demand parameters assuming that firms are playing
 #' a differentitated product Nash-Bertrand pricing game or
@@ -14,7 +14,7 @@
 #' @param object An instance of the respective class (see description for the classes)
 #' @param digits Number of significant digits to report. Default is 2.
 #'
-#' @include MarginsMethods.R VerticalClasses.R
+#' @include MarginsMethods.R
 #' @keywords methods
 NULL
 
@@ -545,8 +545,6 @@ setMethod(
 )
 
 
-#' @rdname Params-Methods
-#' @export
 #' @rdname Params-Methods
 #' @export
 setMethod(
@@ -3135,231 +3133,6 @@ setMethod(
 #' @rdname Params-Methods
 #' @export
 setMethod(
-  f = "calcSlopes",
-  signature = "VertBargBertLogit",
-  definition = function(object) {
-    constrain <- object@constrain
-
-    is2nd <- any(grepl("2nd", class(object)))
-
-    up <- object@up
-    down <- object@down
-
-    sigma <- 0.1
-
-    if (grepl("Nest", class(object))) {
-      nests <- down@nests
-      sigma <- rep(0.1, nlevels(nests))
-      names(sigma) <- levels(nests)
-    }
-
-    constrain <- object@constrain
-
-
-    owner.up.pre <- up@ownerPre
-    owner.down.pre <- down@ownerPre
-
-    owner.up.post <- up@ownerPost
-    owner.down.post <- down@ownerPost
-
-
-    pricesUp <- up@prices
-    marginsUp <- up@margins
-
-    marginsDown <- down@margins
-    idx <- down@normIndex
-    sharesDown <- down@shares
-
-
-    pricesDown <- down@prices
-    down@pricePre <- pricesDown
-
-    if (is.na(idx)) {
-      idxShare <- 1 - down@shareInside
-      idxPrice <- down@priceOutside
-    } else {
-      idxShare <- sharesDown[idx]
-      idxPrice <- pricesDown[idx]
-    }
-
-
-    id <- data.frame(
-      up.firm = owner.up.pre,
-      down.firm = owner.down.pre
-    )
-
-
-    nprods <- nrow(id)
-
-    if (constrain == "pair") {
-      id <- with(id, interaction(up.firm, down.firm))
-    } else if (constrain == "wholesaler") {
-      id <- with(id, up.firm)
-    } else if (constrain == "retailer") {
-      id <- with(id, down.firm)
-    } else {
-      id <- rep(1, nprods)
-    }
-
-    id <- factor(id)
-
-    marginsUp <- marginsUp * pricesUp
-    if (!is2nd) marginsDown <- marginsDown * pricesDown
-
-    # set starting value for bargaining parameter equal to 0.5
-    bStart <- rep(0.5, nlevels(id))
-    # set starting value for alpha equal to single product
-    # unintegrated firm
-    firstAvail <- which(!is.na(marginsDown))[1]
-    alphaStart <- -1 / (marginsDown[firstAvail] * (1 - sharesDown[firstAvail]))
-
-    parmStart <- c(alphaStart, bStart)
-
-
-    div <- tcrossprod(1 / (1 - sharesDown), sharesDown) * sharesDown
-    diag(div) <- -sharesDown
-    div <- as.vector(div)
-
-
-    vertFirms <- intersect(owner.up.pre, owner.down.pre)
-
-    ownerDownMat <- ownerToMatrix(down, preMerger = TRUE)
-    ownerBargUpVert <- ownerToMatrix(up, preMerger = TRUE)
-
-    ownerDownMatVertical <- matrix(0, nrow = nprods, ncol = nprods)
-
-    minD <- function(theta) {
-      alpha <- theta[1]
-      b <- theta[-1]
-      b <- b[as.numeric(id)]
-
-
-      b[owner.up.pre == owner.down.pre] <- 1
-
-      for (v in vertFirms) {
-        vertrows <- owner.up.pre != v & owner.down.pre == v
-        ownerBargUpVert[vertrows, owner.up.pre == v] <- -(1 - b[vertrows]) / b[vertrows]
-      }
-
-      ## set integrated margin disagreement payoff to 0,
-      ## constrain upstream integrated margin to zero
-
-      for (n in which(owner.up.pre == owner.down.pre)) {
-        ownerBargUpVert[n, -n] <- ownerBargUpVert[-n, n] <- 0
-      }
-
-      ownerBargDownVert <- ownerDownMat * (1 - b) / b
-
-      for (v in vertFirms) {
-        vertrows <- owner.up.pre == v & owner.down.pre != v
-
-        ## only change downstream matrix when firms are playing Bertrand
-        if (!is2nd) {
-          ownerDownMatVertical[owner.down.pre == v, vertrows] <- 1
-        }
-        # ownerDownMatVertical[owner.down.pre == v, !vertrows] <- 0
-
-
-        ownerBargDownVert[vertrows, owner.down.pre == v] <- -1
-      }
-
-      # ownerDownMatVertical[!owner.down.pre %in% vertFirms, ] <- 0
-
-      down@ownerPre <- ownerDownMat
-
-      if (is2nd) {
-        mval <- log(sharesDown) - log(idxShare) - alpha * (pricesUp - idxPrice)
-      } else {
-        mval <- log(sharesDown) - log(idxShare) - alpha * (pricesDown - idxPrice)
-      }
-
-      down@slopes <- list(
-        alpha = alpha,
-        meanval = mval,
-        sigma = sigma
-      )
-
-      marginsCandDown <- calcMargins(down, preMerger = TRUE, level = TRUE)
-
-      shareCandDown <- calcShares(down, preMerger = TRUE, revenue = FALSE)
-
-      if (!is2nd) {
-        elast <- -alpha * tcrossprod(sharesDown)
-        diag(elast) <- alpha * sharesDown + diag(elast)
-        elast.inv <- try(solve(ownerDownMat * elast), silent = TRUE)
-        if (any(class(elast.inv) == "try-error")) {
-          elast.inv <- MASS::ginv(ownerDownMat * elast)
-        }
-
-        marginsCandDown <- marginsCandDown - elast.inv %*% ((ownerDownMatVertical * elast) %*% (marginsUp))
-      }
-
-      depVar <- as.vector((ownerBargUpVert * div) %*% marginsUp)
-      regressor <- as.vector((ownerBargDownVert * div) %*% marginsCandDown)
-
-      err <- c(
-        depVar - regressor, marginsDown - marginsCandDown,
-        (sharesDown - shareCandDown)
-      )
-      return(sum((err)^2, na.rm = TRUE))
-    }
-
-    # optmethod <- "L-BFGS-B"
-    # if(length(bStart) ==1) optmethod <- "Brent"
-    lowerB <- rep(.01, length(parmStart))
-    lowerB[1] <- -1e9
-    upperB <- rep(.99, length(parmStart))
-    upperB[1] <- -1e-9
-
-    # thetaOpt <- optim(parmStart,minD,method=optmethod,lower = lowerB,upper = upperB)
-    thetaOpt <- BBoptim(parmStart, minD, lower = lowerB, upper = upperB, control = object@control.slopes, quiet = TRUE)
-
-    if (thetaOpt$convergence != 0) {
-      warning("Calibration routine may not have converged. Optimizer Reports:\n\t", thetaOpt$message)
-    }
-
-    ## Pre-merger bargaining parameter
-    alphaOpt <- thetaOpt$par[1]
-
-    if (!is2nd) {
-      mvalOpt <- log(sharesDown) - log(idxShare) - alphaOpt * (pricesDown - idxPrice)
-    } else {
-      mvalOpt <- log(sharesDown) - log(idxShare) - alphaOpt * (pricesUp - idxPrice)
-    }
-
-    bOpt <- thetaOpt$par[-1]
-    bargparmPre <- bargparmPost <- bOpt[as.numeric(id)]
-    bargparmPre[owner.up.pre == owner.down.pre] <- 1
-    names(bargparmPre) <- down@labels
-
-    ## Post-merger bargaining parameter
-
-    # owner.up.pre <- up@ownerPost
-    # owner.down <- down@ownerPost
-    bargparmPost[owner.up.post == owner.down.post] <- 1
-    names(bargparmPost) <- down@labels
-
-
-    down@slopes <- list(alpha = alphaOpt, meanval = mvalOpt, sigma = sigma)
-    down@mktSize <- down@insideSize / down@shareInside
-    object@down <- down
-
-    up@bargpowerPre <- bargparmPre
-    up@bargpowerPost <- bargparmPost
-    object@up <- up
-
-
-    object <- ownerToMatrix(object, preMerger = TRUE) # create ownership matrices
-    object <- ownerToMatrix(object, preMerger = FALSE) # create ownership matrices
-
-    return(object)
-  }
-)
-
-
-#' @rdname Params-Methods
-#' @export
-setMethod(
   f = "getParms",
   signature = "Bertrand",
   definition = function(object, digits = 10) {
@@ -3373,33 +3146,6 @@ setMethod(
     }
 
     result$mc <- round(calcMC(object, preMerger = TRUE), digits)
-
-    return(result)
-  }
-)
-
-#' @rdname Params-Methods
-#' @export
-setMethod(
-  f = "getParms",
-  signature = "VertBargBertLogit",
-  definition = function(object, digits = 10) {
-    up <- object@up
-    down <- object@down
-
-    if (is.list(down@slopes)) {
-      result <- lapply(down@slopes, round, digits = digits)
-    } else {
-      result <- list(
-        slopes = round(object@slopes, digits),
-        intercepts = round(object@intercepts, digits)
-      )
-    }
-
-    mcPre <- calcMC(object, preMerger = TRUE)
-    result$mcUpPre <- round(mcPre$up, digits)
-    result$mcDownPre <- round(mcPre$down, digits)
-    result$bargpower <- round(up@bargpowerPre, digits)
 
     return(result)
   }
@@ -3467,26 +3213,6 @@ setMethod(
   signature = "CESNests",
   definition = function(object) {
     .getNestSigma(object)
-  }
-)
-
-#' @rdname Params-Methods
-#' @export
-setMethod(
-  f = "getNestsParms",
-  signature = "VertBargBertLogitNests",
-  definition = function(object) {
-    getNestsParms(object@down)
-  }
-)
-
-#' @rdname Params-Methods
-#' @export
-setMethod(
-  f = "getNestsParms",
-  signature = "VertBarg2ndLogitNests",
-  definition = function(object) {
-    getNestsParms(object@down)
   }
 )
 

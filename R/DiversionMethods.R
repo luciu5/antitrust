@@ -2,7 +2,7 @@
 #' @name Diversion-Methods
 #' @docType methods
 #'
-#' @aliases diversion-methods diversion diversion,ANY-method diversion,AIDS-method diversion,Bertrand-method diversion,VertBargBertLogit-method
+#' @aliases diversion-methods diversion diversion,ANY-method diversion,AIDS-method diversion,Bertrand-method
 #'
 #' @description Calculate the diversion matrix between any two products in the market.
 #' @param object An instance of one of the classes listed above.
@@ -111,17 +111,3 @@ setMethod(
   }
 
 )
-
-
-#'@rdname Diversion-Methods
-#'@export
-setMethod(
-  f= "diversion",
-  signature= "VertBargBertLogit",
-  definition=function(object,preMerger=TRUE,revenue=TRUE){
-    
-    
-    result <- diversion(object@down,preMerger=preMerger,revenue=revenue)
-    
-    return(result)
-  })

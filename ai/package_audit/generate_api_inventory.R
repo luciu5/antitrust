@@ -16,13 +16,20 @@ classes <- classes[classes != "ANY"]
 generics <- sort(getGenerics(where = ns))
 
 formal_exports <- setdiff(user_exports, c("antitrust_shiny", "plot"))
+structural_hook_exports <- c(
+    "compound_cost_shocks", "initialize_cost_state",
+    "validate_counterfactual", "vertical.barg"
+)
 export_rows <- data.frame(
     kind = "export", name = user_exports, signature = "",
     status = ifelse(user_exports %in% formal_exports, "formal-test", "documented-exclusion"),
     evidence = ifelse(
-        user_exports %in% formal_exports,
+        user_exports %in% structural_hook_exports,
+        "tests/testthat/test-structural-public-hooks.R",
+        ifelse(user_exports %in% formal_exports,
         "tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",
         "ai/package_audit/audit_report.md"
+        )
     ),
     exclusion_reason = ifelse(
         user_exports == "antitrust_shiny", "Interactive optional UI; exercised by R CMD check examples when available.",
@@ -39,8 +46,7 @@ direct_classes <- c(
     "Auction2ndCap", "Auction2ndCES", "Auction2ndCESALM", "Auction2ndLogit",
     "Auction2ndLogitALM", "Auction2ndLogitNests", "BargainingCES",
     "BargainingCESALM", "BargainingLogit", "BargainingLogitALM",
-    "Bargaining2ndCES", "Bargaining2ndLogit", "VertBargBertLogit",
-    "VertBarg2ndLogit", "VertBargBertLogitNests", "VertBarg2ndLogitNests"
+    "Bargaining2ndCES", "Bargaining2ndLogit"
 )
 class_rows <- data.frame(
     kind = "S4 class", name = classes, signature = "",
@@ -60,7 +66,8 @@ tested_generics <- c(
     "calcPrices", "calcPricesAG", "calcProducerSurplus", "calcQuantities",
     "calcRevenues", "calcSellerCostParms", "calcShares", "calcSlopes",
     "calcVC", "cdfG", "cmcr", "diversion", "elast", "getParms", "hhi",
-    "getNestsParms", "ownerToMatrix", "ownerToVec", "show", "summary", "upp"
+    "getNestsParms", "ownerToMatrix", "ownerToVec", "show", "summary", "upp",
+    "validate_counterfactual"
 )
 method_rows <- do.call(rbind, lapply(generics, function(generic) {
     found <- findMethods(generic, where = ns)
@@ -70,7 +77,13 @@ method_rows <- do.call(rbind, lapply(generics, function(generic) {
     data.frame(
         kind = "S4 method", name = generic, signature = signatures,
         status = if (formal) "formal-test" else "documented-exclusion",
-        evidence = if (formal) "tests/testthat/test-public-output-methods.R" else "ai/package_audit/audit_report.md",
+        evidence = if (formal) {
+            if (identical(generic, "validate_counterfactual")) {
+                "tests/testthat/test-structural-public-hooks.R"
+            } else {
+                "tests/testthat/test-public-output-methods.R"
+            }
+        } else "ai/package_audit/audit_report.md",
         exclusion_reason = if (formal) "" else "Specialized method is not identified by the synthetic core fixture; retain documented example as the review path.",
         stringsAsFactors = FALSE
     )

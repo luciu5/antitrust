@@ -6,8 +6,7 @@
 #'   or \code{"cournot"}.
 #' @param variant A model-specific calibration variant. The default is
 #'   \code{"standard"}; \code{"alm"} selects the existing unknown-market-
-#'   elasticity calibration where supported, and \code{"auction2nd"} selects
-#'   downstream second-score vertical bargaining.
+#'   elasticity calibration where supported.
 #' @return A small object of class \code{antitrust_model_spec} containing
 #'   normalized model names.
 #' @export
@@ -17,6 +16,11 @@ model_spec <- function(demand, conduct, variant = "standard") {
     }
     if (missing(conduct) || length(conduct) != 1L || is.na(conduct)) {
         stop("'conduct' must be a single conduct name.")
+    }
+    conduct_text <- tolower(trimws(as.character(conduct)))
+    conduct_text <- gsub("[[:space:]._-]+", "", conduct_text)
+    if (conduct_text %in% c("vertical", "verticalbarg", "verticalbargaining")) {
+        stop("vertical bargaining models moved to the 'vertical' package; use vertical::model_spec() or vertical::calibrate().")
     }
 
     demand_text <- tolower(trimws(as.character(demand)))
@@ -318,10 +322,7 @@ print.antitrust_model_spec <- function(x, ...) {
         moncom = "moncom",
         monopolisticcompetition = "moncom",
         stackelberg = "stackelberg",
-        stack = "stackelberg",
-        vertical = "vertical_bargaining",
-        verticalbarg = "vertical_bargaining",
-        verticalbargaining = "vertical_bargaining"
+        stack = "stackelberg"
     )
     if (conduct %in% names(aliases)) aliases[[conduct]] else conduct
 }
@@ -446,18 +447,6 @@ print.antitrust_model_spec <- function(x, ...) {
         list(id = "loglin::stackelberg", demand = "loglin", conduct = "stackelberg",
              class = "Stackelberg", calibrator = "stackelberg", calibrate = TRUE,
              specify = FALSE, simulate = TRUE),
-        list(id = "logit::vertical_bargaining", demand = "logit",
-             conduct = "vertical_bargaining", class = "VertBargBertLogit",
-             calibrator = "vertical.barg", calibrate = TRUE,
-             specify = FALSE, simulate = TRUE),
-        list(id = "logit_nests::vertical_bargaining", demand = "logit_nests",
-             conduct = "vertical_bargaining", class = "VertBargBertLogitNests",
-             calibrator = "vertical.barg", calibrate = TRUE,
-             specify = FALSE, simulate = TRUE),
-        list(id = "logit::vertical_bargaining::auction2nd", demand = "logit",
-             conduct = "vertical_bargaining", variant = "auction2nd",
-             class = "VertBarg2ndLogit", calibrator = "vertical.barg",
-             calibrate = TRUE, specify = FALSE, simulate = TRUE),
         list(id = "logit::bertrand::alm", demand = "logit", conduct = "bertrand",
              variant = "alm", class = "LogitALM", calibrator = "logit.alm",
              calibrate = TRUE, specify = FALSE, simulate = TRUE),
@@ -515,8 +504,8 @@ print.antitrust_model_spec <- function(x, ...) {
 ## These flags mirror the concrete state-transition methods in
 ## CounterfactualPromotion.R.  Entry and quality intentionally have separate
 ## sets: quality can reuse the inherited demand-state method for a few
-## descendants whose entry primitive is not yet supported.  BLP and vertical
-## bargaining remain explicit rejections.
+## descendants whose entry primitive is not yet supported. BLP remains an
+## explicit rejection.
 
 .model_counterfactual_capabilities <- function(spec) {
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)

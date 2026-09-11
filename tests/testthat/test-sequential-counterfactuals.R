@@ -748,7 +748,7 @@ test_that("quality is verified for LogitCap Bertrand", {
     expect_lt(.foc_residual(result), 1e-6)
 })
 
-test_that("BLP and vertical bargaining still reject quality and entry", {
+test_that("BLP still rejects quality and entry", {
     qa_skip_unless_tier("extended")
     fit_blp <- suppressWarnings(specify(
         "blp", "bertrand", prices = c(2, 2.2, 2.5),

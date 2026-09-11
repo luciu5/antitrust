@@ -7,13 +7,10 @@
 \alias{calcProducerSurplus,ANY-method}
 \alias{calcProducerSurplus,Bertrand-method}
 \alias{calcProducerSurplus,Cournot-method}
-\alias{calcProducerSurplus,VertBargBertLogit-method}
 \alias{calcProducerSurplus,Auction2ndCap-method}
 \title{Producer Surplus Methods}
 \usage{
 \S4method{calcProducerSurplus}{Bertrand}(object, preMerger = TRUE)
-
-\S4method{calcProducerSurplus}{VertBargBertLogit}(object, preMerger = TRUE)
 
 \S4method{calcProducerSurplus}{Auction2ndCap}(object, preMerger = TRUE, exAnte = TRUE)
 

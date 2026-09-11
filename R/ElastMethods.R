@@ -2,7 +2,7 @@
 #' @name Elast-Methods
 #' @docType methods
 #'
-#' @aliases elast-methods elast elast,ANY-method elast,AIDS-method elast,CES-method elast,CESNests-method elast,Linear-method elast,LogLin-method elast,Logit-method elast,LogitNests-method elast,Cournot-method elast,VertBargBertLogit-method elast,LogitBLP-method elast,Auction2ndBLP-method elast,BargainingBLP-method
+#' @aliases elast-methods elast elast,ANY-method elast,AIDS-method elast,CES-method elast,CESNests-method elast,Linear-method elast,LogLin-method elast,Logit-method elast,LogitNests-method elast,Cournot-method elast,LogitBLP-method elast,Auction2ndBLP-method elast,BargainingBLP-method
 #'
 #' @description Calculate the own and cross-price elasticity between any two products in the market.
 #' @param object An instance of one of the classes listed above.
@@ -429,18 +429,5 @@ setMethod(
       dimnames(elast) <- list(object@labels, object@labels)
     }
     return(elast)
-  }
-)
-
-
-#' @rdname Elast-Methods
-#' @export
-setMethod(
-  f = "elast",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE, market = FALSE) {
-    result <- elast(object@down, preMerger = preMerger, market = market)
-
-    return(result)
   }
 )

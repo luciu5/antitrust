@@ -1,7 +1,7 @@
 #' @title Producer Surplus Methods
 #' @name PS-methods
 #' @docType methods
-#' @aliases calcProducerSurplus calcProducerSurplus,ANY-method calcProducerSurplus,Bertrand-method calcProducerSurplus,Cournot-method calcProducerSurplus,VertBargBertLogit-method
+#' @aliases calcProducerSurplus calcProducerSurplus,ANY-method calcProducerSurplus,Bertrand-method calcProducerSurplus,Cournot-method
 #'
 #' @description In the following methods, \code{calcProducerSurplus} computes the expected profits of each supplier
 #' with the game depending on the class. The available classes are: Bertrand, Cournot, and Auction2ndCap.
@@ -45,32 +45,6 @@ setMethod(
     names(ps) <- object@labels
 
     return(ps)
-  }
-
-)
-#'@rdname PS-methods
-#'@export
-setMethod(
-  f= "calcProducerSurplus",
-  signature= "VertBargBertLogit",
-  definition=function(object,preMerger=TRUE){
-
-    mktSize <- object@down@mktSize
-
-    margins <- calcMargins(object,preMerger=preMerger,level=TRUE)
-
-    output <- calcShares(object,preMerger)
-
-    if (is.na(mktSize)){
-      warning("'insideSize' is missing; using normalized shares instead of quantities. Producer-surplus results are not in market units.")
-      mktSize <- 1
-    }
-
-    psup <- margins$up * output * mktSize
-    psdown <- margins$down * output * mktSize
-    names(psup) <- names(psdown) <-  object@down@labels
-
-    return(list(up=psup,down=psdown))
   }
 
 )

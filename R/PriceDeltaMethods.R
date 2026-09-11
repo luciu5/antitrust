@@ -2,7 +2,7 @@
 #' @name PriceDelta-Methods
 #' @docType methods
 
-#' @aliases calcPriceDelta calcPriceDelta,ANY-method calcPriceDelta,Antitrust-method calcPriceDelta,AIDS-method calcPriceDelta,Auction2ndLogit-method calcPriceDelta,Cournot-method calcPriceDelta,VertBargBertLogit-method
+#' @aliases calcPriceDelta calcPriceDelta,ANY-method calcPriceDelta,Antitrust-method calcPriceDelta,AIDS-method calcPriceDelta,Auction2ndLogit-method calcPriceDelta,Cournot-method
 #'
 #' @description For Antitrust, the method computes equilibrium price changes
 #' due to a merger assuming that firms are playing a
@@ -128,92 +128,6 @@ setMethod(
   signature = "Cournot",
   definition = function(object, levels = FALSE, market = TRUE, ...) {
     callNextMethod()
-  }
-)
-
-#' @rdname PriceDelta-Methods
-#' @export
-setMethod(
-  f = "calcPriceDelta",
-  signature = "VertBargBertLogit",
-  definition = function(object, levels = FALSE, market = FALSE, ...) {
-    up <- object@up
-    down <- object@down
-
-    chain_level <- object@chain_level
-
-    marginsPre <- calcMargins(object, preMerger = TRUE, level = TRUE)
-    marginsPost <- calcMargins(object, preMerger = FALSE, level = TRUE)
-
-    sharesPre <- calcShares(object, preMerger = TRUE, revenue = FALSE)
-    sharesPost <- calcShares(object, preMerger = FALSE, revenue = FALSE)
-
-    upMCPre <- up@mcPre
-    upMCPre <- ifelse(is.na(upMCPre), 0, upMCPre)
-    downMCPre <- down@mcPre
-    downMCPre <- ifelse(is.na(downMCPre), 0, downMCPre)
-    upPricePre <- up@pricePre
-
-    upMCPost <- up@mcPost
-    upMCPost <- ifelse(is.na(upMCPost), 0, upMCPost)
-    downMCPost <- down@mcPost
-    downMCPost <- ifelse(is.na(downMCPost), 0, downMCPost)
-    upPricePost <- up@pricePost
-
-    if (!market) {
-      mcDeltaUp <- upMCPost - upMCPre
-      ## assume 0 marginal cost changes if unkown
-      # mcDeltaUp <- ifelse(is.na(mcDeltaUp),0,mcDeltaUp)
-
-      mcDeltaDown <- (downMCPost - downMCPre)
-      # mcDeltaDown <- ifelse(is.na(mcDeltaDown),0,mcDeltaDown)
-      mcDeltaDown <- mcDeltaDown + upPricePost - upPricePre
-
-
-      upDelta <- marginsPost$up - marginsPre$up + mcDeltaUp
-      downDelta <- marginsPost$down - marginsPre$down + mcDeltaDown
-
-      if (chain_level == "retailer") {
-        upDelta <- rep(0, length(upDelta))
-      } else if (chain_level == "wholesaler") downDelta <- rep(0, length(downDelta))
-      upPricePre <- up@pricePre
-      downPricePre <- down@pricePre
-    } else {
-      mcDeltaUp <- upMCPost * sharesPost - upMCPre * sharesPre
-      mcDeltaDown <- (downMCPost + upPricePost) * sharesPost - (downMCPre + upPricePre) * sharesPre
-
-      ## assume 0 marginal cost changes if unkown
-      # mcDeltaUp <- ifelse(is.na(mcDeltaUp),0,mcDeltaUp)
-      # mcDeltaDown <- ifelse(is.na(mcDeltaDown),0,mcDeltaDown)
-
-      upDelta <- marginsPost$up * sharesPost - marginsPre$up * sharesPre + mcDeltaUp
-      downDelta <- marginsPost$down * sharesPost - marginsPre$down * sharesPre + mcDeltaDown
-
-      upPricePre <- up@pricePre * sharesPre
-      downPricePre <- down@pricePre * sharesPre
-
-
-      upDelta <- sum(upDelta, na.rm = TRUE)
-      downDelta <- sum(downDelta, na.rm = TRUE)
-
-      if (chain_level == "retailer") {
-        upDelta <- 0
-      } else if (chain_level == "wholesaler") downDelta <- 0
-
-      upPricePre <- sum(upPricePre, na.rm = TRUE)
-      downPricePre <- sum(downPricePre, na.rm = TRUE)
-    }
-
-    if (!levels) {
-      upDelta <- upDelta / upPricePre
-      downDelta <- downDelta / downPricePre
-    }
-    priceDelta <- list(
-      up = upDelta,
-      down = downDelta
-    )
-
-    return(priceDelta)
   }
 )
 

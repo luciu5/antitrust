@@ -34,19 +34,11 @@ setMethod(".promote_post_to_pre", "ANY", function(model, step) {
     model
 })
 
-## Vertical bargaining stores its economic state in `up`/`down` sub-objects
-## rather than directly on the container; promote each side independently.
-setMethod(".promote_post_to_pre", "VertBargBertLogit", function(model, step) {
-    model@up <- .promote_post_to_pre(model@up, step)
-    model@down <- .promote_post_to_pre(model@down, step)
-    model
-})
-
 ## Entry and quality are implemented for the following concrete descendants.
 ## The generic Logit/CES methods handle the demand state, while the entrant
 ## expansion below carries each descendant's additional product primitive.
-## BLP and vertical bargaining remain excluded because their state is not a
-## flat product vector and their simulation methods have separate contracts.
+## BLP remains excluded because its state is not a flat product vector and
+## its simulation methods have separate contracts.
 .entry_supported_classes <- c(
     "Logit", "LogitCournot", "CES", "CESCournot",
     "MonComLogit", "MonComCES", "LogitNests", "CESNests",

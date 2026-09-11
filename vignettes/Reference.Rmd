@@ -1903,14 +1903,13 @@ $$
 \partial p_n:   \omega_{nj}(p_n-c_n) - \sum_{k\in W_j}\omega_{kj}(p_k-c_k) s_k = \frac{\ln({1-s_n})/\alpha}{ \frac{\lambda_n}{(1-\lambda_n)}\frac{s_n}{1-s_n}-\omega_{nj}\ln({1-s_n}) }  
 $$
 
-# Vertical Supply (experimental)
+# Vertical Supply
 
-The vertical supply constructors are experimental and currently focus on Logit demand in the downstream market.
+Vertical supply-chain bargaining and merger simulation has moved to the sibling
+`vertical` package. Existing `antitrust::vertical.barg()` calls now report the
+corresponding `vertical::vertical.barg()` migration target; vertical economic
+implementation is no longer maintained in `antitrust`.
 
-The Bertrand, 2nd Score, and Bargaining models under Logit demand described above all focused on merger effects in a single market. Here, we extend the analysis to examine merger effects in a vertical supply chain. 
-
- The supply chain models discussed here  may all be executed using `antitrust`'s `vertical.barg` function.
- 
 # Other Tools
 For some acquisitions, there may be insufficient information available
 to use any of the merger simulation functions described above. In these
@@ -2333,11 +2332,10 @@ sensible default values and then does the following:
 | `auction2nd.ces` | 2nd price, CES | O | 1+ |  | A |  | [@miller2014] |
 | `auction2nd.ces.alm` | 2nd price, CES-Unobserved Outside Share | O | 2+ |  | A |  | [@miller2014] |
 | `auction2nd.cap` | 2nd price, homogeneous single unit | 1+ | 1+ |  |  | A | [@WaehrP2003] |
-|  |  | **Bargaining and Vertical Supply** |  |  |  |  |  |
+|  |  | **Bargaining** |  |  |  |  |  |
 | `bargaining.logit` | Bargaining, Logit | A | 1+ |  | A |  |  |
 | `bargaining.logit.alm` | Bargaining, Logit-Unobserved Outside Share | A | 2+ |  | A |  |  |
 | `bargaining2nd.logit` | Bargaining with 2nd score disagreement, Logit | A | 1+ |  | A |  |  |
-| `vertical.barg` | Vertical bargaining, Logit | A | A | O | A |  |  |
 |  |  | **Other Tools** |  |  |  |  |  |
 | `cmcr.bertrand` | any | M | M | M |  |  | [@Werden1996] |
 | `cmcr.cournot` | any |  | 1 |  | M |  | [@Froeb1998] |

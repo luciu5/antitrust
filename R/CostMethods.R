@@ -2,7 +2,7 @@
 #' @name Cost-Methods
 #' @docType methods
 #'
-#' @aliases calcMC calcMC,ANY-method calcMC,Bertrand-method calcMC,VertBargBertLogit-method calcMC,Auction2ndLogit-method calcMC,Cournot-method calcMC,Auction2ndCap-method calcdMC calcdMC,ANY-method calcdMC,Stackelberg-method calcVC calcVC,ANY-method calcVC,Cournot-method
+#' @aliases calcMC calcMC,ANY-method calcMC,Bertrand-method calcMC,Auction2ndLogit-method calcMC,Cournot-method calcMC,Auction2ndCap-method calcdMC calcdMC,ANY-method calcdMC,Stackelberg-method calcVC calcVC,ANY-method calcVC,Cournot-method
 #'
 #' @description
 #' For Auction2ndCap, calcMC calculates (constant) marginal cost for each
@@ -98,18 +98,12 @@ setGeneric(
 ## For Cournot/Stackelberg the cost functions themselves are the structural
 ## primitive; their realized value remains quantity-dependent and is therefore
 ## deliberately not frozen here.
-.initialize_cost_state <- function(object) {
-  if (methods::is(object, "VertBargBertLogit")) {
-    up <- .initialize_cost_state(object@up)
-    down <- .initialize_cost_state(object@down)
-    ## Slot assignment must happen explicitly: assigning a nested S4 slot
-    ## does not mutate the original object in place, and leaving the inner
-    ## attributes off would let vertical calcMC() fall back to re-inference.
-    object@up <- up
-    object@down <- down
-    state <- list(up = .cost_state(up), down = .cost_state(down))
-    return(.set_cost_state(object, state))
-  }
+#' Initialize persistent structural cost state
+#'
+#' @param object A fitted structural model.
+#' @return The model with its structural cost state initialized.
+#' @export
+initialize_cost_state <- function(object) {
   ## Cournot and Stackelberg marginal costs are functions of equilibrium
   ## quantities.  Their function closures and derivative closures already
   ## live in the S4 slots and are promoted with the quantity state; freezing
@@ -124,6 +118,31 @@ setGeneric(
     mode = .cost_state_mode(object)
   )
   .set_cost_state(object, state)
+}
+
+.initialize_cost_state <- function(object) initialize_cost_state(object)
+
+#' Compound structural marginal-cost shocks
+#'
+#' Combines a new marginal-cost change with a cumulative change using the
+#' cost convention of `object`. Most structural models use proportional
+#' changes; second-score Logit auctions retain their historical additive
+#' convention.
+#'
+#' @param object A fitted structural model whose cost convention is used.
+#' @param current The current cumulative cost change, or `NULL`.
+#' @param change The next cost change, or `NULL`.
+#' @return The compounded cost-change vector, or `current` when `change` is
+#'   `NULL`.
+#' @export
+compound_cost_shocks <- function(object, current = NULL, change = NULL) {
+  state <- .cost_state(object)
+  mode <- if (!is.null(state) && !is.null(state$mode)) {
+    state$mode
+  } else {
+    .cost_state_mode(object)
+  }
+  .compound_costs(current, change, mode = mode)
 }
 
 ## Return a persistent cost level when the model carries one.  A NULL return
@@ -196,78 +215,6 @@ setMethod(
     return(mc)
   }
 )
-
-#' @rdname Cost-Methods
-#' @export
-setMethod(
-  f = "calcMC",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE) {
-    persistent <- .cost_state(object)
-    if (!is.null(persistent) && !is.null(persistent$up) &&
-        !is.null(persistent$down)) {
-      mc_up <- .persistent_mc(object@up, preMerger)
-      mc_down <- .persistent_mc(object@down, preMerger)
-      if (!is.null(mc_up) && !is.null(mc_down)) {
-        mc_up <- as.vector(mc_up)
-        mc_down <- as.vector(mc_down)
-        names(mc_up) <- object@up@labels
-        names(mc_down) <- object@down@labels
-        return(list(up = mc_up, down = mc_down))
-      }
-    }
-    up <- object@up
-    down <- object@down
-
-
-    if (length(up@pricePre) == 0) {
-      priceUpPre <- up@prices
-      object@up@pricePre <- up@prices
-    } else {
-      priceUpPre <- up@pricePre
-    }
-
-    if (length(down@pricePre) == 0) {
-      priceDownPre <- down@prices
-      object@down@pricePre <- priceDownPre
-    } else {
-      priceDownPre <- object@down@pricePre
-    }
-
-
-    marginsPre <- calcMargins(object, preMerger = TRUE, level = TRUE)
-
-
-    mcDown <- -(marginsPre$down - priceDownPre + priceUpPre)
-    mcUp <- -(marginsPre$up - priceUpPre)
-
-
-    if (!preMerger) {
-      mcUp <- mcUp * (1 + up@mcDelta)
-      mcDown <- mcDown * (1 + down@mcDelta)
-    }
-
-    mcUp <- as.vector(mcUp)
-    mcDown <- as.vector(mcDown)
-
-    names(mcUp) <- up@labels
-    names(mcDown) <- down@labels
-
-
-    isNegUpMC <- mcUp < 0
-    isNegDownMC <- mcDown < 0
-
-    if (preMerger && any(isNegUpMC, na.rm = TRUE)) {
-      warning(paste("Negative upstream marginal costs were calibrated for the following firms:", paste(up@labels[isNegUpMC & !is.na(isNegUpMC)], collapse = ",")))
-    }
-    if (preMerger && any(isNegDownMC, na.rm = TRUE)) {
-      warning(paste("Negative downstream marginal costs were calibrated for the following firms:", paste(down@labels[isNegDownMC & !is.na(isNegDownMC)], collapse = ",")))
-    }
-
-    return(list(up = mcUp, down = mcDown))
-  }
-)
-
 
 #' @rdname Cost-Methods
 #' @export
