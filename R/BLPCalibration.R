@@ -1168,11 +1168,7 @@ setMethod(
     ## identify the active dimensions.  Keep the supplied-parameter aliases
     ## here as well, with explicit `dots` values taking precedence over the
     ## parameter list just as they do at the legacy boundary.
-    for (name in intersect(names(parameters), c(
-        "integrationPoints", "draws", "consDraws", "drawWeights", "integrationWeights",
-        "integration", "nNodes", "nDraws", "sigma", "piDemog", "pi",
-        "nDemog", "sigmaChar", "demogMean", "demogCov"
-    ))) {
+    for (name in intersect(names(parameters), .blp_integration_dot_names())) {
         if (!(name %in% names(integration_dots))) {
             integration_dots[[name]] <- parameters[[name]]
         }

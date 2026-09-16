@@ -30,6 +30,29 @@ calcBLPintegration <- function(slopes) {
   .blp_integration(slopes)
 }
 
+## Names recognized by the BLP integration selector (.blp_integration()).
+## Shared by every call site that merges these names between top-level
+## specify()/sim() arguments and a model's `parameters`/`demand.param` list,
+## so the merged set cannot drift out of sync across call sites.
+.blp_integration_dot_names <- function() {
+    c("integrationPoints", "draws", "consDraws", "drawWeights", "integrationWeights",
+      "integration", "nNodes", "nDraws", "sigma", "piDemog", "pi",
+      "nDemog", "sigmaChar", "demogMean", "demogCov")
+}
+
+## TRUE when a BLP `parameters`/`demand.param` list carries only the
+## calibrated price-only random coefficient, with none of the demographic,
+## random-characteristic, or nesting fields that route specify() to the
+## legacy constructor. Shared by specify() (which dispatches on this) and
+## sim() (which must not inject its own historical integration default when
+## specify() will not take the price-only path).
+.blp_price_only_parameters <- function(parameters) {
+    !any(c("prodChar", "sigmaChar", "pi", "piDemog", "demogMean",
+           "demogCov") %in% names(parameters)) &&
+        (is.null(parameters$sigmaNest) ||
+         isTRUE(as.numeric(parameters$sigmaNest) == 1))
+}
+
 .blp_single_demographic_dimension <- function(dots) {
     sigma <- dots[["sigma"]]
     n_demog <- dots[["nDemog"]]

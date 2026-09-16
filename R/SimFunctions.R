@@ -1107,7 +1107,13 @@ sim <- function(prices,
         ## calls.  The refactor API uses integration = "auto" (GH for the
         ## one-dimensional price-only case), but legacy sim() used fixed-draw
         ## Monte Carlo with 1,000 draws unless callers supplied a rule/draws.
+        ## This default is only appropriate for the price-only case that
+        ## specify() itself would route to .specify_blp_conduct_fit(); the
+        ## demographic/characteristic/nested case has its own, better
+        ## defaults (e.g. Gauss-Hermite for a single demographic dimension)
+        ## that this historical override must not clobber.
         if (identical(registry_demand, "BLP") &&
+            .blp_price_only_parameters(demand.param) &&
             is.null(dots$integration) && is.null(dots$nNodes) &&
             is.null(dots$integrationPoints) &&
             is.null(dots$draws) && is.null(dots$consDraws) &&

@@ -448,10 +448,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     ## constructor for existing higher-dimensional BLP specifications rather
     ## than silently dropping characteristics or demographic interactions.
     blp_price_only <- identical(spec$demand, "blp") &&
-        !any(c("prodChar", "sigmaChar", "pi", "piDemog", "demogMean",
-               "demogCov") %in% names(parameters)) &&
-        (is.null(parameters$sigmaNest) ||
-         isTRUE(as.numeric(parameters$sigmaNest) == 1))
+        .blp_price_only_parameters(parameters)
     if (identical(spec$demand, "blp") && !blp_price_only &&
         spec$conduct %in% c("auction2nd", "bargaining")) {
         stop("Multidimensional BLP specification currently supports Bertrand, Cournot, and MonCom conduct. BLP auction and bargaining remain price-random-coefficient-only.")
@@ -481,6 +478,21 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         result@model <- .initialize_cost_state(result@model)
         result <- .retain_fit_metadata(result)
         return(result)
+    }
+    if (identical(spec$demand, "blp")) {
+        ## Reaching here means !blp_price_only: demographic, characteristic,
+        ## or nested BLP heterogeneity is present, so specify() falls through
+        ## to the legacy sim() constructor below. That constructor reads
+        ## integration configuration only from `parameters` (as
+        ## `demand.param`); unlike .specify_blp_conduct_fit() above, it does
+        ## not see top-level specify() arguments at all. Merge the same
+        ## integration-related names here, with top-level dots taking
+        ## precedence, so integration/draws/drawWeights/etc. supplied as
+        ## top-level specify() arguments are not silently dropped just
+        ## because demographic parameters happen to also be present.
+        for (name in intersect(names(dots), .blp_integration_dot_names())) {
+            parameters[[name]] <- dots[[name]]
+        }
     }
     sim_shares <- if (spec$demand %in% c("linear", "loglin")) {
         quantities / sum(quantities)

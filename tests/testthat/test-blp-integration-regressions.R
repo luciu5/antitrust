@@ -413,6 +413,34 @@ test_that("BLP fits reuse their integration rule across counterfactual simulatio
 })
 
 
+test_that("BLP fits with demographic heterogeneity honor top-level integration dots", {
+    qa_skip_unless_tier("extended")
+    nodes <- c(-1.5, -.25, .75, 1.75)
+    weights <- c(.05, .15, .30, .50)
+    fit <- specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1),
+        shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"),
+        parameters = list(
+            alphaMean = -1.2, sigma = 0,
+            piDemog = .3, demogMean = .2, demogCov = matrix(.64, 1L, 1L),
+            meanval = c(.5, .2, -.1)
+        ),
+        integration = "provided",
+        draws = nodes,
+        drawWeights = weights
+    )
+    model <- fit@model
+    ## demogDraws = demogMean + sqrt(demogCov) * nodes (nodes are standardized
+    ## draws); alphas = alphaMean + piDemog * (demogDraws - demogMean).
+    expect_equal(model@slopes$alphas,
+                 -1.2 + .3 * sqrt(.64) * nodes, tolerance = 1e-12)
+    expect_equal(model@slopes$drawWeights, weights / sum(weights),
+                 tolerance = 1e-12)
+})
+
+
 test_that("BLP CV trimming uses integration-weighted quantiles and means", {
     qa_skip_unless_tier("extended")
     nodes <- c(-2, -.5, .5, 2)
