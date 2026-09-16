@@ -245,6 +245,57 @@ test_that("quality works for Logit Cournot and CES Bertrand/Cournot", {
                  fit_cesc@model@slopes$meanval[["Prod1"]] * 1.1, tolerance = 1e-10)
 })
 
+test_that("quality applies a sigmaNest-scaled choice-weight change to LogitBLP", {
+    ## Pin deterministic integration draws so this test cannot perturb the
+    ## global RNG stream (sigma = 0 with no demographic dimension falls back
+    ## to Monte Carlo by default, which would otherwise consume random
+    ## draws and could shift a later, unseeded test's solver starting point).
+    nodes <- c(-1, 0, 1)
+    weights <- c(.25, .5, .25)
+
+    ## Unnested (sigmaNest = 1) must exactly match flat Logit's shift.
+    fit_flat <- specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1), shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"), labels = c("A", "B", "C"),
+        parameters = list(alphaMean = -1.2, sigma = 0, sigmaNest = 1,
+                          meanval = c(.5, .2, -.1),
+                          integration = "provided",
+                          draws = nodes, drawWeights = weights)
+    )
+    result_flat <- simulate(fit_flat, counterfactual(quality = c(A = .25)))
+    expect_equal(result_flat@slopes$meanval[["A"]],
+                 fit_flat@model@slopes$meanval[["A"]] + log1p(.25), tolerance = 1e-12)
+
+    ## Nested (sigmaNest < 1): the meanval shift must be sigmaNest-scaled, and
+    ## the resulting choice weight exp(util / sigmaNest) must scale by exactly
+    ## (1 + quality) -- the actual economic target, not just the formula.
+    sigmaNest <- 0.25
+    fit_nested <- specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1), shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"), labels = c("A", "B", "C"),
+        parameters = list(alphaMean = -1.2, sigma = 0, sigmaNest = sigmaNest,
+                          meanval = c(.5, .2, -.1),
+                          integration = "provided",
+                          draws = nodes, drawWeights = weights)
+    )
+    model_before <- fit_nested@model
+    util_before <- model_before@slopes$meanval[["A"]] + model_before@slopes$alphas[1] *
+        (model_before@pricePre[[1]] - model_before@priceOutside)
+
+    quality <- 0.4
+    result_nested <- simulate(fit_nested, counterfactual(quality = c(A = quality)))
+    expect_equal(result_nested@slopes$meanval[["A"]],
+                 fit_nested@model@slopes$meanval[["A"]] + sigmaNest * log1p(quality),
+                 tolerance = 1e-12)
+
+    util_after <- result_nested@slopes$meanval[["A"]] + result_nested@slopes$alphas[1] *
+        (result_nested@pricePre[[1]] - result_nested@priceOutside)
+    weight_ratio <- exp(util_after / sigmaNest) / exp(util_before / sigmaNest)
+    expect_equal(weight_ratio, 1 + quality, tolerance = 1e-10)
+})
+
 ## ---- Exit ------------------------------------------------------------------
 
 test_that("sequential exit persists and combines across steps", {
@@ -748,16 +799,24 @@ test_that("quality is verified for LogitCap Bertrand", {
     expect_lt(.foc_residual(result), 1e-6)
 })
 
-test_that("BLP still rejects quality and entry", {
+test_that("BLP still rejects entry, but now supports quality", {
     qa_skip_unless_tier("extended")
     fit_blp <- suppressWarnings(specify(
         "blp", "bertrand", prices = c(2, 2.2, 2.5),
         parameters = list(alphaMean = -1, sigma = 1, meanval = c(0, .1, .2)),
         ownerPre = c("A", "B", "C"), insideSize = 100
     ))
-    expect_error(simulate(fit_blp, counterfactual(quality = c(Prod1 = .1))), "does not support")
+    ## Entry remains excluded: BLP's product dimension is not a flat vector
+    ## for entry's ownership/cost-state expansion (see .apply_quality,
+    ## "LogitBLP" method for the supported quality case).
     e1 <- entrant(label = "E1", meanval = .1, cost = 1, priceStart = 2)
     expect_error(simulate(fit_blp, counterfactual(entry = e1)), "does not support")
+
+    result <- simulate(fit_blp, counterfactual(quality = c(Prod1 = .1)))
+    sigmaNest <- unname(fit_blp@model@slopes$sigmaNest)
+    expect_equal(result@slopes$meanval[["Prod1"]],
+                 fit_blp@model@slopes$meanval[["Prod1"]] + sigmaNest * log1p(.1),
+                 tolerance = 1e-10)
 })
 
 ## ---- Additional coverage: ALM, Cournot-conduct entry, CESNests new-nest, --

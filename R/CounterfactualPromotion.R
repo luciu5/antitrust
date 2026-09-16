@@ -37,8 +37,8 @@ setMethod(".promote_post_to_pre", "ANY", function(model, step) {
 ## Entry and quality are implemented for the following concrete descendants.
 ## The generic Logit/CES methods handle the demand state, while the entrant
 ## expansion below carries each descendant's additional product primitive.
-## BLP remains excluded because its state is not a flat product vector and
-## its simulation methods have separate contracts.
+## BLP remains excluded from entry because its state is not a flat product
+## vector and its simulation methods have separate contracts.
 .entry_supported_classes <- c(
     "Logit", "LogitCournot", "CES", "CESCournot",
     "MonComLogit", "MonComCES", "LogitNests", "CESNests",
@@ -50,7 +50,10 @@ setMethod(".promote_post_to_pre", "ANY", function(model, step) {
     "Bargaining2ndCES"
 )
 
-.quality_supported_classes <- .entry_supported_classes
+## Quality is additionally supported for LogitBLP via its own
+## sigmaNest-scaled method below (LogitBLP's product dimension is a flat
+## vector for this purpose, unlike entry's ownership/cost-state expansion).
+.quality_supported_classes <- c(.entry_supported_classes, "LogitBLP")
 
 ## The legacy specialized Logit constructors store a positive demand index
 ## in `meanval`, even though the flat Logit constructor stores utility.  Keep
@@ -264,6 +267,41 @@ setMethod(".apply_quality", "Logit", function(model, quality) {
         ## intended attractiveness change.
         meanval[idx] <- meanval[idx] + log1p(quality)
     }
+    model@slopes$meanval <- meanval
+    model
+})
+
+## LogitBLP nests utility through sigmaNest before exponentiating
+## (calcShares,LogitBLP computes exp(util / sigmaNest)), unlike flat Logit's
+## bare exp(util). A proportional choice-weight change of (1 + quality)
+## therefore requires meanval_new <- meanval_old + sigmaNest * log1p(quality)
+## rather than flat Logit's meanval_old + log1p(quality) -- the two
+## coincide only in the unnested sigmaNest = 1 limit. Without this override,
+## S4 dispatch on inherited "Logit" would silently apply the unscaled
+## shift, which is wrong by a factor of 1/sigmaNest for any nested fit.
+setMethod(".apply_quality", "LogitBLP", function(model, quality) {
+    .require_quality_supported(model, "quality")
+    if (is.null(names(quality)) || any(!nzchar(names(quality)))) {
+        stop("'quality' must be a named numeric vector (product label = proportional change)")
+    }
+    unknown <- setdiff(names(quality), model@labels)
+    if (length(unknown)) {
+        stop("'quality' references unknown product label(s): ", paste(unknown, collapse = ", "))
+    }
+    active_labels <- model@labels[model@subset]
+    exited <- setdiff(names(quality), active_labels)
+    if (length(exited)) {
+        stop("'quality' references product(s) that are not active (exited or not yet entered): ",
+             paste(exited, collapse = ", "))
+    }
+    if (any(quality <= -1)) {
+        stop("'quality' values must be greater than -1 for Logit demand")
+    }
+    sigmaNest <- model@slopes$sigmaNest
+    if (is.null(sigmaNest)) sigmaNest <- 1
+    meanval <- model@slopes$meanval
+    idx <- match(names(quality), model@labels)
+    meanval[idx] <- meanval[idx] + sigmaNest * log1p(quality)
     model@slopes$meanval <- meanval
     model
 })
