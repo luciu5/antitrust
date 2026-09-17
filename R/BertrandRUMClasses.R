@@ -1,3 +1,17 @@
+## Calibration eligibility is distinct from validity of fitted demand state.
+## ALM wrappers can carry an already fitted RUM model with a known outside
+## share; its normalization must not be replaced by a calibration-input marker.
+.has_fitted_rum_state <- function(object) {
+  slopes <- object@slopes
+  if (!is.list(slopes)) return(FALSE)
+  coefficient <- if (methods::is(object, "CES")) slopes$gamma else slopes$alpha
+  meanval <- slopes$meanval
+  is.numeric(coefficient) && length(coefficient) == 1L &&
+    is.finite(coefficient) && is.numeric(meanval) &&
+    length(meanval) == length(object@shares) && length(meanval) > 0L &&
+    all(is.finite(meanval))
+}
+
 #' @title \dQuote{Bertrand RUM} Classes
 #' @name BertrandRUM-Classes
 #' @aliases Logit-class LogitBLP-class CournotBLP-class Auction2ndBLP-class LogitCournot-class LogitCournotALM-class LogitCap-class LogitCapALM-class LogitNests-class LogitNestsALM-class LogitALM-class CES-class CESALM-class CESCournot-class CESCournotALM-class CESNests-class
@@ -317,13 +331,14 @@ setClass(
     )
   ),
   validity = function(object) {
+    fitted <- .has_fitted_rum_state(object)
     nMargins <- length(object@margins[!is.na(object@margins)])
 
-    if (nMargins < 2 && is.na(object@mktElast)) {
+    if (!fitted && nMargins < 2 && is.na(object@mktElast)) {
       stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
     }
 
-    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+    if (!fitted && !isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
       stop("sum of 'shares' must equal 1")
     }
 
@@ -430,16 +445,17 @@ setClass(
     )
   ),
   validity = function(object) {
+    fitted <- .has_fitted_rum_state(object)
     nMargins <- length(object@margins[!is.na(object@margins)])
-    if (is.na(object@insideSize) || object@insideSize <= 0) {
+    if (!fitted && (is.na(object@insideSize) || object@insideSize <= 0)) {
       stop("'insideSize' must be greater than or equal to 0")
     }
 
-    if (nMargins < 2 && is.na(object@mktElast)) {
+    if (!fitted && nMargins < 2 && is.na(object@mktElast)) {
       stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
     }
 
-    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+    if (!fitted && !isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
       stop("sum of 'shares' must equal 1")
     }
 
@@ -541,13 +557,14 @@ setClass(
     )
   ),
   validity = function(object) {
+    fitted <- .has_fitted_rum_state(object)
     nMargins <- length(object@margins[!is.na(object@margins)])
 
-    if (nMargins < 2 && is.na(object@mktElast)) {
+    if (!fitted && nMargins < 2 && is.na(object@mktElast)) {
       stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
     }
 
-    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+    if (!fitted && !isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
       stop("sum of 'shares' must equal 1")
     }
 
@@ -595,13 +612,14 @@ setClass(
     )
   ),
   validity = function(object) {
+    fitted <- .has_fitted_rum_state(object)
     nMargins <- length(object@margins[!is.na(object@margins)])
 
-    if (nMargins < 2 && is.na(object@mktElast)) {
+    if (!fitted && nMargins < 2 && is.na(object@mktElast)) {
       stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
     }
 
-    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+    if (!fitted && !isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
       stop("sum of 'shares' must equal 1")
     }
 
