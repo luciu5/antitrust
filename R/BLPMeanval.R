@@ -105,11 +105,19 @@ setMethod(
       alphaMean <- -alphaMean
     }
 
-    # Ensure all individual alphas have the correct sign
-    wrongSigns <- if(expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
-    if(wrongSigns > 0){
-      warning(wrongSigns, " out of ", length(alphas), " individual price coefficients have wrong sign. ",
-              "Consider reducing sigma or adjusting alphaMean to keep all draws on correct side of zero.")
+    # .blp_materialize_draws() already clips any wrong-sign alphas to a
+    # small epsilon of the correct sign before returning (see
+    # BLPIntegration.R) and reports the pre-clip wrong-sign count/mass via
+    # wrongSignCount/wrongSignMass. This diagnostic mirrors that report for
+    # callers of calcMeanval() directly; alphas here are already the
+    # clipped values.
+    wrongSigns <- materialized$wrongSignCount
+    if(!is.null(materialized$wrongSignMass) && materialized$wrongSignMass > 0){
+      warning(wrongSigns, " out of ", length(alphas),
+              " individual price coefficients had the wrong sign before clipping ",
+              "(weighted mass ", format(materialized$wrongSignMass, digits = 6), "). ",
+              "They were clipped to enforce correct sign (",
+              ifelse(output, "negative", "positive"), ").")
     }
 
     nprods <- length(shares)

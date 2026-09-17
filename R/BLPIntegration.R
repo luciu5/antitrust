@@ -493,11 +493,26 @@ calcBLPintegration <- function(slopes) {
     }
     expected_sign <- if (isTRUE(output)) -1 else 1
     wrong_sign <- if (expected_sign > 0) alphas <= 0 else alphas >= 0
+    wrong_sign_mass <- sum(weights[wrong_sign])
+    ## A draw with price-coefficient sign inconsistent with the market type
+    ## (output=TRUE expects strictly negative; output=FALSE expects strictly
+    ## positive) represents a simulated household whose demand response to
+    ## price points the wrong economic direction. Left unclipped, a
+    ## substantial wrong-sign mass can cancel out most of the market-level
+    ## price elasticity used by calcMC()/calcPrices(), producing
+    ## near-degenerate or numerically unstable Bertrand FOC solves
+    ## downstream. Clip to a small epsilon of the correct sign rather than
+    ## only reporting wrongSignMass -- this restores behavior present before
+    ## the BLP integration rewrite (pre-refactor commit 0464bb2, "censored
+    ## coefficients that are the wrong sign").
+    if (wrong_sign_mass > 0) {
+        alphas <- if (expected_sign > 0) pmax(alphas, 1e-2) else pmin(alphas, -1e-2)
+    }
     list(
         standardizedDraws = z, consDraws = cons_draws, priceDraws = price_z,
         demogDraws = demogDraws, charDraws = charDraws, alphas = alphas,
         char_random = char_random, weights = weights,
-        wrongSignMass = sum(weights[wrong_sign])
+        wrongSignMass = wrong_sign_mass, wrongSignCount = sum(wrong_sign)
     )
 }
 

@@ -373,13 +373,18 @@ test_that("BLP repeated share and derivative evaluations are deterministic", {
 })
 
 
-test_that("legacy BLP retains wrong-sign draws under the explicit domain contract", {
+test_that("legacy BLP clips wrong-sign draws under the explicit domain contract", {
+    ## A wrong-sign draw (here, alpha = -1 + 1.5*1 = +0.5, positive when
+    ## output=TRUE expects strictly negative) is clipped to a small epsilon
+    ## of the correct sign rather than retained -- an uncorrected mix of
+    ## signs can cancel out most of the market-level price elasticity and
+    ## destabilize the downstream Bertrand FOC solve.
     model <- blp_integration_test_model(
         nodes = c(-1, 0, 1), weights = rep(1 / 3, 3),
         alphaMean = -1, sigma = 1.5
     )
-    expect_warning({ model <- calcSlopes(model) }, "retained")
-    expect_equal(model@slopes$alphas, c(-2.5, -1, .5), tolerance = 0)
+    expect_warning({ model <- calcSlopes(model) }, "clipped")
+    expect_equal(model@slopes$alphas, c(-2.5, -1, -1e-2), tolerance = 0)
 })
 
 
