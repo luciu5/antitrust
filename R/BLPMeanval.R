@@ -62,6 +62,15 @@ setMethod(
     nDemog <- as.integer(nDemog)
     sigmaNest    <-  object@slopes$sigmaNest
 
+    # A wrongly signed mean keeps the historical whole-draw sign correction.
+    # Clip in that supplied mean's orientation before reflecting the draws:
+    # clipping(-x, expectedSign) == -clipping(x, -expectedSign).
+    # This keeps materialization from clipping to the final market sign and
+    # then reflecting already-clipped coefficients onto the wrong side.
+    output <- object@output
+    expectedSign <- ifelse(output, -1, 1)
+    flipMean <- sign(alphaMean) != expectedSign && alphaMean != 0
+
     # Check if meanval (delta) is already provided
     deltaProvided <- "meanval" %in% names(object@slopes) && !is.null(object@slopes$meanval)
 
@@ -80,7 +89,7 @@ setMethod(
       demogMean = object@slopes$demogMean,
       demogCov = object@slopes$demogCov,
       prodChar = prodChar, sigmaChar = sigmaChar, pi = pi,
-      output = object@output,
+      output = if (flipMean) !output else output,
       storedDemogDraws = object@slopes$demogDraws,
       storedCharDraws = object@slopes$charDraws
     )
@@ -92,12 +101,8 @@ setMethod(
     charDraws <- materialized$charDraws
     char_random <- materialized$char_random
 
-    # Use output slot to verify sign consistency
-    output <- object@output
-    expectedSign <- ifelse(output, -1, 1)
-
-    # Check if alphaMean has the wrong sign for this market type
-    if(sign(alphaMean) != expectedSign && alphaMean != 0){
+    # Correct both the supplied mean and its individual draws together.
+    if(flipMean){
       warning("Price coefficient sign inconsistent with market type (output=", output,
               "). Expected ", ifelse(output, "negative", "positive"), " alpha, got ",
               round(alphaMean, 4), ". Flipping sign to maintain consistency.")

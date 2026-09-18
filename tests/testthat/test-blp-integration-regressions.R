@@ -477,3 +477,28 @@ test_that("BLP CV trimming uses integration-weighted quantiles and means", {
         sum(weights[keep] * cv_by_draw[keep]) / sum(weights[keep])
     expect_equal(CV(model, lim = c(.5, 1)), expected, tolerance = 1e-13)
 })
+
+
+test_that("calcMeanval keeps wrong-mean correction consistent with draw clipping", {
+    nodes <- c(-1, 0, 1)
+    weights <- c(.2, .3, .5)
+    for (output in c(TRUE, FALSE)) {
+        for (sigma in c(0, 1.5)) {
+            supplied_mean <- if (output) 1 else -1
+            model <- blp_integration_test_model(
+                nodes = nodes, weights = weights,
+                alphaMean = supplied_mean, sigma = sigma
+            )
+            model@output <- output
+            expect_warning({ corrected <- calcMeanval(model) }, "Flipping sign")
+            raw_corrected <- -(supplied_mean + sigma * nodes)
+            expected <- if (output) pmin(raw_corrected, -1e-2) else
+                pmax(raw_corrected, 1e-2)
+            expect_equal(corrected@slopes$alpha, -supplied_mean, tolerance = 0)
+            expect_equal(corrected@slopes$alphas, expected, tolerance = 0)
+            expect_equal(corrected@slopes$drawWeights, weights, tolerance = 0)
+            expect_true(all(if (output) corrected@slopes$alphas < 0 else
+                corrected@slopes$alphas > 0))
+        }
+    }
+})
