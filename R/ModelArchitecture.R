@@ -31,6 +31,39 @@ setClass(
     contains = "VIRTUAL"
 )
 
+#' Initialize a fitted model's observed baseline state
+#'
+#' `initialize_baseline_state()` records which baseline lifecycle was used by
+#' a parameterized constructor.  The default `"solve"` path retains the
+#' legacy constructor behavior.  The `"observed"` path is an opt-in for
+#' parameterized flat Logit/CES models whose observed prices and structural
+#' cost state are already supplied; its implementation must validate and bind
+#' those stored values without running a nonlinear baseline solve.
+#'
+#' Concrete packages may define methods for their `StructuralFit` subclasses
+#' when the model has additional policy state, such as trade tariffs.
+#'
+#' @param object A fitted `StructuralFit` object.
+#' @param baseline Either `"solve"` or `"observed"`.
+#' @return The fitted object with baseline lifecycle diagnostics updated.
+#' @export
+setGeneric(
+    "initialize_baseline_state",
+    function(object, baseline = c("solve", "observed")) {
+        standardGeneric("initialize_baseline_state")
+    }
+)
+
+#' @rdname initialize_baseline_state
+#' @export
+setMethod(
+    "initialize_baseline_state", "StructuralFit",
+    function(object, baseline = c("solve", "observed")) {
+        stop("no initialize_baseline_state() method is defined for objects of class '",
+             class(object)[[1]], "'.")
+    }
+)
+
 
 #' A calibrated structural model
 #'
@@ -54,6 +87,75 @@ setClass(
         observed = list(),
         diagnostics = list()
     )
+)
+
+#' @rdname initialize_baseline_state
+#' @export
+setMethod(
+    "initialize_baseline_state", "AntitrustFit",
+    function(object, baseline = c("solve", "observed")) {
+        baseline <- match.arg(baseline)
+        if (identical(baseline, "observed")) {
+            spec <- object@spec
+            if (!inherits(spec, "antitrust_model_spec") ||
+                !identical(spec$variant, "standard") ||
+                !spec$demand %in% c("logit", "ces")) {
+                stop("baseline = 'observed' is supported only for standard supplied-parameter Logit/CES models.")
+            }
+            prices <- object@observed$prices
+            model <- object@model
+            if (is.null(prices) || length(prices) != length(model@pricePre) ||
+                any(!is.finite(prices)) ||
+                !isTRUE(all.equal(as.numeric(model@pricePre), as.numeric(prices),
+                                  check.attributes = FALSE))) {
+                stop("baseline = 'observed' requires the model's pre-merger prices to equal the supplied observed prices.")
+            }
+            if (!isTRUE(all.equal(as.numeric(model@pricePost), as.numeric(prices),
+                                  check.attributes = FALSE))) {
+                stop("baseline = 'observed' requires an observed post-price placeholder.")
+            }
+            if (length(model@mcPre) != length(prices) ||
+                length(model@mcPost) != length(prices) ||
+                any(!is.finite(model@mcPre)) || any(!is.finite(model@mcPost))) {
+                stop("baseline = 'observed' requires initialized finite marginal-cost state.")
+            }
+            if ("ownerPre" %in% methods::slotNames(model) &&
+                "ownerPost" %in% methods::slotNames(model) &&
+                !isTRUE(all.equal(model@ownerPre, model@ownerPost,
+                                  check.attributes = FALSE))) {
+                stop("baseline = 'observed' requires neutral pre/post ownership state.")
+            }
+            if ("mcDelta" %in% methods::slotNames(model) &&
+                (any(!is.finite(model@mcDelta)) || any(model@mcDelta != 0))) {
+                stop("baseline = 'observed' requires a neutral cost-shock state.")
+            }
+            if ("subset" %in% methods::slotNames(model) &&
+                (length(model@subset) != length(prices) ||
+                 !is.logical(model@subset) || anyNA(model@subset) ||
+                 any(!model@subset))) {
+                stop("baseline = 'observed' requires all products active in the baseline.")
+            }
+            if (!isTRUE(all.equal(as.numeric(model@mcPre),
+                                  as.numeric(model@mcPost),
+                                  check.attributes = FALSE))) {
+                stop("baseline = 'observed' requires equal pre/post marginal costs.")
+            }
+            cost_state <- attr(model, "antitrust_cost_state", exact = TRUE)
+            if (is.list(cost_state) && !is.null(cost_state$base) &&
+                !isTRUE(all.equal(as.numeric(cost_state$base),
+                                  as.numeric(model@mcPre),
+                                  check.attributes = FALSE))) {
+                stop("baseline = 'observed' requires cost state to match pre-merger marginal costs.")
+            }
+        }
+        object@diagnostics$baseline <- baseline
+        object@diagnostics$baseline_equilibrium <- if (identical(baseline, "observed")) {
+            "supplied_observed"
+        } else {
+            "legacy_solved"
+        }
+        object
+    }
 )
 
 #' Validate a counterfactual against a fitted model
@@ -378,6 +480,9 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
 #' @param variant A model-specific calibration variant, such as `"alm"`.
 #' @param output Logical indicator for an output (`TRUE`) or input (`FALSE`)
 #'   market when the selected model supports both orientations.
+#' @param baseline Baseline lifecycle: `"solve"` retains the legacy
+#'   nonlinear solve, while `"observed"` binds supplied observed prices for
+#'   standard flat Logit/CES models.
 #' @param prices A length-k vector of observed product prices.
 #' @param parameters A named list of structural demand parameters.
 #' @param ownerPre Pre-merger ownership vector or matrix.
@@ -397,11 +502,18 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                     insideSize = 1,
                     priceOutside, priceStart,
                     labels = paste("Prod", 1:length(prices), sep = ""),
-                    variant = "standard", output = NULL, ...) {
+                    variant = "standard", output = NULL,
+                    baseline = c("solve", "observed"), ...) {
     spec <- .architecture_model_spec(demand, conduct, variant)
+    baseline <- match.arg(baseline)
 
     if (!.model_registry_supports(spec, "specify")) {
         stop("specify() currently supports the registered standard model variants and BLP parameter loading; ALM variants require their model-specific calibration.")
+    }
+    if (identical(baseline, "observed") &&
+        (!identical(spec$variant, "standard") ||
+         !spec$demand %in% c("logit", "ces"))) {
+        stop("baseline = 'observed' is supported only for standard supplied-parameter Logit/CES models.")
     }
     if (!is.list(parameters)) {
         stop("'parameters' must be a list.")
@@ -413,7 +525,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
              prices = prices, parameters = parameters,
              ownerPre = ownerPre, shares = shares, margins = margins,
              quantities = quantities, insideSize = insideSize,
-             variant = spec$variant, output = output),
+             variant = spec$variant, output = output,
+             baseline = baseline),
         if (!missing(priceOutside)) list(priceOutside = priceOutside) else list(),
         if (!missing(priceStart)) list(priceStart = priceStart) else list(),
         list(labels = labels),
@@ -477,6 +590,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         }
         result@model <- .initialize_cost_state(result@model)
         result <- .retain_fit_metadata(result)
+        result <- initialize_baseline_state(result, baseline = baseline)
         return(result)
     }
     if (identical(spec$demand, "blp")) {
@@ -518,7 +632,11 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         ownerPre = ownerPre,
         ownerPost = ownerPre,
         insideSize = insideSize,
-        labels = labels
+        labels = labels,
+        ## The public baseline mode is translated to an internal legacy
+        ## constructor switch.  Direct sim()/calibrate() calls retain their
+        ## historical solve default because they never pass this argument.
+        solve_equilibrium = identical(baseline, "solve")
     )
     if (!missing(priceOutside)) constructor_args$priceOutside <- priceOutside
     if (!missing(priceStart)) constructor_args$priceStart <- priceStart
@@ -574,7 +692,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
             messages = captured$messages
         ), if (spec$conduct == "moncom") .moncom_diagnostics(model) else list())
     )
-    .retain_fit_metadata(fit)
+    fit <- .retain_fit_metadata(fit)
+    initialize_baseline_state(fit, baseline = baseline)
 }
 
 

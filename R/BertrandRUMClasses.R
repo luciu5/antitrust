@@ -1,3 +1,80 @@
+## Calibration eligibility is distinct from validity of fitted demand state.
+## ALM wrappers can carry an already fitted RUM model with a known outside
+## share; its normalization must not be replaced by a calibration-input marker.
+.has_fitted_rum_state <- function(object) {
+  slopes <- object@slopes
+  if (!is.list(slopes)) return(FALSE)
+
+  ## A fitted state is eligible for the lifecycle bypass only when its
+  ## normalization and market-size slots describe a usable market.  The
+  ## legacy constructors use normIndex to identify the normalization product
+  ## when there is no outside share.  A positive outside share may retain NA
+  ## (Logit) or a valid CES quality normalization index.  shares are
+  ## calibration data in some constructors and need not sum to shareInside
+  ## when the outside share is estimated, but they must remain finite and
+  ## strictly positive.
+  shares <- object@shares
+  share_inside <- object@shareInside
+  if (!is.numeric(shares) || !length(shares) ||
+      any(!is.finite(shares)) || any(shares <= 0) || any(shares > 1) ||
+      length(share_inside) != 1L || !is.finite(share_inside) ||
+      share_inside <= 0 || share_inside > 1) {
+    return(FALSE)
+  }
+  norm <- object@normIndex
+  has_norm_index <- length(norm) == 1L && !is.na(norm) &&
+    is.numeric(norm) && is.finite(norm) && norm == as.integer(norm) &&
+    norm >= 1L && norm <= length(shares)
+  no_outside <- abs(1 - share_inside) <= 1e-8
+  if (no_outside) {
+    ## A no-outside market is identified by a product normalization and the
+    ## observed shares must close to one.  This preserves the historical
+    ## normIndex convention rather than inferring it from fitted slopes.
+    if (!has_norm_index || abs(sum(shares) - 1) > 1e-8) return(FALSE)
+  } else if (!(isTRUE(length(norm) == 1L && is.na(norm)) ||
+              has_norm_index)) {
+    return(FALSE)
+  }
+
+  inside_size <- object@insideSize
+  market_size <- object@mktSize
+  if (length(inside_size) != 1L || !is.finite(inside_size) ||
+      inside_size <= 0 || length(market_size) != 1L ||
+      !is.finite(market_size) || market_size <= 0) {
+    return(FALSE)
+  }
+
+  coefficient <- if (methods::is(object, "CES")) slopes$gamma else slopes$alpha
+  meanval <- slopes$meanval
+  if (!is.numeric(coefficient) || length(coefficient) != 1L ||
+      !is.finite(coefficient) || !is.numeric(meanval) ||
+      length(meanval) != length(shares) || length(meanval) == 0L ||
+      any(!is.finite(meanval)) || length(object@output) != 1L ||
+      is.na(object@output)) {
+    return(FALSE)
+  }
+
+  if (methods::is(object, "CES")) {
+    if (isTRUE(object@output)) {
+      ## CES output demand requires the strict gamma > 1 bound used by
+      ## ParamsMethods.R, rather than merely a finite fitted coefficient.
+      if (coefficient <= 1) return(FALSE)
+    } else {
+      ## Keep the input-side bound identical to the existing CESALM check.
+      if (any(shares >= 1) ||
+          coefficient >= max(-shares / (1 - shares))) return(FALSE)
+    }
+  } else if (isTRUE(object@output)) {
+    ## Logit output demand has a negative stored price coefficient.
+    if (coefficient >= 0) return(FALSE)
+  } else {
+    ## Logit input demand has a positive stored price coefficient.
+    if (coefficient <= 0) return(FALSE)
+  }
+
+  TRUE
+}
+
 #' @title \dQuote{Bertrand RUM} Classes
 #' @name BertrandRUM-Classes
 #' @aliases Logit-class LogitBLP-class CournotBLP-class Auction2ndBLP-class LogitCournot-class LogitCournotALM-class LogitCap-class LogitCapALM-class LogitNests-class LogitNestsALM-class LogitALM-class CES-class CESALM-class CESCournot-class CESCournotALM-class CESNests-class
@@ -317,13 +394,14 @@ setClass(
     )
   ),
   validity = function(object) {
+    fitted <- .has_fitted_rum_state(object)
     nMargins <- length(object@margins[!is.na(object@margins)])
 
-    if (nMargins < 2 && is.na(object@mktElast)) {
+    if (!fitted && nMargins < 2 && is.na(object@mktElast)) {
       stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
     }
 
-    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+    if (!fitted && !isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
       stop("sum of 'shares' must equal 1")
     }
 
@@ -430,16 +508,17 @@ setClass(
     )
   ),
   validity = function(object) {
+    fitted <- .has_fitted_rum_state(object)
     nMargins <- length(object@margins[!is.na(object@margins)])
-    if (is.na(object@insideSize) || object@insideSize <= 0) {
+    if (!fitted && (is.na(object@insideSize) || object@insideSize <= 0)) {
       stop("'insideSize' must be greater than or equal to 0")
     }
 
-    if (nMargins < 2 && is.na(object@mktElast)) {
+    if (!fitted && nMargins < 2 && is.na(object@mktElast)) {
       stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
     }
 
-    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+    if (!fitted && !isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
       stop("sum of 'shares' must equal 1")
     }
 
@@ -541,13 +620,14 @@ setClass(
     )
   ),
   validity = function(object) {
+    fitted <- .has_fitted_rum_state(object)
     nMargins <- length(object@margins[!is.na(object@margins)])
 
-    if (nMargins < 2 && is.na(object@mktElast)) {
+    if (!fitted && nMargins < 2 && is.na(object@mktElast)) {
       stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
     }
 
-    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+    if (!fitted && !isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
       stop("sum of 'shares' must equal 1")
     }
 
@@ -595,13 +675,14 @@ setClass(
     )
   ),
   validity = function(object) {
+    fitted <- .has_fitted_rum_state(object)
     nMargins <- length(object@margins[!is.na(object@margins)])
 
-    if (nMargins < 2 && is.na(object@mktElast)) {
+    if (!fitted && nMargins < 2 && is.na(object@mktElast)) {
       stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
     }
 
-    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+    if (!fitted && !isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
       stop("sum of 'shares' must equal 1")
     }
 

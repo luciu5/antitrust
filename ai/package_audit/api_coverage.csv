@@ -107,6 +107,7 @@
 "export","upp.bertrand","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","upp.cournot","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "export","validate_counterfactual","","formal-test","tests/testthat/test-structural-public-hooks.R",""
+"export","initialize_baseline_state","","formal-test","tests/testthat/test-structural-public-hooks.R",""
 "export","vertical.barg","","formal-test","tests/testthat/test-structural-public-hooks.R",""
 "S4 class","AIDS","","formal-test","tests/testthat/test-model-combinations.R; tests/testthat/test-public-output-methods.R",""
 "S4 class","Antitrust","","documented-exclusion","ai/package_audit/audit_report.md","Abstract/container class or specialized plant-level fixture; inherited behavior is covered by child classes."
@@ -380,3 +381,5 @@
 "S4 method","upp","Bertrand","formal-test","tests/testthat/test-public-output-methods.R",""
 "S4 method","validate_counterfactual","AntitrustFit","formal-test","tests/testthat/test-structural-public-hooks.R",""
 "S4 method","validate_counterfactual","StructuralFit","formal-test","tests/testthat/test-structural-public-hooks.R",""
+"S4 method","initialize_baseline_state","AntitrustFit","formal-test","tests/testthat/test-structural-public-hooks.R",""
+"S4 method","initialize_baseline_state","StructuralFit","formal-test","tests/testthat/test-structural-public-hooks.R",""

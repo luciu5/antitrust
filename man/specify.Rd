@@ -19,6 +19,7 @@ specify(
   labels = paste("Prod", 1:length(prices), sep = ""),
   variant = "standard",
   output = NULL,
+  baseline = c("solve", "observed"),
   ...
 )
 }
@@ -53,6 +54,10 @@ specification object.}
 
 \item{output}{Logical indicator for an output (`TRUE`) or input (`FALSE`)
 market when the selected model supports both orientations.}
+
+\item{baseline}{Baseline lifecycle: `"solve"` retains the legacy nonlinear
+solve, while `"observed"` binds supplied observed prices for standard flat
+Logit/CES models.}
 
 \item{...}{Additional options accepted by the legacy parameterized
 constructor.}

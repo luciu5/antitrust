@@ -14,6 +14,54 @@ test_that("persistent structural cost state is initialized without changing the 
     expect_identical(state$mode, "multiplicative")
 })
 
+test_that("supplied flat demand can bind an observed baseline without solving", {
+    prices <- c(2, 2.2, 2.5)
+    owner <- c("A", "A", "B")
+    parameters <- list(alpha = -1.2, meanval = c(.3, .1, -.2))
+
+    fit <- suppressWarnings(specify(
+        "logit", "bertrand", prices = prices, parameters = parameters,
+        ownerPre = owner, insideSize = 100, baseline = "observed"
+    ))
+
+    expect_s4_class(fit, "AntitrustFit")
+    expect_identical(fit@diagnostics$baseline, "observed")
+    expect_identical(fit@diagnostics$baseline_equilibrium, "supplied_observed")
+    expect_identical(fit@diagnostics$specification_args$baseline, "observed")
+    expect_equal(unname(fit@model@pricePre), prices, tolerance = 0)
+    expect_equal(unname(fit@model@pricePost), prices, tolerance = 0)
+    expect_true(all(is.finite(fit@model@mcPre)))
+    expect_true(all(is.finite(fit@model@mcPost)))
+
+    expect_error(
+        specify("linear", "bertrand", prices = prices,
+                parameters = list(slopes = diag(-1, 3), intercepts = prices),
+                ownerPre = owner, baseline = "observed"),
+        "supported only for standard supplied-parameter Logit/CES"
+    )
+
+    bad_owner <- fit
+    bad_owner@model@ownerPost[1, 1] <- 0
+    expect_error(
+        initialize_baseline_state(bad_owner, baseline = "observed"),
+        "neutral pre/post ownership"
+    )
+
+    bad_cost <- fit
+    bad_cost@model@mcDelta[1] <- .1
+    expect_error(
+        initialize_baseline_state(bad_cost, baseline = "observed"),
+        "neutral cost-shock"
+    )
+
+    bad_subset <- fit
+    bad_subset@model@subset[1] <- FALSE
+    expect_error(
+        initialize_baseline_state(bad_subset, baseline = "observed"),
+        "all products active"
+    )
+})
+
 test_that("cost shocks preserve multiplicative and second-score additive conventions", {
     fit <- calibrate(
         "logit", "bertrand", prices = c(2, 2.2, 2.5),

@@ -269,17 +269,18 @@ setClass(
     )
   ),
   validity = function(object) {
+    fitted <- .has_fitted_rum_state(object)
     nMargins <- length(object@margins[!is.na(object@margins)])
 
     if (!is.na(object@mktElast) && all(is.na(object@prices))) {
       stop("At least 1 price must be supplied")
     }
 
-    if (nMargins < 2 && is.na(object@mktElast)) {
+    if (!fitted && nMargins < 2 && is.na(object@mktElast)) {
       stop("At least 2 elements of 'margins' must not be NA in order to calibrate demand parameters")
     }
 
-    if (!isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
+    if (!fitted && !isTRUE(all.equal(unname(as.vector(object@shareInside)), 1))) {
       stop("sum of 'shares' must equal 1")
     }
 

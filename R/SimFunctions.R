@@ -322,6 +322,7 @@ shares = NULL,
                 labels = paste("Prod", 1:length(prices), sep = ""),
                 diversions = NULL,
                 output = NULL,
+                solve_equilibrium = TRUE,
                 ...) {
   supply_missing <- missing(supply)
   demand <- match.arg(demand)
@@ -1032,12 +1033,22 @@ shares = NULL,
     result@priceDelta <- calcPriceDelta(result, ...)
   }
 
-  ## Use observed prices as pre-merger equilibrium and only solve post-merger prices
-  ## calcMC above already calibrated MCs using the supplied prices.
-  if (!supply %in% c("auction2nd", "bargaining2nd")) {
-    result@pricePost <- calcPrices(result, FALSE, subset = subset, ...)
+  ## Use observed prices as pre-merger equilibrium.  Direct sim() retains
+  ## the historical solve default; specify(baseline = "observed") defers
+  ## this first nonlinear solve to the counterfactual target.
+  if (!is.logical(solve_equilibrium) || length(solve_equilibrium) != 1L ||
+      is.na(solve_equilibrium)) {
+    stop("'solve_equilibrium' must be a single logical value")
+  }
+  if (isTRUE(solve_equilibrium)) {
+    if (!supply %in% c("auction2nd", "bargaining2nd")) {
+      result@pricePost <- calcPrices(result, FALSE, subset = subset, ...)
+    } else {
+      result@pricePost <- calcPrices(result, FALSE, ...)
+    }
   } else {
-    result@pricePost <- calcPrices(result, FALSE, ...)
+    names(result@pricePre) <- result@labels
+    result@pricePost <- result@pricePre
   }
 
   if (any(grepl("logit", demand, ignore.case = TRUE), na.rm = TRUE)) {
