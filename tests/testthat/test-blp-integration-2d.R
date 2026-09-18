@@ -101,6 +101,11 @@ test_that("price and demographic draws materialize from one tensor state", {
     expected_demog <- .3 + 1.5 * points[, 2]
     expected_alpha <- -2 + .25 * points[, 1] +
         .4 * (expected_demog - .3)
+    ## output defaults to TRUE (expects strictly negative alpha);
+    ## .blp_materialize_draws() clips any wrong-sign (non-negative) draws to
+    ## -1e-2 before returning (see BLPIntegration.R) rather than leaving a
+    ## mixed-sign price coefficient in place.
+    expected_alpha <- pmin(expected_alpha, -1e-2)
 
     expect_equal(materialized$priceDraws, points[, 1], tolerance = 0)
     expect_equal(materialized$demogDraws[, 1], expected_demog, tolerance = 1e-14)

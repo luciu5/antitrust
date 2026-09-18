@@ -719,17 +719,19 @@ setMethod(
     charDraws <- materialized$charDraws
     char_random <- materialized$char_random
 
-    # Ensure correct sign for alphas based on market type
+    # .blp_materialize_draws() already clips any wrong-sign alphas to a
+    # small epsilon of the correct sign before returning (see
+    # BLPIntegration.R); alphas here are already the clipped values. This
+    # diagnostic reports the pre-clip wrong-sign count/mass.
     output <- object@output
-    expectedSign <- ifelse(output, -1, 1)
-    wrongSigns <- if (expectedSign > 0) sum(alphas <= 0) else sum(alphas >= 0)
+    wrongSigns <- materialized$wrongSignCount
     wrongSignMass <- materialized$wrongSignMass
-    if (wrongSignMass > 0) {
+    if (!is.null(wrongSignMass) && wrongSignMass > 0) {
       warning(
         wrongSigns, " out of ", length(alphas),
-        " individual price coefficients (weighted mass ",
-        format(wrongSignMass, digits = 6), ") have wrong sign. ",
-        "They are retained under the supplied random-coefficient distribution."
+        " individual price coefficients had the wrong sign before clipping (weighted mass ",
+        format(wrongSignMass, digits = 6), "). They were clipped to enforce correct sign (",
+        ifelse(output, "negative", "positive"), ")."
       )
     }
 
