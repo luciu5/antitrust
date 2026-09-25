@@ -12,9 +12,14 @@
 #' For Bertrand, calcMC computes either pre- or post-merger marginal costs.
 #' Marginal costs are assumed to be constant. Post-merger marginal costs are
 #' equal to pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a
-#' length-k vector of marginal cost changes. \sQuote{mcDelta} will typically
-#' be between 0 and 1. The second-score Logit auction retains its legacy
-#' additive cost-level interpretation of \sQuote{mcDelta}.
+#' length-k vector of physical marginal-cost changes. With revenue retention
+#' \eqn{r}, constant-cost values returned by calcMC are effective costs
+#' \eqn{\kappa=c/r}, so that a price-cost margin is \eqn{p-\kappa}. For an
+#' initialized model, the post-merger value is
+#' \eqn{\kappa_{post}=\kappa_{base}(1+mcDelta)r_{base}/r_{post}}.
+#' Thus a pure retention change uses \sQuote{mcDelta}=0. The second-score
+#' Logit auction retains its legacy additive physical cost-level
+#' interpretation of \sQuote{mcDelta}.
 #'
 #' For Auction2ndLogit, calcMC computes constant marginal costs impied by the model.
 #'
@@ -115,6 +120,8 @@ initialize_cost_state <- function(object) {
   if (!is.numeric(base) || !length(base)) return(object)
   state <- list(
     base = as.numeric(base),
+    baseRetention = getRetention(object, TRUE),
+    preCumulative = rep(0, length(base)),
     mode = .cost_state_mode(object)
   )
   .set_cost_state(object, state)
@@ -153,13 +160,26 @@ compound_cost_shocks <- function(object, current = NULL, change = NULL) {
   if (is.null(state) || is.null(state$base)) return(NULL)
   base <- state$base
   if (!is.numeric(base) || !length(base)) return(NULL)
-  if (!preMerger) {
-    delta <- if ("mcDelta" %in% methods::slotNames(object)) object@mcDelta else NULL
+  {
+    delta <- if (preMerger) state$preCumulative else {
+      if ("mcDelta" %in% methods::slotNames(object)) object@mcDelta else NULL
+    }
+    if (is.null(delta)) delta <- rep(0, length(base))
     if (is.null(delta) || length(delta) != length(base)) return(NULL)
-    if (identical(state$mode, "additive")) {
-      base <- base + delta
+    initial_retention <- if (is.null(state$baseRetention)) {
+      rep(1, length(base))
     } else {
-      base <- base * (1 + delta)
+      state$baseRetention
+    }
+    ## Constant-cost slots store kappa = c/r. Convert the retained baseline
+    ## threshold back to physical cost before applying shocks.
+    target_retention <- getRetention(object, preMerger)
+    if (identical(state$mode, "additive")) {
+      base <- (base * initial_retention + delta) /
+        target_retention
+    } else {
+      base <- base * (1 + delta) * initial_retention /
+        target_retention
     }
   }
   names(base) <- if ("labels" %in% methods::slotNames(object) &&
@@ -199,6 +219,7 @@ setMethod(
 
     if (!preMerger) {
       mc <- mc * (1 + object@mcDelta)
+      mc <- mc * getRetention(object, TRUE) / getRetention(object, FALSE)
     }
 
     # mc <- as.vector(mc)
@@ -358,7 +379,8 @@ setMethod(
     }
 
     if (!preMerger) {
-      mc <- mc + object@mcDelta
+      mc <- (mc * getRetention(object, TRUE) + object@mcDelta) /
+        getRetention(object, FALSE)
     }
 
     if (exAnte) {
@@ -402,6 +424,7 @@ setMethod(
 
     if (!preMerger) {
       mc <- mc * (1 + object@mcDelta)
+      mc <- mc * getRetention(object, TRUE) / getRetention(object, FALSE)
     }
 
     names(mc) <- object@labels

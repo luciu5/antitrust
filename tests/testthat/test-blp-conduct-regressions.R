@@ -117,7 +117,6 @@ blp_conduct_expected_bargaining <- function(object) {
     weights <- object@slopes$drawWeights
     alpha <- object@slopes$alphas
     barg <- object@bargpowerPre / (1 - object@bargpowerPre)
-    output_sign <- -1
     n <- nrow(draw_shares)
     aggregate_shares <- as.vector(draw_shares %*% weights)
     derivative <- matrix(0, nrow = n, ncol = n)
@@ -130,24 +129,25 @@ blp_conduct_expected_bargaining <- function(object) {
             log1p(-shares_r) / alpha[r]
     }
 
-    aggregate_elast <- derivative * outer(1 / aggregate_shares,
-                                          object@pricePre)
-    revenue <- object@pricePre * aggregate_shares
-    margin_system <- t(
-        diag(1 / revenue) %*%
-            (t(aggregate_elast * object@ownerPre) %*%
-                 diag(aggregate_shares))
-    )
-    own_normalized <- diag(derivative) / aggregate_shares
-    right_hand_side <- own_normalized /
-        (output_sign * (own_normalized - barg * aggregate_shares /
-                        buyer_surplus))
-    right_hand_side <- diag(object@ownerPre) * right_hand_side
-
-    ## This is the aggregate Nash system: aggregate the demand Jacobian and
-    ## buyer surplus first, then solve the ownership-adjusted FOCs.  Averaging
-    ## inverses of draw-level systems is not an aggregate equilibrium.
-    as.vector(solve(t(margin_system), right_hand_side))
+    delta <- matrix(0, nrow = n, ncol = n)
+    for (i in seq_len(n)) {
+        for (r in seq_len(ncol(draw_shares))) {
+            without_i <- draw_shares[, r] / (1 - draw_shares[i, r])
+            without_i[i] <- 0
+            delta[i, ] <- delta[i, ] + weights[r] *
+                (draw_shares[, r] - without_i)
+        }
+    }
+    retention <- getRetention(object, TRUE)
+    A <- matrix(0, nrow = n, ncol = n)
+    for (i in seq_len(n)) {
+        for (j in seq_len(n)) {
+            A[i, j] <- object@ownerPre[i, j] * retention[j] *
+                (derivative[j, i] - barg[i] * aggregate_shares[i] /
+                 buyer_surplus[i] * delta[i, j])
+        }
+    }
+    as.vector(solve(A, -diag(object@ownerPre) * retention * aggregate_shares))
 }
 
 

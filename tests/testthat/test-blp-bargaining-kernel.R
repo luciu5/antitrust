@@ -23,19 +23,27 @@ blp_bargaining_reference <- function(object, preMerger = TRUE) {
         buyer_surplus <- buyer_surplus + w[r] * log1p(-s) / alpha[r]
     }
 
-    aggregate_elast <- derivative * outer(1 / shares, prices)
-    revenue <- prices * shares
-    margin_system <- t(
-        diag(1 / revenue) %*%
-            (t(aggregate_elast * owner) %*% diag(shares))
-    )
+    delta <- matrix(0, nrow = nrow(S), ncol = nrow(S))
+    for (i in seq_len(nrow(S))) {
+        for (r in seq_len(ncol(S))) {
+            excluded <- S[, r] / (1 - S[i, r])
+            excluded[i] <- 0
+            delta[i, ] <- delta[i, ] + w[r] * (S[, r] - excluded)
+        }
+    }
     barg <- barg[active] / (1 - barg[active])
-    own_normalized <- diag(derivative) / shares
-    output <- ifelse(object@output, -1, 1)
-    rhs <- own_normalized /
-        (output * (own_normalized - barg * shares / buyer_surplus))
-    rhs <- diag(owner) * rhs
-    level <- as.vector(solve(t(margin_system), rhs))
+    retention <- getRetention(object, preMerger)[active]
+    A <- matrix(0, nrow = nrow(S), ncol = nrow(S))
+    for (i in seq_len(nrow(S))) {
+        for (j in seq_len(nrow(S))) {
+            A[i, j] <- owner[i, j] * retention[j] *
+                (derivative[j, i] - barg[i] * shares[i] /
+                 buyer_surplus[i] * delta[i, j])
+        }
+    }
+    rhs <- -diag(owner) * retention * shares
+    if (!object@output) rhs <- -rhs
+    level <- as.vector(solve(A, rhs))
     proportional <- level / prices
     list(level = level, proportional = proportional)
 }
@@ -81,6 +89,52 @@ test_that("BargainingBLP vectorized kernel matches an independent draw loop", {
                      tolerance = 1e-12, info = paste("preMerger", preMerger))
         expect_true(all(is.na(observed_level[!active])))
     }
+})
+
+test_that("mixed-retention BLP bargaining satisfies numerical Nash gradients", {
+    prices <- c(1.75, 2.10, 2.45)
+    shares <- c(.30, .25, .25)
+    nodes <- c(-1.5, -.25, .8, 1.75)
+    weights <- c(.10, .20, .30, .40)
+    alpha <- -1.35
+    delta <- antitrust:::.blp_contract(
+        prices, shares, alpha, .35, nodes, weights, .20
+    )$delta
+    model <- suppressWarnings(antitrust:::.blp_model(
+        conduct = "bargaining", prices = prices, shares = shares,
+        margins = rep(.2, 3), ownerPre = c("A", "A", "B"),
+        alphaMean = alpha, sigma = .35, meanval = delta,
+        draws = nodes, drawWeights = weights, s0 = .20,
+        output = TRUE, bargpowerPre = c(.2, .35, .1)
+    ))
+    retention <- c(.72, .89, 1.14)
+    model <- setRetention(model, retention)
+    kappa <- prices - calcMargins(model, level = TRUE)
+    owner <- model@ownerPre
+    value <- function(i, price_i) {
+        changed <- model
+        changed@pricePre[i] <- price_i
+        S <- calcShares(changed, aggregate = FALSE)
+        C <- sum(weights * log1p(-S[i, ]) / changed@slopes$alphas)
+        delta_q <- numeric(length(prices))
+        for (r in seq_along(weights)) {
+            without_i <- S[, r] / (1 - S[i, r])
+            without_i[i] <- 0
+            delta_q <- delta_q + weights[r] * (S[, r] - without_i)
+        }
+        p <- prices
+        p[i] <- price_i
+        seller_gain <- sum(owner[i, ] * retention *
+                           (p - kappa) * delta_q)
+        b <- model@bargpowerPre[i]
+        b * log(C) + (1 - b) * log(seller_gain)
+    }
+    for (i in seq_along(prices)) {
+        gradient <- (value(i, prices[i] + 1e-5) -
+                     value(i, prices[i] - 1e-5)) / 2e-5
+        expect_lt(abs(gradient), 1e-5)
+    }
+    expect_equal(model@ownerPre, owner)
 })
 
 

@@ -20,6 +20,7 @@ specify(
   variant = "standard",
   output = NULL,
   baseline = c("solve", "observed"),
+  revenueRetentionPre = NULL,
   ...
 )
 }
@@ -58,6 +59,9 @@ market when the selected model supports both orientations.}
 \item{baseline}{Baseline lifecycle: `"solve"` retains the legacy nonlinear
 solve, while `"observed"` binds supplied observed prices for standard flat
 Logit/CES models.}
+
+\item{revenueRetentionPre}{Optional positive seller revenue-retention vector
+applied before marginal-cost recovery.}
 
 \item{...}{Additional options accepted by the legacy parameterized
 constructor.}

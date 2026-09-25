@@ -8,6 +8,7 @@
 \alias{calcPrices,Cournot-method}
 \alias{calcPrices,Linear-method}
 \alias{calcPrices,Logit-method}
+\alias{calcPrices,CESCournot-method}
 \alias{calcPrices,LogitBLP-method}
 \alias{calcPrices,LogLin-method}
 \alias{calcPrices,AIDS-method}

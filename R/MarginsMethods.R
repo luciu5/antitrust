@@ -54,6 +54,11 @@ setMethod(
 
     elast <- elast(object, preMerger)[subset, subset]
 
+    ## The i-th pricing FOC divides physical profit by its own retention.
+    ## Retention belongs on product j's revenue term, not in ownership.
+    retention <- getRetention(object, preMerger)[subset]
+    owner <- .retention_owner_bertrand(owner, retention)
+
     margins <- try(output * as.vector(solve(t(elast) * owner) %*% (revenue * diag(owner))) / revenue, silent = TRUE)
     if (any(class(margins) == "try-error")) {
       margins <- output * as.vector(MASS::ginv(t(elast) * owner) %*% (revenue * diag(owner))) / revenue
@@ -118,7 +123,8 @@ setMethod(
 
     shares <- shares[subset]
 
-    sharesFirm <- as.numeric(owner %*% shares)
+    retention <- getRetention(object, preMerger)[subset]
+    sharesFirm <- as.numeric(.retention_owner_bertrand(owner, retention) %*% shares)
 
 
     margins <- output * (1 + sharesFirm / idxShare) / alpha
@@ -162,7 +168,8 @@ setMethod(
     alpha <- object@slopes$alpha
     if(is.null(alpha)) alpha <- 0
 
-    firmShares <- as.numeric(owner %*% shares_r)
+    retention <- getRetention(object, preMerger)[subset]
+    firmShares <- as.numeric(.retention_owner_bertrand(owner, retention) %*% shares_r)
 
     ## CES Cournot Lerner index (positive for both output and input markets):
     ## For output: margin = (p - mc) / p
@@ -274,6 +281,8 @@ setMethod(
     barg <- barg[subset]
     shares <- shares[subset]
     prices <- prices[subset]
+    owner <- .retention_owner_bargaining_logit(
+      owner, getRetention(object, preMerger)[subset])
 
     div <- shares / (1 - shares)
 
@@ -360,6 +369,7 @@ setMethod(
 
     elastPre <- t(elast(object, TRUE))
 
+    ownerPre <- .retention_owner_bertrand(ownerPre, getRetention(object, TRUE))
     elastInv <- try(solve(elastPre * ownerPre), silent = TRUE)
     if (any(class(elastInv) == "try-error")) {
       elastInv <- MASS::ginv(elastPre * ownerPre)
@@ -375,7 +385,9 @@ setMethod(
       }
       return(marginPre)
     } else {
-      marginPost <- 1 - ((1 + object@mcDelta) * (1 - marginPre) / (priceDelta + 1))
+      retention_ratio <- getRetention(object, TRUE) / getRetention(object, FALSE)
+      marginPost <- 1 - ((1 + object@mcDelta) * retention_ratio *
+                         (1 - marginPre) / (priceDelta + 1))
       names(marginPost) <- object@labels
       if (level) {
         marginPost <- marginPost * object@pricePost
@@ -414,6 +426,8 @@ setMethod(
       elast <- elast(object, preMerger)
       elast <- elast[unconstrained, unconstrained]
       owner <- owner[unconstrained, unconstrained]
+      owner <- .retention_owner_bertrand(owner,
+          getRetention(object, preMerger)[unconstrained])
 
       outSign <- ifelse(object@output, -1, 1)
       marginCalc <- try(outSign * as.vector(solve(t(elast) * owner) %*% (revenue * diag(owner))) / revenue, silent = TRUE)
@@ -463,6 +477,7 @@ setMethod(
     alpha <- object@slopes$alpha
     shares <- calcShares(object, preMerger = preMerger, revenue = FALSE)
     shares <- shares[subset]
+    .require_uniform_auction_retention(object, preMerger, subset)
     firmShares <- drop(owner %*% shares)
     margins[subset] <- output * log(1 - firmShares) / (alpha * firmShares)
 
@@ -505,6 +520,7 @@ setMethod(
     owner <- owner[subset, subset]
     shares_r <- calcShares(object, preMerger = preMerger, revenue = TRUE)
     shares_r <- shares_r[subset]
+    .require_uniform_auction_retention(object, preMerger, subset)
     firmShares <- drop(owner %*% shares_r)
 
     ## CES 2nd-score auction margin (proportional):
@@ -570,6 +586,7 @@ setMethod(
 
     firmShares <- drop(owner %*% shares)
 
+    .require_uniform_auction_retention(object, preMerger, subset)
     dupCnt <- rowSums(owner * nestMat) # only include the values in a given nest once
 
     ownerValue <- 1 - (1 - ((owner * nestMat) %*% sharesIn))^sigma[nests]
@@ -628,7 +645,9 @@ setMethod(
 
 
     # Note: owner matrix is 1s and 0s (or shares). Element-wise multiplication applies the mask.
-    margins <- output * as.vector((owner * t(J_inv)) %*% shares)
+    retention <- getRetention(object, preMerger)[subset]
+    weighted_owner <- .retention_owner_bertrand(owner, retention)
+    margins <- output * as.vector((weighted_owner * t(J_inv)) %*% shares)
 
     if (!level) {
       margins <- margins / prices

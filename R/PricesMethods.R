@@ -188,6 +188,82 @@ setMethod(
 )
 
 
+#' CES Cournot solves a positive-price interior equilibrium. If high
+#' product-level retention differences require a boundary quantity or
+#' endogenous product exit, the method reports that no valid interior root
+#' was found; callers can specify an explicit product subset.
+#' @rdname Prices-Methods
+#' @export
+setMethod(
+  f = "calcPrices",
+  signature = "CESCournot",
+  definition = function(object, preMerger = TRUE, isMax = FALSE, subset, ...) {
+    n <- length(object@shares)
+    if (missing(subset)) subset <- if (preMerger) rep(TRUE, n) else object@subset
+    if (!is.logical(subset) || length(subset) != n || !any(subset)) {
+      stop("'subset' must select at least one product.")
+    }
+    mc <- if (preMerger) object@mcPre else object@mcPost
+    if (any(!is.finite(mc[subset]))) {
+      stop("CES Cournot has non-finite effective costs.")
+    }
+    residual <- function(prices) {
+      if (length(prices) != sum(subset) || any(!is.finite(prices)) ||
+          any(prices <= 0)) return(rep(1e6, sum(subset)))
+      candidate <- rep(NA_real_, n)
+      candidate[subset] <- prices
+      trial <- object
+      if (preMerger) trial@pricePre <- candidate else trial@pricePost <- candidate
+      margin <- try(calcMargins(trial, preMerger, level = TRUE)[subset],
+                    silent = TRUE)
+      if (inherits(margin, "try-error") || any(!is.finite(margin))) {
+        return(rep(1e6, sum(subset)))
+      }
+      (prices - mc[subset] - margin) / pmax(prices, 1)
+    }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      start <- if (!preMerger && all(is.finite(object@pricePre[subset]))) {
+        object@pricePre[subset]
+      } else object@priceStart[subset]
+      start <- pmax(start, .Machine$double.eps^0.25)
+      foc <- function(z) {
+        if (any(!is.finite(z)) || any(z > 100)) {
+          return(rep(1e6, length(z)))
+        }
+        residual(exp(z))
+      }
+      maxit <- as.integer(object@control.equ$maxit)
+      if (length(maxit) != 1L || !is.finite(maxit) || maxit < 1L) maxit <- 300L
+      tol <- object@control.equ$tol
+      if (length(tol) != 1L || !is.finite(tol) || tol <= 0) tol <- 1e-10
+      solution <- try(nleqslv::nleqslv(log(start), foc,
+          control = list(ftol = tol, maxit = maxit)), silent = TRUE)
+      z <- if (inherits(solution, "try-error")) log(start) else solution$x
+      if (any(!is.finite(foc(z))) || max(abs(foc(z))) > 1e-8) {
+        alternative <- try(BB::BBsolve(z, foc,
+            control = list(tol = tol, maxit = maxit), quiet = TRUE),
+            silent = TRUE)
+        if (!inherits(alternative, "try-error") &&
+            all(is.finite(alternative$par)) &&
+            max(abs(foc(alternative$par))) < max(abs(foc(z)))) {
+          z <- alternative$par
+        }
+      }
+      prices <- rep(NA_real_, n)
+      prices[subset] <- exp(z)
+    } else {
+      prices <- callNextMethod(object, preMerger = preMerger,
+                              isMax = isMax, subset = subset, ...)
+    }
+    if (any(!is.finite(prices[subset])) || any(prices[subset] <= 0) ||
+        max(abs(residual(prices[subset]))) > 1e-7) {
+      stop("CES Cournot failed to find a valid positive interior equilibrium; a boundary or product-exit solution may be required.")
+    }
+    names(prices) <- object@labels
+    prices
+  }
+)
+
 #' @rdname Prices-Methods
 #' @export
 setMethod(
@@ -333,6 +409,8 @@ setMethod(
       priceStart <- priceStart[subset]
       capacities <- capacities[subset]
     }
+    owner <- .retention_owner_bertrand(owner,
+                                      getRetention(object, preMerger)[subset])
     priceEst <- rep(NA, nprods)
     ## Define system of FOC as a function of prices
     FOC <- function(priceCand) {
@@ -353,7 +431,8 @@ setMethod(
       revenues <- revenues[subset]
       quantities <- quantities[subset]
       elasticities <- elast(object, preMerger)[subset, subset]
-      thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
+      thisFOC <- revenues * diag(owner) +
+        as.vector((t(elasticities) * owner) %*% (margins * revenues))
       constraint <- ifelse(is.finite(capacities), (quantities - capacities) / object@insideSize, 0)
       ## Fischer-Burmeister complementarity residual for finite capacities.
       ## A positive infinite capacity is the unconstrained-product sentinel,
@@ -428,6 +507,8 @@ setMethod(
     if (!is.logical(subset) || length(subset) != nprods) {
       stop("'subset' must be a logical vector the same length as 'quantities'")
     }
+    owner <- .retention_owner_bertrand(owner,
+                                      getRetention(object, preMerger))
 
     ## First try the closed-form Bertrand FOC solution for linear demand.
     analytic <- try(
@@ -511,6 +592,8 @@ setMethod(
     if (!is.logical(subset) || length(subset) != nprods) {
       stop("'subset' must be a logical vector the same length as 'quantities'")
     }
+    owner <- .retention_owner_bertrand(owner,
+                                      getRetention(object, preMerger))
     if (!preMerger) {
       cand <- object@pricePre
       if (length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
@@ -624,6 +707,8 @@ setMethod(
       priceStart <- priceStart[subset]
       barg <- barg[subset]
     }
+    owner <- .retention_owner_bargaining_logit(owner,
+        getRetention(object, preMerger)[subset])
 
     priceEst <- rep(NA, nprods)
 

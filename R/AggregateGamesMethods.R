@@ -85,6 +85,11 @@ setMethod(
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
     }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      prices <- calcPrices(object, preMerger = preMerger, subset = subset)
+      if (preMerger) object@pricePre <- prices else object@pricePost <- prices
+      return(calcMargins(object, preMerger = preMerger, level = level))
+    }
     
     if( preMerger) {
       mc <- object@mcPre
@@ -178,6 +183,11 @@ setMethod(
     if (missing(subset)) subset <- if (preMerger) rep(TRUE, nprods) else object@subset
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
+    }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      prices <- calcPrices(object, preMerger = preMerger, subset = subset)
+      if (preMerger) object@pricePre <- prices else object@pricePost <- prices
+      return(calcMargins(object, preMerger = preMerger, level = level))
     }
 
     ## The closed-form CES aggregation is numerically well behaved for output
@@ -280,6 +290,10 @@ setMethod(
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
     }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      return(calcPrices(object, preMerger = preMerger,
+                        isMax = isMax, subset = subset))
+    }
     
     if(preMerger){
       owner <- object@ownerPre
@@ -311,6 +325,10 @@ setMethod(
     if (missing(subset)) subset <- if (preMerger) rep(TRUE, nprods) else object@subset
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
+    }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      return(calcPrices(object, preMerger = preMerger,
+                        isMax = isMax, subset = subset))
     }
     ## A homogeneous CES output market without an outside good has constant
     ## total revenue.  A single owner can therefore raise all prices without

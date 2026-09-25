@@ -167,7 +167,8 @@ setMethod(
       return(sum(priceDelta * shares, na.rm = TRUE))
     }
 
-    ownerPost <- object@ownerPost
+    ownerPost <- .retention_owner_bertrand(object@ownerPost,
+                                           getRetention(object, FALSE))
 
     nprods <- length(object@shares)
     if (missing(subset)) {
@@ -264,7 +265,7 @@ setMethod(
 
     subset <- object@subset
 
-    mcDelta <- object@mcDelta
+    mcDelta <- .auction_effective_cost_delta(object)
 
 
     if (exAnte || market || party) {

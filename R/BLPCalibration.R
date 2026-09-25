@@ -295,6 +295,7 @@ setMethod(
             prices <- object@pricePost
         }
         owner <- owner[subset, subset]
+        .require_uniform_auction_retention(object, preMerger, subset)
         shares_draw <- calcShares(object, preMerger = preMerger,
                                   revenue = FALSE, aggregate = FALSE)
         shares_draw <- shares_draw[subset, , drop = FALSE]
@@ -342,6 +343,7 @@ setMethod(
         active <- if (preMerger) rep(TRUE, length(object@shares)) else object@subset
         prices <- prices[active]
         owner <- owner[active, active, drop = FALSE]
+        retention <- getRetention(object, preMerger)[active]
         if (any(barg >= 1)) stop("Bargaining BLP requires bargaining power strictly below one.")
         barg <- barg[active] / (1 - barg[active])
         shares_draw <- calcShares(object, preMerger, revenue = FALSE,
@@ -370,35 +372,24 @@ setMethod(
             stop("BLP bargaining buyer surplus is not finite under the supplied price-coefficient draws.")
         }
 
-        ## Normalize each price FOC by aggregate demand and revenue.  In the
-        ## homogeneous case the own derivative and buyer-surplus terms reduce
-        ## exactly to the legacy BargainingLogit formula.  With zero buyer
-        ## bargaining power it is the aggregate Bertrand FOC in level-margin
-        ## units.
-        ## Express the system in level-margin units using the same elasticity
-        ## normalization as the legacy Bertrand method.  Let E_ij be the
-        ## aggregate elasticity of share i with respect to price j.  The
-        ## legacy price FOC is
-        ##   diag(1/(p*s)) %*% t(E * owner) %*% diag(s) %*% margin
-        ##       = output * diag(owner).
-        ## This normalization makes bargpower = 0 exactly the Bertrand
-        ## boundary for ownership vectors and fractional ownership matrices.
-        aggregate_elast <- derivative * outer(1 / shares, prices)
-        revenue <- prices * shares
-        margin_matrix <- t(
-            diag(1 / revenue) %*%
-                (t(aggregate_elast * owner) %*% diag(shares))
-        )
-        own_normalized <- diag(derivative) / shares
-        rhs <- own_normalized /
-            (output * (own_normalized - barg * shares / buyer_surplus))
-        rhs <- diag(owner) * rhs
-
-        inverse_matrix <- try(solve(t(margin_matrix)), silent = TRUE)
-        if (inherits(inverse_matrix, "try-error")) {
-            inverse_matrix <- MASS::ginv(t(margin_matrix))
+        ## Excluding bargain i reallocates demand within every buyer draw.
+        ## Integrate that disagreement before taking the seller's Nash FOC.
+        delta <- matrix(0, nrow = length(shares), ncol = length(shares))
+        for (i in seq_along(shares)) {
+            without_i <- sweep(shares_draw, 2L, 1 - shares_draw[i, ], "/")
+            without_i[i, ] <- 0
+            delta[i, ] <- drop((shares_draw - without_i) %*% draw_weights)
         }
-        margins_active <- as.vector(inverse_matrix %*% rhs)
+        buyer_weight <- barg * shares / buyer_surplus
+        coefficient <- t(derivative) - sweep(delta, 1L, buyer_weight, "*")
+        coefficient <- sweep(owner * coefficient, 2L, retention, "*")
+        rhs <- -diag(owner) * retention * shares
+        if (!object@output) rhs <- -rhs
+        margins_active <- try(solve(coefficient, rhs), silent = TRUE)
+        if (inherits(margins_active, "try-error")) {
+            margins_active <- as.vector(MASS::ginv(coefficient) %*% rhs)
+        }
+        margins_active <- as.vector(margins_active)
         margins <- rep(NA_real_, length(object@shares))
         margins[active] <- margins_active
         ## `prices` is already restricted to the active products above.
@@ -460,6 +451,7 @@ setMethod(
     definition = function(object, preMerger = TRUE, revenue = FALSE, aggregate = TRUE) {
         nprods <- length(object@shares)
         active <- if (preMerger) rep(TRUE, nprods) else object@subset
+        .require_uniform_auction_retention(object, preMerger, active)
         alpha <- as.numeric(object@slopes$alphas)
         meanval <- as.numeric(object@slopes$meanval)
         if (length(alpha) < 1L || length(meanval) != nprods ||
@@ -476,13 +468,14 @@ setMethod(
             object@pricePre - object@priceOutside, alpha
         )
         if (!preMerger) {
+            effective_delta <- .auction_effective_cost_delta(object)
             mc_delta_out <- if (is.na(object@normIndex)) {
                 object@priceOutside
             } else {
-                object@mcDelta[object@normIndex]
+                effective_delta[object@normIndex]
             }
             baseline <- baseline + tcrossprod(
-                object@mcDelta - mc_delta_out, alpha
+                effective_delta - mc_delta_out, alpha
             )
         }
         baseline[!active, ] <- -Inf
@@ -625,6 +618,9 @@ setMethod(
         }
     ), silent = TRUE)
     if (inherits(model, "try-error")) return(1e100)
+    if (!is.null(context$revenueRetentionPre)) {
+        model <- setRetention(model, context$revenueRetentionPre)
+    }
     predicted <- try(calcMargins(model, preMerger = TRUE, level = FALSE), silent = TRUE)
     if (inherits(predicted, "try-error") || any(!is.finite(predicted[context$moment_index]))) return(1e100)
     residuals <- predicted - context$margins
@@ -860,7 +856,8 @@ setMethod(
 
 
 .calibrate_blp_fit <- function(spec, prices, shares, margins, ownerPre, s0,
-                               dots, calibration_args) {
+                               dots, calibration_args,
+                               revenueRetentionPre = NULL) {
     if (is.null(shares) || is.null(margins)) {
         stop("BLP calibration requires observed 'shares' and 'margins'.")
     }
@@ -901,6 +898,7 @@ setMethod(
         contractionTol = if (is.null(dots$contractionTol)) 1e-10 else dots$contractionTol,
         contractionMaxIter = if (is.null(dots$contractionMaxIter)) 2000L else dots$contractionMaxIter,
         bargpowerPre = barg_pre,
+        revenueRetentionPre = revenueRetentionPre,
         bargpowerPost = if (is.null(dots$bargpowerPost)) barg_pre else dots$bargpowerPost,
         metrics = new.env(parent = emptyenv()), phase = "multistart"
     )

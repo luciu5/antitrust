@@ -41,7 +41,7 @@ setMethod(
       output <- calcShares(object,preMerger,revenue=FALSE)
     }
 
-    ps <- margins * output
+    ps <- getRetention(object, preMerger) * margins * output
     names(ps) <- object@labels
 
     return(ps)
@@ -118,6 +118,9 @@ setMethod(
     rev <-  calcRevenues(object, preMerger= preMerger)
     vc <- calcVC(object, preMerger= preMerger)
 
+    if (is.matrix(rev) && ncol(rev) == length(getRetention(object, preMerger))) {
+      rev <- sweep(rev, 2L, getRetention(object, preMerger), "*")
+    }
     ps <- rowSums(rev, na.rm=TRUE) - vc
     names(ps) <- object@labels[[1]]
 

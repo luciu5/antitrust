@@ -323,6 +323,8 @@ shares = NULL,
                 diversions = NULL,
                 output = NULL,
                 solve_equilibrium = TRUE,
+                revenueRetentionPre = NULL,
+                revenueRetentionPost = NULL,
                 ...) {
   supply_missing <- missing(supply)
   demand <- match.arg(demand)
@@ -1009,6 +1011,9 @@ shares = NULL,
   ## Convert ownership vectors to ownership matrices before any calibration step
   result@ownerPre <- ownerToMatrix(result, TRUE)
   result@ownerPost <- ownerToMatrix(result, FALSE)
+  if (!is.null(revenueRetentionPre) || !is.null(revenueRetentionPost)) {
+    result <- setRetention(result, revenueRetentionPre, revenueRetentionPost)
+  }
 
   ## Recover any implied demand parameters needed before MC calibration.
   ## LogitCap simulations already received structural alpha/meanval above;

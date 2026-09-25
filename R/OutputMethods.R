@@ -768,12 +768,15 @@ setMethod(
   signature = "Auction2ndLogit",
   definition = function(object, preMerger = TRUE, revenue = FALSE) {
     nprods <- length(object@shares)
+    effectiveDelta <- if (preMerger) object@mcDelta else
+      .auction_effective_cost_delta(object)
 
     if (preMerger) {
       subset <- rep(TRUE, nprods)
     } else {
       subset <- object@subset
     }
+    .require_uniform_auction_retention(object, preMerger, subset)
 
 
     idx <- object@normIndex
@@ -786,7 +789,7 @@ setMethod(
       mcDeltaOut <- object@priceOutside
     } else {
       outVal <- 0
-      mcDeltaOut <- object@mcDelta[idx]
+      mcDeltaOut <- effectiveDelta[idx]
     }
 
 
@@ -794,7 +797,7 @@ setMethod(
       prices <- object@pricePre
     } else {
       prices <- object@pricePost
-      meanval <- meanval + alpha * (object@mcDelta - mcDeltaOut)
+      meanval <- meanval + alpha * (effectiveDelta - mcDeltaOut)
     }
 
 
@@ -823,12 +826,15 @@ setMethod(
   signature = "Auction2ndLogitNests",
   definition = function(object, preMerger = TRUE, revenue = FALSE) {
     nprods <- length(object@shares)
+    effectiveDelta <- if (preMerger) object@mcDelta else
+      .auction_effective_cost_delta(object)
 
     if (preMerger) {
       subset <- rep(TRUE, nprods)
     } else {
       subset <- object@subset
     }
+    .require_uniform_auction_retention(object, preMerger, subset)
 
 
     idx <- object@normIndex
@@ -844,7 +850,7 @@ setMethod(
       mcDeltaOut <- object@priceOutside
     } else {
       outVal <- 0
-      mcDeltaOut <- object@mcDelta[idx]
+      mcDeltaOut <- effectiveDelta[idx]
     }
 
 
@@ -852,7 +858,7 @@ setMethod(
       prices <- object@pricePre
     } else {
       prices <- object@pricePost
-      meanval <- meanval + alpha * (object@mcDelta - mcDeltaOut)
+      meanval <- meanval + alpha * (effectiveDelta - mcDeltaOut)
     }
 
 
@@ -914,6 +920,18 @@ setMethod(
     names(shares) <- object@labels
 
     return(as.vector(shares))
+  }
+)
+
+#' @rdname Output-Methods
+#' @export
+setMethod(
+  f = "calcShares",
+  signature = "Auction2ndCES",
+  definition = function(object, preMerger = TRUE, revenue = FALSE) {
+    subset <- if (preMerger) rep(TRUE, length(object@shares)) else object@subset
+    .require_uniform_auction_retention(object, preMerger, subset)
+    callNextMethod()
   }
 )
 

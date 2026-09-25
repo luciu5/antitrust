@@ -214,6 +214,8 @@ setMethod(
 #' @param mktElast A known market own-price elasticity for PCAIDS calibration.
 #' @param s0 A known outside-good share for price-only BLP calibration. It
 #'   must lie in \code{[0, 1)} and product shares must sum to \code{1 - s0}.
+#' @param revenueRetentionPre Optional positive seller revenue-retention vector
+#'   at the observed baseline; values above one represent subsidies.
 #' @param ... Additional options accepted by the model-specific legacy
 #'   calibration constructor. For BLP calibration,
 #'   \code{multistart = "adaptive"}
@@ -225,7 +227,8 @@ setMethod(
 calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
                       margins = NULL,
                       ownerPre, quantities = NULL, variant = "standard",
-                      knownElast = NULL, mktElast = NULL, s0 = NULL, ...) {
+                      knownElast = NULL, mktElast = NULL, s0 = NULL,
+                      revenueRetentionPre = NULL, ...) {
     spec <- .architecture_model_spec(demand, conduct, variant)
 
     entry <- .model_registry_entry(spec$demand, spec$conduct, spec$variant)
@@ -243,7 +246,8 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
              prices = prices, shares = shares, margins = margins,
              ownerPre = ownerPre, quantities = quantities,
              variant = spec$variant, knownElast = knownElast,
-             mktElast = mktElast, s0 = s0),
+             mktElast = mktElast, s0 = s0,
+             revenueRetentionPre = revenueRetentionPre),
         dots
     )
     forbidden <- intersect(names(dots), c(
@@ -404,8 +408,14 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
         result <- .calibrate_blp_fit(
             spec = spec, prices = prices, shares = shares, margins = margins,
             ownerPre = ownerPre, s0 = s0, dots = dots,
-            calibration_args = calibration_args
+            calibration_args = calibration_args,
+            revenueRetentionPre = revenueRetentionPre
         )
+        if (!is.null(revenueRetentionPre)) {
+            result@model <- setRetention(result@model, revenueRetentionPre)
+            result@model@mcPre <- calcMC(result@model, TRUE)
+            result@model@mcPost <- calcMC(result@model, FALSE)
+        }
         result@model <- .initialize_cost_state(result@model)
         result <- .retain_fit_metadata(result)
         return(result)
@@ -419,7 +429,15 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
     captured <- .capture_architecture_conditions(
         do.call(.legacy_constructor(entry$calibrator), constructor_args)
     )
-    model <- .initialize_cost_state(captured$value)
+    model <- captured$value
+    if (!is.null(revenueRetentionPre)) {
+        model <- setRetention(model, revenueRetentionPre)
+        if (!methods::is(model, "Cournot")) {
+            model@mcPre <- calcMC(model, TRUE)
+            model@mcPost <- calcMC(model, FALSE)
+        }
+    }
+    model <- .initialize_cost_state(model)
     solver <- if (spec$conduct %in% c("bertrand", "bargaining") &&
                   !is.null(dots$solver)) dots$solver else "nleqslv"
 
@@ -493,6 +511,8 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
 #' @param priceOutside Optional outside-good price.
 #' @param priceStart Optional equilibrium price starting values.
 #' @param labels Product labels.
+#' @param revenueRetentionPre Optional positive seller revenue-retention vector
+#'   applied before marginal-cost recovery.
 #' @param ... Additional options accepted by the legacy parameterized
 #'   constructor.
 #' @return An \code{AntitrustFit} object.
@@ -503,7 +523,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                     priceOutside, priceStart,
                     labels = paste("Prod", 1:length(prices), sep = ""),
                     variant = "standard", output = NULL,
-                    baseline = c("solve", "observed"), ...) {
+                    baseline = c("solve", "observed"),
+                    revenueRetentionPre = NULL, ...) {
     spec <- .architecture_model_spec(demand, conduct, variant)
     baseline <- match.arg(baseline)
 
@@ -526,7 +547,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
              ownerPre = ownerPre, shares = shares, margins = margins,
              quantities = quantities, insideSize = insideSize,
              variant = spec$variant, output = output,
-             baseline = baseline),
+             baseline = baseline,
+             revenueRetentionPre = revenueRetentionPre),
         if (!missing(priceOutside)) list(priceOutside = priceOutside) else list(),
         if (!missing(priceStart)) list(priceStart = priceStart) else list(),
         list(labels = labels),
@@ -588,6 +610,11 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
             }
             result@model@priceStart <- as.numeric(priceStart)
         }
+        if (!is.null(revenueRetentionPre)) {
+            result@model <- setRetention(result@model, revenueRetentionPre)
+            result@model@mcPre <- calcMC(result@model, TRUE)
+            result@model@mcPost <- calcMC(result@model, FALSE)
+        }
         result@model <- .initialize_cost_state(result@model)
         result <- .retain_fit_metadata(result)
         result <- initialize_baseline_state(result, baseline = baseline)
@@ -638,6 +665,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         ## historical solve default because they never pass this argument.
         solve_equilibrium = identical(baseline, "solve")
     )
+    constructor_args$revenueRetentionPre <- revenueRetentionPre
     if (!missing(priceOutside)) constructor_args$priceOutside <- priceOutside
     if (!missing(priceStart)) constructor_args$priceStart <- priceStart
     if (!is.null(output)) constructor_args$output <- output
@@ -789,6 +817,7 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 .model_simulate_step <- function(fit, model, ownerPost = NULL, mcDelta = NULL,
                                  exit = NULL, subset = NULL, priceStart = NULL,
                                  capacitiesPost = NULL, bargpowerPost = NULL,
+                                 revenueRetentionPost = NULL,
                                  solver = NULL, isMax = FALSE, dots = list()) {
     if (is.null(ownerPost)) ownerPost <- model@ownerPre
     nprods <- length(model@prices)
@@ -831,6 +860,9 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
         model@ownerPost <- ownerToMatrix(model, preMerger = FALSE)
     }
     model@mcDelta <- mcDelta
+    if (!is.null(revenueRetentionPost)) {
+        model <- setRetention(model, retentionPost = revenueRetentionPost)
+    }
     if (!methods::is(model, "Auction2ndCap")) {
         model@subset <- subset
     }
@@ -1104,6 +1136,8 @@ setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
 #'   or plant capacities for Stackelberg.
 #' @param bargpowerPost Optional post-counterfactual bargaining powers for
 #'   bargaining models.
+#' @param revenueRetentionPost Optional positive seller revenue-retention
+#'   vector for a one-step counterfactual.
 #' @param solver Optional solver override.  The calibration solver is reused
 #'   by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.
 #' @param isMax Whether to run the existing local profit-maximum check.
@@ -1128,12 +1162,14 @@ setGeneric("simulate", function(object, ...) standardGeneric("simulate"))
 .simulate_fit_method <- function(object, ownerPost = NULL, mcDelta = NULL,
                                  subset = NULL, priceStart,
                                  capacitiesPost = NULL, bargpowerPost = NULL,
+                                 revenueRetentionPost = NULL,
                                  solver = NULL, isMax = FALSE, ...) {
     args <- c(
         list(fit = object, ownerPost = ownerPost, mcDelta = mcDelta,
              subset = subset),
         if (!missing(priceStart)) list(priceStart = priceStart),
         list(capacitiesPost = capacitiesPost, bargpowerPost = bargpowerPost,
+             revenueRetentionPost = revenueRetentionPost,
              solver = solver, isMax = isMax),
         list(...)
     )
@@ -1192,6 +1228,7 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
                      subset = NULL,
                      priceStart, capacitiesPost = NULL,
                      bargpowerPost = NULL,
+                     revenueRetentionPost = NULL,
                      solver = NULL, isMax = FALSE, ...) {
     dots <- list(...)
     cf <- if (methods::is(ownerPost, "Counterfactual")) ownerPost else NULL
@@ -1219,6 +1256,9 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
         }
 
         if (length(cf@steps) > 1L) {
+            if (!is.null(revenueRetentionPost)) {
+                stop("'revenueRetentionPost' is supported for one-step simulations; use sequential one-step fits for retention changes.")
+            }
             solved <- .model_simulate_steps(fit, model, cf@steps)
             return(new(
                 "CounterfactualPath",
@@ -1246,6 +1286,7 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
             priceStart = if (!missing(priceStart)) priceStart,
             capacitiesPost = changes$capacity,
             bargpowerPost = changes$bargaining,
+            revenueRetentionPost = revenueRetentionPost,
             solver = solver, isMax = isMax, dots = dots
         )
         return(.counterfactual_attach(result, fit, cf))
@@ -1264,6 +1305,7 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
         ownerPost = ownerPost, mcDelta = mcDelta, subset = subset,
         priceStart = if (!missing(priceStart)) priceStart,
         capacitiesPost = capacitiesPost, bargpowerPost = bargpowerPost,
+        revenueRetentionPost = revenueRetentionPost,
         solver = solver, isMax = isMax, dots = dots
     )
     .counterfactual_attach(result, fit, cf)
@@ -1546,7 +1588,8 @@ setMethod("respecify", "AntitrustFit", function(object, demand = NULL,
         variant = target$variant,
         prices = prices,
         parameters = portable,
-        ownerPre = owner_pre
+        ownerPre = owner_pre,
+        revenueRetentionPre = getRetention(fit, TRUE)
     )
     ## These are observed baseline quantities used to construct the target
     ## state, not identifying margins.  In particular, margins are deliberately

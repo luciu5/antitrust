@@ -52,9 +52,14 @@ length-k vector of NAs when prices are not supplied.
 For Bertrand, calcMC computes either pre- or post-merger marginal costs.
 Marginal costs are assumed to be constant. Post-merger marginal costs are
 equal to pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a
-length-k vector of marginal cost changes. \sQuote{mcDelta} will typically
-be between 0 and 1. The second-score Logit auction retains its legacy
-additive cost-level interpretation of \sQuote{mcDelta}.
+length-k vector of physical marginal-cost changes. With revenue retention
+\eqn{r}, constant-cost values returned by calcMC are effective costs
+\eqn{\kappa=c/r}, so that a price-cost margin is \eqn{p-\kappa}. For an
+initialized model, the post-merger value is
+\eqn{\kappa_{post}=\kappa_{base}(1+mcDelta)r_{base}/r_{post}}.
+Thus a pure retention change uses \sQuote{mcDelta}=0. The second-score
+Logit auction retains its legacy additive physical cost-level
+interpretation of \sQuote{mcDelta}.
 
 For Auction2ndLogit, calcMC computes constant marginal costs impied by the model.
 

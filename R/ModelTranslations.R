@@ -390,10 +390,12 @@
 .translation_build_antitrust <- function(state, target, parameters,
                                          target_shares, target_inside_size,
                                          target_price_outside,
-                                         conduct_arguments = list()) {
+                                         conduct_arguments = list(),
+                                         revenueRetentionPre = NULL) {
     args <- .translation_target_args(state, target, parameters,
                                      target_shares, target_inside_size,
                                      target_price_outside, conduct_arguments)
+    args$revenueRetentionPre <- revenueRetentionPre
     result <- do.call(specify, args)
     ## The target's observed margins are not transition primitives. The
     ## target demand slopes and ownership are already sufficient for calcMC();
@@ -637,7 +639,7 @@
     target_fit <- .translation_build_antitrust(
         state, target, translated$parameters, translated$shares,
         translated$inside_size, translated$price_outside,
-        conduct_arguments
+        conduct_arguments, getRetention(fit, TRUE)
     )
     target_output <- isTRUE(.translation_slot(target_fit@model, "output", TRUE))
     if (!identical(target_output, state$output)) {

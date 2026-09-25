@@ -18,6 +18,7 @@ simulate(object, ...)
   priceStart,
   capacitiesPost = NULL,
   bargpowerPost = NULL,
+  revenueRetentionPost = NULL,
   solver = NULL,
   isMax = FALSE,
   ...
@@ -56,6 +57,9 @@ or plant capacities for Stackelberg.}
 
 \item{bargpowerPost}{Optional post-counterfactual bargaining powers for
 bargaining models.}
+
+\item{revenueRetentionPost}{Optional positive seller revenue-retention
+vector for a one-step counterfactual.}
 
 \item{solver}{Optional solver override.  The calibration solver is reused
 by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.}

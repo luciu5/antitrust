@@ -293,17 +293,17 @@ setMethod(
     output <- object@output
     outSign <- ifelse(output, -1, 1)
 
-    mcDelta <- object@mcDelta
+    mcDelta <- .auction_effective_cost_delta(object)
 
     if (is.na(idx)) {
       outVal <- 1
       mcDeltaOut <- object@priceOutside
     } else {
       outVal <- 0
-      mcDeltaOut <- object@mcDelta[idx]
+      mcDeltaOut <- mcDelta[idx]
     }
 
-    meanvalPost <- meanvalPre + alpha * (object@mcDelta - mcDeltaOut)
+    meanvalPost <- meanvalPre + alpha * (mcDelta - mcDeltaOut)
 
 
     marginPre <- calcMargins(object, preMerger = TRUE, exAnte = TRUE)

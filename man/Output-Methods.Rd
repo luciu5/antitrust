@@ -17,6 +17,7 @@
 \alias{calcShares,ANY-method}
 \alias{calcShares,AIDS-method}
 \alias{calcShares,CES-method}
+\alias{calcShares,Auction2ndCES-method}
 \alias{calcShares,CESNests-method}
 \alias{calcShares,Linear-method}
 \alias{calcShares,Logit-method}

@@ -31,6 +31,14 @@ setMethod(".promote_post_to_pre", "ANY", function(model, step) {
             methods::slot(model, pre_slot) <- methods::slot(model, post_slot)
         }
     }
+    cost_state <- .cost_state(model)
+    if (!is.null(cost_state)) {
+        cost_state$preCumulative <- model@mcDelta
+        model <- .set_cost_state(model, cost_state)
+    }
+    if (!is.null(attr(model, "antitrust_revenue_retention", exact = TRUE))) {
+        model <- setRetention(model, retentionPre = getRetention(model, FALSE))
+    }
     model
 })
 
@@ -117,6 +125,12 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     model@ownerPost <- expand_owner(owner_post)
 
     model@labels <- c(model@labels, entrant@label)
+    retention <- attr(model, "antitrust_revenue_retention", exact = TRUE)
+    if (!is.null(retention)) {
+        retention$pre <- c(retention$pre, 1)
+        retention$post <- c(retention$post, 1)
+        attr(model, "antitrust_revenue_retention") <- retention
+    }
     model@pricePre <- c(model@pricePre, entrant@priceStart)
     model@pricePost <- c(model@pricePost, entrant@priceStart)
     ## Entry supplies a new product's marginal-cost primitive directly.  Keep
@@ -125,6 +139,8 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     cost_state <- .cost_state(model)
     if (!is.null(cost_state) && !is.null(cost_state$base)) {
         cost_state$base <- c(cost_state$base, entrant@cost)
+        cost_state$baseRetention <- c(cost_state$baseRetention, 1)
+        cost_state$preCumulative <- c(cost_state$preCumulative, 0)
         names(cost_state$base) <- model@labels
         model <- .set_cost_state(model, cost_state)
         model@mcPre <- c(model@mcPre, entrant@cost)
