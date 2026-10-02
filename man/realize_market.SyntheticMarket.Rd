@@ -20,8 +20,8 @@
 
 \item{alpha}{Optional known Logit price coefficient.}
 
-\item{allow_negative_costs}{If `FALSE`, fail when the implied level cost is
-negative.}
+\item{allow_negative_costs}{In primitives mode, permit inferred negative
+costs when `TRUE`; observed costs are always supplied and positive.}
 
 \item{foc_tolerance}{Numerical tolerance recorded for the FOC check.}
 
@@ -38,8 +38,8 @@ ownership-adjusted Logit Bertrand FOCs. The active reference product is
 included in the system and only its mean utility is normalized to zero.
 }
 \details{
-In observed mode, `market$observed$outside_margin` identifies the common
-output-market price coefficient through the selected supply model. In
+In observed mode, the cost vector and proportional reference margin identify
+the price coefficient and implied equilibrium prices. In
 primitives mode, `alpha` must be in the market truth or be supplied in
 `...`.
 }

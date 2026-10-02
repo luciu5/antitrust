@@ -127,6 +127,13 @@ market design from its realization under a particular model. An extension
 may use the resulting fits, but remains responsible for the validity of its
 own economics.
 
+In observed synthetic mode, the neutral design contains product shares,
+ownership, positive marginal costs, and one proportional reference-product
+margin. It leaves prices unsolved. The model-aware adapter identifies demand
+scale and solves equilibrium prices; it rejects registered models whose
+additional curvature, capacity, or conduct state is not identified. The
+primitives design keeps its separate supplied-price contract.
+
 Use exported functions, documented S4 classes, result generics, and their
 stated argument contracts as the integration surface. Internal registry
 helpers, promotion functions, solver state, and unnamed attributes can

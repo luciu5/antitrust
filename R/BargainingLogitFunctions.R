@@ -59,6 +59,8 @@
 #' @param control.equ A list of  \code{\link[BB]{BBsolve}} control parameters passed
 #' to the non-linear equation solver (typically the \code{calcPrices} method).
 #' @param parmsStart A vector of length 2 of starting values for the non-linear equation solver.
+#' @param mktElast Optional aggregate market elasticity used by the ALM
+#'   calibration; the default `NA` keeps legacy calibration behavior.
 #' @param labels A k-length vector of labels. Default is "Prod#", where
 #' \sQuote{#} is a number between 1 and the length of \sQuote{prices}.
 #'
@@ -247,7 +249,8 @@ bargaining.logit.alm <- function(prices, shares, margins,
                                  parmsStart = c(NA_real_, NA_real_),
                                  control.slopes,
                                  control.equ,
-                                 labels = paste("Prod", 1:length(prices), sep = "")) {
+                                 labels = paste("Prod", 1:length(prices), sep = ""),
+                                 mktElast = NA_real_) {
   ## Create BargainingLogitALM  container to store relevant data
   result <- new("BargainingLogitALM",
     prices = prices, shares = shares,
@@ -258,6 +261,7 @@ bargaining.logit.alm <- function(prices, shares, margins,
     bargpowerPost = bargpowerPost,
     output = output,
     insideSize = insideSize,
+    mktElast = mktElast,
     mcDelta = mcDelta,
     subset = subset,
     weights = weights,

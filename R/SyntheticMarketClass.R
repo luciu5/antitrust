@@ -31,8 +31,9 @@ SyntheticMarket <- function(design, firms, products, ownership, shares,
         stop("products, ownership, shares, and prices must describe the same products")
     }
     if (any(!is.finite(shares)) || any(shares <= 0) ||
-        any(!is.finite(prices)) || any(prices <= 0)) {
-        stop("shares and prices must be finite and strictly positive")
+        !(all(is.na(prices)) && identical(design$mode, "observed")) &&
+        (any(!is.finite(prices)) || any(prices <= 0))) {
+        stop("shares must be positive; realized prices must be finite and positive")
     }
     if (abs(sum(shares) - 1) > 100 * .Machine$double.eps) {
         stop("product shares, including the reference product, must sum to one")

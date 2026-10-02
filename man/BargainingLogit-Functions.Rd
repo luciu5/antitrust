@@ -66,7 +66,8 @@ bargaining.logit.alm(
   parmsStart = c(NA_real_, NA_real_),
   control.slopes,
   control.equ,
-  labels = paste("Prod", 1:length(prices), sep = "")
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  mktElast = NA_real_
 )
 }
 \arguments{
@@ -139,6 +140,9 @@ to the non-linear equation solver (typically the \code{calcPrices} method).}
 outside good. Default is 0.}
 
 \item{parmsStart}{A vector of length 2 of starting values for the non-linear equation solver.}
+
+\item{mktElast}{Optional aggregate market elasticity used by the ALM
+calibration; the default `NA` keeps legacy calibration behavior.}
 }
 \value{
 \code{bargaining.logit} returns an instance of \code{\linkS4class{BargainingLogit}},

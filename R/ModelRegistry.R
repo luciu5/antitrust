@@ -30,6 +30,8 @@ model_spec <- function(demand, conduct, variant = "standard") {
     variant_aliases <- c(
         logit_alm = "logit",
         logitalm = "logit",
+        logit_nests_alm = "logit_nests",
+        logitnestsalm = "logit_nests",
         ces_alm = "ces",
         cesalm = "ces"
     )
@@ -82,6 +84,7 @@ supportedModels <- function() {
             calibrate = entry$calibrate,
             specify = entry$specify,
             simulate = entry$simulate,
+            observed_synthetic = entry$observed_synthetic,
             stringsAsFactors = FALSE,
             row.names = entry$id
         )
@@ -490,6 +493,41 @@ print.antitrust_model_spec <- function(x, ...) {
              class = "BargainingCESALM", calibrator = "bargaining.ces.alm",
              calibrate = TRUE, specify = FALSE, simulate = TRUE)
     )
+    ## Observed synthetic capability is deliberately narrower than calibration.
+    observed_handlers <- c(
+        "linear::bertrand" = "linear_bertrand",
+        "loglin::bertrand" = "loglin_bertrand",
+        "pcaids::bertrand" = "pcaids_bertrand",
+        "logit::bertrand::alm" = "logit_bertrand_alm",
+        "logit::cournot::alm" = "logit_cournot_alm",
+        "logit::auction2nd::alm" = "logit_auction2nd_alm",
+        "logit::bargaining::alm" = "logit_bargaining_alm",
+        "ces::bertrand::alm" = "ces_bertrand_alm",
+        "ces::cournot::alm" = "ces_cournot_alm",
+        "ces::auction2nd::alm" = "ces_auction2nd_alm",
+        "ces::bargaining::alm" = "ces_bargaining_alm",
+        "logit_nests::bertrand::alm" = "logit_nests_bertrand_alm",
+        "logit::bertrand" = "logit_bertrand",
+        "logit::moncom" = "logit_moncom",
+        "ces::bertrand" = "ces_bertrand",
+        "ces::moncom" = "ces_moncom",
+        "logit::cournot" = "logit_cournot",
+        "ces::cournot" = "ces_cournot",
+        "logit::auction2nd" = "logit_auction2nd",
+        "ces::auction2nd" = "ces_auction2nd",
+        "logit::bargaining" = "logit_bargaining",
+        "ces::bargaining" = "ces_bargaining",
+        "logit::bargaining2nd" = "logit_bargaining2nd",
+        "ces::bargaining2nd" = "ces_bargaining2nd",
+        "logit_nests::bertrand" = "logit_nests_bertrand",
+        "ces_nests::bertrand" = "ces_nests_bertrand"
+    )
+    entries <- lapply(entries, function(entry) {
+        entry$observed_synthetic <- if (entry$id %in% names(observed_handlers)) {
+            unname(observed_handlers[[entry$id]])
+        } else "unsupported"
+        entry
+    })
     registry <- stats::setNames(entries, vapply(entries, `[[`, character(1), "id"))
     function() registry
 })

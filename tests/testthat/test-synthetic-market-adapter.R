@@ -1,87 +1,28 @@
-test_that("multi-product Bertrand Logit realizes a known-primitives market", {
-  market <- fake_market(
-    mode = "primitives", n_firms = 2, n_products = 2,
-    dirichlet_alpha = c(2, 3, 4, 5), outside_beta = c(3, 5),
-    price_level = 100, parameters = list(alpha = -1), seed = 101
-  )
-  source_products <- market$products
-  realized <- realize_market(market, model_spec("logit", "bertrand"))
+## Migration parity A: standalone Logit realization has independent cost-first FOCs.
 
-  expect_s3_class(realized, "SyntheticMarket")
-  expect_equal(realized$diagnostics$equilibrium_status, "realized")
-  expect_lt(realized$diagnostics$foc_residual, 1e-8)
-  expect_equal(realized$diagnostics$recovered_parameters$alpha, -1,
-               tolerance = 1e-12)
-  expect_equal(realized$diagnostics$foc_rank, length(market$shares))
-  expect_lt(realized$diagnostics$foc_condition_number,
-            realized$diagnostics$foc_condition_limit)
-  expect_equal(realized$products$cost,
-               realized$prices - realized$products$markup, tolerance = 1e-12)
-  expect_equal(realized$products$mean_value[realized$design$reference_product], 0,
-               tolerance = 1e-14)
-  expect_equal(market$products, source_products)
-  expect_true(all(is.na(market$products$cost)))
+test_that("realize_market solves prices from observed costs and margin", {
+    shares <- c(.2, .1, .15, .25, .3)
+    costs <- c(40, 50, 60, 70, 80)
+    market <- fake_market(n_firms = 2, n_products = 2,
+        shares = shares, costs = costs, reference_margin = .2, seed = 7)
+    realized <- realize_market(market, model_spec("logit", "bertrand"))
+    D <- diag(shares) - tcrossprod(shares)
+    z <- solve(t(market$ownership * D), shares)
+    alpha <- -z[5] / (costs[5] * .2 / .8)
+    expect_equal(realized$prices, unname(costs - z / alpha),
+                 tolerance = 1e-10)
+    expect_equal(realized$costs, costs)
+    expect_equal(realized$observed$costs, costs)
+    expect_lt(realized$diagnostics$foc_residual, 1e-10)
+    expect_lt(realized$diagnostics$share_residual, 1e-10)
+    expect_lt(abs(realized$diagnostics$reference_margin_residual), 1e-10)
 })
 
-test_that("singular ownership-adjusted systems are rejected", {
-  market <- fake_market(
-    mode = "primitives", n_firms = 2, n_products = c(1, 2),
-    parameters = list(alpha = -1), price_level = 100, seed = 505
-  )
-  market$ownership[,] <- 1
-  expect_error(
-    realize_market(market, model_spec("logit", "bertrand")),
-    "singular or ill-conditioned"
-  )
-})
-
-test_that("observed reference markup identifies alpha with the full ownership system", {
-  market <- fake_market(
-    mode = "observed", n_firms = 3, dirichlet_alpha = rep(1, 3),
-    outside_beta = c(4, 4), price_level = 100,
-    observed_markup = 20, seed = 202
-  )
-  realized <- realize_market(market, model_spec("logit", "bertrand"))
-  ref <- market$design$reference_product
-  expected_alpha <- -1 / (market$observed$reference_markup * (1 - market$shares[ref]))
-
-  expect_equal(realized$diagnostics$recovered_parameters$alpha, expected_alpha,
-               tolerance = 1e-12)
-  expect_lt(realized$diagnostics$foc_residual, 1e-8)
-  expect_equal(realized$products$markup[ref], market$observed$reference_markup,
-               tolerance = 1e-12)
-})
-
-test_that("full multi-product FOCs differ from the one-product shortcut", {
-  market <- fake_market(
-    mode = "observed", n_firms = 2, n_products = 2,
-    dirichlet_alpha = c(3, 2, 4, 5), outside_beta = c(3, 7),
-    price_level = 100, observed_markup = 20, seed = 303
-  )
-  realized <- realize_market(market, model_spec("logit", "bertrand"))
-  shares <- market$shares
-  ownership <- market$ownership
-  d_unit <- diag(shares) - tcrossprod(shares, shares)
-  z <- solve(t(ownership * d_unit), shares)
-  expected_markup <- unname(-z / realized$diagnostics$recovered_parameters$alpha)
-
-  expect_equal(realized$products$markup, expected_markup, tolerance = 1e-12)
-  expect_lt(realized$diagnostics$foc_residual, 1e-8)
-  shortcut <- -1 / (realized$products$markup[1] * (1 - shares[1]))
-  expect_false(isTRUE(all.equal(shortcut,
-                                realized$diagnostics$recovered_parameters$alpha,
-                                tolerance = 1e-6)))
-})
-
-test_that("known-primitive QA records parameter error and mean-share recovery", {
-  market <- fake_market(
-    mode = "primitives", n_firms = 2, n_products = 2,
-    dirichlet_alpha = c(1, 4, 2, 3), price_level = 100,
-    parameters = list(alpha = -0.75), seed = 404
-  )
-  realized <- realize_market(market, model_spec("logit", "bertrand"))
-  expect_equal(realized$diagnostics$parameter_error$alpha, 0,
-               tolerance = 1e-12)
-  expect_lt(realized$diagnostics$share_residual, 1e-12)
-  expect_equal(sum(realized$shares), 1, tolerance = 1e-14)
+test_that("realize_market rejects unidentified models and conflicting slope", {
+    market <- fake_market(n_firms = 2, costs = c(50, 60, 70),
+        reference_margin = .2, seed = 7)
+    expect_error(realize_market(market, model_spec("ces", "bertrand")),
+                 "standard Bertrand Logit only")
+    expect_error(realize_market(market, model_spec("logit", "bertrand"),
+                                alpha = -.1), "omit 'alpha'")
 })

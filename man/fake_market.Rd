@@ -10,6 +10,15 @@ fake_market(
   n_products = 1L,
   dirichlet_alpha = NULL,
   outside_beta = c(2, 8),
+  shares = NULL,
+  costs = NULL,
+  cost_rule = c("common", "uniform"),
+  cost_level = 80,
+  cost_range = c(50, 100),
+  reference_margin = NULL,
+  margin_range = c(0.05, 0.5),
+  passive_outside_share = 0,
+  passive_outside_range = c(0.1, 0.5),
   prices = NULL,
   reference_price = NULL,
   price_rule = c("common", "uniform"),
@@ -37,7 +46,32 @@ inside product. If omitted, all product-level Dirichlet shapes equal one.}
 
 \item{outside_beta}{A positive finite length-two vector of Beta shapes.}
 
-\item{prices}{Optional positive prices for inside products or all products.}
+\item{shares}{Optional positive all-product shares summing to one.}
+
+\item{costs}{Optional complete, positive marginal-cost vector in observed mode.}
+
+\item{cost_rule}{`"common"` or `"uniform"` cost design in observed mode.}
+
+\item{cost_level}{Positive common cost; the default is 80 price units.}
+
+\item{cost_range}{Positive endpoints for uniform heterogeneous costs.}
+
+\item{reference_margin}{Observed proportional margin `(p-c)/p` for the
+active reference product; if omitted, drawn within `margin_range`.}
+
+\item{margin_range}{Open interval used to draw the reference margin.}
+
+\item{passive_outside_share}{Additional passive outside-option share in
+observed mode. Product shares remain conditional on choosing an active
+product and sum to one; unconditional shares equal their product with
+`1-passive_outside_share`. The default zero preserves standard models.
+Use `NULL` to draw from `passive_outside_range` for ALM designs.}
+
+\item{passive_outside_range}{Uniform draw range for a requested passive
+outside share, default 0.1 to 0.5.}
+
+\item{prices}{Optional positive prices for inside products or all products
+in primitives mode.}
 
 \item{reference_price}{Price appended when only inside prices are supplied.}
 
@@ -48,13 +82,13 @@ supplied.}
 
 \item{price_range}{Two positive endpoints for the uniform price rule.}
 
-\item{outside_margin}{Optional observed reference-product level margin.}
+\item{outside_margin}{Retired price-first observed-mode argument.}
 
-\item{observed_markup}{Backward-compatible alias for `outside_margin`.}
+\item{observed_markup}{Retired price-first observed-mode argument.}
 
-\item{reference_markup}{Backward-compatible alias for `outside_margin`.}
+\item{reference_markup}{Retired price-first observed-mode argument.}
 
-\item{markup_range}{Two endpoints for the observed markup draw.}
+\item{markup_range}{Retired price-first observed-mode argument.}
 
 \item{parameters}{A list of model-specific known primitives in primitives
 mode, such as `list(alpha = -1)`.}
@@ -67,8 +101,9 @@ mode, such as `list(alpha = -1)`.}
 A `SyntheticMarket` object.
 }
 \description{
-The design layer draws shares, prices, ownership, and optionally one
-observed reference-product markup. It does not infer demand or conduct
+Observed mode draws shares, ownership, positive marginal costs, and one
+proportional reference-product margin. It leaves prices unsolved. Primitives
+mode retains its price design. This layer does not infer demand or conduct
 primitives. The active reference product is an additional one-product firm
 and participates in the ownership matrix; its mean utility is normalized by
 the economic realization adapter.

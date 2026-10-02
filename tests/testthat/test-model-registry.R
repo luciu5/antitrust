@@ -50,6 +50,38 @@ test_that("the registry covers generalized and migrated model combinations", {
         stringsAsFactors = FALSE,
         row.names = row.names(registry)
     )
+    ## Migration parity A: capability is a complete-model registry promise.
+    handlers <- c(
+        "linear::bertrand" = "linear_bertrand",
+        "loglin::bertrand" = "loglin_bertrand",
+        "pcaids::bertrand" = "pcaids_bertrand",
+        "logit::bertrand::alm" = "logit_bertrand_alm",
+        "logit::cournot::alm" = "logit_cournot_alm",
+        "logit::auction2nd::alm" = "logit_auction2nd_alm",
+        "logit::bargaining::alm" = "logit_bargaining_alm",
+        "ces::bertrand::alm" = "ces_bertrand_alm",
+        "ces::cournot::alm" = "ces_cournot_alm",
+        "ces::auction2nd::alm" = "ces_auction2nd_alm",
+        "ces::bargaining::alm" = "ces_bargaining_alm",
+        "logit_nests::bertrand::alm" = "logit_nests_bertrand_alm",
+        "logit::bertrand" = "logit_bertrand",
+        "logit::moncom" = "logit_moncom",
+        "logit::cournot" = "logit_cournot",
+        "logit::auction2nd" = "logit_auction2nd",
+        "logit::bargaining" = "logit_bargaining",
+        "logit::bargaining2nd" = "logit_bargaining2nd",
+        "ces::bertrand" = "ces_bertrand",
+        "ces::moncom" = "ces_moncom",
+        "ces::cournot" = "ces_cournot",
+        "ces::auction2nd" = "ces_auction2nd",
+        "ces::bargaining" = "ces_bargaining",
+        "ces::bargaining2nd" = "ces_bargaining2nd",
+        "logit_nests::bertrand" = "logit_nests_bertrand",
+        "ces_nests::bertrand" = "ces_nests_bertrand"
+    )
+    expected$observed_synthetic <- rep("unsupported", nrow(expected))
+    expected$observed_synthetic[match(names(handlers), row.names(expected))] <-
+        unname(handlers)
     expect_equal(registry, expected)
 })
 

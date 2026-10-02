@@ -20,6 +20,43 @@ change the conditions under which firms compete.
 We will use one three-product Logit–Bertrand market throughout. The [models
 vignette](Models.html) explains the economic assumptions behind the fit.
 
+## Explore an observed synthetic market
+
+Structural demand parameters can be difficult to choose directly. Observed
+synthetic mode is an intuition/calibration experiment: choose shares,
+ownership, marginal costs, and one reference proportional margin, then let
+the selected model imply its demand parameter and equilibrium prices. It is
+not an empirical data-generating process.
+
+```{r synthetic-observed}
+intuition <- antitrust::synthetic_market(
+  demand = "logit", supply = "bertrand",
+  n_firms = 2, n_products = 2,
+  shares = c(.2, .1, .15, .25, .3),
+  costs = c(40, 50, 60, 70, 80),
+  reference_margin = .2,
+  seed = 7
+)
+intuition@diagnostics$synthetic[c(
+  "supplied_costs", "solved_prices", "recovered_parameters",
+  "share_residual", "foc_residual")]
+```
+
+The reference product has cost 80 and margin 0.2, so its implied price is
+`80/(1-0.2) = 100`. The other prices follow the ownership-adjusted Bertrand
+FOCs. A different demand or conduct specification must satisfy its own
+equations; see the [models vignette](Models.html) and
+`supportedModels()$observed_synthetic` for supported routes.
+
+For ALM, `passive_outside_share` describes a separate outside option. The
+product shares above remain conditional on choosing an active product;
+omitting this argument draws it uniformly from 0.1 to 0.5. For example,
+`synthetic_market(demand = "LogitALM", supply = "cournot",
+shares = c(.2, .1, .15, .25, .3), costs = c(40, 50, 60, 70, 80),
+n_firms = 2, n_products = 2, reference_margin = .2,
+passive_outside_share = .3)` solves the Cournot equation with that passive
+share and the same known costs.
+
 ## Fit and inspect the observed market
 
 Each firm initially sells one product. The products account for 80% of

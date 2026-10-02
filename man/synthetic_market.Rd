@@ -12,6 +12,14 @@ synthetic_market(
   n_products = 1L,
   dirichlet_alpha = NULL,
   outside_beta = c(2, 8),
+  shares = NULL,
+  costs = NULL,
+  cost_rule = c("common", "uniform"),
+  cost_level = 80,
+  cost_range = c(50, 100),
+  reference_margin = NULL,
+  passive_outside_share = NULL,
+  passive_outside_range = c(0.1, 0.5),
   reference_price = 100,
   prices = NULL,
   outside_margin = NULL,
@@ -37,15 +45,37 @@ inside product. If omitted, all shapes equal one.}
 
 \item{outside_beta}{Positive Beta shape parameters for the reference share.}
 
-\item{reference_price}{A positive level price for the reference product.}
+\item{shares}{Optional complete all-product share vector summing to one.}
 
-\item{prices}{Optional complete positive price vector. It is not randomly
-generated and the final element is the reference-product price.}
+\item{costs}{Optional complete positive cost vector in observed mode.}
 
-\item{outside_margin}{Optional level reference-product markup in observed
-mode. Otherwise the open numerical implementation of `U(0, 100)` is used.}
+\item{cost_rule}{`"common"` or `"uniform"` observed cost design.}
 
-\item{parameters}{Named model-specific primitives in primitives mode.}
+\item{cost_level}{Positive common cost, default 80.}
+
+\item{cost_range}{Positive endpoints for uniform heterogeneous costs.}
+
+\item{reference_margin}{Proportional reference-product margin in `(0,1)`;
+if omitted, drawn from the design's `margin_range`.}
+
+\item{passive_outside_share}{Optional ALM passive outside-option share in
+`(0,1)`. If omitted for ALM, draw uniformly from
+`passive_outside_range`.}
+
+\item{passive_outside_range}{ALM passive outside-share draw endpoints,
+default 0.1 and 0.5.}
+
+\item{reference_price}{Positive reference price in primitives mode only.}
+
+\item{prices}{Optional complete positive price vector in primitives mode.}
+
+\item{outside_margin}{Retired price-first observed argument; use
+`reference_margin` with known costs.}
+
+\item{parameters}{Named model-specific primitives in primitives mode.
+Observed nested Logit and nested CES need named `sigma` by nest;
+observed Linear and log-linear Bertrand need a relative all-product
+`slopes` matrix.}
 
 \item{seed}{Optional explicit integer seed.}
 
@@ -57,10 +87,11 @@ An [AntitrustFit] directly accepted by [simulate()].
 }
 \description{
 `synthetic_market()` is the antitrust-native entry point for fake markets.
-It draws only a product-share and ownership design. The active reference
-product has a real positive price. In observed mode, the selected
-demand/supply implementation uses the reference-product level markup and
-all product shares to recover structural demand parameters. In primitives
+Structural demand parameters can be difficult to choose directly. Observed
+mode lets users reason in terms of shares, ownership, marginal costs, and a
+reference proportional margin, then recovers the structural parameter and
+equilibrium prices implied by the selected model. This is an intuition and
+calibration experiment, not an empirical data-generating process. In primitives
 mode, the supplied parameters are passed through [specify()] without hidden
 recalibration.
 }
@@ -70,9 +101,25 @@ one-product firm and is included in `ownerPre`. `n_products` may be a scalar
 shared by all inside firms or a vector with one count per firm, and
 `dirichlet_alpha` is product-level.
 
-Prices and margins are not independently drawn. `reference_price` is the
-positive price normalization for the market; if `prices` is supplied, it
-must contain the complete positive product-price vector and its last value
-must equal `reference_price`. The selected economic implementation derives
-the remaining markups and marginal costs.
+In observed mode, `reference_margin = (p_r-c_r)/p_r` pins down the
+reference price `p_r=c_r/(1-reference_margin)`. Costs remain supplied
+design inputs. Standard Logit and CES support Bertrand, Cournot,
+monopolistic competition, second-score auctions, bargaining, and
+second-score bargaining. Nested Logit and nested CES Bertrand additionally
+require `nests` and named `parameters$sigma`; nested CES requires at least
+two products per nest. Linear and log-linear Bertrand require a relative
+`parameters$slopes` matrix. Bargaining power defaults to 0.5 per product;
+`bargpowerPre` in `...` overrides it. Other registered combinations raise
+an explicit unsupported or underidentification error. Primitives mode
+retains `prices` and `reference_price`.
+PCAIDS Bertrand uses its legacy proportional-to-share diversion rule and
+aggregate market elasticity of -1; the reference margin identifies the
+reference own-price elasticity.
+Logit and CES ALM Bertrand, Cournot, second-score auction, and bargaining
+routes use a separate passive outside-option share.
+Nested Logit ALM Bertrand also requires `nests` and named
+`parameters$sigma` with singleton-nest sigma fixed at one.
+Product shares are conditional on choosing an active product, including
+the reference product. If `passive_outside_share` is omitted, it is drawn
+uniformly between 0.1 and 0.5; unconditional product shares are recorded.
 }

@@ -46,6 +46,8 @@
 #' Default is 1.
 #' @param priceStart A length k vector of starting values for price calculation.
 #' @param parmsStart A length 2 vector of starting values for ALM demand parameter estimation.
+#' @param mktElast Optional aggregate market elasticity used by the ALM
+#'   calibration; the default `NA` keeps legacy calibration behavior.
 #' @param weights A length k vector of product weights. Default is rep(1, length(shares)).
 #' @param solver A length-1 character vector specifying the solver algorithm used to calculate pre- and post-merger price equilibria. Options are \code{"nleqslv"} (default) or \code{"ag"} (Aggregative Games).
 #' @param control.slopes A list of control parameters for non-linear optimization routine.
@@ -217,7 +219,8 @@ bargaining.ces.alm <- function(prices, shares, margins,
                                priceOutside = 1,
                                control.slopes,
                                control.equ,
-                               labels = paste("Prod", 1:length(prices), sep = "")) {
+                               labels = paste("Prod", 1:length(prices), sep = ""),
+                               mktElast = NA_real_) {
   ## Create BargainingCESALM container to store relevant data
   result <- new("BargainingCESALM",
     prices = prices, shares = shares,
@@ -229,6 +232,7 @@ bargaining.ces.alm <- function(prices, shares, margins,
     bargpowerPost = bargpowerPost,
     output = output,
     insideSize = insideSize,
+    mktElast = mktElast,
     mcDelta = mcDelta,
     subset = subset,
     weights = weights,

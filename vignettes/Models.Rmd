@@ -101,6 +101,31 @@ additional margins to identify that share along with demand curvature. The
 variant is a separate implemented model, even when its demand name is the
 same, and it may lack a `specify()` route.
 
+### Identification in observed synthetic markets
+
+The observed synthetic experiment begins with shares, ownership, marginal
+costs, and one proportional reference margin. One margin identifies a common
+Logit price coefficient or CES curvature under the listed standard conduct
+equations, but it does not identify every model in this table. Nested Logit
+also requires the caller to supply `nests` and named `parameters$sigma`;
+Linear Bertrand requires a relative `parameters$slopes` matrix. Bargaining
+power defaults to 0.5 per product unless `bargpowerPre` is supplied.
+PCAIDS Bertrand uses diversion proportional to share and aggregate elasticity
+`-1`; the reference margin identifies its remaining demand scale. In ALM
+Logit and CES models, the active-product shares sum to one conditional on
+participation. A separate passive outside share is supplied or drawn
+uniformly from 0.1 to 0.5. This supports Bertrand, Cournot, second-score
+auction, and bargaining observed inversions for both demand families.
+Nested Logit ALM Bertrand additionally uses supplied `nests` and named
+`parameters$sigma` for the within-nest substitution pattern.
+
+The registry's `observed_synthetic` column names implemented inversion
+handlers; `"unsupported"` means the route requires more anchors or different
+design state. The model-by-model reasons are recorded in
+`artifacts/observed_synthetic_market_redesign.md`. Calibration from observed
+prices remains available through `calibrate()` for other models, which is a
+different experiment.
+
 ## Conduct and cost recovery
 
 Demand tells us how buyers respond to prices; conduct tells us which choices

@@ -3092,17 +3092,25 @@ setMethod(
       upperB[1] <- mktElast / avgPrice
     }
 
-    minTheta <- optim(object@parmsStart, minD,
-      method = "L-BFGS-B",
-      lower = lowerB, upper = upperB,
-      control = object@control.slopes
-    )
-
-    if (minTheta$convergence != 0) {
-      warning("'calcSlopes' nonlinear solver may not have successfully converged. Reason: '", minTheta$message, "'")
+    ## An exactly calibrated start has zero residual.  L-BFGS-B can report a
+    ## line-search failure there because its finite-difference gradient is
+    ## roundoff noise, so retain that verified root without optimizing.
+    if (all(object@parmsStart > lowerB &
+            object@parmsStart < upperB) &&
+        is.finite(minD(object@parmsStart)) &&
+        minD(object@parmsStart) < 1e-20) {
+      minTheta <- object@parmsStart
+    } else {
+      fit <- optim(object@parmsStart, minD,
+        method = "L-BFGS-B",
+        lower = lowerB, upper = upperB,
+        control = object@control.slopes
+      )
+      if (fit$convergence != 0) {
+        warning("'calcSlopes' nonlinear solver may not have successfully converged. Reason: '", fit$message, "'")
+      }
+      minTheta <- fit$par
     }
-
-    minTheta <- minTheta$par
 
     # Handle edge cases
     if (isTRUE(all.equal(minTheta[2], lowerB[2], check.names = FALSE))) {
