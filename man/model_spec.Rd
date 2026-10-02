@@ -24,3 +24,6 @@ A small object of class \code{antitrust_model_spec} containing
 \description{
 Describe a demand/conduct model combination
 }
+\examples{
+model_spec("logit", "bertrand")
+}

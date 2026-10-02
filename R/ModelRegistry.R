@@ -9,6 +9,8 @@
 #'   elasticity calibration where supported.
 #' @return A small object of class \code{antitrust_model_spec} containing
 #'   normalized model names.
+#' @examples
+#' model_spec("logit", "bertrand")
 #' @export
 model_spec <- function(demand, conduct, variant = "standard") {
     if (missing(demand) || length(demand) != 1L || is.na(demand)) {
@@ -65,6 +67,8 @@ model_spec <- function(demand, conduct, variant = "standard") {
 #'
 #' @return A data frame with normalized demand names, conduct names, existing
 #'   S4 result classes, and legacy constructor mappings.
+#' @examples
+#' head(supportedModels()[c("demand", "conduct", "calibrate", "specify", "simulate")])
 #' @export
 supportedModels <- function() {
     registry <- .model_registry()

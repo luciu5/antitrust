@@ -56,9 +56,9 @@ specification object.}
 \item{output}{Logical indicator for an output (`TRUE`) or input (`FALSE`)
 market when the selected model supports both orientations.}
 
-\item{baseline}{Baseline lifecycle: `"solve"` retains the legacy nonlinear
-solve, while `"observed"` binds supplied observed prices for standard flat
-Logit/CES models.}
+\item{baseline}{Baseline lifecycle: `"solve"` retains the legacy
+nonlinear solve, while `"observed"` binds supplied observed prices for
+standard flat Logit/CES models.}
 
 \item{revenueRetentionPre}{Optional positive seller revenue-retention vector
 applied before marginal-cost recovery.}
@@ -71,4 +71,11 @@ An \code{AntitrustFit} object.
 }
 \description{
 Construct a fitted structural model from supplied parameters
+}
+\examples{
+fit <- specify("logit", "bertrand", prices = c(2, 2.2, 2.5),
+  ownerPre = c("A", "B", "C"),
+  parameters = list(alpha = -2, meanval = c(.6, .4, .2)),
+  insideSize = 100)
+fit@parameters$alpha
 }

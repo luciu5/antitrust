@@ -69,3 +69,9 @@ It delegates calibration to the corresponding model-specific legacy
 constructor, so existing equations, normalizations, solvers, and warnings
 remain the behavioral source of truth.
 }
+\examples{
+fit <- calibrate("logit", "bertrand", prices = c(2, 2.2, 2.5),
+  shares = c(.35, .25, .20), margins = c(.40, .35, .30),
+  ownerPre = c("A", "B", "C"), insideSize = 100)
+summary(fit)[c("spec", "model_class")]
+}

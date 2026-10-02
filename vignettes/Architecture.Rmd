@@ -1,0 +1,132 @@
+---
+title: "Classes, inheritance, and extending antitrust"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Classes, inheritance, and extending antitrust}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+`antitrust` separates the **structural lifecycle** from the existing
+model-specific S4 economics. This lets users fit once and run controlled
+scenarios while keeping the result classes and methods that economic models
+already implement. The [workflow vignette](Workflow.html) demonstrates that
+lifecycle; the [models vignette](Models.html) describes its FOCs and
+identification assumptions.
+
+## Objects in the lifecycle
+
+```text
+model_spec() + observed inputs  --calibrate()-->  AntitrustFit
+model_spec() + known parameters --specify()---->  AntitrustFit
+AntitrustFit + Counterfactual --simulate()---->  legacy S4 result (one step)
+AntitrustFit + multiple steps --simulate()----->  CounterfactualPath
+```
+
+`model_spec()` normalizes a supported demand, conduct and variant identity.
+An `AntitrustFit` is a `StructuralFit`: it stores that identity, an existing
+fitted model object, structural parameters, observed inputs and diagnostics.
+It marks the state *before* a requested counterfactual. A
+`Counterfactual` contains one or more `CounterfactualStep` objects. One step
+returns the existing model class, such as `Logit`, `CES`, `Cournot`, or
+`Auction2ndLogit`; a multi-step simulation returns `CounterfactualPath`,
+whose `result_at()` and `final_result()` return those same model classes.
+
+This choice preserves the economic methods already defined for result
+classes. A universal result class would lose model-specific dispatch and
+would force unrelated auction, quantity-game and bargaining outputs into one
+set of slots. `summary(fit)` describes stored fit state;
+`summary(result)` describes the simulation under the result class's method.
+
+## S4 relationships that affect behavior
+
+The following is a deliberately selective map of *current* inheritance.
+Arrows mean “extends”; they do not assert that two economic games share a
+FOC. Some descendants inherit demand storage and override supply methods.
+
+```text
+StructuralFit (virtual)
+  └─ AntitrustFit
+
+Antitrust
+  ├─ Bertrand
+  │   ├─ Linear ── LogLin, AIDS ── PCAIDS ── PCAIDSNests
+  │   ├─ Logit ── LogitNests, LogitCap, LogitCournot, LogitBLP,
+  │   │             Auction2ndLogit, BargainingLogit, MonComLogit
+  │   ├─ CES ── CESNests, CESCournot, Auction2ndCES,
+  │   │           BargainingCES, MonComCES
+  │   └─ Cournot ── Stackelberg
+  └─ Auction2ndCap
+
+Counterfactual ── contains CounterfactualStep objects
+CounterfactualPath ── contains legacy S4 results
+```
+
+The diagram omits ALM, nested, BLP and auction/bargaining subvariants where
+they do not change this explanation. `Cournot`'s inheritance from
+`Bertrand` is an implementation inheritance, not a claim that Cournot uses
+Bertrand price FOCs. The former `ClassDiagram.png` omitted the new lifecycle
+and several result families; `methods::showClass()` and
+`methods::showMethods()` give the authoritative detailed hierarchy.
+
+## Public methods and dispatch
+
+The current public price and margin generics are `calcPrices()` and
+`calcMargins()` (there are no exported `prices()` or `margins()` generics).
+Results also support, where their class defines a method,
+`calcShares()`, `calcQuantities()`, `elast()`, `diversion()`, `upp()`,
+`cmcr()`, `CV()`, `HypoMonTest()`, and `calcDiagnostics()`. For example,
+`elast()` on a `Logit` result and on a `CES` result dispatches to their
+respective demand equations. See each generic's help page for argument
+conventions; availability is not identical across all model classes.
+
+The model registry behind `supportedModels()` records **complete supported
+implementations**: normalized identity, existing S4 result class, legacy
+calibration constructor, and support for `calibrate()`, `specify()` and
+`simulate()`. It does not mechanically cross every demand family with every
+conduct family. Each entry delegates economic behavior to its model-specific
+constructor and methods. A second, narrower transition registry controls
+`respecify()` and records what is retained, derived, discarded and
+recomputed. `model_transition()` exposes those records for supported
+source/target specifications.
+
+The public `counterfactual()` vocabulary is broader than any one model.
+`validate_counterfactual()` checks fields against model-specific
+capabilities before solving. In particular, entry, quality, capacity,
+bargaining and leadership are conditional capabilities; tariff and quota
+are rejected for antitrust models.
+
+## Building an extension
+
+An extension package should own its **specialized economics**: model
+identities beyond `antitrust::supportedModels()`, calibration equations,
+equilibrium solves, and result methods. It can reuse exported lifecycle
+types and hooks when appropriate: subclass `StructuralFit`, implement
+`simulate()` and `respecify()` for its own fit class, validate its
+counterfactual fields, and implement `simulate_steps()` if paths should
+resume. The generic `StructuralFit` methods fail explicitly until the
+extension supplies behavior; they do not silently run antitrust economics.
+
+The sibling packages show distinct uses of this boundary. `vertical` owns
+two-sided vertical bargaining models and their policy state. `coordination`
+owns specialized price-leadership economics. `trade` depends on antitrust
+and adds tariff/quota policy rather than moving generic market design out of
+antitrust. `financial` supplies its own debt/limited-liability lifecycle.
+`antitrustBayes` can construct antitrust fits from posterior structural
+draws and use the public simulation boundary. These are architectural
+examples, not a claim that all packages share one registry.
+
+`synthetic_market()`, `fake_market()`, and `realize_market()` also belong to
+antitrust: neutral market design and model-specific realization are separate
+parts of antitrust's public synthetic-market tools. Extensions can consume
+the resulting structural fits while retaining responsibility for their own
+economic validity.
+
+For a downstream package, the dependable integration surface is the
+exported functions, documented S4 classes, documented result generics, and
+their stated argument contracts. Do not use `antitrust:::` registry helpers,
+promotion functions, solver state or unnamed attributes as extension
+contracts. In the source repository, `ARCHITECTURE.md` and
+`artifacts/refactor_architecture.md` contain maintainer context;
+`?StructuralFit`, `?AntitrustFit`, `?simulate_steps` and
+`?validate_counterfactual` define the callable hooks.

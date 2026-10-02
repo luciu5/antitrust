@@ -2,7 +2,6 @@
 ^\.Rproj\.user$
 ^ai$
 ^artifacts$
-^vignettes$
 ^\.Rlib$
 ^\.Rlib-devel$
 ^\.R-devel.*$

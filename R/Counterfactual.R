@@ -179,6 +179,12 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
 #'   describing a new single-product firm to add to the market.
 #' @param ... Reserved; model specification fields are rejected.
 #' @return A `Counterfactual` object with exactly one `CounterfactualStep`.
+#' @examples
+#' fit <- calibrate("logit", "bertrand", prices = c(2, 2.2, 2.5),
+#'   shares = c(.35, .25, .20), margins = c(.40, .35, .30),
+#'   ownerPre = c("A", "B", "C"), insideSize = 100)
+#' scenario <- counterfactual(ownership = c("A", "A", "C"))
+#' simulate(fit, scenario)@pricePost
 #' @export
 counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
                            capacity = NULL, tariff = NULL, quota = NULL,

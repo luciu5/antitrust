@@ -9,8 +9,8 @@
 \arguments{
 \item{object}{An `AntitrustFit` returned by `calibrate()`.}
 
-\item{...}{Baseline data, model-specification arguments, or model-specific
-calibration options to replace.}
+\item{...}{Observed baseline data or model-specific calibration options
+to replace. Demand, conduct, and variant cannot be changed here.}
 
 \item{evaluate}{If `FALSE`, return the reconstructed calibration call.}
 }
@@ -23,4 +23,11 @@ A newly calibrated `AntitrustFit`, or a call when `evaluate` is
 stored in an `AntitrustFit`, applies the supplied replacements, and invokes
 the target model's ordinary calibration routine.  It is intentionally not a
 class conversion and is available for fits created by `calibrate()`.
+}
+\examples{
+fit <- calibrate("logit", "bertrand", prices = c(2, 2.2, 2.5),
+  shares = c(.35, .25, .20), margins = c(.40, .35, .30),
+  ownerPre = c("A", "B", "C"), insideSize = 100)
+revised <- update(fit, margins = c(.38, .35, .30))
+revised@parameters$alpha
 }

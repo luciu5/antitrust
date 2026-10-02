@@ -4,31 +4,24 @@
 #' @title \packageTitle{antitrust}
 #' @description \packageDescription{antitrust}
 #'
-#' @section Disclaimer
-#' The views expressed herein are entirely those of the authors and should
-#' not be purported to reflect those of the U.S. Department of Justice.
-#' The \code{antitrust} package has been released into the
-#' public domain without warranty of any kind, expressed or implied.
-#' Address: Economic Analysis Group, Antitrust Division, U.S. Department of
-#' Justice, 450 5th St. NW, Washington DC 20530.
-#' E-mail: ctaragin+antitrustr@gmail.com and michael.sandfort@usdoj.gov.
+#' @details Choose a complete model with \code{\link{supportedModels}}.
+#' Use \code{\link{calibrate}} for observed-market calibration or
+#' \code{\link{specify}} when structural parameters are supplied, then
+#' \code{\link{counterfactual}} and \code{\link{simulate}} for a scenario.
+#' The package vignettes cover workflow, economic models, and extension design.
+#' Direct model constructors remain available as compatibility and convenience
+#' interfaces. \code{\link{cmcr.bertrand}} and \code{\link{cmcr.cournot}}
+#' provide screening measures when a complete market fit is unavailable.
 #'
-#' @details The DESCRIPTION file:
 #' \packageDESCRIPTION{antitrust}
 #' \packageIndices{antitrust}
-#'
-#' To get Started:
-#'   \enumerate{
-#'     \item Collect data on product prices, shares, margins and diversions
-#'     (optional).
-#'     \item Specify how firms interact strategically (e.g. Bertrand, Cournot, Auction)
-#'     \item If you have data on many/all products in the market consider
-#'     calibrating a demand system and simulating a merger with either
-#'     a \code{\link{bertrand.alm}},\code{\link{cournot}}, or \code{\link{auction2nd.logit}}.
-#'     \item If you only have data on the merging parties' products, consider
-#'     using \code{\link{cmcr.bertrand}} or \code{\link{cmcr.cournot}} to
-#'     uncover the marginal cost reductions needed to offset a post-merger increase.
-#'     }
 #' @author \packageAuthor{antitrust}
 #' Maintainer: \packageMaintainer{antitrust}
+#' @examples
+#' fit <- calibrate("logit", "bertrand", prices = c(2, 2.2, 2.5),
+#'   shares = c(.35, .25, .20), margins = c(.40, .35, .30),
+#'   ownerPre = c("A", "B", "C"), insideSize = 100)
+#' result <- simulate(fit, counterfactual(ownership = c("A", "A", "C")))
+#' result@pricePost
 #' @include Antitrust_Shiny.R
+NULL

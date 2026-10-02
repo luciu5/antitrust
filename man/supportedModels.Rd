@@ -13,3 +13,6 @@ A data frame with normalized demand names, conduct names, existing
 \description{
 List demand/conduct combinations supported by antitrust
 }
+\examples{
+head(supportedModels()[c("demand", "conduct", "calibrate", "specify", "simulate")])
+}

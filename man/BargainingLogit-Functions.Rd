@@ -164,37 +164,17 @@ calibrated parameters to simulate a merger between two firms, under the assumpti
 (bargaining.logit) or splitting the full surplus (bargaining2nd.logit).
 }
 \examples{
-## Calibration and simulation results from a merger between firms 2 and 3
-## of a 4-firm market
-## Source: Miller 2014 backup materials http://www.nathanhmiller.org/research
-
-share <- c(0.29, 0.40, 0.28, 0.03)
-bargpower <- rep(0.6, 4) # buyer has advantage
-price <- c(35.53, 154, 84.08, 53.16)
-cost <- c(NA, 101, NA, NA)
-
-ownerPre <- ownerPost <- diag(length(share))
-
-# Suppose products 2 and 3 merge
-ownerPost[2, 3] <- ownerPost[3, 2] <- 1
-
-margin <- (price - cost) / price
-
-result.barg <- bargaining.logit(price, share, margin,
-  bargpowerPre = bargpower,
-  ownerPre = ownerPre, ownerPost = ownerPost, normIndex = 2
-)
-
-
-print(result.barg)
-summary(result.barg, revenue = FALSE)
-
-
-## Get a detailed description of the 'BargainingLogit' class slots
-showClass("BargainingLogit")
-
-## Show all methods attached to the 'BargainingLogit' Class
-showMethods(classes = "BargainingLogit")
+## Direct bargaining constructor (compatibility/convenience interface).
+shares <- c(.29, .40, .28, .03)
+prices <- c(35.53, 154, 84.08, 53.16)
+margins <- (prices - c(NA, 101, NA, NA)) / prices
+before <- diag(4)
+after <- before
+after[2, 3] <- after[3, 2] <- 1
+result <- bargaining.logit(prices, shares, margins,
+  bargpowerPre = rep(.6, 4), ownerPre = before,
+  ownerPost = after, normIndex = 2)
+summary(result, revenue = FALSE)
 
 }
 \references{

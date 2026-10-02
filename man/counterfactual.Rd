@@ -62,3 +62,10 @@ environment, bundled as the single `CounterfactualStep` of a
 not counterfactual fields; use `update()` or `respecify()` for those
 changes. Use `add_step()` to append further, sequential steps.
 }
+\examples{
+fit <- calibrate("logit", "bertrand", prices = c(2, 2.2, 2.5),
+  shares = c(.35, .25, .20), margins = c(.40, .35, .30),
+  ownerPre = c("A", "B", "C"), insideSize = 100)
+scenario <- counterfactual(ownership = c("A", "A", "C"))
+simulate(fit, scenario)@pricePost
+}

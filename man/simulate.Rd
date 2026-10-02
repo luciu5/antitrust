@@ -98,3 +98,10 @@ ordinary models such as `lm`) continue to dispatch to
 Other `StructuralFit` subclasses (e.g. from a sibling package) must supply
 their own method and fail explicitly otherwise.
 }
+\examples{
+fit <- calibrate("logit", "bertrand", prices = c(2, 2.2, 2.5),
+  shares = c(.35, .25, .20), margins = c(.40, .35, .30),
+  ownerPre = c("A", "B", "C"), insideSize = 100)
+result <- simulate(fit, counterfactual(ownership = c("A", "A", "C")))
+result@pricePost
+}

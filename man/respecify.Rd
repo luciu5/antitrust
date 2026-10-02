@@ -44,6 +44,14 @@ the transition contract exactly; other `StructuralFit` subclasses (e.g.
 from a sibling package) must supply their own method and fail explicitly
 otherwise, rather than silently running antitrust economics.
 }
+\examples{
+fit <- specify("logit", "bertrand", prices = c(2, 2.2, 2.5),
+  ownerPre = c("A", "B", "C"),
+  parameters = list(alpha = -2, meanval = c(.6, .4, .2)),
+  insideSize = 100)
+cournot_fit <- respecify(fit, conduct = "cournot")
+cournot_fit@spec$id
+}
 \seealso{
 [`specify()`], [`update.AntitrustFit()`]
 }

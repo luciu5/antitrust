@@ -223,6 +223,11 @@ setMethod(
 #'   convergence diagnostics are inconclusive;
 #'   \code{multistart = "exhaustive"} evaluates all 12 retained starts.
 #' @return An \code{AntitrustFit} object.
+#' @examples
+#' fit <- calibrate("logit", "bertrand", prices = c(2, 2.2, 2.5),
+#'   shares = c(.35, .25, .20), margins = c(.40, .35, .30),
+#'   ownerPre = c("A", "B", "C"), insideSize = 100)
+#' summary(fit)[c("spec", "model_class")]
 #' @export
 calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
                       margins = NULL,
@@ -516,6 +521,12 @@ calibrate <- function(demand, conduct = NULL, prices, shares = NULL,
 #' @param ... Additional options accepted by the legacy parameterized
 #'   constructor.
 #' @return An \code{AntitrustFit} object.
+#' @examples
+#' fit <- specify("logit", "bertrand", prices = c(2, 2.2, 2.5),
+#'   ownerPre = c("A", "B", "C"),
+#'   parameters = list(alpha = -2, meanval = c(.6, .4, .2)),
+#'   insideSize = 100)
+#' fit@parameters$alpha
 #' @export
 specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
                     shares = NULL, margins = NULL, quantities = NULL,
@@ -1155,6 +1166,12 @@ setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
 #' @return For a one-step counterfactual, an existing S4 simulation-result
 #'   object, such as \code{Logit} or \code{LogitCournot}. For a multi-step
 #'   counterfactual, a `CounterfactualPath`.
+#' @examples
+#' fit <- calibrate("logit", "bertrand", prices = c(2, 2.2, 2.5),
+#'   shares = c(.35, .25, .20), margins = c(.40, .35, .30),
+#'   ownerPre = c("A", "B", "C"), insideSize = 100)
+#' result <- simulate(fit, counterfactual(ownership = c("A", "A", "C")))
+#' result@pricePost
 #' @importFrom stats simulate
 #' @export
 setGeneric("simulate", function(object, ...) standardGeneric("simulate"))
@@ -1320,11 +1337,17 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
 #' class conversion and is available for fits created by `calibrate()`.
 #'
 #' @param object An `AntitrustFit` returned by `calibrate()`.
-#' @param ... Baseline data, model-specification arguments, or model-specific
-#'   calibration options to replace.
+#' @param ... Observed baseline data or model-specific calibration options
+#'   to replace. Demand, conduct, and variant cannot be changed here.
 #' @param evaluate If `FALSE`, return the reconstructed calibration call.
 #' @return A newly calibrated `AntitrustFit`, or a call when `evaluate` is
 #'   `FALSE`.
+#' @examples
+#' fit <- calibrate("logit", "bertrand", prices = c(2, 2.2, 2.5),
+#'   shares = c(.35, .25, .20), margins = c(.40, .35, .30),
+#'   ownerPre = c("A", "B", "C"), insideSize = 100)
+#' revised <- update(fit, margins = c(.38, .35, .30))
+#' revised@parameters$alpha
 #' @export
 #' @exportS3Method stats::update AntitrustFit
 update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
@@ -1385,6 +1408,13 @@ update.AntitrustFit <- function(object, ..., evaluate = TRUE) {
 #'   `sigma`.
 #' @return A newly constructed `AntitrustFit` under the target specification.
 #' @seealso [`specify()`], [`update.AntitrustFit()`]
+#' @examples
+#' fit <- specify("logit", "bertrand", prices = c(2, 2.2, 2.5),
+#'   ownerPre = c("A", "B", "C"),
+#'   parameters = list(alpha = -2, meanval = c(.6, .4, .2)),
+#'   insideSize = 100)
+#' cournot_fit <- respecify(fit, conduct = "cournot")
+#' cournot_fit@spec$id
 #' @export
 setGeneric("respecify", function(object, ...) standardGeneric("respecify"))
 

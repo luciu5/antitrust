@@ -7,18 +7,28 @@
 \title{Initialize a fitted model's observed baseline state}
 \usage{
 initialize_baseline_state(object, baseline = c("solve", "observed"))
+
+\S4method{initialize_baseline_state}{StructuralFit}(object, baseline = c("solve", "observed"))
+
+\S4method{initialize_baseline_state}{AntitrustFit}(object, baseline = c("solve", "observed"))
 }
 \arguments{
-\item{object}{A fitted \code{StructuralFit} object.}
+\item{object}{A fitted `StructuralFit` object.}
 
-\item{baseline}{Either \code{"solve"} or \code{"observed"}.}
+\item{baseline}{Either `"solve"` or `"observed"`.}
 }
 \value{
 The fitted object with baseline lifecycle diagnostics updated.
 }
 \description{
-Records the baseline lifecycle used by a parameterized constructor. The
-default \code{"solve"} retains legacy nonlinear baseline solving;
-\code{"observed"} validates supplied observed prices for supported flat
-Logit/CES models.
+`initialize_baseline_state()` records which baseline lifecycle was used by
+a parameterized constructor.  The default `"solve"` path retains the
+legacy constructor behavior.  The `"observed"` path is an opt-in for
+parameterized flat Logit/CES models whose observed prices and structural
+cost state are already supplied; its implementation must validate and bind
+those stored values without running a nonlinear baseline solve.
+}
+\details{
+Concrete packages may define methods for their `StructuralFit` subclasses
+when the model has additional policy state, such as trade tariffs.
 }

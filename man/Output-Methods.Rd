@@ -17,7 +17,6 @@
 \alias{calcShares,ANY-method}
 \alias{calcShares,AIDS-method}
 \alias{calcShares,CES-method}
-\alias{calcShares,Auction2ndCES-method}
 \alias{calcShares,CESNests-method}
 \alias{calcShares,Linear-method}
 \alias{calcShares,Logit-method}
@@ -35,6 +34,7 @@
 \alias{calcRevenues,AIDS-method}
 \alias{calcRevenues,Cournot-method}
 \alias{calcShares,Auction2ndCap-method}
+\alias{calcShares,Auction2ndCES-method}
 \title{Output Methods}
 \usage{
 \S4method{calcQuantities}{Cournot}(object, preMerger = TRUE, market = FALSE, ...)
@@ -78,6 +78,8 @@
 \S4method{calcShares}{Auction2ndLogitNests}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{CES}(object, preMerger = TRUE, revenue = FALSE)
+
+\S4method{calcShares}{Auction2ndCES}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{CESNests}(object, preMerger = TRUE, revenue = FALSE)
 }
