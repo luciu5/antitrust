@@ -41,11 +41,12 @@ jobs:
           r-version: '4.6.1'
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM
+          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::knitr, any::bookdown, any::rmarkdown
+          install-pandoc: true
       - name: Run reproducibility runner
         run: Rscript ai/package_audit/run_qa.R . qa-output
       - name: Build package
-        run: R CMD build --no-build-vignettes --no-manual --no-resave-data .
+        run: R CMD build --no-manual --no-resave-data .
       - name: Check package
         run: R CMD check --as-cran antitrust_*.tar.gz
       - name: Upload canonical evidence
