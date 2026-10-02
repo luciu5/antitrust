@@ -1,5 +1,9 @@
 # ioverse `testthat` audit — 2026-10-01
 
+The original before/after figures below describe the first audit batch. A
+[follow-up addendum](#follow-up-independent-economic-validation-2026-10-01)
+records subsequent independent benchmarks and current verification.
+
 ## Scope, method, and status
 
 This audit covers `antitrust` and `trade` on `refactor`, and `vertical`, `coordination`, `antitrustBayes`, and `financial` on `main`. The four latter repositories have no local or remote `refactor` branch. `antitrust`, `trade`, `coordination`, and `financial` were already current when pulled; `antitrustBayes` fast-forwarded one documentation commit. `vertical` was fetched but not pulled because it contains pre-existing tracked edits. No scoped `DESCRIPTION` imports `iopolicy`.
@@ -126,3 +130,32 @@ The concise version is also added to `antitrust/AGENTS.md` so future agents see 
 - `financial` main: full suite unrun because `cubature` could not be installed in this environment. The patch parses and applies cleanly; a standalone Beta integral check passed.
 
 The four patches have been applied. Package commits require a writable user shell because the agent cannot write Git metadata. The reviewed [commit script](audit/testthat-2026-10-01/commit_audit.sh) checks branches and staged-index cleanliness, then stages only audit paths and commits package by package. The pre-existing `vertical` production changes were outside this audit's edits and are not part of those commits.
+
+## Follow-up: independent economic validation (2026-10-01)
+
+The first audit left seven substantive gaps in section D. This follow-up
+closes or narrows six of them through independent economic checks, rather
+than by expanding the model grid. The ordinary test suite now has **128
+files and 788 `test_that()` blocks** across the six packages; the first
+audit snapshot was 124 files and 787 blocks. Most new checks directly
+replace previously circular, shallow, or absent protection.
+
+| Package | Follow-up economic check | Verification |
+|---|---|---|
+| `antitrust` refactor | PCAIDS share-slope matrix and merged-firm profit FOCs from an independently calculated three-product example | Focused check and fast `test_local()` passed. |
+| `trade` refactor | Hand-computed finite-mixture BLP shares, elasticities, integration weights, and multi-product Bertrand FOCs | Actual fast `test_local()` passed, about 24 s. |
+| `vertical` main | Logit bargaining recovery and post-shock two-tier best responses; quantities, upstream/downstream transfer cancellation, and consumer variation | Actual `test_local()` passed, about 14 s, after installing the current antitrust refactor. `R CMD INSTALL` also passed after the stale Collate entry was removed and the public `summary` generic was re-exported. |
+| `coordination` main | Firm-level Grim Trigger discount threshold in pre/post multi-product ownership states; independent finite-difference retained-profit FOC after exit | Actual `test_local()` passed, about 27 s. Four shallow Grim Trigger blocks became one deeper economic block. |
+| `financial` main | Portfolio funding gap, Beta exposure variance, normal shortfall integral; merged-firm debt/default thresholds integrated independently | Sourced-production targeted checks passed: 8 bank and 24 debt assertions. Full package test remains blocked by missing `cubature`. |
+| `antitrustBayes` main | Current-CmdStanR known-truth alpha/outside-share recovery and separately identified Bertrand-versus-Cournot bridge evidence | Full Tier 3 gate passed with sound HMC and stable bridge diagnostics; see `doc/validation/README.md` in that package. |
+
+The Bayesian gate is bounded: it demonstrates recovery and model-evidence
+preference in two specified designs. The old 124-task recovery runner still
+needs a CmdStanR port, and a less-identified multi-market evidence pilot did
+not satisfy the gate. `financial` still needs a loadable package-level suite
+and an independent public multi-bank equilibrium FOC. `vertical` still needs
+a distinct inactive-product bargaining oracle if that branch's policy work
+expands. Cross-package CI should install the same antitrust refactor source
+used by downstream tests; an older installed build caused three vertical
+failures even though the checked-out refactor already contained the owner
+matrix fix.

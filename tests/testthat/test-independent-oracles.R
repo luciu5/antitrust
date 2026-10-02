@@ -103,10 +103,35 @@ test_that("AIDS and PCAIDS use documented price-share transformations", {
                     1e-8, "AIDS revenue/quantity accounting")
 
     pcaids_fit <- qa_value(pcaids(
-        shares = s, knownElast = -2, mktElast = -1.2, prices = p,
+        shares = s, knownElast = -2, mktElast = -1, prices = p,
         diversions = d, ownerPre = op, ownerPost = oo,
         priceStart = rep(.2, 3)
     ), "oracle PCAIDS calibration")
     testthat::expect_true(is(pcaids_fit, "PCAIDS"))
     testthat::expect_true(length(getParms(pcaids_fit)) > 0)
+
+    ## With unit market elasticity, total expenditure is fixed. The known
+    ## own elasticity gives B[1,1] = s[1] * (-2 + 1) = -0.4. Symmetric
+    ## cross slopes and the supplied diversion ratios give the other cells.
+    ## Independently differentiate each firm's revenue
+    ## share less its baseline marginal-cost bill with respect to log price.
+    B <- matrix(c(-.40, .22, .18,
+                   .22, -.44, .27,
+                   .18, .22, -.45), nrow = 3, byrow = TRUE)
+    qa_assert_close(pcaids_fit@slopes, B, 1e-8,
+                    "PCAIDS calibrated share slopes")
+    ratio <- 1 + unname(pcaids_fit@priceDelta)
+    testthat::expect_true(all(is.finite(ratio) & ratio > 0))
+    post_share <- as.vector(s + B %*% log(ratio))
+    pre_margin <- s / (s - diag(B))
+    mc <- p * (1 - pre_margin)
+    owner <- c(1L, 1L, 2L)
+    profit_gradient <- vapply(seq_along(p), function(j) {
+        products <- which(owner == owner[j])
+        sum(B[products, j] *
+            (1 - mc[products] / (p[products] * ratio[products]))) +
+            post_share[j] * mc[j] / (p[j] * ratio[j])
+    }, numeric(1))
+    qa_assert_close(profit_gradient, rep(0, length(p)), 1e-7,
+                    "PCAIDS merged and outsider profit FOCs")
 })
