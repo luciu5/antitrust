@@ -9,7 +9,7 @@ new economics vignette; “Workflow” and “Architecture” name the other two
 
 | Old section or section group | Destination | Decision |
 |---|---|---|
-| Front matter and introduction | Workflow / delete | Retain the short statement of purpose and input sensitivity; remove stale address, contact, Shiny promotion, disclaimers and commented prose. |
+| Front matter and introduction | Workflow / Models / delete | Retain the purpose and input sensitivity in the relevant vignettes; remove stale address, contact, Shiny promotion, disclaimers and commented prose. |
 | Separating calibration from simulation | Workflow | Rewrite for the current five operations and executable code; the old chunks are `eval=FALSE`. |
 | Bertrand game and mathematical model | Models | Retain the ownership-adjusted FOC and cost-recovery logic; shorten repeated derivations. |
 | Exogenous capacity constraints | Models | Retain the economic distinction for `LogitCap`; move argument details to function help. |
@@ -26,7 +26,7 @@ new economics vignette; “Workflow” and “Architecture” name the other two
 | Nash bargaining and bargaining game | Models | Keep disagreement payoff and bargaining-power logic; remove duplicated headings and “experimental” labels that do not describe the registry. |
 | Vertical supply | Architecture / historical artifact | State package boundary briefly. Migration explanation remains in existing `artifacts/refactor_architecture.md`. |
 | CMCR, generalized pricing pressure, HHI | Function documentation / Architecture | Mention as public diagnostics; detailed formulas and argument lists remain in `man/`. |
-| Coordinated effects and grim trigger | Models / function documentation | Keep a short economic distinction; the long repeated-game derivation and use instructions belong in dedicated help or historical Git history. |
+| Coordinated effects and grim trigger | Function documentation / historical artifact | The repeated-game derivation and use instructions belong in dedicated help or historical Git history, outside these three vignettes. |
 | Under the Hood, Getting Help, extending Bertrand/auctions | Architecture / developer documentation | Replace stale constructor-step advice with the current fit/registry/dispatch contract; retain `showClass()` and `showMethods()` as discovery tools. |
 | Appendix function-input table, method table, CV formula table | Function documentation / delete | Stale static catalog (omits BLP and new lifecycle). Replace support list with a table generated from `supportedModels()`; method details remain in help. |
 | Class diagram | Delete | The old 1000px diagram omits `StructuralFit`, `AntitrustFit`, counterfactual/path, BLP, bargaining and newer subclasses. A compact current relationship diagram in Architecture replaces it. |
@@ -59,14 +59,14 @@ the behavioral source of truth.
 
 ## Implementation and verification
 
-The three source vignettes total 26,214 bytes (roughly 82% less than the old
+The three source vignettes total 26,630 bytes (roughly 81% less than the old
 source). The deliberate split is:
 
-| Vignette | Source bytes | Rendered words, including code/table | Scope |
+| Vignette | Source bytes | Source words, including code/table | Scope |
 |---|---:|---:|---|
-| `Workflow.Rmd` | 8,328 | about 2,680 | One Logit–Bertrand market, repeated/simultaneous/sequential scenarios, lifecycle semantics and registered transitions. |
-| `Models.Rmd` | 11,176 | about 2,560 | Identification, demand and conduct economics, registry-generated complete-model table. |
-| `Architecture.Rmd` | 6,710 | about 1,450 | Fit/result/path classes, selected inheritance, public dispatch and sibling-package boundary. |
+| `Workflow.Rmd` | 9,263 | 1,291 | One Logit–Bertrand market, repeated/simultaneous/sequential scenarios, lifecycle semantics and registered transitions. |
+| `Models.Rmd` | 10,846 | 1,534 | Identification, demand and conduct economics, registry-generated complete-model table. |
+| `Architecture.Rmd` | 6,521 | 828 | Fit/result/path classes, selected inheritance, public dispatch and sibling-package boundary. |
 
 `Reference.Rmd`, its committed generated `.R` and
 `.html`, the stale `ClassDiagram.png`, and `Thumbs.db` were deleted. The
@@ -116,6 +116,8 @@ tests and the economics vignette.
   S4 methods are `calcPrices()` and `calcMargins()`, so Architecture names them.
 * `ClassDiagram.png` predates the fit and path classes and omits current model
   families; it was removed and replaced with a selective text map.
+  A later prose review also corrected that map: `CES` extends `Logit` in the
+  actual S4 hierarchy, although their demand equations differ.
 * Package-level help previously lacked a generated page and recommended
   legacy constructors as the starting path; it now introduces the lifecycle.
 * The `auction2nd.logit.alm` return-class sentence misnamed
@@ -156,3 +158,12 @@ respecification or arbitrary demand-conduct composition is claimed.
 The sibling-package descriptions were checked against their source and
 package metadata, but their cross-package test suites were outside this
 documentation check.
+
+In a follow-up editorial pass, the workflow was reorganized around the
+merger question, the economics text now explains why each assumption matters
+before listing model families, and the extension vignette introduces its
+object map through the work an extension needs to do. Historical refactor
+language and the coordinated-effects aside were removed. All three revised
+vignettes rendered successfully against the current workspace; citations
+resolved and the cross-vignette links appear in the HTML. The full package
+check reported above was run before this prose-only follow-up.

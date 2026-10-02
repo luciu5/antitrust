@@ -11,18 +11,22 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-The working unit in `antitrust` is a **fitted structural market**. Fit observed
-market data once; change ownership, costs, products, or other supported parts
-of the environment; then solve the new equilibrium. The [models
-vignette](Models.html) explains the economics. This vignette follows one
-three-product Logit–Bertrand market throughout.
+Suppose firms A and B propose a merger. You want to know how their prices
+would change, whether a cost saving would offset that change, and how the
+answer depends on which products remain in the market. These questions share
+the same observed market. In `antitrust`, you fit that market once and then
+change the conditions under which firms compete.
+
+We will use one three-product Logit–Bertrand market throughout. The [models
+vignette](Models.html) explains the economic assumptions behind the fit.
 
 ## Fit and inspect the observed market
 
-The three products begin under separate owners. Observed prices, quantity
-shares (with an outside option), and margins identify Logit demand under
-Bertrand pricing. `calibrate()` delegates the economic inversion and cost
-recovery to the registered Logit model.
+Each firm initially sells one product. The products account for 80% of
+quantity, leaving 20% for the outside option. We observe their prices and
+gross margins as well as their shares. Under the chosen Logit demand and
+Bertrand pricing assumptions, `calibrate()` uses those observations to recover
+demand parameters and marginal costs.
 
 ```{r baseline}
 library(antitrust)
@@ -40,16 +44,16 @@ summary(fit)[c("spec", "model_class")]
 fit@parameters$alpha
 ```
 
-An `AntitrustFit` stores the model specification, the fitted legacy S4 model,
-recovered parameters, observed inputs, and diagnostics. `summary(fit)` reads
-that stored state; it does not solve a new equilibrium. The baseline result is
-available in `fit@model`, including its `pricePre` and `mcPre` slots.
+The returned `AntitrustFit` holds the observations, recovered parameters,
+model specification, and fitted model. `summary(fit)` describes this fitted
+state; it does not predict a new outcome. The underlying model is in
+`fit@model`, where `pricePre` and `mcPre` hold baseline prices and costs.
 
 ## Ask a merger question
 
-`counterfactual()` describes changes relative to the fit. `simulate()` solves
-one equilibrium and returns the established `Logit` result class, so its
-ordinary methods still apply.
+If A acquires B, the merged firm takes account of sales that move between
+their products when it changes either price. Represent that change with a
+`counterfactual()`, then use `simulate()` to solve for postmerger prices.
 
 ```{r merger}
 merger <- counterfactual(ownership = c("A", "A", "C"))
@@ -57,8 +61,11 @@ merged <- simulate(fit, merger)
 data.frame(before = merged@pricePre, after = merged@pricePost)
 ```
 
-The fit is reusable. These are distinct *one-step* questions about the same
-observed market, not sequential changes to `merged`:
+The result is a `Logit` object, so the familiar model methods remain
+available. We can use the same fit to ask several other questions. For
+example, what if the merger reduces product 2's marginal cost? What if
+product 3 exits, or a new product enters? Each simulation below starts from
+the **original fitted market**, regardless of the simulations above it.
 
 ```{r alternatives}
 efficient_merger <- simulate(fit, counterfactual(
@@ -75,17 +82,16 @@ exit_result@pricePost
 entrant_result@pricePost
 ```
 
-Here `costs = -.10` is a 10% reduction for product 2 under the
-constant-cost Logit–Bertrand convention. `exit` removes a product from the
-solved market. An entrant supplies its own label, mean value, marginal cost,
-and solver starting price; it inherits the fitted market's common Logit price
-coefficient. `entry` is supported only for registered model classes with an
-entry implementation. A named `quality` shock is another supported Logit
-scenario: for example, `quality = c(Prod1 = .05)` increases product 1's
-choice weight by 5%. The original `fit` remains unchanged.
+In this model, `costs = -.10` means a 10% reduction in product 2's marginal
+cost. `exit` removes product 3 from the solved market. The entrant needs its
+own label, mean value, marginal cost, and starting price for the solver; it
+shares the fitted Logit price coefficient. This entry calculation is available
+only for models with an entry implementation. A named quality change is
+possible too: `quality = c(Prod1 = .05)` raises product 1's choice weight by
+5%. None of these questions changes `fit`.
 
-Changes in a single `counterfactual()` are simultaneous. Separate one-step
-objects can be combined when their fields do not conflict:
+The merger and cost saving above occur together. You can also define them
+separately and combine them before solving:
 
 ```{r combine}
 combined <- combine_counterfactuals(
@@ -95,15 +101,17 @@ combined_result <- simulate(fit, combined)
 combined_result@pricePost
 ```
 
-`combined_result` answers the same simultaneous question as
-`efficient_merger`. Conflicting values for the same field are rejected.
+`combined_result` answers the same question as `efficient_merger`.
+`combine_counterfactuals()` rejects conflicting values for the same field.
 
-## Sequence changes when order matters
+## See what happens at each stage
 
-`add_step()` adds a later equilibrium solve. Each step starts from the
-previous step's solved state; costs and product state persist according to
-the fitted model's rules. A multi-step simulation returns a
-`CounterfactualPath`, with a result for each step.
+Suppose the firms merge before they realize a cost saving. The final prices
+are only part of the analysis; you may also want prices in the period between
+the two changes. `add_step()` creates a second solve, starting from the
+outcome of the first. Costs and product state carry forward under the fitted
+model's rules. The result is a `CounterfactualPath` containing both
+equilibria.
 
 ```{r path}
 staged <- add_step(merger, costs = c(0, -.10, 0))
@@ -112,23 +120,29 @@ data.frame(after_merger = result_at(path, 1)@pricePost,
            after_efficiency = final_result(path)@pricePost)
 ```
 
-`result_at(path, 1)` is the intermediate `Logit` result;
-`final_result(path)` is the last one. A path can be resumed with
-`simulate(path, counterfactual(...))`. See `?add_step` and `?simulate` for
-the persistence contract.
+`result_at(path, 1)` retrieves the outcome after the merger, and
+`final_result(path)` retrieves the outcome after the cost saving. Both are
+`Logit` results. You can continue a path with
+`simulate(path, counterfactual(...))`; `?add_step` and `?simulate` describe
+which changes carry forward.
 
-## Choose the right operation
+## Which question are you asking?
 
-| Operation | Economic question | Effect on fitted parameters |
+The five lifecycle functions answer different questions. In particular,
+new evidence about the observed market calls for a new calibration, while a
+proposed change to that market calls for a simulation.
+
+| Operation | Use it when... | What happens |
 |:--|:--|:--|
-| `calibrate()` | What structure is identified by observed prices, shares, margins and a chosen economic model? | Recovers demand primitives and costs using that model's calibration equations. |
-| `specify()` | What if structural parameters are already known or supplied? | Constructs the supported model from those parameters; no demand recalibration. |
-| `simulate()` | What equilibrium follows from a changed economic environment? | Keeps the fit's structural demand; applies the supported scenario and solves. |
-| `update()` | What if an observed calibration input changes? | Re-runs calibration for the **same** specification. |
-| `respecify()` | What can be carried into another registered model? | Uses an explicit transition, reconstructing target state without calibrating from the source margins. |
+| `calibrate()` | You have observed market inputs and an economic model. | Recovers demand parameters and costs using that model's calibration equations. |
+| `specify()` | You already know the structural parameters. | Builds a fit from supplied parameters, without recalibrating demand. |
+| `simulate()` | You want the equilibrium after a proposed change. | Applies the change to a fit and solves under its structural model. |
+| `update()` | An observed input or calibration option has changed. | Calibrates again under the **same** model specification. |
+| `respecify()` | You want to examine another supported model specification. | Transfers only the information allowed by a registered transition and reconstructs the target model. |
 
-For this fit, revising an observed margin is a new calibration. Supplying
-known Logit parameters instead is a different construction route:
+For example, a revised estimate of product 1's observed margin changes what
+the data identify. It calls for `update()`. If Logit parameters are already
+known, `specify()` provides another way to construct a fit:
 
 ```{r calibration-routes}
 revised <- update(fit, margins = c(.38, .35, .30))
@@ -140,22 +154,25 @@ c(revised_alpha = revised@parameters$alpha,
   supplied_alpha = known@parameters$alpha)
 ```
 
-`update()` currently accepts replacement observed inputs and calibration
-options for the fit's *same* demand, conduct, and variant. A changed model
-specification needs its own `calibrate()` call if fresh identification is the
-question. A fit created by `specify()` has no observed-data calibration call
-to update.
+`update()` accepts revised inputs or calibration options for the fit's
+existing demand, conduct, and variant. To identify a different model from
+observations, call `calibrate()` with that model. A fit made by `specify()`
+has no observed-data calibration call to repeat.
 
 ## Translate a fitted market, with limits
 
-`respecify()` is an explicitly registered transition, never arbitrary S4
-coercion. For the fitted market, a same-demand move from Bertrand to Cournot
-retains portable Logit demand primitives and rebuilds the supply and marginal
-cost state under Cournot. A Logit-to-CES translation requires a target CES
-curvature (`gamma`); it holds baseline prices, shares/quantities, ownership,
-and active products fixed, solves target mean values, and recovers target
-costs. The source Logit price coefficient and source cost state cease to be
-valid CES primitives.
+Different assumptions can fit the same observed market yet predict different
+responses to a merger. `respecify()` lets us explore certain comparisons
+without treating one economic model as interchangeable with another. It
+works only where the package has a registered transition.
+
+Moving this Logit market from Bertrand to Cournot carries over its portable
+demand parameters, then rebuilds the supply and marginal-cost state under
+Cournot behavior. Moving from Logit to CES needs a target CES curvature
+(`gamma`). That transition preserves baseline prices, shares or quantities,
+ownership, and active products; it solves for CES mean values and recovers
+costs under the target model. The Logit price coefficient and recovered costs
+are no longer valid CES parameters.
 
 ```{r transitions, warning=FALSE}
 cournot_fit <- respecify(fit, conduct = "cournot")
@@ -165,28 +182,28 @@ vapply(list(cournot_fit, ces_fit, linear_fit),
        function(x) x@spec$id, character(1))
 ```
 
-Flat/nested Logit and CES transitions are also registered when the required
-nest assignments and curvature are supplied; nested-to-flat transitions
-discard the nesting primitive. First-order Linear and LogLin transitions
-match the fitted baseline and its local derivatives. They do not preserve
-global demand shape. Inspect a proposed transition with
+Transitions between flat and nested Logit or CES models require the relevant
+nest assignments and curvature; going back to a flat model discards the
+nesting parameter. First-order translations to Linear or LogLin match the
+baseline and its local derivatives, rather than demand far from that point.
+Inspect a proposed transition with
 `model_transition(model_spec("logit", "bertrand"),
 model_spec("ces", "bertrand"))` before applying it.
 
-Matching a baseline does **not** make Logit and CES globally equivalent:
-their substitution and curvature away from that point differ, so merger
-predictions can differ. Translation diagnostics are recorded in
-`ces_fit@diagnostics$translation`. `respecify()` deliberately clears the
-target's recalibration call: `update(ces_fit)` cannot silently identify CES
-from the original Logit margins.
+Thus a Logit-to-CES transition is a **local, baseline-preserving comparison**,
+not a claim that the two demand systems are globally equivalent. Their
+substitution and curvature away from the baseline differ, and so may their
+merger predictions. Translation diagnostics are in
+`ces_fit@diagnostics$translation`. The translated fit has no CES calibration
+call: `update(ces_fit)` cannot quietly recalibrate CES from the original
+Logit margins.
 
 ## Scope of counterfactual fields
 
-The scenario vocabulary is shared, but each registered implementation
-accepts only fields it can solve. `capacity` is public for `LogitCap` and
-Stackelberg models; `bargaining` applies to bargaining models; `leader` and
-`products` apply to Stackelberg. Their calibration requirements and cost
-conventions differ from this Logit–Bertrand example. `tariff` and `quota`
-are reserved for the sibling `trade` package, and are rejected by antitrust
-models. `?counterfactual`, `?supportedModels`, and the [models
-vignette](Models.html) give the model-specific boundaries.
+Not every model can answer every scenario. Capacity changes are available for
+`LogitCap` and Stackelberg models; bargaining changes belong to bargaining
+models; leader and product-state changes belong to Stackelberg models. These
+models need different observations and cost assumptions from our
+Logit–Bertrand example. Tariffs and quotas belong to the sibling `trade`
+package. Consult `?counterfactual`, `?supportedModels`, and the [models
+vignette](Models.html) before applying a field to another model.
