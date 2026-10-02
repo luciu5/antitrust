@@ -1152,6 +1152,10 @@ setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
 #' @param solver Optional solver override.  The calibration solver is reused
 #'   by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.
 #' @param isMax Whether to run the existing local profit-maximum check.
+#' @param price_domain Input price-level simulation domain. The default
+#'   `"positive"` rejects a nonpositive solved rate; `"real"` retains finite
+#'   negative or zero rates for flat/nested/capacity Logit and BLP demand.
+#'   Demand systems using log-prices or price powers remain positive-only.
 #' @param nsim For objects that are not an `AntitrustFit` or
 #'   `CounterfactualPath`, the number of simulated response vectors passed on
 #'   to \code{\link[stats]{simulate}}.
@@ -1176,18 +1180,64 @@ setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
 #' @export
 setGeneric("simulate", function(object, ...) standardGeneric("simulate"))
 
+.antitrust_simulation_price_domain <- function(fit, price_domain) {
+    price_domain <- match.arg(price_domain, c("positive", "real"))
+    signed_demand <- fit@spec$demand %in%
+        c("logit", "logit_nests", "logit_cap", "blp")
+    if (identical(price_domain, "real") &&
+        (!signed_demand || isTRUE(fit@model@output))) {
+        stop("price_domain = 'real' supports input flat/nested/capacity Logit and BLP simulation only.")
+    }
+    price_domain
+}
+
+.antitrust_check_simulated_rates <- function(result, price_domain) {
+    models <- if (methods::is(result, "CounterfactualPath"))
+        result@results else list(result)
+    for (model in models) {
+        if (!methods::is(model, "Logit") || isTRUE(model@output)) next
+        for (pre in c(TRUE, FALSE)) {
+            rates <- as.numeric(if (pre) model@pricePre else model@pricePost)
+            active <- if (pre) rep(TRUE, length(rates)) else model@subset
+            if (length(active) != length(rates) || anyNA(active) || !any(active)) {
+                stop("Input price-level simulation has an invalid active-product map.")
+            }
+            bad <- which(active & (!is.finite(rates) |
+                (identical(price_domain, "positive") & rates <= 0)))
+            if (!length(bad)) next
+            i <- bad[[1L]]
+            finite <- rates[active & is.finite(rates)]
+            category <- if (is.finite(rates[[i]]))
+                "positive_domain_violation" else "invalid_price_solution"
+            message <- if (identical(category, "positive_domain_violation"))
+                "Input equilibrium has a nonpositive rate; use price_domain = 'real' to retain signed rates."
+            else "Input equilibrium has a nonfinite active rate."
+            stop(structure(list(
+                message = message, call = NULL, category = category,
+                price_domain = price_domain,
+                minimum_rate = if (length(finite)) min(finite) else NA_real_,
+                minimum_product = as.character(model@labels[[i]]),
+                preMerger = pre),
+                class = c("antitrust_price_domain_error", "error", "condition")))
+        }
+    }
+    invisible(result)
+}
+
 .simulate_fit_method <- function(object, ownerPost = NULL, mcDelta = NULL,
                                  subset = NULL, priceStart,
                                  capacitiesPost = NULL, bargpowerPost = NULL,
                                  revenueRetentionPost = NULL,
-                                 solver = NULL, isMax = FALSE, ...) {
+                                 solver = NULL, isMax = FALSE,
+                                 price_domain = c("positive", "real"), ...) {
     args <- c(
         list(fit = object, ownerPost = ownerPost, mcDelta = mcDelta,
              subset = subset),
         if (!missing(priceStart)) list(priceStart = priceStart),
         list(capacitiesPost = capacitiesPost, bargpowerPost = bargpowerPost,
              revenueRetentionPost = revenueRetentionPost,
-             solver = solver, isMax = isMax),
+             solver = solver, isMax = isMax,
+             price_domain = price_domain),
         list(...)
     )
     do.call(.simulate_antitrust_fit, args)
@@ -1199,12 +1249,13 @@ setMethod("simulate", "AntitrustFit", .simulate_fit_method)
 
 #' @rdname simulate
 #' @export
-setMethod("simulate", "CounterfactualPath", function(object, ownerPost = NULL, ...) {
+setMethod("simulate", "CounterfactualPath", function(object, ownerPost = NULL,
+                                                     price_domain = c("positive", "real"), ...) {
     cf <- if (methods::is(ownerPost, "Counterfactual")) ownerPost else NULL
     if (is.null(cf)) {
         stop("simulate() on a CounterfactualPath requires a Counterfactual as its second argument.")
     }
-    .resume_counterfactual_path(object, cf)
+    .resume_counterfactual_path(object, cf, price_domain)
 })
 
 #' @rdname simulate
@@ -1220,17 +1271,23 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
 ## by name, and whatever simulate_steps() returns beyond `results` becomes
 ## the new path's diagnostics, so this function never needs to know what
 ## that state means for any particular family.
-.resume_counterfactual_path <- function(resume_path, cf) {
+.resume_counterfactual_path <- function(resume_path, cf, price_domain) {
     base_fit <- resume_path@diagnostics$fit
     if (is.null(base_fit)) {
         stop("'fit' CounterfactualPath does not retain enough diagnostics to resume simulation.")
     }
+    price_domain <- .antitrust_simulation_price_domain(base_fit, price_domain)
+    last_result <- final_result(resume_path)
+    if (identical(base_fit@spec$demand, "logit_cap")) {
+        base_fit@model@control.equ$price_domain <- price_domain
+        last_result@control.equ$price_domain <- price_domain
+    }
     validate_counterfactual(base_fit, cf)
     extra_state <- resume_path@diagnostics[setdiff(names(resume_path@diagnostics), "fit")]
     solved <- do.call(simulate_steps, c(
-        list(base_fit, final_result(resume_path), cf@steps), extra_state
+        list(base_fit, last_result, cf@steps), extra_state
     ))
-    new(
+    result <- new(
         "CounterfactualPath",
         initial = resume_path@initial,
         steps = c(resume_path@steps, cf@steps),
@@ -1238,6 +1295,8 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
         diagnostics = c(list(fit = base_fit),
                         solved[setdiff(names(solved), "results")])
     )
+    .antitrust_check_simulated_rates(result, price_domain)
+    result
 }
 
 .simulate_antitrust_fit <- function(fit, ownerPost = NULL,
@@ -1246,8 +1305,13 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
                      priceStart, capacitiesPost = NULL,
                      bargpowerPost = NULL,
                      revenueRetentionPost = NULL,
-                     solver = NULL, isMax = FALSE, ...) {
+                     solver = NULL, isMax = FALSE,
+                     price_domain = c("positive", "real"), ...) {
     dots <- list(...)
+    price_domain <- .antitrust_simulation_price_domain(fit, price_domain)
+    if (identical(fit@spec$demand, "logit_cap")) {
+        fit@model@control.equ$price_domain <- price_domain
+    }
     cf <- if (methods::is(ownerPost, "Counterfactual")) ownerPost else NULL
 
     if (!.model_registry_supports(fit@spec, "simulate")) {
@@ -1277,13 +1341,15 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
                 stop("'revenueRetentionPost' is supported for one-step simulations; use sequential one-step fits for retention changes.")
             }
             solved <- .model_simulate_steps(fit, model, cf@steps)
-            return(new(
+            result <- new(
                 "CounterfactualPath",
                 initial = model,
                 steps = cf@steps,
                 results = solved$results,
                 diagnostics = list(fit = fit, cumulative_costs = solved$cumulative_costs)
-            ))
+            )
+            .antitrust_check_simulated_rates(result, price_domain)
+            return(result)
         }
 
         step <- cf@steps[[1L]]
@@ -1306,6 +1372,7 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
             revenueRetentionPost = revenueRetentionPost,
             solver = solver, isMax = isMax, dots = dots
         )
+        .antitrust_check_simulated_rates(result, price_domain)
         return(.counterfactual_attach(result, fit, cf))
     }
 
@@ -1325,6 +1392,7 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
         revenueRetentionPost = revenueRetentionPost,
         solver = solver, isMax = isMax, dots = dots
     )
+    .antitrust_check_simulated_rates(result, price_domain)
     .counterfactual_attach(result, fit, cf)
 }
 

@@ -180,9 +180,8 @@ setMethod(
       stop("MonCom Logit requires a finite non-zero alpha")
     }
     result <- rep(NA_real_, length(prices))
-    result[active] <- .moncom_output_sign(object) /
-      (alpha * prices[active])
-    if (level) result[active] <- result[active] * prices[active]
+    dollar <- .moncom_output_sign(object) / alpha
+    result[active] <- if (level) dollar else dollar / prices[active]
     names(result) <- object@labels
     result
   }
@@ -237,9 +236,8 @@ setMethod(
       stop("MonCom BLP has a singular integrated own-product derivative")
     }
     result <- rep(NA_real_, length(prices))
-    result[active] <- .moncom_output_sign(object) * shares /
-      (prices[active] * direct_derivative)
-    if (level) result[active] <- result[active] * prices[active]
+    dollar <- .moncom_output_sign(object) * shares / direct_derivative
+    result[active] <- if (level) dollar else dollar / prices[active]
     names(result) <- object@labels
     result
   }

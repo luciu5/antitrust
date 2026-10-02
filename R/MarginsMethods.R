@@ -50,14 +50,45 @@ setMethod(
     }
 
 
-    revenue <- calcShares(object, preMerger, revenue = TRUE)[subset]
-
-    elast <- elast(object, preMerger)[subset, subset]
-
     ## The i-th pricing FOC divides physical profit by its own retention.
     ## Retention belongs on product j's revenue term, not in ownership.
     retention <- getRetention(object, preMerger)[subset]
     owner <- .retention_owner_bertrand(owner, retention)
+
+    ## At a zero price-level Logit rate the elasticity and revenue
+    ## representation has a removable 0/0 singularity. Use the level FOC.
+    if (level && class(object)[[1L]] %in%
+        c("Logit", "LogitNests", "LogitBLP") &&
+        !isTRUE(object@output) && any(prices == 0)) {
+      shares <- calcShares(object, preMerger, revenue = FALSE)[subset]
+      if (identical(class(object)[[1L]], "Logit")) {
+        derivative <- object@slopes$alpha *
+          (diag(shares, length(shares)) - tcrossprod(shares))
+      } else {
+        derivative <- numDeriv::jacobian(function(active_prices) {
+          changed <- object
+          if (preMerger) {
+            changed@pricePre[subset] <- active_prices
+          } else {
+            changed@pricePost[subset] <- active_prices
+          }
+          as.numeric(calcShares(changed, preMerger,
+                                revenue = FALSE)[subset])
+        }, as.numeric(prices))
+      }
+      margins <- try(as.vector(solve(t(derivative) * owner, shares)),
+                     silent = TRUE)
+      if (inherits(margins, "try-error")) {
+        margins <- as.vector(MASS::ginv(t(derivative) * owner) %*% shares)
+      }
+      result <- rep(NA_real_, nprods)
+      result[subset] <- margins
+      names(result) <- object@labels
+      return(result)
+    }
+
+    revenue <- calcShares(object, preMerger, revenue = TRUE)[subset]
+    elast <- elast(object, preMerger)[subset, subset]
 
     margins <- try(output * as.vector(solve(t(elast) * owner) %*% (revenue * diag(owner))) / revenue, silent = TRUE)
     if (any(class(margins) == "try-error")) {
@@ -419,23 +450,41 @@ setMethod(
 
     quantities <- calcQuantities(object, preMerger = preMerger)
     constrained <- abs(capacities - quantities) < 1e-5
+    level_override <- NULL
 
     if (any(!constrained)) {
       unconstrained <- !constrained
-      revenue <- calcShares(object, preMerger, revenue = TRUE)[unconstrained]
-      elast <- elast(object, preMerger)
-      elast <- elast[unconstrained, unconstrained]
       owner <- owner[unconstrained, unconstrained]
       owner <- .retention_owner_bertrand(owner,
           getRetention(object, preMerger)[unconstrained])
-
-      outSign <- ifelse(object@output, -1, 1)
-      marginCalc <- try(outSign * as.vector(solve(t(elast) * owner) %*% (revenue * diag(owner))) / revenue, silent = TRUE)
-      if (any(class(marginCalc) == "try-error")) {
-        marginCalc <- outSign * as.vector(MASS::ginv(t(elast) * owner) %*% (revenue * diag(owner))) / revenue
+      if (level && !isTRUE(object@output) &&
+          any(prices[unconstrained] == 0)) {
+        share <- calcShares(object, preMerger,
+                            revenue = FALSE)[unconstrained]
+        derivative <- object@mktSize * object@slopes$alpha *
+          (diag(share, length(share)) - tcrossprod(share))
+        level_override <- try(as.vector(solve(t(derivative) * owner,
+                                               quantities[unconstrained])),
+                              silent = TRUE)
+        if (inherits(level_override, "try-error")) {
+          level_override <- as.vector(MASS::ginv(t(derivative) * owner) %*%
+                                        quantities[unconstrained])
+        }
+      } else {
+        revenue <- calcShares(object, preMerger,
+                              revenue = TRUE)[unconstrained]
+        elast <- elast(object, preMerger)
+        elast <- elast[unconstrained, unconstrained]
+        outSign <- ifelse(object@output, -1, 1)
+        marginCalc <- try(outSign * as.vector(solve(t(elast) * owner) %*%
+                                             (revenue * diag(owner))) / revenue,
+                          silent = TRUE)
+        if (inherits(marginCalc, "try-error")) {
+          marginCalc <- outSign * as.vector(MASS::ginv(t(elast) * owner) %*%
+                                            (revenue * diag(owner))) / revenue
+        }
+        margins[unconstrained] <- marginCalc
       }
-
-      margins[unconstrained] <- marginCalc
     }
 
 
@@ -443,6 +492,9 @@ setMethod(
 
     if (level) {
       margins <- margins * prices
+      if (!is.null(level_override)) {
+        margins[unconstrained] <- level_override
+      }
     }
     return(as.vector(margins))
   }

@@ -420,19 +420,23 @@ setMethod(
         object@pricePost[subset] <- priceCand
       }
 
+      quantities <- calcQuantities(object, preMerger = preMerger)
+      quantities <- quantities[subset]
       if (output) {
         margins <- 1 - mc / priceCand
+        revenues <- calcShares(object, preMerger = preMerger,
+                               revenue = TRUE)[subset]
+        elasticities <- elast(object, preMerger)[subset, subset]
+        thisFOC <- revenues * diag(owner) +
+          as.vector((t(elasticities) * owner) %*% (margins * revenues))
       } else {
-        margins <- mc / priceCand - 1
+        shares <- calcShares(object, preMerger = preMerger,
+                             revenue = FALSE)[subset]
+        demand_jacobian <- object@mktSize * object@slopes$alpha *
+          (diag(shares, length(shares)) - tcrossprod(shares))
+        thisFOC <- quantities -
+          as.vector((t(demand_jacobian) * owner) %*% (mc - priceCand))
       }
-
-      revenues <- calcShares(object, preMerger = preMerger, revenue = TRUE)
-      quantities <- calcQuantities(object, preMerger = preMerger)
-      revenues <- revenues[subset]
-      quantities <- quantities[subset]
-      elasticities <- elast(object, preMerger)[subset, subset]
-      thisFOC <- revenues * diag(owner) +
-        as.vector((t(elasticities) * owner) %*% (margins * revenues))
       constraint <- ifelse(is.finite(capacities), (quantities - capacities) / object@insideSize, 0)
       ## Fischer-Burmeister complementarity residual for finite capacities.
       ## A positive infinite capacity is the unconstrained-product sentinel,
@@ -457,7 +461,9 @@ setMethod(
     )
 
     if (minResult$termcd > 2) {
-      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = object@control.equ, ...)
+      bb_control <- object@control.equ
+      bb_control$price_domain <- NULL
+      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = bb_control, ...)
       priceEst_solution <- minResult$par
       if (minResult$convergence != 0) {
         warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '", minResult$message, "'")
@@ -468,7 +474,22 @@ setMethod(
         warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ", minResult$termcd)
       }
     }
-    if (any(!is.finite(priceEst_solution) | priceEst_solution <= 0)) {
+    if (any(!is.finite(priceEst_solution))) {
+      stop("'calcPrices' returned non-finite LogitCap prices; no valid equilibrium was found.")
+    }
+    signed_input <- !isTRUE(object@output) &&
+      identical(object@control.equ$price_domain, "real")
+    if (!signed_input && any(priceEst_solution <= 0)) {
+      if (!isTRUE(object@output)) {
+        i <- which.min(priceEst_solution)
+        stop(structure(list(
+          message = "Input LogitCap equilibrium has a nonpositive rate; use price_domain = 'real' to retain signed rates.",
+          call = NULL, category = "positive_domain_violation",
+          price_domain = "positive", minimum_rate = priceEst_solution[[i]],
+          minimum_product = as.character(object@labels[which(subset)[[i]]]),
+          preMerger = preMerger),
+          class = c("antitrust_price_domain_error", "error", "condition")))
+      }
       stop("'calcPrices' returned non-positive or non-finite LogitCap prices; no valid equilibrium was found.")
     }
     priceEst[subset] <- priceEst_solution

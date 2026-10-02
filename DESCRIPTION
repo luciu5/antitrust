@@ -1,7 +1,7 @@
 Package: antitrust
 Type: Package
 Title: Tools for Antitrust Practitioners
-Version: 0.99.41
+Version: 0.99.42
 Date: 2026-09-16
 Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com",
                   role = c("aut", "cre")),

@@ -21,10 +21,11 @@ simulate(object, ...)
   revenueRetentionPost = NULL,
   solver = NULL,
   isMax = FALSE,
+  price_domain = c("positive", "real"),
   ...
 )
 
-\S4method{simulate}{CounterfactualPath}(object, ownerPost = NULL, ...)
+\S4method{simulate}{CounterfactualPath}(object, ownerPost = NULL, price_domain = c("positive", "real"), ...)
 
 \S4method{simulate}{ANY}(object, nsim = 1, seed = NULL, ...)
 
@@ -65,6 +66,11 @@ vector for a one-step counterfactual.}
 by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.}
 
 \item{isMax}{Whether to run the existing local profit-maximum check.}
+
+\item{price_domain}{Input price-level simulation domain. The default
+`"positive"` rejects a nonpositive solved rate; `"real"` retains finite
+negative or zero rates for flat/nested/capacity Logit and BLP demand.
+Demand systems using log-prices or price powers remain positive-only.}
 
 \item{nsim}{For objects that are not an `AntitrustFit` or
 `CounterfactualPath`, the number of simulated response vectors passed on

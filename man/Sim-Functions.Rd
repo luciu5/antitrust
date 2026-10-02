@@ -26,6 +26,7 @@ sim(
   bargpowerPre = rep(0.5, length(prices)),
   bargpowerPost = bargpowerPre,
   labels = paste("Prod", 1:length(prices), sep = ""),
+  price_domain = c("positive", "real"),
   ...
 )
 }
@@ -95,6 +96,10 @@ Ignored if \sQuote{supply} not equal to "bargaining" or "bargaining2nd".}
 
 \item{labels}{A k-length vector of labels. Default is \dQuote{Prod#}, where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
+
+\item{price_domain}{Input price-level simulation domain. The default
+requires positive rates; \code{"real"} permits negative or zero rates for
+flat/nested/capacity Logit and BLP demand.}
 
 \item{...}{Additional options to feed to the
 optimizer used to solve for equilibrium prices.}
