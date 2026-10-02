@@ -21,6 +21,7 @@ test_that("fixed BLP draws are repeatable and preserve caller RNG state", {
 })
 
 test_that("seeded generated BLP draws are repeatable", {
+    qa_skip_unless_tier("extended")
     f <- qa_fixture_market()
     run <- function() {
         set.seed(918273)

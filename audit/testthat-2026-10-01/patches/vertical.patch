@@ -1,0 +1,30 @@
+diff --git a/tests/testthat/test-parity-fixtures.R b/tests/testthat/test-parity-fixtures.R
+index b483112..5bfb79a 100644
+--- a/tests/testthat/test-parity-fixtures.R
++++ b/tests/testthat/test-parity-fixtures.R
+@@ -1,9 +1,6 @@
+-test_that("the frozen fixture records the reviewed pre-extraction source", {
+-  expect_identical(
+-    vertical_fixture$metadata$antitrust_sha,
+-    "24caac92a6c8ad4dc1d3d754c4c26ad0afd4248f"
+-  )
+-})
++# Reviewed pre-extraction numerical fixtures remain transition benchmarks.
++# Independent FOC tests guard the active games; the fixture retains selected
++# welfare and price behavior until independent vertical accounts are tested.
+ 
+ test_that("flat and vertical merger fixtures retain reviewed economics", {
+   cases <- c("flat_upstream_horizontal", "flat_vertical",
+diff --git a/tests/testthat/test-subset-support.R b/tests/testthat/test-subset-support.R
+index aad83fb..2660ffd 100644
+--- a/tests/testthat/test-subset-support.R
++++ b/tests/testthat/test-subset-support.R
+@@ -264,8 +264,3 @@ test_that("subset masks are strict and survive serialization", {
+   expect_equal(restored@up@pricePost, result@up@pricePost)
+   expect_equal(restored@down@pricePost, result@down@pricePost)
+ })
+-
+-test_that("nested second-score remains a deliberate unsupported combination", {
+-  args <- subset_direct_args(demand = "logit_nests", variant = "auction2nd")
+-  expect_error(do.call(vertical::vertical.barg, args), "Nested Logit")
+-})

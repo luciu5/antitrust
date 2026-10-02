@@ -92,7 +92,7 @@ getRetention <- function(object, preMerger = TRUE) {
 
 .mixed_firm_retention <- function(object, preMerger, subset) {
   retention <- getRetention(object, preMerger)[subset]
-  owner <- if (preMerger) object@ownerPre else object@ownerPost
+  owner <- ownerToMatrix(object, preMerger = preMerger)
   owner <- owner[subset, subset, drop = FALSE]
   any((owner > 0) &
       (abs(outer(log(retention), log(retention), "-")) > 1e-10))

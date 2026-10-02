@@ -1,0 +1,34 @@
+diff --git a/tests/testthat/test-bank-parity.R b/tests/testthat/test-bank-parity.R
+index b1c92a3..5bf794a 100644
+--- a/tests/testthat/test-bank-parity.R
++++ b/tests/testthat/test-bank-parity.R
+@@ -63,6 +63,7 @@ test_that("closed-form expected_liq_penalty agrees with the stored Monte-Carlo v
+ })
+ 
+ test_that("simulate_beta_portfolio_liquidity() Monte-Carlo comparator is migrated and runs", {
++  skip_if(Sys.getenv("FINANCIAL_EXTENDED_TESTS") != "1", "extended validation")
+   skip_if_not(file.exists(mc_vs_cf_path), "bank_liquidity_mc_vs_cf.rds oracle not present")
+   oracle <- readRDS(mc_vs_cf_path)
+   inputs <- oracle$inputs
+diff --git a/tests/testthat/test-debt-parity.R b/tests/testthat/test-debt-parity.R
+index c8c95b0..8c2e371 100644
+--- a/tests/testthat/test-debt-parity.R
++++ b/tests/testthat/test-debt-parity.R
+@@ -13,6 +13,7 @@ closedform_path <- testthat::test_path("..", "oracles", "debt_singlemarket_close
+ ## ---------------------------------------------------------------------
+ 
+ test_that("logit.debt() reproduces the golden-master grid fixture", {
++  skip_if(Sys.getenv("FINANCIAL_EXTENDED_TESTS") != "1", "extended validation")
+     skip_if_not(file.exists(grid_path), "debt_goldenmaster_grid.rds oracle not present")
+     grid <- readRDS(grid_path)
+ 
+diff --git a/tests/testthat/test-skeleton.R b/mnt/d/Projects/financial/tests/testthat/test-skeleton.R
+deleted file mode 100644
+index 58dd9df..0000000
+--- a/tests/testthat/test-skeleton.R
++++ /dev/null
+@@ -1,4 +0,0 @@
+-test_that("package loads and FinancialFit is a virtual class", {
+-  expect_true(isVirtualClass("FinancialFit"))
+-  expect_true(extends("FinancialFit", "StructuralFit"))
+-})

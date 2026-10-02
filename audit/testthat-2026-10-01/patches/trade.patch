@@ -1,0 +1,352 @@
+diff --git a/.github/workflows/qa.yml b/.github/workflows/qa.yml
+index c30e05e..f08d05d 100644
+--- a/.github/workflows/qa.yml
++++ b/.github/workflows/qa.yml
+@@ -30,6 +30,7 @@ jobs:
+     name: R 4.6.1 dependency-stack check
+     env:
+       ANTITRUST_TEST_TIER: ${{ github.event_name == 'schedule' && 'nightly' || inputs.test_tier || 'fast' }}
++      TRADE_TEST_TIER: ${{ github.event_name == 'schedule' && 'nightly' || github.event_name == 'pull_request' && 'extended' || inputs.test_tier || 'fast' }}
+     runs-on: ubuntu-latest
+     steps:
+       - uses: actions/checkout@v4
+@@ -51,7 +52,8 @@ jobs:
+             echo "requested_antitrust_ref=${REQUESTED_ANTITRUST_REF}"
+             echo "antitrust_sha=${core_sha}"
+             echo "trade_sha=${trade_sha}"
+-            echo "test_tier=${ANTITRUST_TEST_TIER}"
++            echo "antitrust_test_tier=${ANTITRUST_TEST_TIER}"
++            echo "trade_test_tier=${TRADE_TEST_TIER}"
+           } | tee "${provenance_file}"
+           {
+             echo "### Source provenance"
+@@ -59,7 +61,8 @@ jobs:
+             echo "- requested antitrust ref: \`${REQUESTED_ANTITRUST_REF}\`"
+             echo "- resolved antitrust SHA: \`${core_sha}\`"
+             echo "- resolved trade SHA: \`${trade_sha}\`"
+-            echo "- test tier: \`${ANTITRUST_TEST_TIER}\`"
++            echo "- antitrust test tier: \`${ANTITRUST_TEST_TIER}\`"
++            echo "- trade test tier: \`${TRADE_TEST_TIER}\`"
+           } >> "${GITHUB_STEP_SUMMARY}"
+       - uses: r-lib/actions/setup-r@v2
+         with:
+diff --git a/tests/testthat/TESTING.md b/tests/testthat/TESTING.md
+index 031fe98..6cb4152 100644
+--- a/tests/testthat/TESTING.md
++++ b/tests/testthat/TESTING.md
+@@ -1,16 +1,26 @@
+-# trade test and CI provenance
++# trade test tiers
+ 
+-Trade's suite is small and has no significant slow duplication, so every tier
+-runs the complete package test path. The prior full-suite 419-expectation
+-evidence remains the reference for this package; tier routing is applied to the
+-larger antitrust dependency suite rather than removing trade coverage.
++`TRADE_TEST_TIER` selects `fast`, `extended`, or `nightly`. An unset variable
++selects `fast` for local runs. The trade workflow runs `fast` on pushes,
++`extended` on pull requests, and `nightly` on the schedule. Manual runs can
++select `extended` or `nightly`. Higher tiers include lower-tier tests.
+ 
+-`fast` is the default on pushes and pull requests. Scheduled runs select
+-`nightly`, while manual dispatch accepts `extended` or `nightly`. Each job
+-records the selected tier and the resolved `git rev-parse HEAD` values for both
+-repositories in the job summary and a source-provenance artifact.
++- **fast:** direct tariff/Cournot FOCs, tariff accounts, numerical oracles,
++  public lifecycle, representative promotion, sequential policy, and deterministic
++  BLP integration-state checks.
++- **extended:** exhaustive registered promotion routes and output-game policy
++  matrices, plus BLP calibration against supplied integration points and weights.
++- **nightly:** both Gauss-Hermite and Monte Carlo BLP parameter-recovery runs,
++  plus the migration-only supplied-parameter parity matrix. Revisit the parity
++  matrix once `refactor` is canonical.
+ 
+-Push and pull-request jobs intentionally follow the mutable `refactor` branch
+-by default for compatibility. A reproducible dependency run must be started
+-manually with a full antitrust commit SHA in the workflow's `antitrust_ref`
+-input; the resolved SHA is authoritative if the branch moves afterward.
++The prior all-tests baseline was 143 `test_that()` blocks and 113.7 seconds
++under local source loading; two BLP calibration blocks consumed 82.6 seconds.
++Tiering preserves these statistical and integration checks while making routine
++failures faster to detect. `testthat` skips tiered blocks before constructing
++fixtures or solving.
++
++The workflow records the selected tiers and resolved Git SHAs for both
++repositories in its job summary and source-provenance artifact. A reproducible
++dependency run can be started manually with a full antitrust commit SHA in the
++`antitrust_ref` input.
+diff --git a/tests/testthat/helper-tiers.R b/tests/testthat/helper-tiers.R
+new file mode 100644
+index 0000000..b971012
+--- /dev/null
++++ b/tests/testthat/helper-tiers.R
+@@ -0,0 +1,17 @@
++# Test tiers are selected by the trade workflow. Local runs default to fast.
++trade_test_tier <- function() {
++  tier <- Sys.getenv("TRADE_TEST_TIER", unset = "fast")
++  if (!tier %in% c("fast", "extended", "nightly")) {
++    stop("TRADE_TEST_TIER must be fast, extended, or nightly")
++  }
++  tier
++}
++
++trade_skip_unless_tier <- function(required) {
++  levels <- c("fast", "extended", "nightly")
++  if (!required %in% levels) stop("unknown required test tier")
++  testthat::skip_if(
++    match(trade_test_tier(), levels) < match(required, levels),
++    paste("requires trade", required, "test tier")
++  )
++}
+diff --git a/tests/testthat/test-blp-integration.R b/tests/testthat/test-blp-integration.R
+index 4df5f7c..2624e84 100644
+--- a/tests/testthat/test-blp-integration.R
++++ b/tests/testthat/test-blp-integration.R
+@@ -51,6 +51,7 @@
+ }
+ 
+ test_that("trade BLP preserves provided integration points and weights", {
++  trade_skip_unless_tier("extended")
+   fixture <- .trade_blp_fixture(
+     nodes = c(-1.5, -.5, .5, 1.5),
+     weights = c(.10, .20, .30, .40)
+@@ -106,6 +107,7 @@ test_that("trade BLP accepts the consDraws alias without partial matching", {
+ })
+ 
+ test_that("trade BLP no-demographics calibration works under GH and Monte Carlo", {
++  trade_skip_unless_tier("nightly")
+   for (rule in c("gauss-hermite", "monte-carlo")) {
+     if (identical(rule, "gauss-hermite")) {
+       quadrature <- antitrust:::.blp_normal_nodes(15L)
+diff --git a/tests/testthat/test-fitted-tariff-equivalence.R b/tests/testthat/test-fitted-tariff-equivalence.R
+index cc87e50..0b19197 100644
+--- a/tests/testthat/test-fitted-tariff-equivalence.R
++++ b/tests/testthat/test-fitted-tariff-equivalence.R
+@@ -30,6 +30,7 @@
+ }
+ 
+ test_that("all fourteen output games agree under physical costs and tariff wedges", {
++  trade_skip_unless_tier("extended")
+   for (demand in c("logit", "ces")) for (family in c("B", "C", "MC", "BF", "CF", "BS", "CS")) {
+     source <- .tariff_matrix_source(demand, family)
+     original <- serialize(source, NULL)
+@@ -100,6 +101,7 @@ test_that("multiproduct followers obey the same tariff cost transformation", {
+ })
+ 
+ test_that("untaxed products respond across all fourteen fitted output games", {
++  trade_skip_unless_tier("extended")
+   for (demand in c("logit", "ces")) for (family in c("B", "C", "MC", "BF", "CF", "BS", "CS")) {
+     source <- .tariff_matrix_source(demand, family)
+     fit <- suppressWarnings(trade::as_trade_fit(source, tariffPre = 0,
+diff --git a/tests/testthat/test-price-start.R b/tests/testthat/test-price-start.R
+deleted file mode 100644
+index b629615..0000000
+--- a/tests/testthat/test-price-start.R
++++ /dev/null
+@@ -1,15 +0,0 @@
+-test_that("AIDS starts at zero log price changes", {
+-  prices <- c(10, 12, 15)
+-  fit <- suppressWarnings(
+-    bertrand_tariff(
+-      demand = "aids",
+-      prices = prices,
+-      quantities = c(30, 40, 50),
+-      margins = c(.2, .25, .3),
+-      owner = c("A", "B", "C"),
+-      tariffPost = c(0, .1, 0)
+-    )
+-  )
+-
+-  expect_equal(fit@priceStart, rep(0, length(prices)))
+-})
+diff --git a/tests/testthat/test-structural-fit-contract.R b/tests/testthat/test-structural-fit-contract.R
+index fa76bc1..c04932f 100644
+--- a/tests/testthat/test-structural-fit-contract.R
++++ b/tests/testthat/test-structural-fit-contract.R
+@@ -9,61 +9,20 @@ test_that("TradeFit inherits the shared structural fit contract", {
+ })
+ 
+ 
+-test_that("TradeFit construction retains its visible slots", {
+-  fit <- methods::new(
+-    "TradeFit",
+-    spec = list(id = "test::trade"),
+-    model = list(state = TRUE),
+-    parameters = list(alpha = -1.2),
+-    observed = list(prices = c(1, 2)),
+-    diagnostics = list(status = "constructed")
+-  )
+-
+-  expect_s4_class(fit, "TradeFit")
+-  expect_s4_class(fit, "StructuralFit")
+-  expect_equal(fit@spec$id, "test::trade")
+-  expect_true(isTRUE(fit@model$state))
+-  expect_equal(fit@parameters$alpha, -1.2)
+-})
+-
+-
+-test_that("named trade simulate calls retain trade dispatch", {
+-  prices <- c(.0441, .0328, .0409, .0396, .0387, .0497)
+-  quantities <- c(.066, .172, .253, .187, .099, .223) * 100
+-  margins <- c(.3830, .5515, .5421, .5557, .4453, .3769)
+-  owner <- c("BUD", "OLD STYLE", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
+-  tariff <- c(0, 0, 0, 0, .1, .1)
+-
++test_that("a saved fitted trade model retains its tariff economics", {
+   fit <- suppressWarnings(calibrate(
+-    demand = "logit", conduct = "bertrand", prices = prices,
+-    quantities = quantities, margins = margins, owner = owner
++    "logit", "bertrand", prices = c(2, 2.2, 2.5),
++    quantities = c(35, 25, 20), margins = c(.4, .35, .3),
++    owner = c("A", "A", "B")
+   ))
+-  result <- suppressWarnings(trade::simulate(fit, tariffPost = tariff))
+-
+-  expect_s4_class(fit, "StructuralFit")
+-  expect_s4_class(result, "TariffLogit")
+-  expect_equal(result@tariffPost, tariff)
+-})
+-
+-
+-test_that("TradeFit survives an RDS round trip", {
+-  fit <- methods::new(
+-    "TradeFit",
+-    spec = list(id = "test::rds"),
+-    model = list(state = TRUE),
+-    parameters = list(alpha = -1.2),
+-    observed = list(prices = c(1, 2)),
+-    diagnostics = list(status = "constructed")
+-  )
+-  path <- tempfile(fileext = ".rds")
+-  on.exit(unlink(path), add = TRUE)
+-
+-  saveRDS(fit, path)
+-  restored <- readRDS(path)
++  restored <- unserialize(serialize(fit, NULL))
++  tariff <- c(0, .1, .2)
++  actual <- suppressWarnings(simulate(restored, tariffPost = tariff))
++  expected <- suppressWarnings(simulate(fit, tariffPost = tariff))
+ 
+   expect_s4_class(restored, "TradeFit")
+-  expect_s4_class(restored, "StructuralFit")
+-  expect_equal(restored, fit)
++  expect_equal(actual@pricePost, expected@pricePost, tolerance = 1e-10)
++  expect_equal(actual@mcPost, expected@mcPost, tolerance = 1e-10)
+ })
+ 
+ 
+@@ -114,28 +73,3 @@ test_that("TradeFit exposes trade-specific counterfactual validation", {
+     "does not support counterfactual field\\(s\\): quota"
+   )
+ })
+-
+-
+-test_that("a StructuralFit subclass that is neither TradeFit nor AntitrustFit still hits the shared fallback", {
+-  ## The shared StructuralFit fallback methods, owned by antitrust, must keep
+-  ## producing an explicit "no method defined" error for any StructuralFit
+-  ## subclass -- including a hypothetical third sibling family -- that
+-  ## supplies neither a TradeFit nor an AntitrustFit method. Trade must not
+-  ## touch or duplicate that fallback.
+-  setClass("DummyTradeSiblingFit", contains = "StructuralFit")
+-  on.exit(removeClass("DummyTradeSiblingFit"), add = TRUE)
+-  dummy <- methods::new("DummyTradeSiblingFit")
+-
+-  expect_true(is(dummy, "StructuralFit"))
+-  expect_false(is(dummy, "TradeFit"))
+-  expect_false(is(dummy, "AntitrustFit"))
+-
+-  expect_error(
+-    antitrust::simulate(dummy, ownerPost = c("A", "B")),
+-    "no simulate\\(\\) method is defined"
+-  )
+-  expect_error(
+-    antitrust::respecify(dummy, conduct = "cournot"),
+-    "no respecify\\(\\) method is defined"
+-  )
+-})
+diff --git a/tests/testthat/test-tariff-game-fit.R b/tests/testthat/test-tariff-game-fit.R
+index 320896f..df7e185 100644
+--- a/tests/testthat/test-tariff-game-fit.R
++++ b/tests/testthat/test-tariff-game-fit.R
+@@ -128,24 +128,6 @@ test_that("tariff wrappers reject legacy lifecycle paths and summarize physical
+                     "physicalPlusGovernmentDelta") %in% names(market)))
+ })
+ 
+-test_that("fractional or non-block ordinary ownership is rejected", {
+-  source <- try(antitrust::specify(
+-    demand = "logit", conduct = "bertrand",
+-    prices = c(1.5, 1.8, 2.1), shares = c(.3, .25, .15),
+-    parameters = list(alpha = -1.5, meanval = c(.5, .2, -.1)),
+-    ownerPre = matrix(c(1, .5, .5, .5, 1, 0, .5, 0, 1), 3, 3,
+-                      byrow = TRUE), margins = rep(.3, 3), insideSize = 100,
+-    labels = paste0("P", 1:3)
+-  ), silent = TRUE)
+-  skip_if(inherits(source, "try-error"), "antitrust rejected the fractional ownership fixture")
+-  expect_error(
+-    trade::as_trade_fit(source, tariffPre = 0,
+-                        cost_basis = "effective",
+-                        margin_basis = "net_revenue"),
+-    class = "trade_tariff_unsupported_ownership"
+-  )
+-})
+-
+ test_that("recorded gross margins are compatible only at a zero baseline tariff", {
+   source <- try(antitrust::specify(
+     demand = "logit", conduct = "bertrand",
+diff --git a/tests/testthat/test-trade-architecture.R b/tests/testthat/test-trade-architecture.R
+index 1576609..e092172 100644
+--- a/tests/testthat/test-trade-architecture.R
++++ b/tests/testthat/test-trade-architecture.R
+@@ -180,6 +180,7 @@ test_that("specify and simulate preserve the supplied-parameter sim path", {
+ })
+ 
+ test_that("migrated sim paths remain numerically compatible", {
++  trade_skip_unless_tier("nightly")
+   x <- trade_fit_data()
+   parameters <- list(
+     logit = list(alpha = -48.0457,
+diff --git a/tests/testthat/test-trade-model-registry.R b/tests/testthat/test-trade-model-registry.R
+index 89fb797..f8506ab 100644
+--- a/tests/testthat/test-trade-model-registry.R
++++ b/tests/testthat/test-trade-model-registry.R
+@@ -127,21 +127,3 @@ test_that("trade transition registry records only supported supplied paths", {
+     expect_true(any(grepl("cournot->", keys)))
+     expect_false(any(grepl("->.*cournot", keys)))
+ })
+-
+-test_that("trade transition lookup delegates to antitrust's public accessor", {
+-    from <- model_spec("logit", "bertrand")
+-    to <- model_spec("ces", "bertrand")
+-    antitrust_from <- antitrust::model_spec(
+-        from$demand, "bertrand", from$variant
+-    )
+-    antitrust_to <- antitrust::model_spec(
+-        to$demand, "bertrand", to$variant
+-    )
+-
+-    expect_equal(
+-        getFromNamespace(".trade_antitrust_transition_entry", "trade")(
+-            from, to
+-        ),
+-        antitrust::model_transition(antitrust_from, antitrust_to)
+-    )
+-})
+diff --git a/tests/testthat/test-trade-promotion.R b/tests/testthat/test-trade-promotion.R
+index 67cb398..2a6ac35 100644
+--- a/tests/testthat/test-trade-promotion.R
++++ b/tests/testthat/test-trade-promotion.R
+@@ -138,6 +138,7 @@
+ }
+ 
+ test_that("selective tariffs leave domestic firms responsive in every direct promotion family", {
++  trade_skip_unless_tier("extended")
+   registry <- trade::supportedModels()
+   registry <- registry[registry$policy == "tariff" &
+     registry$promotion_handler != "tariff_reuse", , drop = FALSE]
+@@ -231,6 +232,7 @@ test_that("as_trade_fit is an S4 generic with explicit fallback behavior", {
+ 
+ 
+ test_that("every exact tariff overlap has a direct promotion route", {
++  trade_skip_unless_tier("extended")
+   target_registry <- trade::supportedModels()
+   target_registry <- target_registry[
+     target_registry$policy == "tariff" &

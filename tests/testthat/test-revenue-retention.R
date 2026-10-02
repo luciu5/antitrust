@@ -165,3 +165,30 @@ test_that("mixed retention within an auction firm is rejected", {
     uniform <- setRetention(auction, c(.8, .8, 1))
     expect_true(all(is.finite(calcMargins(uniform, level = TRUE))))
 })
+
+test_that("auction retention accepts vector ownership used by downstream models", {
+    auction <- suppressWarnings(auction2nd.logit(
+        prices = c(2, 2.2, 2.4, 2.6),
+        shares = c(.25, .20, .15, .10),
+        margins = c(.4, .35, .3, .25),
+        ownerPre = c("A", "A", "B", "B"),
+        ownerPost = c("A", "A", "B", "B")
+    ))
+    vector_owner <- auction
+    vector_owner@ownerPre <- c("A", "A", "B", "B")
+    vector_owner@ownerPost <- c("A", "A", "B", "B")
+
+    uniform <- setRetention(vector_owner, c(.8, .8, .9, .9))
+    expect_equal(calcShares(uniform, TRUE),
+                 calcShares(setRetention(auction, c(.8, .8, .9, .9)), TRUE),
+                 tolerance = 1e-10)
+    mixed <- setRetention(vector_owner, c(.8, .7, .9, .9))
+    expect_error(calcShares(mixed, TRUE),
+                 "mixed revenue retention within an auction firm")
+
+    post_mixed <- setRetention(vector_owner,
+                               retentionPost = c(.8, .7, .9, .9))
+    post_mixed@subset <- c(TRUE, TRUE, FALSE, FALSE)
+    expect_error(calcShares(post_mixed, FALSE),
+                 "mixed revenue retention within an auction firm")
+})

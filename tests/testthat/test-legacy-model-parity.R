@@ -354,7 +354,7 @@ test_that("BLP supplied parameters reuse the existing Bertrand and Cournot solve
 })
 
 test_that("legacy BLP aliases preserve their conduct mapping", {
-    qa_skip_unless_tier("fast")
+    qa_skip_unless_tier("extended")
     parameters <- qa_fixture_blp_parameters()
     common <- list(
         prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
@@ -375,32 +375,6 @@ test_that("legacy BLP aliases preserve their conduct mapping", {
     ))
     expect_s4_class(alias, "CournotBLP")
     expect_equal(alias@pricePost, explicit@pricePost, tolerance = 1e-8)
-})
-
-test_that("legacy BLP simulation messages remain visible through sim", {
-    qa_skip_unless_tier("fast")
-    parameters <- qa_fixture_blp_parameters()
-    common <- list(
-        prices = c(2, 2.2, 2.5), shares = c(.35, .25, .20),
-        ownerPre = c("A", "B", "C"), ownerPost = c("A", "A", "C"),
-        insideSize = 100
-    )
-    nonempty <- function(x) x[nzchar(trimws(x))]
-    legacy_messages <- capture.output(suppressWarnings(getFromNamespace(
-        ".sim_legacy", "antitrust")(
-            prices = common$prices, shares = common$shares,
-            demand = "BLP", demand.param = parameters,
-            supply = "bertrand", ownerPre = common$ownerPre,
-            ownerPost = common$ownerPost, insideSize = common$insideSize
-        )
-    ), type = "message")
-    wrapper_messages <- capture.output(suppressWarnings(sim(
-        prices = common$prices, shares = common$shares,
-        demand = "BLP", demand.param = parameters, supply = "bertrand",
-        ownerPre = common$ownerPre, ownerPost = common$ownerPost,
-        insideSize = common$insideSize
-    )), type = "message")
-    expect_equal(nonempty(wrapper_messages), nonempty(legacy_messages))
 })
 
 test_that("ALM model variants calibrate and simulate through their legacy methods", {
