@@ -33,6 +33,8 @@
 #' Automatic integration uses one-dimensional Gauss-Hermite quadrature for a
 #' price-only BLP specification, or for a single demographic price dimension
 #' when \code{sigma = 0}; it uses fixed-draw Monte Carlo otherwise.
+#' Joint two-dimensional quadrature is available through \code{sim()} with
+#' BLP demand; \code{ple.blp()} retains its legacy multi-factor Monte Carlo path.
 #' @param nNodes Number of Gauss-Hermite nodes. Defaults to 31 when
 #' \code{integration = "gauss-hermite"}.
 #' @param nDraws Number of Monte Carlo draws used for BLP demand. It selects
@@ -299,7 +301,28 @@ ple.blp <- function(
     integration <- "monte-carlo"
   }
   slopes$integration <- integration
-  integration_result <- .blp_integration(slopes)
+  if (.blp_multidimensional(slopes)) {
+    if (identical(integration, "gauss-hermite") ||
+        !is.null(slopes$integrationPoints)) {
+      stop("Two-dimensional BLP quadrature is not supported by ple.blp(); use sim() with BLP demand for joint-factor CV.")
+    }
+    ## ple.blp() has a separate legacy demographic draw path. Retain its
+    ## vector Monte Carlo price draws rather than passing it a joint matrix.
+    legacy_slopes <- slopes
+    legacy_slopes$nDemog <- 0L
+    legacy_slopes$piDemog <- numeric(0)
+    legacy_slopes$sigmaChar <- NULL
+    legacy_slopes$pi <- NULL
+    if (identical(legacy_slopes$integration, "auto") &&
+        is.null(legacy_slopes$draws) &&
+        is.null(legacy_slopes$consDraws)) {
+      legacy_slopes$integration <- "monte-carlo"
+    }
+    integration_result <- .blp_integration(legacy_slopes)
+    slopes$legacyVectorIntegration <- TRUE
+  } else {
+    integration_result <- .blp_integration(slopes)
+  }
   slopes$consDraws <- integration_result$draws
   slopes$drawWeights <- integration_result$weights
   slopes$integrationWeights <- integration_result$weights

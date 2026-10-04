@@ -137,7 +137,9 @@ passed to the non-linear equation solver.}
 \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
 Automatic integration uses one-dimensional Gauss-Hermite quadrature for a
 price-only BLP specification, or for a single demographic price dimension
-when \code{sigma = 0}; it uses fixed-draw Monte Carlo otherwise.}
+when \code{sigma = 0}; it uses fixed-draw Monte Carlo otherwise.
+Joint two-dimensional quadrature is available through \code{sim()} with
+BLP demand; \code{ple.blp()} retains its legacy multi-factor Monte Carlo path.}
 
 \item{nNodes}{Number of Gauss-Hermite nodes. Defaults to 31 when
 \code{integration = "gauss-hermite"}.}

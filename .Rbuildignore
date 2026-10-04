@@ -9,6 +9,7 @@
 ^.*[.]Rcheck$
 ^\.codex$
 ^\.github$
+^\.git$
 ^AGENTS[.]md$
 ^\.Rhistory$
 ^antitrust_.*[.]tar[.]gz$

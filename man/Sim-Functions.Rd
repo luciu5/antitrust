@@ -25,6 +25,7 @@ sim(
   bargpowerPre = rep(0.5, length(prices)),
   bargpowerPost = bargpowerPre,
   labels = paste("Prod", 1:length(prices), sep = ""),
+  price_domain = c("positive", "real"),
   ...
 )
 }
@@ -96,6 +97,12 @@ Ignored if \sQuote{supply} not equal to "bargaining" or "bargaining2nd".}
 
 \item{labels}{A k-length vector of labels. Default is \dQuote{Prod#}, where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
+
+\item{price_domain}{Domain for simulated input rates. The default
+\code{"positive"} requires positive rates; \code{"real"} permits zero
+or negative post-merger rates for input Logit, nested Logit, capacity
+Logit, and BLP. Supplied baseline rates remain subject to constructor
+validity checks.}
 
 \item{...}{Additional options to feed to the
 optimizer used to solve for equilibrium prices.}
@@ -173,14 +180,20 @@ If \sQuote{demand} equals \sQuote{BLP}, then
   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
   \item{integration}{Optional integration rule: \code{"auto"},
   \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
-  Automatic integration uses Gauss-Hermite nodes for price-only BLP, or for
-  a single demographic price dimension when \code{sigma = 0}; it uses Monte
-  Carlo for higher-dimensional BLP specifications.}
-  \item{nNodes}{Optional number of Gauss-Hermite nodes; default 31.}
+  Automatic integration uses Gauss-Hermite nodes for up to two active
+  Gaussian factors and Monte Carlo for higher-dimensional specifications.}
+  \item{nNodes}{Optional Gauss-Hermite nodes per axis: 31 by default in one
+  dimension and 15 by 15 in two dimensions. A length-two vector sets
+  different counts for the two axes.}
   \item{nDraws}{Number of Monte Carlo draws. It selects
   \code{integration = "monte-carlo"} when no integration rule is supplied,
   preserving legacy BLP calls; it is not a quadrature-node count.}
-  \item{consDraws or draws}{Optional supplied BLP integration points.}
+  \item{consDraws or draws}{Optional supplied vector of standardized BLP
+  price draws. With additional heterogeneous factors, legacy vector calls
+  draw those factors independently; use \code{integrationPoints} to specify
+  one joint point per row.}
+  \item{integrationPoints}{Optional numeric matrix of joint standardized
+  BLP points, one active factor per column.}
   \item{integrationWeights}{Optional non-negative weights for supplied
   integration points; normalized internally to sum to one.}
   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}

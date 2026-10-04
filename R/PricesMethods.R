@@ -353,18 +353,23 @@ setMethod(
         object@pricePost[subset] <- priceCand
       }
 
+      quantities <- calcQuantities(object, preMerger = preMerger)
+      quantities <- quantities[subset]
       if (output) {
         margins <- 1 - mc / priceCand
+        revenues <- calcShares(object, preMerger = preMerger,
+                               revenue = TRUE)[subset]
+        elasticities <- elast(object, preMerger)[subset, subset]
+        thisFOC <- revenues * diag(owner) +
+          as.vector(t(elasticities * owner) %*% (margins * revenues))
       } else {
-        margins <- mc / priceCand - 1
+        shares <- calcShares(object, preMerger = preMerger,
+                             revenue = FALSE)[subset]
+        demand_jacobian <- object@mktSize * object@slopes$alpha *
+          (diag(shares, length(shares)) - tcrossprod(shares))
+        thisFOC <- quantities -
+          as.vector((t(demand_jacobian) * owner) %*% (mc - priceCand))
       }
-
-      revenues <- calcShares(object, preMerger = preMerger, revenue = TRUE)
-      quantities <- calcQuantities(object, preMerger = preMerger)
-      revenues <- revenues[subset]
-      quantities <- quantities[subset]
-      elasticities <- elast(object, preMerger)[subset, subset]
-      thisFOC <- revenues * diag(owner) + as.vector(t(elasticities * owner) %*% (margins * revenues))
       constraint <- ifelse(is.finite(capacities), (quantities - capacities) / object@insideSize, 0)
       ## Fischer-Burmeister complementarity residual.  The previous exact-zero
       ## branch returned `thisFOC`, which incorrectly required the unconstrained
@@ -386,7 +391,9 @@ setMethod(
     )
 
     if (minResult$termcd > 2) {
-      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = object@control.equ, ...)
+      bb_control <- object@control.equ
+      bb_control$price_domain <- NULL
+      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = bb_control, ...)
       priceEst_solution <- minResult$par
       if (minResult$convergence != 0) {
         warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '", minResult$message, "'")
@@ -397,7 +404,22 @@ setMethod(
         warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ", minResult$termcd)
       }
     }
-    if (any(!is.finite(priceEst_solution) | priceEst_solution <= 0)) {
+    if (any(!is.finite(priceEst_solution))) {
+      stop("'calcPrices' returned non-finite LogitCap prices; no valid equilibrium was found.")
+    }
+    signed_input <- !isTRUE(object@output) &&
+      identical(object@control.equ$price_domain, "real")
+    if (!signed_input && any(priceEst_solution <= 0)) {
+      if (!isTRUE(object@output)) {
+        i <- which.min(priceEst_solution)
+        stop(structure(list(
+          message = "Input LogitCap equilibrium has a nonpositive rate; use price_domain = 'real' to retain signed rates.",
+          call = NULL, category = "positive_domain_violation",
+          price_domain = "positive", minimum_rate = priceEst_solution[[i]],
+          minimum_product = as.character(object@labels[which(subset)[[i]]]),
+          preMerger = preMerger),
+          class = c("antitrust_price_domain_error", "error", "condition")))
+      }
       stop("'calcPrices' returned non-positive or non-finite LogitCap prices; no valid equilibrium was found.")
     }
     priceEst[subset] <- priceEst_solution
@@ -1031,6 +1053,49 @@ setMethod(
 
 
     priceStart <- priceStart[subset]
+
+    if (!output) {
+      ## Input-market profit is (cost - rate) times quantity. Its level FOC
+      ## remains well defined when a candidate rate crosses zero; the
+      ## revenue-elasticity representation used for output BLP does not.
+      active_owner <- owner[subset, subset, drop = FALSE]
+      active_mc <- mc[subset]
+      share_at <- function(active_prices) {
+        changed <- object
+        candidate <- rep(NA_real_, nprods)
+        candidate[subset] <- active_prices
+        if (preMerger) changed@pricePre <- candidate
+        else changed@pricePost <- candidate
+        as.numeric(calcShares(changed, preMerger,
+                              revenue = FALSE)[subset])
+      }
+      level_foc <- function(active_prices) {
+        shares <- share_at(active_prices)
+        derivative <- numDeriv::jacobian(share_at,
+                                          as.numeric(active_prices))
+        shares - as.vector((t(derivative) * active_owner) %*%
+                             (active_mc - active_prices))
+      }
+      maxit <- as.integer(object@control.equ$maxit)
+      if (!length(maxit) || is.na(maxit) || maxit < 1L) maxit <- 150L
+      roots <- list(priceStart, active_mc - 1)
+      for (start in roots) {
+        solved <- tryCatch(nleqslv::nleqslv(start, level_foc,
+          method = "Broyden", control = list(maxit = maxit,
+          ftol = object@control.equ$tol)), error = function(e) NULL)
+        if (is.null(solved) || solved$termcd > 2L ||
+            any(!is.finite(solved$x))) next
+        residual <- tryCatch(max(abs(level_foc(solved$x))),
+                             error = function(e) Inf)
+        if (!is.finite(residual) || residual > 1e-6 ||
+            any(share_at(solved$x) < 1e-10)) next
+        result <- rep(NA_real_, nprods)
+        result[subset] <- solved$x
+        names(result) <- object@labels
+        return(result)
+      }
+      stop("'calcPrices' could not find an admissible input BLP equilibrium with a small level-FOC residual.")
+    }
 
     # 2 Define FOCs function (Unified for Root-Finding and Fixed-Point)
     FOC <- function(priceCand, as_fp = FALSE) {

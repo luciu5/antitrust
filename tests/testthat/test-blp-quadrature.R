@@ -150,19 +150,22 @@ test_that("weighted quantiles retain equal-weight compatibility", {
 })
 
 
-test_that("multidimensional BLP retains Monte Carlo fallback", {
+test_that("two-dimensional BLP uses quadrature and higher dimensions fall back", {
     multidimensional <- blp_quadrature_market(list(
         alpha = -1, sigma = .1, piDemog = .05,
         integration = "monte-carlo", nDraws = 12
     ))
     expect_identical(multidimensional@slopes$integration, "monte-carlo")
-    expect_error(
-        blp_quadrature_market(list(
-            alpha = -1, sigma = .1, piDemog = .05,
-            integration = "gauss-hermite", nNodes = 12
-        )),
-        "only for one-dimensional"
-    )
+    quadrature <- blp_quadrature_market(list(
+        alpha = -1, sigma = .1, piDemog = .05,
+        integration = "gauss-hermite", nNodes = c(5L, 7L)
+    ))
+    expect_equal(dim(quadrature@slopes$integrationPoints), c(35L, 2L))
+    expect_identical(quadrature@slopes$nodesPerAxis, c(5L, 7L))
+    expect_error(blp_quadrature_market(list(
+        alpha = -1, sigma = .1, piDemog = c(.05, .04),
+        integration = "gauss-hermite", nNodes = 5L
+    )), "at most two active dimensions")
 })
 
 

@@ -50,6 +50,11 @@
 #' @param priceStart A length k vector of starting values used to solve for
 #'   equilibrium price. Default is the \sQuote{prices} vector for all values of
 #'   demand except for \sQuote{AIDS}, which is set equal to a vector of 0s.
+#' @param price_domain Domain for simulated input rates. The default
+#'   \code{"positive"} requires positive rates; \code{"real"} permits zero
+#'   or negative post-merger rates for input Logit, nested Logit, capacity
+#'   Logit, and BLP. Supplied baseline rates remain subject to constructor
+#'   validity checks.
 #' @param bargpowerPre A length k vector of pre-merger bargaining power parameters. Values
 #' must be between 0 (sellers have the power) and 1 (buyers the power). Ignored if \sQuote{supply} not equal
 #' to "bargaining" or "bargaining2nd".
@@ -120,14 +125,20 @@
 #'   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
 #'   \item{integration}{Optional integration rule: \code{"auto"},
 #'   \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
-#'   Automatic integration uses Gauss-Hermite nodes for price-only BLP, or for
-#'   a single demographic price dimension when \code{sigma = 0}; it uses Monte
-#'   Carlo for higher-dimensional BLP specifications.}
-#'   \item{nNodes}{Optional number of Gauss-Hermite nodes; default 31.}
+#'   Automatic integration uses Gauss-Hermite nodes for up to two active
+#'   Gaussian factors and Monte Carlo for higher-dimensional specifications.}
+#'   \item{nNodes}{Optional Gauss-Hermite nodes per axis: 31 by default in one
+#'   dimension and 15 by 15 in two dimensions. A length-two vector sets
+#'   different counts for the two axes.}
 #'   \item{nDraws}{Number of Monte Carlo draws. It selects
 #'   \code{integration = "monte-carlo"} when no integration rule is supplied,
 #'   preserving legacy BLP calls; it is not a quadrature-node count.}
-#'   \item{consDraws or draws}{Optional supplied BLP integration points.}
+#'   \item{consDraws or draws}{Optional supplied vector of standardized BLP
+#'   price draws. With additional heterogeneous factors, legacy vector calls
+#'   draw those factors independently; use \code{integrationPoints} to specify
+#'   one joint point per row.}
+#'   \item{integrationPoints}{Optional numeric matrix of joint standardized
+#'   BLP points, one active factor per column.}
 #'   \item{integrationWeights}{Optional non-negative weights for supplied
 #'   integration points; normalized internally to sum to one.}
 #'   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
@@ -310,7 +321,9 @@ shares = NULL,
                 bargpowerPre = rep(0.5, length(prices)),
                 bargpowerPost = bargpowerPre,
                 labels = paste("Prod", 1:length(prices), sep = ""),
+                price_domain = c("positive", "real"),
                 ...) {
+  price_domain <- match.arg(price_domain)
   supply_missing <- missing(supply)
   demand <- match.arg(demand)
   supply <- match.arg(supply)
@@ -413,7 +426,8 @@ shares = NULL,
     }
     demand.param$nDemog <- length(demand.param$piDemog)
 
-    has_points <- !is.null(demand.param$draws) || !is.null(demand.param$consDraws)
+    has_points <- !is.null(demand.param$integrationPoints) ||
+      !is.null(demand.param$draws) || !is.null(demand.param$consDraws)
     has_weights <- !is.null(demand.param$integrationWeights) ||
       !is.null(demand.param$drawWeights)
     has_n_draws <- "nDraws" %in% names(demand.param)
@@ -428,13 +442,15 @@ shares = NULL,
          !is.finite(demand.param$nDraws) || demand.param$nDraws < 1)) {
       stop("'demand.param$nDraws' must be a positive scalar.")
     }
-    supplied_points <- if (!is.null(demand.param$draws)) {
+    supplied_points <- if (!is.null(demand.param$integrationPoints)) {
+      demand.param$integrationPoints
+    } else if (!is.null(demand.param$draws)) {
       demand.param$draws
     } else {
       demand.param$consDraws
     }
-    if (has_n_draws && has_points &&
-        demand.param$nDraws != length(supplied_points)) {
+    supplied_count <- if (is.matrix(supplied_points)) nrow(supplied_points) else length(supplied_points)
+    if (has_n_draws && has_points && demand.param$nDraws != supplied_count) {
       stop("'demand.param$nDraws' must equal the number of supplied BLP integration points.")
     }
     if (has_n_draws && !integration_specified && !has_points) {
@@ -455,23 +471,42 @@ shares = NULL,
       stop("supplied BLP integration points conflict with integration = '", integration, "'.")
     }
     if (has_weights && !has_points) {
-      stop("BLP integration weights require supplied 'draws' or 'consDraws'.")
+      stop("BLP integration weights require supplied 'integrationPoints', 'draws', or 'consDraws'.")
     }
     if (identical(integration, "provided") && !has_points) {
       stop("integration = 'provided' requires supplied BLP integration points.")
     }
     demand.param$integration <- integration
-    integration_result <- .blp_integration(demand.param)
+    legacy_vector <- is.null(demand.param$integrationPoints) &&
+      !is.null(supplied_points) && !is.matrix(supplied_points) &&
+      (demand.param$nDemog > 0L ||
+       length(demand.param$sigmaChar) > 0L)
+    if (legacy_vector) {
+      ## Master historically treated supplied vectors as price draws, with
+      ## independent demographic/characteristic draws generated once below.
+      legacy_spec <- demand.param
+      legacy_spec$nDemog <- 0L
+      legacy_spec$piDemog <- numeric(0)
+      legacy_spec$sigmaChar <- NULL
+      legacy_spec$pi <- NULL
+      integration_result <- .blp_integration(legacy_spec)
+      demand.param$legacyVectorIntegration <- TRUE
+    } else {
+      integration_result <- .blp_integration(demand.param)
+    }
     demand.param$consDraws <- integration_result$draws
+    demand.param$integrationPoints <- integration_result$integrationPoints
+    demand.param$factorOrder <- integration_result$factorOrder
+    demand.param$nodesPerAxis <- integration_result$nodesPerAxis
     demand.param$drawWeights <- integration_result$weights
     demand.param$integrationWeights <- integration_result$weights
     demand.param$integration <- integration_result$rule
     demand.param$nNodes <- if (identical(integration_result$rule, "gauss-hermite")) {
-      length(integration_result$draws)
+      integration_result$nodesPerAxis
     } else {
       NULL
     }
-    demand.param$nDraws <- length(integration_result$draws)
+    demand.param$nDraws <- length(integration_result$weights)
     if (demand.param$nDemog > 0) {
       if (!("demogMean" %in% names(demand.param))) {
         demand.param$demogMean <- rep(0, demand.param$nDemog)
@@ -799,6 +834,7 @@ shares = NULL,
   } else if (demand == "LogitNests") {
     result <- new(demand,
       prices = prices, shares = shares, margins = margins,
+      output = outputFlag,
       weights = sim_weights,
       mcDelta = mcDelta,
       subset = subset,
@@ -994,6 +1030,15 @@ shares = NULL,
     result@slopes <- demand.param
   }
 
+  signed_demand <- demand %in% c("Logit", "LogitNests", "LogitCap", "BLP")
+  if (identical(price_domain, "real") &&
+      !(signed_demand && !isTRUE(result@output))) {
+    stop("price_domain = 'real' supports input flat/nested/capacity Logit and BLP simulation only.")
+  }
+  if (methods::is(result, "LogitCap")) {
+    result@control.equ$price_domain <- price_domain
+  }
+
   ## Convert ownership vectors to ownership matrices before any calibration step
   result@ownerPre <- ownerToMatrix(result, TRUE)
   result@ownerPost <- ownerToMatrix(result, FALSE)
@@ -1028,6 +1073,9 @@ shares = NULL,
   } else {
     result@pricePost <- calcPrices(result, FALSE, ...)
   }
+  if (signed_demand && !isTRUE(result@output)) {
+    .antitrust_check_simulated_rates(result, price_domain)
+  }
 
   if (any(grepl("logit", demand, ignore.case = TRUE), na.rm = TRUE)) {
     result@mktSize <- insideSize / sum(calcShares(result))
@@ -1042,4 +1090,32 @@ shares = NULL,
 
 
   return(result)
+}
+
+.antitrust_check_simulated_rates <- function(result, price_domain) {
+  for (pre in c(TRUE, FALSE)) {
+    rates <- as.numeric(if (pre) result@pricePre else result@pricePost)
+    active <- if (pre) rep(TRUE, length(rates)) else result@subset
+    if (length(active) != length(rates) || anyNA(active) || !any(active)) {
+      stop("Input price-level simulation has an invalid active-product map.")
+    }
+    bad <- which(active & (!is.finite(rates) |
+      (identical(price_domain, "positive") & rates <= 0)))
+    if (!length(bad)) next
+    i <- bad[[1L]]
+    finite <- rates[active & is.finite(rates)]
+    category <- if (is.finite(rates[[i]]))
+      "positive_domain_violation" else "invalid_price_solution"
+    message <- if (identical(category, "positive_domain_violation"))
+      "Input equilibrium has a nonpositive rate; use price_domain = 'real' to retain signed rates."
+    else "Input equilibrium has a nonfinite active rate."
+    stop(structure(list(
+      message = message, call = NULL, category = category,
+      price_domain = price_domain,
+      minimum_rate = if (length(finite)) min(finite) else NA_real_,
+      minimum_product = as.character(result@labels[[i]]),
+      preMerger = pre),
+      class = c("antitrust_price_domain_error", "error", "condition")))
+  }
+  invisible(result)
 }
