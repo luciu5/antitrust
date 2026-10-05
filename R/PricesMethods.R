@@ -1055,21 +1055,43 @@ setMethod(
     priceStart <- priceStart[subset]
 
     if (!output) {
-      ## Input-market profit is (cost - rate) times quantity. Its level FOC
-      ## remains well defined when a candidate rate crosses zero; the
-      ## revenue-elasticity representation used for output BLP does not.
+      ## Input-market level FOCs remain defined when a candidate rate crosses
+      ## zero. Cournot chooses quantities, so its FOC uses inverse demand;
+      ## Bertrand chooses rates and uses the direct demand Jacobian.
       active_owner <- owner[subset, subset, drop = FALSE]
       active_mc <- mc[subset]
-      share_at <- function(active_prices) {
+      cournot_input <- methods::is(object, "CournotBLP")
+      model_at <- function(active_prices) {
         changed <- object
         candidate <- rep(NA_real_, nprods)
         candidate[subset] <- active_prices
         if (preMerger) changed@pricePre <- candidate
         else changed@pricePost <- candidate
-        as.numeric(calcShares(changed, preMerger,
+        changed
+      }
+      share_at <- function(active_prices) {
+        as.numeric(calcShares(model_at(active_prices), preMerger,
                               revenue = FALSE)[subset])
       }
       level_foc <- function(active_prices) {
+        if (cournot_input) {
+          changed <- model_at(active_prices)
+          shares <- as.numeric(calcShares(changed, preMerger,
+                                          revenue = FALSE)[subset])
+          derivative <- elast(changed, preMerger, partial = TRUE)[
+            subset, subset, drop = FALSE]
+          condition <- if (any(!is.finite(derivative))) {
+            NA_real_
+          } else {
+            rcond(derivative)
+          }
+          if (!is.finite(condition) || condition < 1e-12) {
+            stop("input Cournot BLP requires a locally invertible demand Jacobian")
+          }
+          inverse <- solve(derivative)
+          return((active_mc - active_prices) -
+                   as.vector((active_owner * t(inverse)) %*% shares))
+        }
         shares <- share_at(active_prices)
         derivative <- numDeriv::jacobian(share_at,
                                           as.numeric(active_prices))
@@ -1094,7 +1116,7 @@ setMethod(
         names(result) <- object@labels
         return(result)
       }
-      stop("'calcPrices' could not find an admissible input BLP equilibrium with a small level-FOC residual.")
+      stop("'calcPrices' could not find an admissible input BLP equilibrium with a small conduct-specific level-FOC residual.")
     }
 
     # 2 Define FOCs function (Unified for Root-Finding and Fixed-Point)

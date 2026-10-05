@@ -168,3 +168,37 @@ test_that("signed input BLP uses both quadrature factors in its FOCs", {
     (market@mcPost - market@pricePost))
   expect_lt(max(abs(foc)), 1e-6)
 })
+
+test_that("signed input Cournot BLP satisfies its inverse-demand FOCs", {
+  market <- suppressMessages(suppressWarnings(sim(
+    prices = c(.2, .1, .3), shares = c(.405, .315, .18),
+    supply = "cournot", demand = "BLP",
+    demand.param = list(alpha = .8, sigma = .05, piDemog = .04,
+      meanval = c(.5, .1, .2), demogMean = .4,
+      demogCov = matrix(.25, 1L, 1L),
+      integration = "gauss-hermite", nNodes = c(5L, 7L)),
+    ownerPre = c("A", "B", "C"), ownerPost = c("A", "A", "C"),
+    insideSize = 100, mcDelta = rep(-.2, 3), price_domain = "real"
+  )))
+  expect_equal(dim(market@slopes$integrationPoints), c(35L, 2L))
+  expect_equal(as.numeric(market@pricePre), c(.2, .1, .3),
+               tolerance = 1e-8)
+  expect_true(all(is.finite(market@pricePost)))
+  expect_true(any(market@pricePost < 0))
+
+  share_at <- function(prices) {
+    changed <- market
+    changed@pricePost <- prices
+    as.numeric(calcShares(changed, FALSE, revenue = FALSE))
+  }
+  prices <- as.numeric(market@pricePost)
+  shares <- share_at(prices)
+  derivative <- numDeriv::jacobian(share_at, prices)
+  owner <- unname(market@ownerPost)
+  cournot_foc <- as.numeric(market@mcPost) - prices -
+    as.vector((owner * t(solve(derivative))) %*% shares)
+  bertrand_foc <- shares - as.vector((t(derivative) * owner) %*%
+    (as.numeric(market@mcPost) - prices))
+  expect_lt(max(abs(cournot_foc)), 1e-6)
+  expect_gt(max(abs(bertrand_foc)), 1e-3)
+})
