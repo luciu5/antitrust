@@ -1,4 +1,5 @@
 name: antitrust QA
+run-name: ${{ github.event_name == 'workflow_dispatch' && format('certification-{0}', inputs.test_tier) || github.event_name }}
 
 on:
   push:
@@ -22,6 +23,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     env:
       ANTITRUST_TEST_TIER: fast
+      _R_CHECK_FORCE_SUGGESTS_: "false"
     strategy:
       fail-fast: false
       matrix:
@@ -51,7 +53,12 @@ jobs:
           r-version: ${{ matrix.r }}
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown, any::competitiontoolbox
+          # The core audit installs its explicit runtime/test stack. competitiontoolbox
+          # is an optional downstream package with its own dependency-stack workflow;
+          # it is not available from CRAN and is not needed by antitrust's tests.
+          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::MASS, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown
+          dependencies: '"hard"'
+          install-pandoc: false
       - name: Run formal synthetic QA
         run: Rscript ai/package_audit/run_qa.R . qa-output
       - name: Upload QA evidence
@@ -68,6 +75,7 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     env:
       ANTITRUST_TEST_TIER: fast
+      _R_CHECK_FORCE_SUGGESTS_: "false"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -89,14 +97,29 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.6.1'
+      - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-tinytex@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown, any::competitiontoolbox
+          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::MASS, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown
+          dependencies: '"hard"'
+          install-pandoc: false
       - name: Run reproducibility runner
         run: Rscript ai/package_audit/run_qa.R . qa-output
       - name: Build package
         run: R CMD build --no-manual --no-resave-data .
+      - name: Verify source archive excludes CI checkout data
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$(find . -maxdepth 1 -type f -name 'antitrust_*.tar.gz' -print -quit)"
+          test -n "$archive"
+          listing="${RUNNER_TEMP}/antitrust-source-archive-files.txt"
+          tar -tzf "$archive" > "$listing"
+          if grep -Eq '(^|/)(\.ci|\.github)(/|$)' "$listing"; then
+            echo "The antitrust source archive contains CI checkout data" >&2
+            exit 1
+          fi
       - name: Check package
         run: R CMD check --as-cran antitrust_*.tar.gz
       - name: Upload canonical evidence
@@ -114,6 +137,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANTITRUST_TEST_TIER: ${{ github.event_name == 'schedule' && 'nightly' || inputs.test_tier || 'extended' }}
+      _R_CHECK_FORCE_SUGGESTS_: "false"
     steps:
       - uses: actions/checkout@v4
       - name: Record source revision and test tier
@@ -134,14 +158,29 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           r-version: '4.6.1'
+      - uses: r-lib/actions/setup-pandoc@v2
       - uses: r-lib/actions/setup-tinytex@v2
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown, any::competitiontoolbox
+          packages: any::testthat, any::pkgload, any::BB, any::numDeriv, any::nleqslv, any::SQUAREM, any::MASS, any::ggplot2, any::knitr, any::bookdown, any::rmarkdown
+          dependencies: '"hard"'
+          install-pandoc: false
       - name: Run selected reproducibility runner
         run: Rscript ai/package_audit/run_qa.R . "qa-output-${ANTITRUST_TEST_TIER}"
       - name: Build package
         run: R CMD build --no-manual --no-resave-data .
+      - name: Verify source archive excludes CI checkout data
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$(find . -maxdepth 1 -type f -name 'antitrust_*.tar.gz' -print -quit)"
+          test -n "$archive"
+          listing="${RUNNER_TEMP}/antitrust-source-archive-files.txt"
+          tar -tzf "$archive" > "$listing"
+          if grep -Eq '(^|/)(\.ci|\.github)(/|$)' "$listing"; then
+            echo "The antitrust source archive contains CI checkout data" >&2
+            exit 1
+          fi
       - name: Check package with selected tier
         run: R CMD check --as-cran antitrust_*.tar.gz
       - name: Upload selected-tier evidence

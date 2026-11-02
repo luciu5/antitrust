@@ -237,6 +237,21 @@ def validate_candidate(
                 f"manifest candidate is {expected_dependency_sha}"
             )
 
+    ci_path = "ci/release-dependencies.json"
+    tracked_paths = set(git(repository, "ls-tree", "-r", "--name-only", expected_sha).splitlines())
+    if ci_path in tracked_paths:
+        try:
+            ci_pins = json.loads(git(repository, "show", f"{expected_sha}:{ci_path}"))
+        except json.JSONDecodeError as error:
+            raise ManifestError(f"{package} has malformed {ci_path}: {error}") from error
+        if not isinstance(ci_pins, dict) or not ci_pins:
+            raise ManifestError(f"{package} {ci_path} must contain dependency SHA mappings")
+        for dependency, ref in ci_pins.items():
+            if dependency not in PACKAGE_NAMES or dependency == package:
+                raise ManifestError(f"{package} {ci_path} has an invalid dependency: {dependency}")
+            if ref != all_candidates[dependency]["sha"]:
+                raise ManifestError(f"{package} {ci_path} does not match the frozen {dependency} SHA")
+
 
 def validate_manifest_not_in_core_commit(
     manifest_path: Path,

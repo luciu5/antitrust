@@ -26,4 +26,11 @@ ai/package_audit/*
 !ai/package_audit/generate_api_inventory.R
 !ai/package_audit/run_qa.R
 !ai/package_audit/warning_dispositions.csv
+!ai/package_audit/check_release_manifest.py
+!ai/package_audit/release-manifest.template.json
+!ai/package_audit/push_coordinated_release.py
+!ai/package_audit/test_push_coordinated_release.py
 ai/package_audit/latest/
+!ai/package_audit/release_workflows.py
+!ai/package_audit/test_release_workflows.py
+!ai/package_audit/check_release_workflows.py
