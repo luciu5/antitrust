@@ -4,4 +4,3 @@
 - Add reusable counterfactual paths and ownership-aware synthetic markets.
 - Correct signed input BLP equilibria, fractional ownership weights, rare-share convergence, and legacy heterogeneous draw reconstruction.
 - Price leadership and repeated-game models are provided by coordination; vertical bargaining is provided by vertical.
-
