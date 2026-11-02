@@ -1,8 +1,6 @@
 #' @title Bertrand Calibration and Merger Simulation With Logit, CES and AIDS Demand
 #' @name Bertrand-Functions
-#' @aliases Bertrand
-#' bertrand
-#' bertrand.alm
+#' @aliases Bertrand bertrand bertrand.alm
 #'
 #' @description Calibrates consumer demand using either a
 #' Logit, CES, or AIDS demand system and then simulates the

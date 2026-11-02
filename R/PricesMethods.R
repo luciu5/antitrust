@@ -1,19 +1,7 @@
 #' @title \dQuote{Calculating Prices} Methods
 #' @name Prices-Methods
 #' @docType methods
-#' @aliases calcPrices,ANY-method
-#' calcPrices,Auction2ndCap-method
-#' calcPrices,Cournot-method
-#' calcPrices,Linear-method
-#' calcPrices,Logit-method
-#' calcPrices,LogitBLP-method
-#' calcPrices,LogLin-method
-#' calcPrices,AIDS-method
-#' calcPrices,LogitCap-method
-#' calcPrices,Auction2ndLogit-method
-#' calcPrices,VertBargBertLogit-method
-#' calcPrices,VertBarg2ndLogit-method
-#' calcPrices
+#' @aliases calcPrices,ANY-method calcPrices,Auction2ndCap-method calcPrices,Cournot-method calcPrices,Linear-method calcPrices,Logit-method calcPrices,LogitBLP-method calcPrices,LogLin-method calcPrices,AIDS-method calcPrices,LogitCap-method calcPrices,Auction2ndLogit-method calcPrices,BargainingBLP-method calcPrices
 #' @param object An instance of the respective class (see description for the classes)
 #' @param  preMerger If TRUE, the pre-merger ownership structure is used. If FALSE, the post-merger ownership structure is used.
 #' Default is TRUE.
@@ -46,7 +34,8 @@
 #' that consumer demand is AIDS and firms play a differentiated product Bertrand Nash pricing game.
 #' It returns a length-k vector of NAs if the user did not supply prices.
 #'
-#' @include AuctionCapMethods.R VerticalClasses.R
+#' @include AuctionCapMethods.R
+#' @include BargainingClasses.R
 #' @keywords methods
 NULL
 setGeneric(
@@ -199,6 +188,82 @@ setMethod(
 )
 
 
+#' CES Cournot solves a positive-price interior equilibrium. If high
+#' product-level retention differences require a boundary quantity or
+#' endogenous product exit, the method reports that no valid interior root
+#' was found; callers can specify an explicit product subset.
+#' @rdname Prices-Methods
+#' @export
+setMethod(
+  f = "calcPrices",
+  signature = "CESCournot",
+  definition = function(object, preMerger = TRUE, isMax = FALSE, subset, ...) {
+    n <- length(object@shares)
+    if (missing(subset)) subset <- if (preMerger) rep(TRUE, n) else object@subset
+    if (!is.logical(subset) || length(subset) != n || !any(subset)) {
+      stop("'subset' must select at least one product.")
+    }
+    mc <- if (preMerger) object@mcPre else object@mcPost
+    if (any(!is.finite(mc[subset]))) {
+      stop("CES Cournot has non-finite effective costs.")
+    }
+    residual <- function(prices) {
+      if (length(prices) != sum(subset) || any(!is.finite(prices)) ||
+          any(prices <= 0)) return(rep(1e6, sum(subset)))
+      candidate <- rep(NA_real_, n)
+      candidate[subset] <- prices
+      trial <- object
+      if (preMerger) trial@pricePre <- candidate else trial@pricePost <- candidate
+      margin <- try(calcMargins(trial, preMerger, level = TRUE)[subset],
+                    silent = TRUE)
+      if (inherits(margin, "try-error") || any(!is.finite(margin))) {
+        return(rep(1e6, sum(subset)))
+      }
+      (prices - mc[subset] - margin) / pmax(prices, 1)
+    }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      start <- if (!preMerger && all(is.finite(object@pricePre[subset]))) {
+        object@pricePre[subset]
+      } else object@priceStart[subset]
+      start <- pmax(start, .Machine$double.eps^0.25)
+      foc <- function(z) {
+        if (any(!is.finite(z)) || any(z > 100)) {
+          return(rep(1e6, length(z)))
+        }
+        residual(exp(z))
+      }
+      maxit <- as.integer(object@control.equ$maxit)
+      if (length(maxit) != 1L || !is.finite(maxit) || maxit < 1L) maxit <- 300L
+      tol <- object@control.equ$tol
+      if (length(tol) != 1L || !is.finite(tol) || tol <= 0) tol <- 1e-10
+      solution <- try(nleqslv::nleqslv(log(start), foc,
+          control = list(ftol = tol, maxit = maxit)), silent = TRUE)
+      z <- if (inherits(solution, "try-error")) log(start) else solution$x
+      if (any(!is.finite(foc(z))) || max(abs(foc(z))) > 1e-8) {
+        alternative <- try(BB::BBsolve(z, foc,
+            control = list(tol = tol, maxit = maxit), quiet = TRUE),
+            silent = TRUE)
+        if (!inherits(alternative, "try-error") &&
+            all(is.finite(alternative$par)) &&
+            max(abs(foc(alternative$par))) < max(abs(foc(z)))) {
+          z <- alternative$par
+        }
+      }
+      prices <- rep(NA_real_, n)
+      prices[subset] <- exp(z)
+    } else {
+      prices <- callNextMethod(object, preMerger = preMerger,
+                              isMax = isMax, subset = subset, ...)
+    }
+    if (any(!is.finite(prices[subset])) || any(prices[subset] <= 0) ||
+        max(abs(residual(prices[subset]))) > 1e-7) {
+      stop("CES Cournot failed to find a valid positive interior equilibrium; a boundary or product-exit solution may be required.")
+    }
+    names(prices) <- object@labels
+    prices
+  }
+)
+
 #' @rdname Prices-Methods
 #' @export
 setMethod(
@@ -344,6 +409,8 @@ setMethod(
       priceStart <- priceStart[subset]
       capacities <- capacities[subset]
     }
+    owner <- .retention_owner_bertrand(owner,
+                                      getRetention(object, preMerger)[subset])
     priceEst <- rep(NA, nprods)
     ## Define system of FOC as a function of prices
     FOC <- function(priceCand) {
@@ -361,7 +428,7 @@ setMethod(
                                revenue = TRUE)[subset]
         elasticities <- elast(object, preMerger)[subset, subset]
         thisFOC <- revenues * diag(owner) +
-          as.vector(t(elasticities * owner) %*% (margins * revenues))
+          as.vector((t(elasticities) * owner) %*% (margins * revenues))
       } else {
         shares <- calcShares(object, preMerger = preMerger,
                              revenue = FALSE)[subset]
@@ -371,11 +438,14 @@ setMethod(
           as.vector((t(demand_jacobian) * owner) %*% (mc - priceCand))
       }
       constraint <- ifelse(is.finite(capacities), (quantities - capacities) / object@insideSize, 0)
-      ## Fischer-Burmeister complementarity residual.  The previous exact-zero
-      ## branch returned `thisFOC`, which incorrectly required the unconstrained
-      ## FOC to vanish at a binding capacity.  At capacity, KKT permits a
-      ## non-zero (negative) FOC supported by the capacity multiplier.
-      measure <- thisFOC + constraint + sqrt(thisFOC^2 + constraint^2)
+      ## Fischer-Burmeister complementarity residual for finite capacities.
+      ## A positive infinite capacity is the unconstrained-product sentinel,
+      ## so those products must retain the ordinary FOC rather than a
+      ## complementarity residual with a zero placeholder constraint.
+      finite_capacity <- is.finite(capacities)
+      complementarity <- thisFOC + constraint +
+        sqrt(thisFOC^2 + constraint^2)
+      measure <- ifelse(finite_capacity, complementarity, thisFOC)
       return(measure)
     }
     ## Find price changes that set FOCs equal to 0
@@ -458,6 +528,8 @@ setMethod(
     if (!is.logical(subset) || length(subset) != nprods) {
       stop("'subset' must be a logical vector the same length as 'quantities'")
     }
+    owner <- .retention_owner_bertrand(owner,
+                                      getRetention(object, preMerger))
 
     ## First try the closed-form Bertrand FOC solution for linear demand.
     analytic <- try(
@@ -541,6 +613,8 @@ setMethod(
     if (!is.logical(subset) || length(subset) != nprods) {
       stop("'subset' must be a logical vector the same length as 'quantities'")
     }
+    owner <- .retention_owner_bertrand(owner,
+                                      getRetention(object, preMerger))
     if (!preMerger) {
       cand <- object@pricePre
       if (length(cand) == nprods && all(is.finite(cand))) priceStart <- cand
@@ -652,7 +726,10 @@ setMethod(
       owner <- owner[subset, subset]
       mc <- mc[subset]
       priceStart <- priceStart[subset]
+      barg <- barg[subset]
     }
+    owner <- .retention_owner_bargaining_logit(owner,
+        getRetention(object, preMerger)[subset])
 
     priceEst <- rep(NA, nprods)
 
@@ -737,298 +814,6 @@ setMethod(
     return(priceEst)
   }
 )
-#' @rdname Prices-Methods
-#' @export
-setMethod(
-  f = "calcPrices",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE, ...) {
-    up <- object@up
-    down <- object@down
-
-    chain_level <- object@chain_level
-
-    upPricePre <- up@prices
-    downPricePre <- down@prices
-
-    # isHorizontal <- object@isHorizontal
-
-
-    subsetDown <- down@subset
-    alpha <- down@slopes$alpha
-    meanval <- down@slopes$meanval[subsetDown]
-
-    priceStartUp <- up@priceStart
-    priceStartDown <- down@priceStart
-
-    if (chain_level == "full") {
-      priceStart <- c(priceStartUp[subsetDown], priceStartDown[subsetDown])
-    } else if (chain_level == "retailer") {
-      priceStart <- priceStartDown[subsetDown]
-    } else if (chain_level == "wholesaler") {
-      priceStart <- priceStartUp[subsetDown]
-    }
-
-
-    nprods <- length(meanval)
-
-    ownerUp <- ownerToMatrix(up, preMerger = preMerger)[subsetDown, subsetDown]
-    ownerDown <- ownerToMatrix(down, preMerger = preMerger)[subsetDown, subsetDown]
-
-    if (preMerger) {
-      # ownerUp <- up@ownerPre[subsetDown,subsetDown]
-      # ownerDown <- down@ownerPre[subsetDown,subsetDown]
-      up@ownerPre <- ownerUp
-      down@ownerPre <- ownerDown
-      bargparm <- up@bargpowerPre[subsetDown]
-      mcUp <- up@mcPre[subsetDown]
-      mcDown <- down@mcPre[subsetDown]
-      # ownerVDown <- object@ownerDownPre[subsetDown,subsetDown]
-      # ownerDownLambda <- object@ownerDownLambdaPre[subsetDown,subsetDown]
-      # ownerUpLambda <- object@ownerUpLambdaPre[subsetDown,subsetDown]
-    } else {
-      # ownerUp <- up@ownerPost[subsetDown,subsetDown]
-      # ownerDown <- down@ownerPost[subsetDown,subsetDown]
-      up@ownerPost <- ownerUp
-      down@ownerPost <- ownerDown
-      bargparm <- up@bargpowerPost[subsetDown]
-      mcUp <- up@mcPost[subsetDown]
-      mcDown <- down@mcPost[subsetDown]
-      # ownerVDown <- object@ownerDownPost[subsetDown,subsetDown]
-      # ownerDownLambda <- object@ownerDownLambdaPost[subsetDown,subsetDown]
-      # ownerUpLambda <- object@ownerUpLambdaPost[subsetDown,subsetDown]
-    }
-
-
-    FOC <- function(priceCand) {
-      thisobj <- object
-
-
-      if (chain_level == "full") {
-        priceCandUp <- rep(NA, 1, nprods)[subsetDown]
-        priceCandUp <- priceCand[1:length(priceCandUp)]
-        priceCandDown <- priceCand[-(1:length(priceCandUp))]
-      } else if (chain_level == "retailer") {
-        priceCandUp <- up@prices[subsetDown]
-        priceCandDown <- priceCand
-      } else if (chain_level == "wholesaler") {
-        priceCandDown <- down@prices[subsetDown]
-        priceCandUp <- priceCand
-      }
-
-
-      if (preMerger) {
-        up@pricePre <- priceCandUp
-        down@pricePre <- priceCandDown
-      } else {
-        up@pricePost <- priceCandUp
-        down@pricePost <- priceCandDown
-      }
-
-      thisobj@up <- up
-      thisobj@down <- down
-      # shareCandDown  <- calcShares(down, preMerger=preMerger,revenue=FALSE)
-      #
-      #
-      # elast <-  -alpha*tcrossprod(shareCandDown)
-      # diag(elast) <- alpha*shareCandDown + diag(elast)
-      # elast.inv <- try(solve(ownerDown * elast),silent=TRUE)
-      # if(any(class(elast.inv) == "try-error")){elast.inv <- MASS::ginv(ownerDown * elast)}
-      # marginsDownCand <- -as.vector(elast.inv %*% shareCandDown)
-      #
-      #
-      # div <- tcrossprod(1/(1-shareCandDown),shareCandDown)*shareCandDown
-      # diag(div) <- -shareCandDown
-      # div <- as.vector(div)
-      #
-      # #if(!isHorizontal){
-      #   marginsDownCand <-  marginsDownCand - elast.inv %*% ( (ownerVDown * elast) %*% (priceCandUp-mcUp) )
-      #
-      # #}
-      # marginsUpCand <- as.vector(solve(ownerUpLambda * div) %*% (ownerDownLambda * div) %*% marginsDownCand)
-      #
-
-      theseMargins <- calcMargins(thisobj, preMerger = preMerger, level = TRUE)
-
-      upFOC <- priceCandUp - mcUp - theseMargins$up
-      downFOC <- priceCandDown - priceCandUp - mcDown - theseMargins$down
-
-
-      thisFOC <- c(upFOC, downFOC)
-
-      if (chain_level == "full") {
-        thisFOC <- c(upFOC, downFOC)
-      } else if (chain_level == "retailer") {
-        thisFOC <- downFOC
-      } else if (chain_level == "wholesaler") {
-        thisFOC <- upFOC
-      }
-
-      return(thisFOC)
-    }
-
-
-    ## Try nleqslv first, fallback to BBsolve
-    nleqslv_maxit <- as.integer(down@control.equ$maxit)
-    if (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
-    minResult <- nleqslv::nleqslv(priceStart, FOC,
-      method = "Broyden",
-      control = list(
-        ftol = down@control.equ$tol,
-        maxit = nleqslv_maxit
-      )
-    )
-
-    if (minResult$termcd > 2) {
-      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = down@control.equ, ...)
-      priceResult <- minResult$par
-      if (minResult$convergence != 0) {
-        warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '", minResult$message, "'")
-      }
-    } else {
-      priceResult <- minResult$x
-      if (minResult$termcd > 1) {
-        warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ", minResult$termcd)
-      }
-    }
-
-    minResultUp <- rep(NA, length(priceStartUp))
-    minResultDown <- rep(NA, length(priceStartDown))
-
-
-    if (chain_level == "full") {
-      minResultUp[subsetDown] <- priceResult[1:length(priceStartUp[subsetDown])]
-      minResultDown[subsetDown] <- priceResult[-(1:length(priceStartUp[subsetDown]))]
-    } else if (chain_level == "retailer") {
-      minResultUp[subsetDown] <- upPricePre[subsetDown]
-      minResultDown[subsetDown] <- priceResult
-    } else if (chain_level == "wholesaler") {
-      minResultUp[subsetDown] <- priceResult
-      minResultDown[subsetDown] <- downPricePre[subsetDown]
-    }
-
-
-    return(list(up = minResultUp, down = minResultDown))
-  }
-)
-#' @rdname Prices-Methods
-#' @export
-setMethod(
-  f = "calcPrices",
-  signature = "VertBarg2ndLogit",
-  definition = function(object, preMerger = TRUE, ...) {
-    up <- object@up
-    down <- object@down
-
-    alpha <- down@slopes$alpha
-    meanval <- down@slopes$meanval
-
-
-    subsetDown <- down@subset
-
-
-    priceStartUp <- up@priceStart
-    priceStartDown <- down@priceStart
-    priceStart <- c(priceStartUp[subsetDown], priceStartDown[subsetDown])
-
-
-    nprods <- length(priceStartDown)
-
-
-    ownerDown <- ownerToMatrix(down, preMerger = preMerger)[subsetDown, subsetDown]
-
-    priceOutside <- down@priceOutside
-
-    if (preMerger) {
-      bargparm <- up@bargpowerPre[subsetDown]
-      down@ownerPre <- ownerDown
-      mcUp <- up@mcPre[subsetDown]
-      mcDown <- down@mcPre[subsetDown]
-      ownerDownLambda <- object@ownerDownLambdaPre[subsetDown, subsetDown]
-      ownerUpLambda <- object@ownerUpLambdaPre[subsetDown, subsetDown]
-    } else {
-      down@ownerPost <- ownerDown
-      bargparm <- up@bargpowerPost[subsetDown]
-      mcUp <- up@mcPost[subsetDown]
-      mcDown <- down@mcPost[subsetDown]
-      ownerDownLambda <- object@ownerDownLambdaPost[subsetDown, subsetDown]
-      ownerUpLambda <- object@ownerUpLambdaPost[subsetDown, subsetDown]
-    }
-
-
-    FOC <- function(priceCand) {
-      priceCandUp <- rep(NA, 1, nprods)[subsetDown]
-      priceCandUp <- priceCand[1:length(priceCandUp)]
-      priceCandDown <- priceCand[-(1:length(priceCandUp))]
-
-
-      down@slopes$meanval <- meanval + alpha * (priceCandUp - priceOutside)
-
-      shareCandDown <- calcShares(down, preMerger = preMerger, revenue = FALSE)
-      marginsDownCand <- calcMargins(down, preMerger = preMerger, level = TRUE)
-
-
-      div <- tcrossprod(1 / (1 - shareCandDown), shareCandDown) * shareCandDown
-      diag(div) <- -shareCandDown
-      div <- as.vector(div)
-
-      # marginsUpCand <- as.vector(solve(ownerUpLambda * div) %*% ((ownerDownLambda * div) %*% marginsDownCand))
-
-
-      upFOC <- (ownerUpLambda * div) %*% (priceCandUp - mcUp) - ((ownerDownLambda * div) %*% marginsDownCand)
-
-      downFOC <- priceCandDown - priceCandUp - mcDown - marginsDownCand
-
-
-      thisFOC <- c(
-        downFOC,
-        as.vector(upFOC)
-      )
-
-      return(thisFOC)
-    }
-
-
-    ## Try nleqslv first, fallback to BBsolve
-    nleqslv_maxit <- as.integer(down@control.equ$maxit)
-    if (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
-    minResult <- nleqslv::nleqslv(priceStart, FOC,
-      method = "Broyden",
-      control = list(
-        ftol = down@control.equ$tol,
-        maxit = nleqslv_maxit
-      )
-    )
-
-    if (minResult$termcd > 2) {
-      minResult <- BB::BBsolve(priceStart, FOC, quiet = TRUE, control = down@control.equ, ...)
-      priceResult <- minResult$par
-      if (minResult$convergence != 0) {
-        warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '", minResult$message, "'")
-      }
-    } else {
-      priceResult <- minResult$x
-      if (minResult$termcd > 1) {
-        warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ", minResult$termcd)
-      }
-    }
-
-    minResultUp <- rep(NA, length(priceStartUp))
-    minResultDown <- rep(NA, length(priceStartDown))
-
-
-    minResultUp[subsetDown] <- priceResult[1:length(priceStartUp[subsetDown])]
-    minResultDown[subsetDown] <- priceResult[-(1:length(priceStartUp[subsetDown]))]
-
-    down@slopes$meanval <- meanval + alpha * (minResultUp - priceOutside)
-
-    # marginsDown <- calcMargins(down, preMerger=preMerger,level=TRUE)
-
-    # minResultDown <- marginsDown  + minResultUp + mcDown
-
-    return(list(up = minResultUp, down = minResultDown))
-  }
-)
 
 #' @rdname Prices-Methods
 #' @export
@@ -1054,11 +839,12 @@ setMethod(
 
     priceStart <- priceStart[subset]
 
-    if (!output) {
+    if (!output && class(object)[[1L]] %in% c("LogitBLP", "CournotBLP")) {
       ## Input-market level FOCs remain defined when a candidate rate crosses
       ## zero. Cournot chooses quantities, so its FOC uses inverse demand;
       ## Bertrand chooses rates and uses the direct demand Jacobian.
-      active_owner <- owner[subset, subset, drop = FALSE]
+      active_owner <- .retention_owner_bertrand(
+        owner[subset, subset, drop = FALSE], getRetention(object, preMerger)[subset])
       active_mc <- mc[subset]
       cournot_input <- methods::is(object, "CournotBLP")
       model_at <- function(active_prices) {
@@ -1095,8 +881,11 @@ setMethod(
         shares <- share_at(active_prices)
         derivative <- numDeriv::jacobian(share_at,
                                           as.numeric(active_prices))
-        shares - as.vector((t(derivative) * active_owner) %*%
-                             (active_mc - active_prices))
+        # Normalize by own share so tiny-market tail candidates cannot
+        # satisfy an absolute residual while violating the pricing condition.
+        (shares * diag(active_owner) - as.vector((t(derivative) * active_owner) %*%
+                             (active_mc - active_prices))) /
+          pmax(shares, .Machine$double.xmin)
       }
       maxit <- as.integer(object@control.equ$maxit)
       if (!length(maxit) || is.na(maxit) || maxit < 1L) maxit <- 150L
@@ -1110,7 +899,7 @@ setMethod(
         residual <- tryCatch(max(abs(level_foc(solved$x))),
                              error = function(e) Inf)
         if (!is.finite(residual) || residual > 1e-6 ||
-            any(share_at(solved$x) < 1e-10)) next
+            any(share_at(solved$x) <= 0)) next
         result <- rep(NA_real_, nprods)
         result[subset] <- solved$x
         names(result) <- object@labels

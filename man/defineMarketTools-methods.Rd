@@ -6,7 +6,6 @@
 \alias{HypoMonTest}
 \alias{HypoMonTest,ANY-method}
 \alias{HypoMonTest,Bertrand-method}
-\alias{HypoMonTest,VertBargBertLogit-method}
 \alias{calcPricesHypoMon}
 \alias{calcPricesHypoMon,ANY-method}
 \alias{calcPricesHypoMon,AIDS-method}

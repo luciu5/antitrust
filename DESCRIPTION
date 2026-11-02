@@ -1,8 +1,8 @@
 Package: antitrust
 Type: Package
 Title: Tools for Antitrust Practitioners
-Version: 0.99.35
-Date: 2026-08-30
+Version: 0.99.43
+Date: 2026-11-01
 Authors@R: c(person("Charles", "Taragin", email = "ctaragin+antitrustr@gmail.com",
                   role = c("aut", "cre")),
              person("Michael", "Sandfort",
@@ -24,10 +24,8 @@ Collate:
     'AntitrustClasses.R'
     'BertrandClasses.R'
     'BertrandRUMClasses.R'
-    'PriceLeadershipClasses.R'
     'AuctionClasses.R'
     'BargainingClasses.R'
-    'VerticalClasses.R'
     'CournotClasses.R'
     'OwnershipMethods.R'
     'SummaryMethods.R'
@@ -36,7 +34,6 @@ Collate:
     'PricesMethods.R'
     'CostMethods.R'
     'MarginsMethods.R'
-    'BLPIntegration.R'
     'ParamsMethods.R'
     'PriceDeltaMethods.R'
     'PSMethods.R'
@@ -56,20 +53,39 @@ Collate:
     'AntitrustPackage.R'
     'Auction2ndCapFunctions.R'
     'Auction2ndLogitFunctions.R'
+    'BLPCalibration.R'
+    'BLPIntegration.R'
+    'BLPMeanval.R'
     'BargainingCESFunctions.R'
     'BargainingLogitFunctions.R'
     'BertrandFunctions.R'
     'CESFunctions.R'
     'CMCRBertrandFunctions.R'
     'CMCRCournotFunctions.R'
+    'Counterfactual.R'
+    'CounterfactualPath.R'
+    'CounterfactualPromotion.R'
     'CournotFunctions.R'
     'HHIFunctions.R'
     'LinearFunctions.R'
+    'LogitCournotClasses.R'
     'LogitFunctions.R'
-    'PriceLeadershipFunctions.R'
+    'ModelArchitecture.R'
+    'ModelRegistry.R'
+    'ModelTranslations.R'
+    'MonComClasses.R'
+    'MonComFunctions.R'
+    'MonComMethods.R'
+    'Retention.R'
     'SimFunctions.R'
-    'VerticalFunctions.R'
+    'StructuralFitMethods.R'
+    'SyntheticMarket.R'
+    'SyntheticMarketAdapter.R'
+    'SyntheticMarketClass.R'
+    'SyntheticMarketDesign.R'
     'antitrust-deprecated.R'
+    'realize_market.R'
 Config/roxygen2/version: 8.0.0
 Config/testthat/edition: 3
 Config/antitrust/qa-canonical-r: 4.6.1
+RoxygenNote: 7.3.2

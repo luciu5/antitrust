@@ -14,8 +14,9 @@
 \alias{elast,Logit-method}
 \alias{elast,LogitNests-method}
 \alias{elast,Cournot-method}
-\alias{elast,VertBargBertLogit-method}
 \alias{elast,LogitBLP-method}
+\alias{elast,Auction2ndBLP-method}
+\alias{elast,BargainingBLP-method}
 \title{Methods For Calculating Own and Cross-Price Elasticities}
 \usage{
 \S4method{elast}{Cournot}(object, preMerger = TRUE, market = FALSE)
@@ -35,8 +36,6 @@
 \S4method{elast}{CES}(object, preMerger = TRUE, market = FALSE)
 
 \S4method{elast}{CESNests}(object, preMerger = TRUE, market = FALSE)
-
-\S4method{elast}{VertBargBertLogit}(object, preMerger = TRUE, market = FALSE)
 }
 \arguments{
 \item{object}{An instance of one of the classes listed above.}

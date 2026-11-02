@@ -9,7 +9,8 @@ sim(
   prices,
   shares = NULL,
   margins = NULL,
-  supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+  supply = c("bertrand", "moncom", "cournot", "auction2nd", "bargaining",
+    "bargaining2nd"),
   demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests",
     "LogitCap", "BLP", "LogitBLP", "CournotBLP"),
   demand.param,
@@ -39,14 +40,12 @@ calibrate costs from observed margins. Ignored for \sQuote{BLP} demand, where ma
 recovered from observed prices and the estimated demand system.}
 
 \item{supply}{A character string indicating how firms compete with one another. Valid
-values are "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
+values are "moncom" (differentiated-product monopolistic competition), "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
 (2nd score auction), "bargaining", or "bargaining2nd".}
 
-\item{demand}{A character string indicating the type of demand system
-to be used in the merger simulation. Supported demand systems are
-linear (\sQuote{Linear}), log-linear(\sQuote{LogLin}), logit (\sQuote{Logit}), nested logit
-(\sQuote{LogitNests}), ces (\sQuote{CES}), nested CES (\sQuote{CESNests}) and capacity
-constrained Logit (\sQuote{LogitCap}).}
+\item{demand}{A demand-system name for a complete supplied-parameter
+implementation. See \code{\link{supportedModels}} for the current
+demand/conduct combinations and their \code{specify} support.}
 
 \item{demand.param}{See Below.}
 
@@ -98,11 +97,9 @@ Ignored if \sQuote{supply} not equal to "bargaining" or "bargaining2nd".}
 \item{labels}{A k-length vector of labels. Default is \dQuote{Prod#}, where
 \sQuote{#} is a number between 1 and the length of \sQuote{prices}.}
 
-\item{price_domain}{Domain for simulated input rates. The default
-\code{"positive"} requires positive rates; \code{"real"} permits zero
-or negative post-merger rates for input Logit, nested Logit, capacity
-Logit, and BLP. Supplied baseline rates remain subject to constructor
-validity checks.}
+\item{price_domain}{Input price-level simulation domain. The default
+requires positive rates; \code{"real"} permits negative or zero rates for
+flat/nested/capacity Logit and BLP demand.}
 
 \item{...}{Additional options to feed to the
 optimizer used to solve for equilibrium prices.}
@@ -112,8 +109,8 @@ optimizer used to solve for equilibrium prices.}
 \sQuote{demand} argument.
 }
 \description{
-Simulates the price effects of a merger between two firms
-with user-supplied demand parameters under the
+A compatibility and convenience constructor that simulates a
+merger with user-supplied demand parameters under the
 assumption that all firms in the market are playing either a
 differentiated products Bertrand pricing game, Cournot quantity game,
 2nd price (score) auction, or bargaining game.
@@ -121,9 +118,25 @@ differentiated products Bertrand pricing game, Cournot quantity game,
 Let k denote the number of products produced by all firms below.
 }
 \details{
+For a reusable structural fit, prefer \code{\link{specify}}
+followed by \code{\link{counterfactual}} and \code{\link{simulate}}.
+The supported combinations are complete implementations recorded by
+\code{\link{supportedModels}}, not arbitrary demand-conduct pairings.
+
 Using user-supplied demand parameters,
 \code{sim} simulates the effects of a merger in a market where
 firms are playing a differentiated products pricing game.
+Under \sQuote{supply = "moncom"}, each product uses its own demand
+response and does not internalize strategic cross-product effects. Pure
+ownership changes therefore have no strategic price effect, while cost,
+demand, and product-set changes remain model-specific counterfactuals.
+For flat CES, the direct perceived own elasticity is `-gamma`, not the
+full share-adjusted diagonal returned by `elast()`. For BLP, the direct
+perceived derivative is integrated over the existing consumer draws as
+`sum_r w_r * alpha_r * s_jr`. Nested Logit/CES, Linear, LogLinear, AIDS,
+and PCAIDS remain rejected because their package-specific nest,
+expenditure, or quantity-game objects do not yet have a complete validated
+MonCom lifecycle.
 
 The \sQuote{supply} parameter determines the type of competition.
 When \sQuote{supply} equals \sQuote{cournot}, firms compete on quantities
@@ -178,29 +191,23 @@ If \sQuote{demand} equals \sQuote{BLP}, then
   for demographic variables. Default is identity matrix (unit variance, independent).
   Should match the variance structure of demographics in your data. For a single
   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
-  \item{integration}{Optional integration rule: \code{"auto"},
+  \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 5000.}
+  \item{integration}{Integration rule: \code{"auto"},
   \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
-  Automatic integration uses Gauss-Hermite nodes for up to two active
-  Gaussian factors and Monte Carlo for higher-dimensional specifications.}
-  \item{nNodes}{Optional Gauss-Hermite nodes per axis: 31 by default in one
-  dimension and 15 by 15 in two dimensions. A length-two vector sets
-  different counts for the two axes.}
-  \item{nDraws}{Number of Monte Carlo draws. It selects
-  \code{integration = "monte-carlo"} when no integration rule is supplied,
-  preserving legacy BLP calls; it is not a quadrature-node count.}
-  \item{consDraws or draws}{Optional supplied vector of standardized BLP
-  price draws. With additional heterogeneous factors, legacy vector calls
-  draw those factors independently; use \code{integrationPoints} to specify
-  one joint point per row.}
-  \item{integrationPoints}{Optional numeric matrix of joint standardized
-  BLP points, one active factor per column.}
-  \item{integrationWeights}{Optional non-negative weights for supplied
-  integration points; normalized internally to sum to one.}
+  Automatic integration uses Gauss-Hermite for at most two active Gaussian
+  factors and Monte Carlo otherwise.}
+  \item{nNodes}{Gauss-Hermite nodes per axis: 31 by default in one
+  dimension and 15 by 15 in two dimensions.}
+  \item{integrationPoints}{Optional numeric matrix of supplied standardized
+  points for two-dimensional integration, one point per row.}
   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
   \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}
   \item{pi}{Optional: nDemog x L matrix of demographic interactions with characteristics.}
 }
+Two-dimensional BLP integration is available for Bertrand, Cournot, and
+MonCom supply. BLP auction and bargaining currently accept price
+random-coefficient heterogeneity only.
 
 Note: The \sQuote{shares} argument is only used with \sQuote{BLP} demand.
 If supplied for any other demand system, a warning will be issued but the function will proceed
@@ -228,127 +235,13 @@ must be supplied for products that are exactly at capacity because their
 marginal costs are not identified by an unconstrained first-order condition.
 }
 \examples{
-## Calibration and simulation results from a merger between Budweiser and
-## Old Style. Note that the in the following model there is no outside
-## good; BUD's mean value has been normalized to zero.
-
-## Source: Epstein/Rubenfeld 2004, pg 80
-
-
-prodNames <- c("BUD", "OLD STYLE", "MILLER", "MILLER-LITE", "OTHER-LITE", "OTHER-REG")
-ownerPre <- c("BUD", "OLD STYLE", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
-ownerPost <- c("BUD", "BUD", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
-nests <- c("Reg", "Reg", "Reg", "Light", "Light", "Reg")
-
-price <- c(.0441, .0328, .0409, .0396, .0387, .0497)
-
-demand.param <- list(
-  alpha = -48.0457,
-  meanval = c(0, 0.4149233, 1.1899885, 0.8252482, 0.1460183, 1.4865730)
-)
-
-sim.logit <- sim(price,
-  supply = "bertrand", demand = "Logit", demand.param = demand.param,
-  ownerPre = ownerPre, ownerPost = ownerPost
-)
-
-
-print(sim.logit) # return predicted price change
-summary(sim.logit) # summarize merger simulation
-
-elast(sim.logit, TRUE) # returns premerger elasticities
-elast(sim.logit, FALSE) # returns postmerger elasticities
-
-diversion(sim.logit, TRUE) # return premerger diversion ratios
-diversion(sim.logit, FALSE) # return postmerger diversion ratios
-
-
-cmcr(sim.logit) # calculate compensating marginal cost reduction
-upp(sim.logit) # calculate Upwards Pricing Pressure Index
-
-CV(sim.logit) # calculate representative agent compensating variation
-
-\dontrun{
-## Philadelphia National Bank Example: Comparing Four Model Types
-## Demonstrates Logit, Cournot, LogitBLP, and CournotBLP
-
-# Philadelphia National Bank data (38 products)
-prices <- c(
-  2.46, 2.21, 2.4, 2.29, 2.05, 2.45, 1.13, 2.39, 2.66, 2.73,
-  1.83, 1.84, 2.76, 2.46, 1.1, 2.53, 2.27, 2.31, 2.72, 1.96, 2.26,
-  2.63, 2.07, 2.31, 1.33, 2.67, 2.68, 2.59, 2.62, 1.85, 2.63, 1.51,
-  1.8, 2.66, 1.4, 2.39, 2.35, 1.82
-)
-
-shares <- c(
-  0.12499, 0.11462, 0.07748, 0.05231, 0.05168, 0.02918, 0.01622,
-  0.01245, 0.00992, 0.00578, 0.00461, 0.00417, 0.00415, 0.00275,
-  0.00271, 0.00214, 0.00206, 0.00184, 0.00176, 0.00155, 0.00151,
-  0.00146, 0.00146, 0.00103, 0.00101, 0.00095, 8e-04, 0.00066,
-  0.00062, 0.00061, 0.00057, 0.00053, 0.00053, 5e-04, 0.00049,
-  0.00048, 0.00041, 0.00039
-)
-
-ownerPre <- diag(38)
-ownerPost <- diag(38)
-ownerPost[2, 3] <- 1 # Products 2 and 3 merge
-ownerPost[3, 2] <- 1
-
-insideSize <- 4773473000
-
-# Logit parameters (from calibrated model)
-logit_params <- list(
-  alpha = 0.4296,
-  meanval = c(
-    -2.265, -2.206, -2.671, -2.972, -2.855, -3.596, -3.494, -4.344,
-    -4.709, -5.253, -4.966, -5.059, -5.572, -5.773, -5.128, -6.043,
-    -5.933, -6.057, -6.339, -6.027, -6.215, -6.46, -6.146, -6.597,
-    -6.131, -6.871, -7.035, -7.169, -7.237, -6.833, -7.318, -6.804,
-    -6.939, -7.457, -6.819, -7.328, -7.473, -7.227
-  )
-)
-
-# BLP parameters
-blp_params <- list(
-  alpha = 1.0,
-  sigma = 0.3,
-  sigmaNest = 0.9,
-  integration = "monte-carlo",
-  nDraws = 200
-)
-
-# MODEL 1: Logit (Bertrand)
-result_logit <- sim(prices,
-  supply = "bertrand", demand = "Logit",
-  demand.param = logit_params, ownerPre = ownerPre,
-  ownerPost = ownerPost, insideSize = insideSize
-)
-summary(result_logit)
-
-# MODEL 2: Logit (Cournot)
-result_cournot <- sim(prices,
-  supply = "cournot", demand = "Logit",
-  demand.param = logit_params, ownerPre = ownerPre,
-  ownerPost = ownerPost, insideSize = insideSize
-)
-summary(result_cournot)
-
-# MODEL 3: LogitBLP (Bertrand with random coefficients)
-result_logitblp <- sim(prices, shares,
-  supply = "bertrand", demand = "BLP",
-  demand.param = blp_params, ownerPre = ownerPre,
-  ownerPost = ownerPost, insideSize = insideSize
-)
-summary(result_logitblp)
-
-# MODEL 4: CournotBLP (Cournot with random coefficients)
-result_cournotblp <- sim(prices, shares,
-  supply = "cournot", demand = "BLP",
-  demand.param = blp_params, ownerPre = ownerPre,
-  ownerPost = ownerPost, insideSize = insideSize
-)
-summary(result_cournotblp)
-}
+## sim() is a supported convenience interface for supplied parameters.
+## Use specify() and simulate() for a reusable fit.
+result <- sim(c(2, 2.2, 2.5), supply = "bertrand", demand = "Logit",
+  demand.param = list(alpha = -2, meanval = c(.6, .4, .2)),
+  ownerPre = c("A", "B", "C"), ownerPost = c("A", "A", "C"),
+  insideSize = 100)
+result@pricePost
 
 }
 \seealso{

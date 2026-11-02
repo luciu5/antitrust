@@ -1,15 +1,12 @@
-#' @importFrom stats constrOptim integrate model.matrix optim optimize quantile rnorm runif weighted.mean
-#' @importFrom methods .hasSlot callNextMethod new selectMethod show
+#' @importFrom stats constrOptim integrate median model.matrix optim optimize pnorm quantile rnorm runif weighted.mean
+#' @importFrom methods .hasSlot callNextMethod new selectMethod show validObject
 #' @importFrom BB BBoptim BBsolve
 #' @importFrom numDeriv genD
 #' @importFrom nleqslv nleqslv
 #' @importFrom SQUAREM squarem
 #' @title \dQuote{Antitrust} Classes
 #' @name Antitrust-Class
-#' @aliases Antitrust-class
-#' matrixOrList-class
-#' matrixOrVector-class
-#' characterOrList-class
+#' @aliases Antitrust-class matrixOrList-class matrixOrVector-class characterOrList-class
 #' @description The \dQuote{Antitrust} class is a building block used to create other classes
 #' in this package. As such, it is most likely to be useful for developers
 #' who wish to code their own calibration/simulation routines.
@@ -35,6 +32,7 @@
 #' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #' @examples showClass("Antitrust") # get a detailed description of the class
 #' @keywords classes
+#' @exportClass Antitrust
 NULL
 
 setClassUnion("matrixOrVector", c("matrix", "numeric", "character", "factor"))

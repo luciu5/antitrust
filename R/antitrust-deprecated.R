@@ -6,3 +6,13 @@
 #' @name antitrust-deprecated
 #' @keywords internal
 NULL
+
+#' Vertical bargaining moved to the vertical package
+#'
+#' @param ... Ignored.
+#' @return This function does not return; it raises a migration error.
+#' @export
+vertical.barg <- function(...) {
+  .Defunct("vertical.barg", package = "vertical",
+           msg = "vertical bargaining economics moved to vertical::vertical.barg().")
+}

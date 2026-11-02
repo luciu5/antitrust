@@ -1,0 +1,50 @@
+{
+  "refactor_source": "20f0923fc560295e04310aed5615c19dadf672cb",
+  "mainline_parent": "e6ca9d595668f37f0a1e518db30ce53de61361d1",
+  "candidate_policy": "Single-parent squash candidate in a temporary clone; active master/refactor branches and original index/worktree remain unchanged. Commit message records reviewed tree and refactor source. Ancestry is not substituted for behavioral verification.",
+  "mainline_only_commits": [
+    {
+      "commit": "e6ca9d595668f37f0a1e518db30ce53de61361d1",
+      "title": "Fix input-market Cournot BLP equilibrium solver",
+      "disposition": "implemented and independently tested",
+      "evidence_or_reason": "Input Cournot BLP uses inverse-demand FOCs; Bertrand uses share-normalized direct-demand FOCs. Tests distinguish the two games and reject false tiny-share convergence."
+    },
+    {
+      "commit": "14c602e048ec47b3c9c17598c663319acd1425bc",
+      "title": "Port two-dimensional BLP CV and signed input rates",
+      "disposition": "implemented with extracted ownership boundary",
+      "evidence_or_reason": "Joint two-factor BLP integration/CV and signed-rate level FOCs are retained. Price leadership now belongs to coordination; source-only legacy aliases are not reintroduced into antitrust."
+    },
+    {
+      "commit": "42becfc0898f0d3ee9b2d0019f6d4bdc053ed3be",
+      "title": "Build master reference vignette by default",
+      "disposition": "superseded intentionally",
+      "evidence_or_reason": "Full builds render Workflow, Models and Architecture in place of the old Reference vignette. Vignette builds and rebuilds are release gates."
+    },
+    {
+      "commit": "28cad4a18c6d9fa8d03ab3c2b84574f82807e910",
+      "title": "Fix BLP demographic quadrature selection",
+      "disposition": "implemented and corrected",
+      "evidence_or_reason": "Single-demographic sigma-zero nodes retain their canonical factor meaning and caller RNG; legacy vector price draws retain independent demographic factors."
+    },
+    {
+      "commit": "149d0203682638cc73f3c6d2c1d79e27ef2d380c",
+      "title": "Test and document BLP quadrature",
+      "disposition": "implemented and reorganized",
+      "evidence_or_reason": "Quadrature moment, weighted derivative and reproduction checks live in the tiered BLP integration suites; lifecycle help and new vignettes replace older examples."
+    },
+    {
+      "commit": "6404007bc966fc5aaaac45b11feeca1c68233313",
+      "title": "Add BLP quadrature integration options",
+      "disposition": "implemented with documented default distinction",
+      "evidence_or_reason": "Explicit Gauss-Hermite, Monte Carlo and provided integration rules are supported. The refactor API defaults to deterministic GH for price-only BLP; legacy sim retains its documented fixed-draw Monte Carlo default rather than silently changing existing refactor callers."
+    },
+    {
+      "commit": "f2c5c445368505e9782b10b15d3d7305d658b038",
+      "title": "Add weighted BLP integration core",
+      "disposition": "implemented",
+      "evidence_or_reason": "Weighted integration points are shared by BLP shares, derivatives, margins and welfare; point/weight identities and independent derivatives are permanent tests."
+    }
+  ],
+  "validation": "Existing independent BLP, economic, ownership, integration and vignette gates cover these behaviors. Exact exported candidate package checks follow freeze. No claim of byte-identical legacy output for deliberately changed defaults or relocated model APIs."
+}

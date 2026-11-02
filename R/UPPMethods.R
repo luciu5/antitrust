@@ -2,11 +2,7 @@
 #' @name UPP-Methods
 #' @docType methods
 #'
-#' @aliases upp-methods
-#' upp,ANY-method
-#' upp,Bertrand-method
-#' upp,AIDS-method
-#' upp,Auction2ndLogit-method
+#' @aliases upp-methods upp,ANY-method upp,Bertrand-method upp,AIDS-method upp,Auction2ndLogit-method
 #'
 #' @description Calculate the Upwards Pricing Pressure Index
 #' for the products of merging firms playing a differentiated

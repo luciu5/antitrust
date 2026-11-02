@@ -2,36 +2,7 @@
 #' @name Output-Methods
 #' @docType methods
 #'
-#' @aliases calcQuantities
-#' calcQuantities,ANY-method
-#' calcQuantities,Logit-method
-#' calcQuantities,CES-method
-#' calcQuantities,Linear-method
-#' calcQuantities,LogLin-method
-#' calcQuantities,LogitCap-method
-#' calcQuantities,Logit-method
-#' calcQuantities,Cournot-method
-#' calcQuantities,Stackelberg-method
-#' calcQuantities,AIDS-method
-#' calcShares
-#' calcShares,ANY-method
-#' calcShares,AIDS-method
-#' calcShares,CES-method
-#' calcShares,CESNests-method
-#' calcShares,Linear-method
-#' calcShares,Logit-method
-#' calcShares,LogitNests-method
-#' calcShares,Auction2ndLogit-method
-#' calcShares,Auction2ndLogitNests-method
-#' calcShares,Cournot-method
-#' calcShares,LogitBLP-method
-#' calcRevenues
-#' calcRevenues,ANY-method
-#' calcRevenues,Bertrand-method
-#' calcRevenues,CES-method
-#' calcRevenues,AIDS-method
-#' calcRevenues,Cournot-method
-#' calcRevenues,VertBargBertLogit-method
+#' @aliases calcQuantities calcQuantities,ANY-method calcQuantities,Logit-method calcQuantities,CES-method calcQuantities,Linear-method calcQuantities,LogLin-method calcQuantities,LogitCap-method calcQuantities,Logit-method calcQuantities,Cournot-method calcQuantities,Stackelberg-method calcQuantities,AIDS-method calcShares calcShares,ANY-method calcShares,AIDS-method calcShares,CES-method calcShares,CESNests-method calcShares,Linear-method calcShares,Logit-method calcShares,LogitNests-method calcShares,Auction2ndLogit-method calcShares,Auction2ndLogitNests-method calcShares,Cournot-method calcShares,LogitBLP-method calcShares,Auction2ndBLP-method calcShares,BargainingBLP-method calcRevenues calcRevenues,ANY-method calcRevenues,Bertrand-method calcRevenues,CES-method calcRevenues,AIDS-method calcRevenues,Cournot-method
 #'
 #' @description This section contains three types of methods: calcShares, calcQuantities, and calcRevenues.
 #'  calcShares computes equilibrium product shares assuming that firms are playing a
@@ -439,16 +410,6 @@ setMethod(
 
 
 ## compute product revenues
-#' @rdname Output-Methods
-#' @export
-setMethod(
-  f = "calcRevenues",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE, market = FALSE) {
-    result <- calcRevenues(object@down, preMerger = preMerger, market = market)
-    return(result)
-  }
-)
 
 #' @rdname Output-Methods
 #' @export
@@ -585,63 +546,6 @@ setMethod(
     } else {
       return(quantities / sum(quantities))
     }
-  }
-)
-
-
-#' @rdname Output-Methods
-#' @export
-setMethod(
-  f = "calcQuantities",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE, market = FALSE) {
-    down <- object@down
-
-    result <- calcQuantities(down, preMerger = preMerger, market = market)
-
-    return(result)
-  }
-)
-
-
-#' @rdname Output-Methods
-#' @export
-setMethod(
-  f = "calcShares",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE, revenue = FALSE) {
-    down <- object@down
-
-    result <- calcShares(down, preMerger = preMerger, revenue = revenue)
-    return(result)
-  }
-)
-
-
-#' @rdname Output-Methods
-#' @export
-setMethod(
-  f = "calcShares",
-  signature = "VertBarg2ndLogit",
-  definition = function(object, preMerger = TRUE, revenue = FALSE) {
-    down <- object@down
-    up <- object@up
-
-    priceOutside <- down@priceOutside
-
-    if (preMerger) {
-      upPrice <- up@pricePre
-    } else {
-      upPrice <- up@pricePost
-    }
-
-
-    meanval <- down@slopes$meanval
-    alpha <- down@slopes$alpha
-
-    down@slopes$meanval <- meanval + alpha * (upPrice - priceOutside)
-    result <- calcShares(down, preMerger = preMerger, revenue = revenue)
-    return(result)
   }
 )
 
@@ -844,9 +748,11 @@ setMethod(
 
 
     shares <- sharesIn * sharesAcross[nests]
+    shares[!subset] <- 0
 
     if (revenue) {
       shares <- prices * shares / sum(prices * shares, object@priceOutside * (1 - sum(shares, na.rm = TRUE)), na.rm = TRUE)
+      shares[!subset] <- 0
     }
 
     names(shares) <- object@labels
@@ -862,12 +768,15 @@ setMethod(
   signature = "Auction2ndLogit",
   definition = function(object, preMerger = TRUE, revenue = FALSE) {
     nprods <- length(object@shares)
+    effectiveDelta <- if (preMerger) object@mcDelta else
+      .auction_effective_cost_delta(object)
 
     if (preMerger) {
       subset <- rep(TRUE, nprods)
     } else {
       subset <- object@subset
     }
+    .require_uniform_auction_retention(object, preMerger, subset)
 
 
     idx <- object@normIndex
@@ -880,7 +789,7 @@ setMethod(
       mcDeltaOut <- object@priceOutside
     } else {
       outVal <- 0
-      mcDeltaOut <- object@mcDelta[idx]
+      mcDeltaOut <- effectiveDelta[idx]
     }
 
 
@@ -888,7 +797,7 @@ setMethod(
       prices <- object@pricePre
     } else {
       prices <- object@pricePost
-      meanval <- meanval + alpha * (object@mcDelta - mcDeltaOut)
+      meanval <- meanval + alpha * (effectiveDelta - mcDeltaOut)
     }
 
 
@@ -917,12 +826,15 @@ setMethod(
   signature = "Auction2ndLogitNests",
   definition = function(object, preMerger = TRUE, revenue = FALSE) {
     nprods <- length(object@shares)
+    effectiveDelta <- if (preMerger) object@mcDelta else
+      .auction_effective_cost_delta(object)
 
     if (preMerger) {
       subset <- rep(TRUE, nprods)
     } else {
       subset <- object@subset
     }
+    .require_uniform_auction_retention(object, preMerger, subset)
 
 
     idx <- object@normIndex
@@ -938,7 +850,7 @@ setMethod(
       mcDeltaOut <- object@priceOutside
     } else {
       outVal <- 0
-      mcDeltaOut <- object@mcDelta[idx]
+      mcDeltaOut <- effectiveDelta[idx]
     }
 
 
@@ -946,7 +858,7 @@ setMethod(
       prices <- object@pricePre
     } else {
       prices <- object@pricePost
-      meanval <- meanval + alpha * (object@mcDelta - mcDeltaOut)
+      meanval <- meanval + alpha * (effectiveDelta - mcDeltaOut)
     }
 
 
@@ -1008,6 +920,18 @@ setMethod(
     names(shares) <- object@labels
 
     return(as.vector(shares))
+  }
+)
+
+#' @rdname Output-Methods
+#' @export
+setMethod(
+  f = "calcShares",
+  signature = "Auction2ndCES",
+  definition = function(object, preMerger = TRUE, revenue = FALSE) {
+    subset <- if (preMerger) rep(TRUE, length(object@shares)) else object@subset
+    .require_uniform_auction_retention(object, preMerger, subset)
+    callNextMethod()
   }
 )
 

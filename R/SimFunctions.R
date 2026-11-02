@@ -1,8 +1,8 @@
 #' @title Merger Simulation With User-Supplied Demand Parameters
 #' @name Sim-Functions
 #' @aliases sim
-#' @description Simulates the price effects of a merger between two firms
-#' with user-supplied demand parameters under the
+#' @description A compatibility and convenience constructor that simulates a
+#' merger with user-supplied demand parameters under the
 #' assumption that all firms in the market are playing either a
 #' differentiated products Bertrand pricing game, Cournot quantity game,
 #' 2nd price (score) auction, or bargaining game.
@@ -14,13 +14,11 @@
 #' calibrate costs from observed margins. Ignored for \sQuote{BLP} demand, where marginal costs are
 #' recovered from observed prices and the estimated demand system.
 #' @param supply A character string indicating how firms compete with one another. Valid
-#' values are "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
+#' values are "moncom" (differentiated-product monopolistic competition), "bertrand" (Nash Bertrand), "cournot" (Nash Cournot), "auction2nd"
 #' (2nd score auction), "bargaining", or "bargaining2nd".
-#' @param demand A character string indicating the type of demand system
-#'   to be used in the merger simulation. Supported demand systems are
-#'   linear (\sQuote{Linear}), log-linear(\sQuote{LogLin}), logit (\sQuote{Logit}), nested logit
-#'   (\sQuote{LogitNests}), ces (\sQuote{CES}), nested CES (\sQuote{CESNests}) and capacity
-#'   constrained Logit (\sQuote{LogitCap}).
+#' @param demand A demand-system name for a complete supplied-parameter
+#'   implementation. See \code{\link{supportedModels}} for the current
+#'   demand/conduct combinations and their \code{specify} support.
 #' @param demand.param  See Below.
 #' @param ownerPre EITHER a vector of length k whose values
 #'   indicate which firm produced a product pre-merger OR
@@ -50,11 +48,9 @@
 #' @param priceStart A length k vector of starting values used to solve for
 #'   equilibrium price. Default is the \sQuote{prices} vector for all values of
 #'   demand except for \sQuote{AIDS}, which is set equal to a vector of 0s.
-#' @param price_domain Domain for simulated input rates. The default
-#'   \code{"positive"} requires positive rates; \code{"real"} permits zero
-#'   or negative post-merger rates for input Logit, nested Logit, capacity
-#'   Logit, and BLP. Supplied baseline rates remain subject to constructor
-#'   validity checks.
+#' @param price_domain Input price-level simulation domain. The default
+#'   requires positive rates; \code{"real"} permits negative or zero rates for
+#'   flat/nested/capacity Logit and BLP demand.
 #' @param bargpowerPre A length k vector of pre-merger bargaining power parameters. Values
 #' must be between 0 (sellers have the power) and 1 (buyers the power). Ignored if \sQuote{supply} not equal
 #' to "bargaining" or "bargaining2nd".
@@ -66,9 +62,25 @@
 #' @param ... Additional options to feed to the
 #'       optimizer used to solve for equilibrium prices.
 #'
-#' @details Using user-supplied demand parameters,
+#' @details For a reusable structural fit, prefer \code{\link{specify}}
+#' followed by \code{\link{counterfactual}} and \code{\link{simulate}}.
+#' The supported combinations are complete implementations recorded by
+#' \code{\link{supportedModels}}, not arbitrary demand-conduct pairings.
+#'
+#' Using user-supplied demand parameters,
 #' \code{sim} simulates the effects of a merger in a market where
 #' firms are playing a differentiated products pricing game.
+#' Under \sQuote{supply = "moncom"}, each product uses its own demand
+#' response and does not internalize strategic cross-product effects. Pure
+#' ownership changes therefore have no strategic price effect, while cost,
+#' demand, and product-set changes remain model-specific counterfactuals.
+#' For flat CES, the direct perceived own elasticity is `-gamma`, not the
+#' full share-adjusted diagonal returned by `elast()`. For BLP, the direct
+#' perceived derivative is integrated over the existing consumer draws as
+#' `sum_r w_r * alpha_r * s_jr`. Nested Logit/CES, Linear, LogLinear, AIDS,
+#' and PCAIDS remain rejected because their package-specific nest,
+#' expenditure, or quantity-game objects do not yet have a complete validated
+#' MonCom lifecycle.
 #'
 #' The \sQuote{supply} parameter determines the type of competition.
 #' When \sQuote{supply} equals \sQuote{cournot}, firms compete on quantities
@@ -123,29 +135,23 @@
 #'   for demographic variables. Default is identity matrix (unit variance, independent).
 #'   Should match the variance structure of demographics in your data. For a single
 #'   demographic with variance sigma^2, use matrix(sigma^2, nrow=1, ncol=1).}
-#'   \item{integration}{Optional integration rule: \code{"auto"},
+#'   \item{nDraws}{Number of draws to use for simulating consumer heterogeneity. Default is 5000.}
+#'   \item{integration}{Integration rule: \code{"auto"},
 #'   \code{"gauss-hermite"}, \code{"monte-carlo"}, or \code{"provided"}.
-#'   Automatic integration uses Gauss-Hermite nodes for up to two active
-#'   Gaussian factors and Monte Carlo for higher-dimensional specifications.}
-#'   \item{nNodes}{Optional Gauss-Hermite nodes per axis: 31 by default in one
-#'   dimension and 15 by 15 in two dimensions. A length-two vector sets
-#'   different counts for the two axes.}
-#'   \item{nDraws}{Number of Monte Carlo draws. It selects
-#'   \code{integration = "monte-carlo"} when no integration rule is supplied,
-#'   preserving legacy BLP calls; it is not a quadrature-node count.}
-#'   \item{consDraws or draws}{Optional supplied vector of standardized BLP
-#'   price draws. With additional heterogeneous factors, legacy vector calls
-#'   draw those factors independently; use \code{integrationPoints} to specify
-#'   one joint point per row.}
-#'   \item{integrationPoints}{Optional numeric matrix of joint standardized
-#'   BLP points, one active factor per column.}
-#'   \item{integrationWeights}{Optional non-negative weights for supplied
-#'   integration points; normalized internally to sum to one.}
+#'   Automatic integration uses Gauss-Hermite for at most two active Gaussian
+#'   factors and Monte Carlo otherwise.}
+#'   \item{nNodes}{Gauss-Hermite nodes per axis: 31 by default in one
+#'   dimension and 15 by 15 in two dimensions.}
+#'   \item{integrationPoints}{Optional numeric matrix of supplied standardized
+#'   points for two-dimensional integration, one point per row.}
 #'   \item{prodChar}{Optional: k x L matrix of L product characteristics for k products.}
 #'   \item{beta}{Optional: Length-L vector of mean coefficients on product characteristics.}
 #'   \item{sigmaChar}{Optional: Length-L vector of random coefficient standard deviations on characteristics.}
 #'   \item{pi}{Optional: nDemog x L matrix of demographic interactions with characteristics.}
 #' }
+#' Two-dimensional BLP integration is available for Bertrand, Cournot, and
+#' MonCom supply. BLP auction and bargaining currently accept price
+#' random-coefficient heterogeneity only.
 #'
 #' Note: The \sQuote{shares} argument is only used with \sQuote{BLP} demand.
 #' If supplied for any other demand system, a warning will be issued but the function will proceed
@@ -179,138 +185,25 @@
 #' \code{\linkS4class{CES}}, \code{\linkS4class{CESNests}}
 #' @author Charles Taragin \email{ctaragin+antitrustr@gmail.com}
 #'
-#' @examples ## Calibration and simulation results from a merger between Budweiser and
-#' ## Old Style. Note that the in the following model there is no outside
-#' ## good; BUD's mean value has been normalized to zero.
-#'
-#' ## Source: Epstein/Rubenfeld 2004, pg 80
-#'
-#'
-#' prodNames <- c("BUD", "OLD STYLE", "MILLER", "MILLER-LITE", "OTHER-LITE", "OTHER-REG")
-#' ownerPre <- c("BUD", "OLD STYLE", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
-#' ownerPost <- c("BUD", "BUD", "MILLER", "MILLER", "OTHER-LITE", "OTHER-REG")
-#' nests <- c("Reg", "Reg", "Reg", "Light", "Light", "Reg")
-#'
-#' price <- c(.0441, .0328, .0409, .0396, .0387, .0497)
-#'
-#' demand.param <- list(
-#'   alpha = -48.0457,
-#'   meanval = c(0, 0.4149233, 1.1899885, 0.8252482, 0.1460183, 1.4865730)
-#' )
-#'
-#' sim.logit <- sim(price,
-#'   supply = "bertrand", demand = "Logit", demand.param = demand.param,
-#'   ownerPre = ownerPre, ownerPost = ownerPost
-#' )
-#'
-#'
-#' print(sim.logit) # return predicted price change
-#' summary(sim.logit) # summarize merger simulation
-#'
-#' elast(sim.logit, TRUE) # returns premerger elasticities
-#' elast(sim.logit, FALSE) # returns postmerger elasticities
-#'
-#' diversion(sim.logit, TRUE) # return premerger diversion ratios
-#' diversion(sim.logit, FALSE) # return postmerger diversion ratios
-#'
-#'
-#' cmcr(sim.logit) # calculate compensating marginal cost reduction
-#' upp(sim.logit) # calculate Upwards Pricing Pressure Index
-#'
-#' CV(sim.logit) # calculate representative agent compensating variation
-#'
-#' \dontrun{
-#' ## Philadelphia National Bank Example: Comparing Four Model Types
-#' ## Demonstrates Logit, Cournot, LogitBLP, and CournotBLP
-#'
-#' # Philadelphia National Bank data (38 products)
-#' prices <- c(
-#'   2.46, 2.21, 2.4, 2.29, 2.05, 2.45, 1.13, 2.39, 2.66, 2.73,
-#'   1.83, 1.84, 2.76, 2.46, 1.1, 2.53, 2.27, 2.31, 2.72, 1.96, 2.26,
-#'   2.63, 2.07, 2.31, 1.33, 2.67, 2.68, 2.59, 2.62, 1.85, 2.63, 1.51,
-#'   1.8, 2.66, 1.4, 2.39, 2.35, 1.82
-#' )
-#'
-#' shares <- c(
-#'   0.12499, 0.11462, 0.07748, 0.05231, 0.05168, 0.02918, 0.01622,
-#'   0.01245, 0.00992, 0.00578, 0.00461, 0.00417, 0.00415, 0.00275,
-#'   0.00271, 0.00214, 0.00206, 0.00184, 0.00176, 0.00155, 0.00151,
-#'   0.00146, 0.00146, 0.00103, 0.00101, 0.00095, 8e-04, 0.00066,
-#'   0.00062, 0.00061, 0.00057, 0.00053, 0.00053, 5e-04, 0.00049,
-#'   0.00048, 0.00041, 0.00039
-#' )
-#'
-#' ownerPre <- diag(38)
-#' ownerPost <- diag(38)
-#' ownerPost[2, 3] <- 1 # Products 2 and 3 merge
-#' ownerPost[3, 2] <- 1
-#'
-#' insideSize <- 4773473000
-#'
-#' # Logit parameters (from calibrated model)
-#' logit_params <- list(
-#'   alpha = 0.4296,
-#'   meanval = c(
-#'     -2.265, -2.206, -2.671, -2.972, -2.855, -3.596, -3.494, -4.344,
-#'     -4.709, -5.253, -4.966, -5.059, -5.572, -5.773, -5.128, -6.043,
-#'     -5.933, -6.057, -6.339, -6.027, -6.215, -6.46, -6.146, -6.597,
-#'     -6.131, -6.871, -7.035, -7.169, -7.237, -6.833, -7.318, -6.804,
-#'     -6.939, -7.457, -6.819, -7.328, -7.473, -7.227
-#'   )
-#' )
-#'
-#' # BLP parameters
-#' blp_params <- list(
-#'   alpha = 1.0,
-#'   sigma = 0.3,
-#'   sigmaNest = 0.9,
-#'   integration = "monte-carlo",
-#'   nDraws = 200
-#' )
-#'
-#' # MODEL 1: Logit (Bertrand)
-#' result_logit <- sim(prices,
-#'   supply = "bertrand", demand = "Logit",
-#'   demand.param = logit_params, ownerPre = ownerPre,
-#'   ownerPost = ownerPost, insideSize = insideSize
-#' )
-#' summary(result_logit)
-#'
-#' # MODEL 2: Logit (Cournot)
-#' result_cournot <- sim(prices,
-#'   supply = "cournot", demand = "Logit",
-#'   demand.param = logit_params, ownerPre = ownerPre,
-#'   ownerPost = ownerPost, insideSize = insideSize
-#' )
-#' summary(result_cournot)
-#'
-#' # MODEL 3: LogitBLP (Bertrand with random coefficients)
-#' result_logitblp <- sim(prices, shares,
-#'   supply = "bertrand", demand = "BLP",
-#'   demand.param = blp_params, ownerPre = ownerPre,
-#'   ownerPost = ownerPost, insideSize = insideSize
-#' )
-#' summary(result_logitblp)
-#'
-#' # MODEL 4: CournotBLP (Cournot with random coefficients)
-#' result_cournotblp <- sim(prices, shares,
-#'   supply = "cournot", demand = "BLP",
-#'   demand.param = blp_params, ownerPre = ownerPre,
-#'   ownerPost = ownerPost, insideSize = insideSize
-#' )
-#' summary(result_cournotblp)
-#' }
+#' @examples
+#' ## sim() is a supported convenience interface for supplied parameters.
+#' ## Use specify() and simulate() for a reusable fit.
+#' result <- sim(c(2, 2.2, 2.5), supply = "bertrand", demand = "Logit",
+#'   demand.param = list(alpha = -2, meanval = c(.6, .4, .2)),
+#'   ownerPre = c("A", "B", "C"), ownerPost = c("A", "A", "C"),
+#'   insideSize = 100)
+#' result@pricePost
 #'
 #' @include LogitFunctions.R
 NULL
 
 
 #' @rdname Sim-Functions
-#' @export
-sim <- function(prices,
+#' @noRd
+.sim_legacy <- function(prices,
 shares = NULL,
                 margins = NULL,
-                supply = c("bertrand", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+                supply = c("bertrand", "moncom", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
                 demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP", "LogitBLP", "CournotBLP"), demand.param,
                 ownerPre, ownerPost, nests, capacities,
                 mcDelta = rep(0, length(prices)),
@@ -321,9 +214,12 @@ shares = NULL,
                 bargpowerPre = rep(0.5, length(prices)),
                 bargpowerPost = bargpowerPre,
                 labels = paste("Prod", 1:length(prices), sep = ""),
-                price_domain = c("positive", "real"),
+                diversions = NULL,
+                output = NULL,
+                solve_equilibrium = TRUE,
+                revenueRetentionPre = NULL,
+                revenueRetentionPost = NULL,
                 ...) {
-  price_domain <- match.arg(price_domain)
   supply_missing <- missing(supply)
   demand <- match.arg(demand)
   supply <- match.arg(supply)
@@ -346,6 +242,7 @@ shares = NULL,
 
   # Validate supply/demand combinations
   valid_combinations <- list(
+    moncom = c("Logit", "CES", "BLP"),
     bertrand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP"),
     cournot = c("Logit", "CES", "BLP"),
     auction2nd = c("Logit", "CES"),
@@ -402,6 +299,10 @@ shares = NULL,
   }
 
   outputFlag <- TRUE
+  if (!is.null(output) &&
+      (!is.logical(output) || length(output) != 1L || is.na(output))) {
+    stop("'output' must be a single logical value")
+  }
   shareInside <- sum(shares)
   normIndex <- if (isTRUE(all.equal(sum(shares), 1, check.names = FALSE))) 1 else NA
 
@@ -421,92 +322,14 @@ shares = NULL,
     if (!("meanval" %in% names(demand.param))) {
       message("Note: 'meanval' (delta) not provided for BLP. It will be recovered via BLP contraction from observed shares/prices.")
     }
+    if (!("nDraws" %in% names(demand.param))) {
+      demand.param$nDraws <- 5000
+      message("'nDraws' not provided for BLP. Defaulting to 5000 draws.")
+    }
     if (!("piDemog" %in% names(demand.param))) {
       demand.param$piDemog <- numeric(0)
     }
     demand.param$nDemog <- length(demand.param$piDemog)
-
-    has_points <- !is.null(demand.param$integrationPoints) ||
-      !is.null(demand.param$draws) || !is.null(demand.param$consDraws)
-    has_weights <- !is.null(demand.param$integrationWeights) ||
-      !is.null(demand.param$drawWeights)
-    has_n_draws <- "nDraws" %in% names(demand.param)
-    has_n_nodes <- "nNodes" %in% names(demand.param)
-    integration_specified <- "integration" %in% names(demand.param)
-    integration <- if (integration_specified) demand.param$integration else "auto"
-    integration <- match.arg(integration,
-      c("auto", "gauss-hermite", "monte-carlo", "provided")
-    )
-    if (has_n_draws && has_points &&
-        (!is.numeric(demand.param$nDraws) || length(demand.param$nDraws) != 1 ||
-         !is.finite(demand.param$nDraws) || demand.param$nDraws < 1)) {
-      stop("'demand.param$nDraws' must be a positive scalar.")
-    }
-    supplied_points <- if (!is.null(demand.param$integrationPoints)) {
-      demand.param$integrationPoints
-    } else if (!is.null(demand.param$draws)) {
-      demand.param$draws
-    } else {
-      demand.param$consDraws
-    }
-    supplied_count <- if (is.matrix(supplied_points)) nrow(supplied_points) else length(supplied_points)
-    if (has_n_draws && has_points && demand.param$nDraws != supplied_count) {
-      stop("'demand.param$nDraws' must equal the number of supplied BLP integration points.")
-    }
-    if (has_n_draws && !integration_specified && !has_points) {
-      ## nDraws historically selected a fixed Monte Carlo sample in sim().
-      ## Preserve that behavior while reserving nNodes for quadrature.
-      integration <- "monte-carlo"
-    }
-    if (has_n_draws && !has_points && !identical(integration, "monte-carlo")) {
-      stop("'demand.param$nDraws' is only valid with integration = 'monte-carlo'; use 'nNodes' for Gauss-Hermite.")
-    }
-    if (has_n_nodes && identical(integration, "auto")) {
-      integration <- "gauss-hermite"
-    }
-    if (has_n_nodes && !identical(integration, "gauss-hermite")) {
-      stop("'demand.param$nNodes' is only valid with integration = 'gauss-hermite'.")
-    }
-    if (has_points && integration %in% c("gauss-hermite", "monte-carlo")) {
-      stop("supplied BLP integration points conflict with integration = '", integration, "'.")
-    }
-    if (has_weights && !has_points) {
-      stop("BLP integration weights require supplied 'integrationPoints', 'draws', or 'consDraws'.")
-    }
-    if (identical(integration, "provided") && !has_points) {
-      stop("integration = 'provided' requires supplied BLP integration points.")
-    }
-    demand.param$integration <- integration
-    legacy_vector <- is.null(demand.param$integrationPoints) &&
-      !is.null(supplied_points) && !is.matrix(supplied_points) &&
-      (demand.param$nDemog > 0L ||
-       length(demand.param$sigmaChar) > 0L)
-    if (legacy_vector) {
-      ## Master historically treated supplied vectors as price draws, with
-      ## independent demographic/characteristic draws generated once below.
-      legacy_spec <- demand.param
-      legacy_spec$nDemog <- 0L
-      legacy_spec$piDemog <- numeric(0)
-      legacy_spec$sigmaChar <- NULL
-      legacy_spec$pi <- NULL
-      integration_result <- .blp_integration(legacy_spec)
-      demand.param$legacyVectorIntegration <- TRUE
-    } else {
-      integration_result <- .blp_integration(demand.param)
-    }
-    demand.param$consDraws <- integration_result$draws
-    demand.param$integrationPoints <- integration_result$integrationPoints
-    demand.param$factorOrder <- integration_result$factorOrder
-    demand.param$nodesPerAxis <- integration_result$nodesPerAxis
-    demand.param$drawWeights <- integration_result$weights
-    demand.param$integrationWeights <- integration_result$weights
-    demand.param$integration <- integration_result$rule
-    demand.param$nNodes <- if (identical(integration_result$rule, "gauss-hermite")) {
-      integration_result$nodesPerAxis
-    } else {
-      NULL
-    }
-    demand.param$nDraws <- length(integration_result$weights)
     if (demand.param$nDemog > 0) {
       if (!("demogMean" %in% names(demand.param))) {
         demand.param$demogMean <- rep(0, demand.param$nDemog)
@@ -543,6 +366,10 @@ shares = NULL,
       demand.param$sigmaNest <= 0 || demand.param$sigmaNest > 1) {
       stop("'sigmaNest' (nesting parameter) must be a single numeric value in (0,1].")
     }
+    if (!is.numeric(demand.param$nDraws) || length(demand.param$nDraws) != 1 ||
+      !is.finite(demand.param$nDraws) || demand.param$nDraws < 1) {
+      stop("'demand.param$nDraws' must be a positive scalar.")
+    }
     if ("prodChar" %in% names(demand.param)) {
       if (!is.matrix(demand.param$prodChar) || nrow(demand.param$prodChar) != nprods) {
         stop("'prodChar' must be a k x L matrix where k is the number of products.")
@@ -576,7 +403,18 @@ shares = NULL,
         normIndex <- which(demand.param$meanval == 0)[1]
       }
     } else {
-      normIndex <- NA_integer_
+      ## When mean utilities are recovered from observed shares, retain the
+      ## no-outside-good normalization when the supplied shares exhaust the
+      ## market.  The BLP contraction uses the same normalization as
+      ## calcShares() below; forcing NA here would make a sum-one market
+      ## impossible to match because the fixed point would still include an
+      ## outside option.
+      normIndex <- if (isTRUE(all.equal(sum(shares), 1,
+                                        check.names = FALSE))) {
+        1L
+      } else {
+        NA_integer_
+      }
     }
 
     alphaVal <- if ("alpha" %in% names(demand.param)) {
@@ -640,6 +478,7 @@ shares = NULL,
         any(demand.param$sigma <= 0) || any(demand.param$sigma > 1)) {
         stop("'demand.param$sigma' must contain numeric nesting parameters in (0,1].")
       }
+      parmsStartSigma <- demand.param$sigma
       if (length(demand.param$sigma) == 1) {
         constraint <- TRUE
         demand.param$sigma <- rep(demand.param$sigma, nlevels(nests))
@@ -699,9 +538,14 @@ shares = NULL,
         stop("When 'demand' equals 'CESNests', 'nests' must equal a vector whose length equals the number of products.")
       }
       if (!is.numeric(demand.param$sigma) || any(!is.finite(demand.param$sigma)) ||
-        any(demand.param$sigma <= 0) || any(demand.param$sigma > 1)) {
-        stop("'demand.param$sigma' must contain numeric nesting parameters in (0,1].")
+          !isTRUE(demand.param$gamma > 1) ||
+          any(demand.param$sigma <= demand.param$gamma)) {
+        if (isTRUE(demand.param$gamma > 1)) {
+          stop("'demand.param$sigma' must satisfy sigma_g > gamma > 1 for output-market CESNests.")
+        }
+        stop("'demand.param$sigma' and 'gamma' do not define a supported CESNests input-market model.")
       }
+      parmsStartSigma <- demand.param$sigma
       if (length(demand.param$sigma) == 1) {
         constraint <- TRUE
         demand.param$sigma <- rep(demand.param$sigma, nlevels(nests))
@@ -813,6 +657,8 @@ shares = NULL,
     }
   }
 
+  if (!is.null(output)) outputFlag <- output
+
 
   ## Create constructors for each demand system specified in the 'demand' parameter
 
@@ -826,7 +672,7 @@ shares = NULL,
       ownerPost = ownerPost,
       nests = nests,
       normIndex = normIndex,
-      parmsStart = c(demand.param$gamma, demand.param$sigma),
+      parmsStart = c(demand.param$gamma, parmsStartSigma),
       priceStart = priceStart,
       constraint = constraint,
       shareInside = shareInside, labels = labels
@@ -842,7 +688,7 @@ shares = NULL,
       ownerPost = ownerPost,
       nests = nests,
       normIndex = normIndex,
-      parmsStart = c(demand.param$alpha, demand.param$sigma),
+      parmsStart = c(demand.param$alpha, parmsStartSigma),
       priceStart = priceStart,
       constraint = constraint,
       shareInside = shareInside, labels = labels
@@ -851,6 +697,8 @@ shares = NULL,
     # Determine class based on supply type
     if (supply == "cournot") {
       demandClass <- "CournotBLP"
+    } else if (supply == "moncom") {
+      demandClass <- "MonComBLP"
     } else {
       demandClass <- "LogitBLP"
     }
@@ -876,6 +724,22 @@ shares = NULL,
     )
   } else if (demand %in% c("Logit", "CES")) {
     result <- switch(supply,
+      moncom = new(paste0("MonCom", demand),
+        prices = prices, shares = shares,
+        margins = margins,
+        weights = sim_weights,
+        normIndex = normIndex,
+        mcDelta = mcDelta,
+        insideSize = insideSize,
+        subset = subset,
+        ownerPre = ownerPre,
+        ownerPost = ownerPost,
+        priceStart = priceStart,
+        priceOutside = priceOutside,
+        shareInside = shareInside,
+        output = outputFlag,
+        labels = labels
+      ),
       bertrand = new(demand,
         prices = prices, shares = shares,
         margins = margins,
@@ -987,14 +851,19 @@ shares = NULL,
     ## the implied diversion matrix as the placeholder so valid parameterized
     ## simulations are not rejected by the class validator.  This is the same
     ## identity used by calcSlopes,Linear-method: D_ij = -B_ji / B_jj.
-    sim_diversion <- -t(demand.param$slopes) /
-      matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
+    sim_diversion <- if (is.null(diversions)) {
+      -t(demand.param$slopes) /
+        matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
+    } else {
+      diversions
+    }
     result <- new(demand,
       prices = prices, quantities = shares, margins = margins,
       shares = shares, mcDelta = mcDelta, subset = subset,
       ownerPre = ownerPre, diversion = sim_diversion,
       symmetry = identical(demand.param$slopes, t(demand.param$slopes)),
-      ownerPost = ownerPost, priceStart = priceStart, labels = labels
+      ownerPost = ownerPost, priceStart = priceStart, output = outputFlag,
+      labels = labels
     )
   } else if (demand == "AIDS") {
     ## find the market elasticity that best explains user-supplied intercepts and prices
@@ -1012,13 +881,17 @@ shares = NULL,
       ownerPost = ownerPost, labels = labels
     )
   } else if (demand == "LogLin") {
-    sim_diversion <- -t(demand.param$slopes) /
-      matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
+    sim_diversion <- if (is.null(diversions)) {
+      -t(demand.param$slopes) /
+        matrix(diag(demand.param$slopes), nrow = nprods, ncol = nprods, byrow = TRUE)
+    } else {
+      diversions
+    }
     result <- new(demand,
       prices = prices, quantities = shares, margins = margins,
       shares = shares, mcDelta = mcDelta, subset = subset, priceStart = priceStart,
       ownerPre = ownerPre, diversion = sim_diversion,
-      ownerPost = ownerPost, labels = labels
+      ownerPost = ownerPost, output = outputFlag, labels = labels
     )
   }
 
@@ -1030,18 +903,12 @@ shares = NULL,
     result@slopes <- demand.param
   }
 
-  signed_demand <- demand %in% c("Logit", "LogitNests", "LogitCap", "BLP")
-  if (identical(price_domain, "real") &&
-      !(signed_demand && !isTRUE(result@output))) {
-    stop("price_domain = 'real' supports input flat/nested/capacity Logit and BLP simulation only.")
-  }
-  if (methods::is(result, "LogitCap")) {
-    result@control.equ$price_domain <- price_domain
-  }
-
   ## Convert ownership vectors to ownership matrices before any calibration step
   result@ownerPre <- ownerToMatrix(result, TRUE)
   result@ownerPost <- ownerToMatrix(result, FALSE)
+  if (!is.null(revenueRetentionPre) || !is.null(revenueRetentionPost)) {
+    result <- setRetention(result, revenueRetentionPre, revenueRetentionPost)
+  }
 
   ## Recover any implied demand parameters needed before MC calibration.
   ## LogitCap simulations already received structural alpha/meanval above;
@@ -1066,15 +933,22 @@ shares = NULL,
     result@priceDelta <- calcPriceDelta(result, ...)
   }
 
-  ## Use observed prices as pre-merger equilibrium and only solve post-merger prices
-  ## calcMC above already calibrated MCs using the supplied prices.
-  if (!supply %in% c("auction2nd", "bargaining2nd")) {
-    result@pricePost <- calcPrices(result, FALSE, subset = subset, ...)
-  } else {
-    result@pricePost <- calcPrices(result, FALSE, ...)
+  ## Use observed prices as pre-merger equilibrium.  Direct sim() retains
+  ## the historical solve default; specify(baseline = "observed") defers
+  ## this first nonlinear solve to the counterfactual target.
+  if (!is.logical(solve_equilibrium) || length(solve_equilibrium) != 1L ||
+      is.na(solve_equilibrium)) {
+    stop("'solve_equilibrium' must be a single logical value")
   }
-  if (signed_demand && !isTRUE(result@output)) {
-    .antitrust_check_simulated_rates(result, price_domain)
+  if (isTRUE(solve_equilibrium)) {
+    if (!supply %in% c("auction2nd", "bargaining2nd")) {
+      result@pricePost <- calcPrices(result, FALSE, subset = subset, ...)
+    } else {
+      result@pricePost <- calcPrices(result, FALSE, ...)
+    }
+  } else {
+    names(result@pricePre) <- result@labels
+    result@pricePost <- result@pricePre
   }
 
   if (any(grepl("logit", demand, ignore.case = TRUE), na.rm = TRUE)) {
@@ -1092,30 +966,156 @@ shares = NULL,
   return(result)
 }
 
-.antitrust_check_simulated_rates <- function(result, price_domain) {
-  for (pre in c(TRUE, FALSE)) {
-    rates <- as.numeric(if (pre) result@pricePre else result@pricePost)
-    active <- if (pre) rep(TRUE, length(rates)) else result@subset
-    if (length(active) != length(rates) || anyNA(active) || !any(active)) {
-      stop("Input price-level simulation has an invalid active-product map.")
+
+#' @rdname Sim-Functions
+#' @export
+sim <- function(prices,
+                shares = NULL,
+                margins = NULL,
+                supply = c("bertrand", "moncom", "cournot", "auction2nd", "bargaining", "bargaining2nd"),
+                demand = c("Linear", "AIDS", "LogLin", "Logit", "CES", "LogitNests", "CESNests", "LogitCap", "BLP", "LogitBLP", "CournotBLP"),
+                demand.param,
+                ownerPre, ownerPost, nests, capacities,
+                mcDelta = rep(0, length(prices)),
+                subset = rep(TRUE, length(prices)),
+                insideSize = 1,
+                priceOutside,
+                priceStart,
+                bargpowerPre = rep(0.5, length(prices)),
+                bargpowerPost = bargpowerPre,
+                labels = paste("Prod", 1:length(prices), sep = ""),
+                price_domain = c("positive", "real"),
+                ...) {
+    price_domain <- match.arg(price_domain)
+    demand_name <- match.arg(demand)
+    supply_missing <- missing(supply)
+    supply_name <- match.arg(supply)
+
+    ## Preserve the historical BLP aliases.  `CournotBLP` means BLP demand
+    ## with Cournot conduct when supply is omitted, while `LogitBLP` means
+    ## BLP demand with Bertrand conduct.  Incompatible explicit conduct must
+    ## continue through the legacy path so it retains the old error message.
+    registry_demand <- demand_name
+    alias_compatible <- TRUE
+    if (identical(demand_name, "LogitBLP")) {
+        alias_compatible <- identical(supply_name, "bertrand")
+        registry_demand <- "BLP"
+    } else if (identical(demand_name, "CournotBLP")) {
+        alias_compatible <- supply_missing || identical(supply_name, "cournot")
+        if (supply_missing) supply_name <- "cournot"
+        registry_demand <- "BLP"
     }
-    bad <- which(active & (!is.finite(rates) |
-      (identical(price_domain, "positive") & rates <= 0)))
-    if (!length(bad)) next
-    i <- bad[[1L]]
-    finite <- rates[active & is.finite(rates)]
-    category <- if (is.finite(rates[[i]]))
-      "positive_domain_violation" else "invalid_price_solution"
-    message <- if (identical(category, "positive_domain_violation"))
-      "Input equilibrium has a nonpositive rate; use price_domain = 'real' to retain signed rates."
-    else "Input equilibrium has a nonfinite active rate."
-    stop(structure(list(
-      message = message, call = NULL, category = category,
-      price_domain = price_domain,
-      minimum_rate = if (length(finite)) min(finite) else NA_real_,
-      minimum_product = as.character(result@labels[[i]]),
-      preMerger = pre),
-      class = c("antitrust_price_domain_error", "error", "condition")))
-  }
-  invisible(result)
+
+    normalized_spec <- try(
+        model_spec(.normalize_demand_name(registry_demand),
+                   .normalize_conduct_name(supply_name)),
+        silent = TRUE
+    )
+    migrated <- alias_compatible && !inherits(normalized_spec, "try-error") &&
+        .model_registry_supports(normalized_spec, "specify") &&
+        .model_registry_supports(normalized_spec, "simulate")
+    if (migrated) {
+        dots <- list(...)
+        ## Preserve the historical sim() default for BLP parameter-loading
+        ## calls.  The refactor API uses integration = "auto" (GH for the
+        ## one-dimensional price-only case), but legacy sim() used fixed-draw
+        ## Monte Carlo with 1,000 draws unless callers supplied a rule/draws.
+        ## This default is only appropriate for the price-only case that
+        ## specify() itself would route to .specify_blp_conduct_fit(); the
+        ## demographic/characteristic/nested case has its own, better
+        ## defaults (e.g. Gauss-Hermite for a single demographic dimension)
+        ## that this historical override must not clobber.
+        if (identical(registry_demand, "BLP") &&
+            .blp_price_only_parameters(demand.param) &&
+            is.null(dots$integration) && is.null(dots$nNodes) &&
+            is.null(dots$integrationPoints) &&
+            is.null(dots$draws) && is.null(dots$consDraws) &&
+            is.null(demand.param$integration) &&
+            is.null(demand.param$nNodes) &&
+            is.null(demand.param$integrationPoints) &&
+            is.null(demand.param$draws) &&
+            is.null(demand.param$consDraws)) {
+            dots$integration <- "monte-carlo"
+            if (is.null(dots$nDraws) && is.null(demand.param$nDraws)) {
+                dots$nDraws <- 5000L
+            }
+        }
+        specify_args <- list(
+            demand = registry_demand,
+            conduct = supply_name,
+            prices = prices,
+            parameters = demand.param,
+            ownerPre = ownerPre,
+            shares = shares,
+            margins = margins,
+            quantities = if (demand_name %in% c("Linear", "LogLin")) {
+                if (is.null(shares)) rep(1 / length(prices), length(prices)) else shares
+            } else {
+                NULL
+            },
+            insideSize = insideSize,
+            labels = labels
+        )
+        if (identical(registry_demand, "BLP") && is.null(dots$output)) {
+            legacy_alpha <- demand.param$alphaMean
+            if (is.null(legacy_alpha)) legacy_alpha <- demand.param$alpha
+            if (is.null(legacy_alpha)) legacy_alpha <- demand.param$alpha_mean
+            if (is.numeric(legacy_alpha) && length(legacy_alpha) == 1L &&
+                is.finite(legacy_alpha)) specify_args$output <- legacy_alpha < 0
+        }
+        if (!missing(nests)) specify_args$nests <- nests
+        if (!missing(capacities)) specify_args$capacities <- capacities
+        if (!missing(priceOutside)) specify_args$priceOutside <- priceOutside
+        if (!missing(priceStart)) specify_args$priceStart <- priceStart
+        if (supply_name %in% c("bargaining", "bargaining2nd")) {
+            specify_args$bargpowerPre <- bargpowerPre
+            specify_args$bargpowerPost <- bargpowerPost
+        }
+        fit <- do.call(specify, c(specify_args, dots))
+        ## The parameterized construction path captures informational BLP
+        ## messages so that `specify()` remains quiet and diagnostics retain
+        ## them.  Re-emit them here for legacy `sim()` callers, whose public
+        ## output historically included these messages.
+        if (length(fit@diagnostics$messages)) {
+            for (message_text in fit@diagnostics$messages) {
+                message(message_text)
+            }
+        }
+        simulate_args <- list(
+            object = fit,
+            ownerPost = ownerPost,
+            mcDelta = mcDelta,
+            subset = subset,
+            price_domain = price_domain
+        )
+        if (supply_name %in% c("bargaining", "bargaining2nd")) {
+            simulate_args$bargpowerPost <- bargpowerPost
+        }
+        return(do.call(simulate, c(simulate_args, dots)))
+    }
+
+    if (identical(price_domain, "real")) {
+        stop("price_domain = 'real' is unavailable for this sim() demand/conduct combination.")
+    }
+    legacy_args <- list(
+        prices = prices,
+        shares = shares,
+        margins = margins,
+        supply = supply,
+        demand = demand,
+        demand.param = demand.param,
+        ownerPre = ownerPre,
+        ownerPost = ownerPost,
+        mcDelta = mcDelta,
+        subset = subset,
+        insideSize = insideSize,
+        bargpowerPre = bargpowerPre,
+        bargpowerPost = bargpowerPost,
+        labels = labels
+    )
+    if (!missing(nests)) legacy_args$nests <- nests
+    if (!missing(capacities)) legacy_args$capacities <- capacities
+    if (!missing(priceOutside)) legacy_args$priceOutside <- priceOutside
+    if (!missing(priceStart)) legacy_args$priceStart <- priceStart
+    do.call(.sim_legacy, c(legacy_args, list(...)))
 }

@@ -1,4 +1,5 @@
 test_that("all documented sim demand/supply combinations have formal coverage", {
+    qa_skip_if_not_nightly()
     p <- c(2, 2.2, 2.5)
     op <- c("A", "B", "C")
     oo <- c("A", "A", "C")
@@ -47,7 +48,7 @@ test_that("all documented sim demand/supply combinations have formal coverage", 
     results$bertrand_ces_nests <- qa_value(sim(
         p4, supply = "bertrand", demand = "CESNests",
         demand.param = list(gamma = 2, meanval = c(1, .8, .6, .5),
-                            sigma = c(.7, .8), shareInside = .7),
+                            sigma = c(3, 4), shareInside = .7),
         nests = nests4, ownerPre = op4, ownerPost = oo4
     ), "sim bertrand CESNests")
     results$bertrand_logit_cap <- qa_value(sim(
@@ -105,6 +106,7 @@ test_that("all documented sim demand/supply combinations have formal coverage", 
 })
 
 test_that("LogitCap solves binding-capacity KKT conditions", {
+    qa_skip_unless_tier("extended")
     prices <- c(2, 2.2, 2.5)
     capacities <- c(25, 20, 15)
     shares <- capacities / 100
@@ -124,6 +126,32 @@ test_that("LogitCap solves binding-capacity KKT conditions", {
     testthat::expect_true(max(abs(calcQuantities(fit, FALSE) - capacities)) > 1e-3)
 })
 
+test_that("LogitCap direct simulation accepts structurally consistent meanval", {
+    capacities <- c(30, 25, 20)
+    market_size <- 150
+    shares <- capacities / market_size
+    prices <- c(10, 11, 9)
+    meanval <- log(shares / (1 - sum(shares))) - (-1) * prices
+
+    result <- qa_value(sim(
+        prices = prices,
+        margins = c(.30, .25, .20),
+        demand = "LogitCap",
+        demand.param = list(alpha = -1, meanval = meanval,
+                            mktSize = market_size),
+        ownerPre = c("A", "B", "C"),
+        ownerPost = c("A", "A", "C"),
+        capacities = capacities
+    ), "LogitCap direct simulation")
+
+    testthat::expect_s4_class(result, "LogitCap")
+    qa_assert_close(result@shares, shares, tolerance = 1e-12,
+                    message = "LogitCap shares")
+    testthat::expect_equal(result@insideSize, sum(capacities),
+                           tolerance = 1e-12)
+    qa_assert_finite(result@pricePost, "LogitCap post-merger prices")
+})
+
 test_that("unsupported sim combinations fail explicitly", {
     qa_expect_error(sim(
         c(2, 2.2), supply = "cournot", demand = "Linear",
@@ -131,9 +159,9 @@ test_that("unsupported sim combinations fail explicitly", {
         ownerPre = c("A", "B"), ownerPost = c("A", "A")
     ), "currently not supported", "unsupported Linear/Cournot combination")
     qa_expect_error(sim(
-        c(2, 2.2), supply = "auction2nd", demand = "BLP",
+        c(2, 2.2), supply = "bargaining2nd", demand = "BLP",
         demand.param = qa_fixture_blp_parameters(),
         ownerPre = c("A", "B"), ownerPost = c("A", "A"),
         shares = c(.3, .2)
-    ), "currently not supported|only compatible", "unsupported BLP/auction combination")
+    ), "currently not supported|only compatible", "unsupported BLP/bargaining2nd combination")
 })

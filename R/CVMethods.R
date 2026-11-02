@@ -2,21 +2,7 @@
 #' @name CV-Methods
 #' @docType methods
 #'
-#' @aliases CV-methods
-#' CV
-#' CV,ANY-method
-#' CV,AIDS-method
-#' CV,CES-method
-#' CV,CESNests-method
-#' CV,Linear-method
-#' CV,LogLin-method
-#' CV,Logit-method
-#' CV,LogitBLP-method
-#' CV,LogitNests-method
-#' CV,Auction2ndLogit-method
-#' CV,VertBargBertLogit-method
-#' CV,VertBarg2ndLogit-method
-#' CV,Cournot-method
+#' @aliases CV-methods CV CV,ANY-method CV,AIDS-method CV,CES-method CV,CESNests-method CV,Linear-method CV,LogLin-method CV,Logit-method CV,LogitBLP-method CV,LogitNests-method CV,Auction2ndLogit-method CV,Cournot-method
 #'
 #' @description Calculate the amount of money a consumer would need to
 #' be paid to be just as well off as they were before the merger.
@@ -146,7 +132,8 @@ setMethod(
     char_random <- object@slopes$char_random
     mktSize <- object@mktSize
 
-    # Quantile cutoffs
+    ## Integration points may be quadrature nodes rather than equally weighted
+    ## draws. Use the fitted object's weights for trimming and aggregation.
     draw_weights <- .blp_draw_weights(object, length(alphas))
     qlo <- .blp_weighted_quantile(alphas, lim[1], draw_weights)
     qhi <- .blp_weighted_quantile(alphas, lim[2], draw_weights)
@@ -306,17 +293,17 @@ setMethod(
     output <- object@output
     outSign <- ifelse(output, -1, 1)
 
-    mcDelta <- object@mcDelta
+    mcDelta <- .auction_effective_cost_delta(object)
 
     if (is.na(idx)) {
       outVal <- 1
       mcDeltaOut <- object@priceOutside
     } else {
       outVal <- 0
-      mcDeltaOut <- object@mcDelta[idx]
+      mcDeltaOut <- mcDelta[idx]
     }
 
-    meanvalPost <- meanvalPre + alpha * (object@mcDelta - mcDeltaOut)
+    meanvalPost <- meanvalPre + alpha * (mcDelta - mcDeltaOut)
 
 
     marginPre <- calcMargins(object, preMerger = TRUE, exAnte = TRUE)
@@ -335,69 +322,6 @@ setMethod(
     }
 
     return(outSign * result)
-  }
-)
-
-
-#' @rdname CV-Methods
-#' @export
-setMethod(
-  f = "CV",
-  signature = "VertBargBertLogit",
-  definition = function(object) {
-    down <- object@down
-    logitCV <- selectMethod("CV", class(down))
-
-    return(logitCV(down))
-  }
-)
-
-
-#' @rdname CV-Methods
-#' @export
-setMethod(
-  f = "CV",
-  signature = "VertBarg2ndLogit",
-  definition = function(object) {
-    down <- object@down
-    mktSize <- down@mktSize
-
-    alpha <- down@slopes$alpha
-    meanvalPre <- down@slopes$meanval
-
-    priceDelta <- calcPriceDelta(object, levels = TRUE)
-
-    marginsPre <- calcMargins(object, preMerger = TRUE, level = TRUE)
-    marginsPost <- calcMargins(object, preMerger = FALSE, level = TRUE)
-
-    sharesPre <- calcShares(object, preMerger = TRUE, revenue = FALSE)
-    sharesPost <- calcShares(object, preMerger = FALSE, revenue = FALSE)
-
-    result <- sum(marginsPost$down * sharesPost, na.rm = TRUE) - sum(marginsPre$down * sharesPre, na.rm = TRUE)
-
-    idx <- down@normIndex
-    subset <- down@subset
-    if (is.na(idx)) {
-      outVal <- 1
-      mcDeltaOut <- down@priceOutside
-    } else {
-      outVal <- 0
-      mcDeltaOut <- down@mcDelta[idx]
-    }
-
-
-    meanvalPost <- meanvalPre + alpha * (priceDelta$up + down@mcDelta -
-      mcDeltaOut)
-
-
-    VPre <- sum(exp(meanvalPre), na.rm = TRUE) + outVal
-    VPost <- sum(exp(meanvalPost[subset]), na.rm = TRUE) + outVal
-    result <- result + log(VPost / VPre) / alpha
-
-    if (!is.na(mktSize)) {
-      result <- mktSize * result
-    }
-    return(result)
   }
 )
 

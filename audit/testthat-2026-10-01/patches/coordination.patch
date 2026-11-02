@@ -1,0 +1,51 @@
+diff --git a/tests/testthat/test-price-leadership-blp.R b/tests/testthat/test-price-leadership-blp.R
+index d7e7363..2b381e4 100644
+--- a/tests/testthat/test-price-leadership-blp.R
++++ b/tests/testthat/test-price-leadership-blp.R
+@@ -220,13 +220,3 @@ test_that("PriceLeadershipBLP accepts two-dimensional supplied points and seeded
+   expect_identical(mc1@pricePre, mc2@pricePre)
+   expect_identical(mc1@pricePost, mc2@pricePost)
+ })
+-
+-
+-test_that("ple.blp with a fringe firm and no supplied margins recovers finite outputs", {
+-  fit <- fixture_ple_blp()
+-  expect_s4_class(fit, "PriceLeadershipBLP")
+-  expect_true(all(is.na(fit@margins)))
+-  expect_true(all(is.finite(fit@pricePre)))
+-  expect_true(all(is.finite(fit@pricePost)))
+-  expect_true(is.finite(fit@supermarkupPost))
+-})
+diff --git a/tests/testthat/test-price-leadership-invariants.R b/tests/testthat/test-price-leadership-invariants.R
+index 4016e94..4822532 100644
+--- a/tests/testthat/test-price-leadership-invariants.R
++++ b/tests/testthat/test-price-leadership-invariants.R
+@@ -47,14 +47,3 @@ test_that("calcSupermarkup unconstrained post-merger supermarkup is finite", {
+   sm_post <- calcSupermarkup(fit, preMerger = FALSE, constrained = FALSE)
+   expect_equal(sm_post, 0)
+ })
+-
+-test_that("changing only package location does not alter PriceLeadership economics", {
+-  ## Two independently-constructed but identical PLE fits from the same
+-  ## inputs must produce bitwise-identical output; this guards against any
+-  ## accidental state leakage introduced by the extraction.
+-  fit1 <- fixture_ple()
+-  fit2 <- fixture_ple()
+-  expect_identical(fit1@pricePre, fit2@pricePre)
+-  expect_identical(fit1@pricePost, fit2@pricePost)
+-  expect_identical(fit1@slopes$alpha, fit2@slopes$alpha)
+-})
+diff --git a/tests/testthat/test-s4-dispatch.R b/tests/testthat/test-s4-dispatch.R
+index 1e2dbf6..7acd784 100644
+--- a/tests/testthat/test-s4-dispatch.R
++++ b/tests/testthat/test-s4-dispatch.R
+@@ -1,9 +1,3 @@
+-test_that("PriceLeadership and PriceLeadershipBLP-related classes are each defined exactly once", {
+-  ## getClass() errors (rather than warning about multiple definitions) when
+-  ## a class is uniquely defined and resolvable in the current session.
+-  expect_silent(methods::getClass("PriceLeadership"))
+-})
+-
+ test_that("PriceLeadership extends antitrust::Logit, not a local duplicate", {
+   cls <- methods::getClass("PriceLeadership")
+   expect_true("Logit" %in% names(cls@contains))

@@ -15,8 +15,6 @@
 \alias{CV,LogitBLP-method}
 \alias{CV,LogitNests-method}
 \alias{CV,Auction2ndLogit-method}
-\alias{CV,VertBargBertLogit-method}
-\alias{CV,VertBarg2ndLogit-method}
 \alias{CV,Cournot-method}
 \title{Methods For Calculating Compensating Variation (CV)}
 \usage{
@@ -37,10 +35,6 @@ CV(object, ...)
 \S4method{CV}{LogitNests}(object)
 
 \S4method{CV}{Auction2ndLogit}(object)
-
-\S4method{CV}{VertBargBertLogit}(object)
-
-\S4method{CV}{VertBarg2ndLogit}(object)
 
 \S4method{CV}{CES}(object)
 

@@ -90,3 +90,38 @@ test_that("BLP dimensions, nesting, capacities, and stochastic controls are vali
         ownerPost = f$ownerPost
     ), "cannot exceed", "capacity market size")
 })
+
+test_that("LogitCap accepts +Inf as the unbounded-capacity sentinel", {
+    object <- new("LogitCap",
+        prices = c(2, 2.2),
+        shares = c(.2, .3),
+        margins = c(.3, .3),
+        capacitiesPre = c(Inf, 20),
+        capacitiesPost = c(Inf, 20),
+        mcDelta = c(0, 0),
+        insideSize = 30,
+        ownerPre = c("A", "B"),
+        ownerPost = c("A", "A"),
+        subset = c(TRUE, TRUE),
+        priceStart = c(2, 2.2),
+        shareInside = .5,
+        labels = c("P1", "P2")
+    )
+    testthat::expect_true(methods::validObject(object, test = TRUE))
+
+    testthat::expect_error(new("LogitCap",
+        prices = c(2, 2.2),
+        shares = c(.2, .3),
+        margins = c(.3, .3),
+        capacitiesPre = c(-Inf, 20),
+        capacitiesPost = c(Inf, 20),
+        mcDelta = c(0, 0),
+        insideSize = 30,
+        ownerPre = c("A", "B"),
+        ownerPost = c("A", "A"),
+        subset = c(TRUE, TRUE),
+        priceStart = c(2, 2.2),
+        shareInside = .5,
+        labels = c("P1", "P2")
+    ), "non-negative")
+})

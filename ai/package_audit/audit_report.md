@@ -2,6 +2,13 @@
 
 Audit date: 2026-06-01
 
+> **Vertical extraction note (2026-09-10):** References below to vertical
+> bargaining in `antitrust` describe the historical pre-extraction audit.
+> The `VertBarg*` classes, their methods, and vertical registry entries now
+> live in the sibling `vertical` package. `antitrust` retains only generic
+> structural machinery and an economics-free `vertical.barg()` migration
+> error.
+
 ## Formal QA expansion (2026-08-30)
 
 The smoke harness has been supplemented with a reviewable `testthat` suite. The
@@ -64,7 +71,7 @@ This pass inventories the exported R package surface and adds a smoke harness fo
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | High | `R/CMCRCournotFunctions.R` | `upp.cournot()` | `upp.cournot(1, c(.2, .3), c("A", "B"))` | Return a two-product UPP vector by delegating to `upp.bertrand()` with a 2x2 diversion matrix. | Failed before this patch with `only matrix diagonals can be replaced`; after changing `rep()` to `matrix()`, positional argument matching passed `mcDelta` as `output`, causing a second error. | Fixed: build `diversions` with `matrix(1, ncol = 2, nrow = 2)` and call `upp.bertrand()` with explicit `ownerPost`, `mcDelta`, and `labels` names. | `Rscript -e "pkgload::load_all('.', quiet=TRUE); upp.cournot(1, c(.2,.3), c('A','B'))"` |
 | Fixed | `R/ParamsMethods.R` / `R/LinearFunctions.R` | `linear()` / `calcSlopes,Linear-method` | `linear(c(1,1.1,1.25), c(22,18,12), c(.35,.3,.28), div, ownerPre=c('A','B','C'), ownerPost=c('A','A','C'))` with a complete diversion matrix `div` | Small linear examples should either calibrate quickly or fail with a clear validation error before entering the optimizer. | The old component-wise repair loop could never enter `constrOptim()`'s strict interior for complete diversions and could run indefinitely. | Fixed: construct a bounded, damped Perron-system starting point, add numerical diagonal slack only to the inequality matrix, and stop with a package-level diagnostic if no strictly feasible start exists. | `test-audit-regressions.R` now calibrates the reproducer and asserts finite slopes. |
-| Fixed | `R/ParamsMethods.R`, `NAMESPACE` | `getNestsParms()` | `findMethods("getNestsParms", where=asNamespace("antitrust"))` | The helper should work for nested PCAIDS, nested Logit, nested auction Logit, nested CES, and vertical bargaining objects with nested downstream demand. | Previously the generic was exported, but only `PCAIDSNests` had a method. Calling it on `CESNests` errored with no inherited method. | Fixed: added methods for `LogitNests`, `Auction2ndLogitNests`, `CESNests`, `VertBargBertLogitNests`, and `VertBarg2ndLogitNests`. `LogitNestsALM` inherits the `LogitNests` method. | `Rscript ai/examples/package_audit_smoke.R` |
+| Fixed | `R/ParamsMethods.R`, `NAMESPACE` | `getNestsParms()` | `findMethods("getNestsParms", where=asNamespace("antitrust"))` | The helper should work for antitrust-owned nested PCAIDS, Logit, auction Logit, and CES objects. | Previously the generic was exported, but only `PCAIDSNests` had a method. Calling it on `CESNests` errored with no inherited method. | Fixed: added antitrust methods for `LogitNests`, `Auction2ndLogitNests`, and `CESNests`; the extracted `vertical` package owns its `VertBarg*` methods. `LogitNestsALM` inherits the `LogitNests` method. | `Rscript ai/examples/package_audit_smoke.R` |
 | Medium | `R/ParamsMethods.R` | `ces.nests()` / `calcSlopes,CESNests-method` | `Rscript ai/examples/package_audit_smoke.R` | A small valid nested CES example should calibrate cleanly or flag identification issues before optimization. | Smoke run completes but warns that singleton nests are normalized and that the optimizer may not have found a good solution. | Improve examples to avoid singleton nests; consider stricter validation or clearer warning text when nest parameters are unidentified. | `Rscript ai/examples/package_audit_smoke.R` |
 | Low | `R/Auction2nd*`, `R/BargainingLogitFunctions.R` | `control.slopes` handling | Passing a shared control list with both `tol` and `reltol` to auction/bargaining constructors. | Optimizer controls should be documented per solver, or unsupported names should be ignored consistently. | `optimize()` requires `reltol`, while `BBoptim()` rejects `tol`/`reltol` combinations in some paths. | Document solver-specific control lists; optionally sanitize controls before passing to each optimizer. | Covered by the smoke script using solver-specific controls. |
 
@@ -72,7 +79,9 @@ This pass inventories the exported R package surface and adds a smoke harness fo
 
 - Fixed `upp.cournot()` diversion matrix construction.
 - Fixed `upp.cournot()` delegation to `upp.bertrand()` by using explicit argument names.
-- Added `getNestsParms()` methods for nested Logit, nested auction Logit, nested CES, and nested vertical bargaining objects.
+- Added antitrust `getNestsParms()` methods for nested Logit, nested auction
+  Logit, and nested CES objects; extracted vertical methods are maintained in
+  the sibling `vertical` package.
 - Preserved supplied LogitCap structural parameters, solved capacity KKT conditions with a Fischer--Burmeister residual, and rejected non-finite or over-capacity implied quantities.
 - Added explicit diagnostics for non-finite CES no-outside equilibria, LogLin unit-elastic/zero-cost boundaries, and invalid LogitCap identification inputs.
 - Reworked the symmetric Linear calibration start so complete diversion matrices cannot hang the constrained optimizer.

@@ -1,0 +1,171 @@
+---
+title: "Economic models and calibration"
+output: rmarkdown::html_vignette
+bibliography: antitrustbib.bib
+link-citations: true
+vignette: >
+  %\VignetteIndexEntry{Economic models and calibration}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+To predict the effect of a merger, we need to know where sales go when a
+price changes and how firms take those sales into account. Prices and shares
+alone rarely answer either question. `antitrust` combines observed market
+information with a demand system and an assumption about firm behavior to
+recover the parameters needed for a simulation.
+
+The answer is conditional on those inputs and assumptions. A different
+margin, diversion estimate, or conduct model can change recovered demand and
+costs, and therefore the predicted effect. Calibration does not provide
+sampling standard errors; checking plausible inputs and model choices is
+part of an economic analysis. The [workflow vignette](Workflow.html) shows
+how to use a fitted market. Here we explain what its fit means.
+
+## From observed market to structural state
+
+Most calibrations start with product prices $p$, quantities or shares $q$,
+pre-change ownership $\Omega$, and at least some gross margins
+$m_i=(p_i-c_i)/p_i$. A model may also require diversion ratios,
+elasticities, capacities, bargaining powers, nest assignments, or auction
+moments. Check what a "share" means before supplying one: Logit uses
+*quantity* shares, while CES and AIDS use *revenue* shares. Utilities and
+valuations may also need an observed outside share or a normalization to fix
+their common level.
+
+Consider Bertrand pricing. Firm $f$ chooses the prices of its products to
+maximize $\sum_{j\in J_f}(p_j-c_j)q_j(p)$. For one of those products, $i$,
+the first-order condition is
+
+$$
+q_i(p)+\sum_{j\in J_f}(p_j-c_j)\frac{\partial q_j(p)}{\partial p_i}=0.
+$$
+
+The first term is the gain from charging a slightly higher price on units of
+$i$ still sold. The sum captures lost sales of $i$ and any change in profits
+on the firm's other products. A merger adds terms to that sum: sales
+diverted from one merging product to another now matter to the same owner.
+Partial ownership is handled with ownership weights.
+
+Observed shares and margins restrict the demand derivatives in this
+condition. The chosen demand system fills in the remaining structure and
+allows marginal costs to be recovered. A counterfactual then changes
+ownership or another market condition while holding the calibrated demand
+primitives fixed. Two demand systems can agree at the observed prices but
+predict different outcomes if their derivatives change differently away from
+that point.
+
+One useful observation about substitution is quantity diversion from $i$ to
+$j$:
+$D^q_{ij}=-(\partial q_j/\partial p_i)/(\partial q_i/\partial p_i)$.
+It can help identify derivatives that shares and margins leave
+undetermined. Under the package's diversion-matrix convention, the diagonal
+is $-1$. With an outside option, the other modeled products need not absorb
+all sales lost by $i$. See `?diversion` for each model's quantity or revenue
+convention.
+
+## Demand systems
+
+Demand assumptions determine both **who substitutes for whom** and **how
+those substitution patterns change** as prices move. Linear and Log-linear
+models put restrictions directly on slopes or elasticities. Logit and CES
+give substitution a more structured form, while nests and random
+coefficients allow more variation. The table gives the main calibration
+tradeoffs; the model help pages give exact arguments and solver controls.
+
+| Family | Substitution and recovered parameters | What the calibration needs or restricts |
+|:--|:--|:--|
+| Linear | $q=a+Bp$ has constant slopes in quantity levels. Calibration recovers intercepts and a slope matrix. | Prices, quantities, margins, and diversion or symmetry restrictions are needed to pin down slopes. There is no curvature in quantity levels. |
+| Log-linear (`LogLin`) | $\log q_i=a_i+\sum_j B_{ij}\log p_j$ has constant elasticities, collected in $B$. | Prices, quantities, margins, and diversion or other restrictions identify the elasticities. |
+| LA-AIDS (`AIDS`) | Budget shares respond to log prices and an expenditure/price index. Adding up, homogeneity, and symmetry restrict cross-price effects. | Revenue shares, margins, and diversion or curvature restrictions identify the local system. Prices can be optional at calibration but matter for level outputs. |
+| PCAIDS and nested PCAIDS | Share proportionality restricts substitution; nests allow stronger within-group substitution. | `knownElast` and `mktElast` provide identifying information. Nested calibration also needs nests and enough margins. |
+| Logit | $s_i=\exp(\delta_i+\alpha p_i)/(1+\sum_j\exp(\delta_j+\alpha p_j))$. A common $\alpha<0$ governs price response; substitution is proportional to shares. | Prices, quantity shares, ownership, and enough margins identify $\alpha$ and mean values. Without an outside option, one mean value is normalized. |
+| Nested Logit | Correlation within nests directs more diversion toward products in the same nest. | Nest assignments and additional margins identify nesting parameters. A singleton nest cannot identify its own parameter. |
+| CES | Quality weights and price powers determine revenue shares. `gamma` controls substitution; `alpha` and the inside share govern expenditure allocation. | Prices, revenue shares, margins, and an outside share or normalization identify primitives for the chosen construction. Ordinary output-market translations require `gamma > 1`. |
+| Nested CES | Substitution can differ within and across nests. | Nest assignments and extra restrictions or margins identify the curvatures. In ordinary output markets, within-nest `sigma` exceeds between-nest `gamma > 1`. |
+| BLP/random coefficients | Integrating heterogeneous price tastes over consumer draws allows flexible diversion. | Prices, shares, known outside share `s0`, and conduct-specific margins identify price-taste parameters by contraction and margin matching. Calibration does not estimate `s0` or bargaining power. |
+| Capacity Logit (`LogitCap`) | Logit demand is subject to product quantity ceilings. | Market size and capacities locate binding constraints. Margins at exactly binding products matter because unconstrained FOCs do not identify their costs. |
+
+In Linear, Log-linear, and AIDS models, restrictions on derivatives and
+diversion help fill gaps in observed market data [@Haefen2002;
+@LaFrance2004; @Epstein2004]. Logit, CES, and capacity models instead put
+more structure on substitution or supply constraints [@Werden1994;
+@Sheu2011; @Froeb2003].
+
+Some models have an `"alm"` variant for an unobserved outside share. It uses
+additional margins to identify that share along with demand curvature. The
+variant is a separate implemented model, even when its demand name is the
+same, and it may lack a `specify()` route.
+
+### Identification in observed synthetic markets
+
+The observed synthetic experiment begins with shares, ownership, marginal
+costs, and one proportional reference margin. One margin identifies a common
+Logit price coefficient or CES curvature under the listed standard conduct
+equations, but it does not identify every model in this table. Nested Logit
+also requires the caller to supply `nests` and named `parameters$sigma`;
+Linear Bertrand requires a relative `parameters$slopes` matrix. Bargaining
+power defaults to 0.5 per product unless `bargpowerPre` is supplied.
+PCAIDS Bertrand uses diversion proportional to share and aggregate elasticity
+`-1`; the reference margin identifies its remaining demand scale. In ALM
+Logit and CES models, the active-product shares sum to one conditional on
+participation. A separate passive outside share is supplied or drawn
+uniformly from 0.1 to 0.5. This supports Bertrand, Cournot, second-score
+auction, and bargaining observed inversions for both demand families.
+Nested Logit ALM Bertrand additionally uses supplied `nests` and named
+`parameters$sigma` for the within-nest substitution pattern.
+
+The registry's `observed_synthetic` column names implemented inversion
+handlers; `"unsupported"` means the route requires more anchors or different
+design state. The model-by-model reasons are recorded in
+`artifacts/observed_synthetic_market_redesign.md`. Calibration from observed
+prices remains available through `calibrate()` for other models, which is a
+different experiment.
+
+## Conduct and cost recovery
+
+Demand tells us how buyers respond to prices; conduct tells us which choices
+firms make and which profits they internalize. The distinction matters for
+cost recovery as well as merger predictions. A Bertrand margin, for example,
+cannot simply be fed into a Cournot first-order condition. Each conduct model
+below uses its own equilibrium argument.
+
+| Conduct | How firms compete and what a merger changes | What calibration requires |
+|:--|:--|:--|
+| Bertrand | Firms choose prices and internalize the margins on their own products. Common ownership adds recaptured sales to that calculation. | Margins help identify demand derivatives; fitted prices and margins yield costs. |
+| Cournot | Firms or plants choose quantities, taking account of their effect on inverse demand. Common ownership changes those quantity incentives. | General Linear/LogLin implementations use plant quantities and production or cost information. Logit and CES Cournot have separate complete implementations. |
+| Stackelberg | Quantity leaders move before followers, whose responses they anticipate. A merger or a capacity/leadership change may alter that sequence. | Implemented Linear/LogLin games require plant and leadership information. |
+| Monopolistic competition (`moncom`) | Each product is priced against its *perceived own* demand. CES holds the aggregate index fixed for that derivative. | Prices, shares, and at least one margin identify supported Logit/CES/BLP variants. Ownership does not enter the cross-product FOC. |
+| Differentiated second-score auction | A seller offers the portfolio product with the highest surplus and bids cost; payment reflects the next-best score. A merger changes portfolio alternatives. | Shares and margins recover offer-value and cost primitives. A valuation may need normalization; price data help separate value from cost under cost changes [@Brannman2000; @miller2014]. |
+| Nash bargaining | Buyer and seller negotiate against disagreement payoffs. A merger changes recapture within the seller's portfolio and the bargaining alternatives. | Bargaining power is supplied. Supported Logit, CES, and BLP models use their own FOCs rather than Bertrand margins alone. |
+| Second-score bargaining | Bargaining occurs with a second-score auction disagreement option. | The Logit and CES implementations each have their own demand, bargaining, and auction state. |
+| Capacity-constrained second-price auction | A buyer sets a reserve, while seller costs are drawn from a distribution; capacity changes the minimum-cost distribution. | Capacities, prices/margins, and sometimes reserve or self-supply moments identify the cost distribution. More flexible distributions need more moments [@WaehrP2003]. |
+
+## Implemented combinations
+
+The demand and conduct descriptions above are a guide to choosing assumptions,
+not a menu of components that can be paired at will. The table below is
+generated from `supportedModels()` when this vignette is built. Each row is a
+**complete implemented model**. `TRUE` means the listed lifecycle operation
+is available; `simulate()` still checks whether a particular scenario field
+is supported by that model.
+
+```{r support-table, echo=FALSE}
+models <- antitrust::supportedModels()
+knitr::kable(
+  models[c("demand", "conduct", "variant", "class",
+           "calibrate", "specify", "simulate")],
+  row.names = FALSE
+)
+```
+
+The model registry identifies what can be fitted or simulated. A separate,
+narrower transition registry determines which fitted models can be translated
+with `respecify()`; an implemented row does not imply a transition from every
+other row. The [workflow vignette](Workflow.html) shows such comparisons, and
+the [architecture vignette](Architecture.html) explains the registry's role in
+dispatch and extensions.

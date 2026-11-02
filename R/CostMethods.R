@@ -2,29 +2,24 @@
 #' @name Cost-Methods
 #' @docType methods
 #'
-#' @aliases calcMC
-#' calcMC,ANY-method
-#' calcMC,Bertrand-method
-#' calcMC,VertBargBertLogit-method
-#' calcMC,Auction2ndLogit-method
-#' calcMC,Cournot-method
-#' calcMC,Auction2ndCap-method
-#' calcdMC
-#' calcdMC,ANY-method
-#' calcdMC,Stackelberg-method
-#' calcVC
-#' calcVC,ANY-method
-#' calcVC,Cournot-method
+#' @aliases calcMC calcMC,ANY-method calcMC,Bertrand-method calcMC,Auction2ndLogit-method calcMC,Cournot-method calcMC,Auction2ndCap-method calcdMC calcdMC,ANY-method calcdMC,Stackelberg-method calcVC calcVC,ANY-method calcVC,Cournot-method
 #'
 #' @description
 #' For Auction2ndCap, calcMC calculates (constant) marginal cost for each
 #' product. For those classes that do not require prices, returns a
 #' length-k vector of NAs when prices are not supplied.
 #'
-#' For Bertrand, calcMC computes either pre- or post-merger marginal costs. Marginal costs
-#' are assumed to be constant. Post-merger marginal costs are equal to
-#' pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a length-k
-#' vector of marginal cost changes. \sQuote{mcDelta} will typically be between 0 and 1.
+#' For Bertrand, calcMC computes either pre- or post-merger marginal costs.
+#' Marginal costs are assumed to be constant. Post-merger marginal costs are
+#' equal to pre-merger marginal costs multiplied by 1+\sQuote{mcDelta}, a
+#' length-k vector of physical marginal-cost changes. With revenue retention
+#' \eqn{r}, constant-cost values returned by calcMC are effective costs
+#' \eqn{\kappa=c/r}, so that a price-cost margin is \eqn{p-\kappa}. For an
+#' initialized model, the post-merger value is
+#' \eqn{\kappa_{post}=\kappa_{base}(1+mcDelta)r_{base}/r_{post}}.
+#' Thus a pure retention change uses \sQuote{mcDelta}=0. The second-score
+#' Logit auction retains its legacy additive physical cost-level
+#' interpretation of \sQuote{mcDelta}.
 #'
 #' For Auction2ndLogit, calcMC computes constant marginal costs impied by the model.
 #'
@@ -74,6 +69,124 @@ setGeneric(
   }
 )
 
+## A calibrated model has two different kinds of cost information.  The
+## legacy `mcPre` slot is the value implied by the calibration observations,
+## while a counterfactual needs the structural cost primitive that remains
+## fixed when ownership, quality, or the active product set changes.  Keep the
+## latter as an ordinary attribute so the public S4 classes and their mature
+## constructors do not change.  The attribute is copied by S4 value
+## semantics, including when a result is promoted into the next path step.
+.cost_state_attribute <- "antitrust_cost_state"
+
+.cost_state <- function(object) {
+  attr(object, .cost_state_attribute, exact = TRUE)
+}
+
+.cost_state_mode <- function(object) {
+  ## The second-score Logit family historically treats `mcDelta` as an
+  ## additive cost level.  All other constant-cost demand classes use the
+  ## documented proportional change.  Keep that one-step convention intact.
+  if (methods::is(object, "Auction2ndLogit") &&
+      !methods::is(object, "Auction2ndCES")) {
+    "additive"
+  } else {
+    "multiplicative"
+  }
+}
+
+.set_cost_state <- function(object, state) {
+  attr(object, .cost_state_attribute) <- state
+  object
+}
+
+## Capture the calibrated cost level after a legacy constructor has completed.
+## For Cournot/Stackelberg the cost functions themselves are the structural
+## primitive; their realized value remains quantity-dependent and is therefore
+## deliberately not frozen here.
+#' Initialize persistent structural cost state
+#'
+#' @param object A fitted structural model.
+#' @return The model with its structural cost state initialized.
+#' @export
+initialize_cost_state <- function(object) {
+  ## Cournot and Stackelberg marginal costs are functions of equilibrium
+  ## quantities.  Their function closures and derivative closures already
+  ## live in the S4 slots and are promoted with the quantity state; freezing
+  ## the calibration-time evaluation here would change their economics.
+  if (methods::is(object, "Cournot")) return(object)
+  slots <- methods::slotNames(object)
+  if (!"mcPre" %in% slots) return(object)
+  base <- methods::slot(object, "mcPre")
+  if (!is.numeric(base) || !length(base)) return(object)
+  state <- list(
+    base = as.numeric(base),
+    baseRetention = getRetention(object, TRUE),
+    preCumulative = rep(0, length(base)),
+    mode = .cost_state_mode(object)
+  )
+  .set_cost_state(object, state)
+}
+
+.initialize_cost_state <- function(object) initialize_cost_state(object)
+
+#' Compound structural marginal-cost shocks
+#'
+#' Combines a new marginal-cost change with a cumulative change using the
+#' cost convention of `object`. Most structural models use proportional
+#' changes; second-score Logit auctions retain their historical additive
+#' convention.
+#'
+#' @param object A fitted structural model whose cost convention is used.
+#' @param current The current cumulative cost change, or `NULL`.
+#' @param change The next cost change, or `NULL`.
+#' @return The compounded cost-change vector, or `current` when `change` is
+#'   `NULL`.
+#' @export
+compound_cost_shocks <- function(object, current = NULL, change = NULL) {
+  state <- .cost_state(object)
+  mode <- if (!is.null(state) && !is.null(state$mode)) {
+    state$mode
+  } else {
+    .cost_state_mode(object)
+  }
+  .compound_costs(current, change, mode = mode)
+}
+
+## Return a persistent cost level when the model carries one.  A NULL return
+## means that the object is a direct legacy S4 object, for which calcMC keeps
+## its original inference behavior.
+.persistent_mc <- function(object, preMerger) {
+  state <- .cost_state(object)
+  if (is.null(state) || is.null(state$base)) return(NULL)
+  base <- state$base
+  if (!is.numeric(base) || !length(base)) return(NULL)
+  {
+    delta <- if (preMerger) state$preCumulative else {
+      if ("mcDelta" %in% methods::slotNames(object)) object@mcDelta else NULL
+    }
+    if (is.null(delta)) delta <- rep(0, length(base))
+    if (is.null(delta) || length(delta) != length(base)) return(NULL)
+    initial_retention <- if (is.null(state$baseRetention)) {
+      rep(1, length(base))
+    } else {
+      state$baseRetention
+    }
+    ## Constant-cost slots store kappa = c/r. Convert the retained baseline
+    ## threshold back to physical cost before applying shocks.
+    target_retention <- getRetention(object, preMerger)
+    if (identical(state$mode, "additive")) {
+      base <- (base * initial_retention + delta) /
+        target_retention
+    } else {
+      base <- base * (1 + delta) * initial_retention /
+        target_retention
+    }
+  }
+  names(base) <- if ("labels" %in% methods::slotNames(object) &&
+                     is.character(object@labels)) object@labels else names(base)
+  base
+}
+
 ## Create a method to recover marginal cost using
 ## demand parameters and supplied prices
 #' @rdname Cost-Methods
@@ -82,6 +195,15 @@ setMethod(
   f = "calcMC",
   signature = "Bertrand",
   definition = function(object, preMerger = TRUE) {
+    persistent <- .persistent_mc(object, preMerger)
+    if (!is.null(persistent)) {
+      isNegMC <- persistent < 0
+      if (preMerger && any(isNegMC, na.rm = TRUE)) {
+        warning(paste("Negative marginal costs were calibrated for the following firms:",
+                      paste(object@labels[isNegMC], collapse = ",")))
+      }
+      return(persistent)
+    }
     output <- object@output
 
     object@pricePre <- object@prices
@@ -97,6 +219,7 @@ setMethod(
 
     if (!preMerger) {
       mc <- mc * (1 + object@mcDelta)
+      mc <- mc * getRetention(object, TRUE) / getRetention(object, FALSE)
     }
 
     # mc <- as.vector(mc)
@@ -113,65 +236,6 @@ setMethod(
     return(mc)
   }
 )
-
-#' @rdname Cost-Methods
-#' @export
-setMethod(
-  f = "calcMC",
-  signature = "VertBargBertLogit",
-  definition = function(object, preMerger = TRUE) {
-    up <- object@up
-    down <- object@down
-
-
-    if (length(up@pricePre) == 0) {
-      priceUpPre <- up@prices
-      object@up@pricePre <- up@prices
-    } else {
-      priceUpPre <- up@pricePre
-    }
-
-    if (length(down@pricePre) == 0) {
-      priceDownPre <- down@prices
-      object@down@pricePre <- priceDownPre
-    } else {
-      priceDownPre <- object@down@pricePre
-    }
-
-
-    marginsPre <- calcMargins(object, preMerger = TRUE, level = TRUE)
-
-
-    mcDown <- -(marginsPre$down - priceDownPre + priceUpPre)
-    mcUp <- -(marginsPre$up - priceUpPre)
-
-
-    if (!preMerger) {
-      mcUp <- mcUp * (1 + up@mcDelta)
-      mcDown <- mcDown * (1 + down@mcDelta)
-    }
-
-    mcUp <- as.vector(mcUp)
-    mcDown <- as.vector(mcDown)
-
-    names(mcUp) <- up@labels
-    names(mcDown) <- down@labels
-
-
-    isNegUpMC <- mcUp < 0
-    isNegDownMC <- mcDown < 0
-
-    if (preMerger && any(isNegUpMC, na.rm = TRUE)) {
-      warning(paste("Negative upstream marginal costs were calibrated for the following firms:", paste(up@labels[isNegUpMC & !is.na(isNegUpMC)], collapse = ",")))
-    }
-    if (preMerger && any(isNegDownMC, na.rm = TRUE)) {
-      warning(paste("Negative downstream marginal costs were calibrated for the following firms:", paste(down@labels[isNegDownMC & !is.na(isNegDownMC)], collapse = ",")))
-    }
-
-    return(list(up = mcUp, down = mcDown))
-  }
-)
-
 
 #' @rdname Cost-Methods
 #' @export
@@ -295,6 +359,14 @@ setMethod(
   f = "calcMC",
   signature = "Auction2ndLogit",
   definition = function(object, preMerger = TRUE, exAnte = FALSE) {
+    persistent <- .persistent_mc(object, preMerger)
+    if (!is.null(persistent)) {
+      ## Auction2ndLogit's public legacy method reports the conditional cost
+      ## level by default and multiplies by the product share for exAnte.
+      mc <- persistent
+      if (exAnte) mc <- mc * calcShares(object, preMerger = preMerger)
+      return(as.vector(mc))
+    }
     prices <- object@prices
     output <- object@output
 
@@ -307,7 +379,8 @@ setMethod(
     }
 
     if (!preMerger) {
-      mc <- mc + object@mcDelta
+      mc <- (mc * getRetention(object, TRUE) + object@mcDelta) /
+        getRetention(object, FALSE)
     }
 
     if (exAnte) {
@@ -334,6 +407,8 @@ setMethod(
   f = "calcMC",
   signature = "Auction2ndCES",
   definition = function(object, preMerger = TRUE) {
+    persistent <- .persistent_mc(object, preMerger)
+    if (!is.null(persistent)) return(as.vector(persistent))
     prices <- object@prices
     output <- object@output
 
@@ -349,6 +424,7 @@ setMethod(
 
     if (!preMerger) {
       mc <- mc * (1 + object@mcDelta)
+      mc <- mc * getRetention(object, TRUE) / getRetention(object, FALSE)
     }
 
     names(mc) <- object@labels

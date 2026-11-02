@@ -9,7 +9,6 @@
 \alias{calcPriceDelta,AIDS-method}
 \alias{calcPriceDelta,Auction2ndLogit-method}
 \alias{calcPriceDelta,Cournot-method}
-\alias{calcPriceDelta,VertBargBertLogit-method}
 \title{Methods For Calculating Price Delta}
 \usage{
 \S4method{calcPriceDelta}{Antitrust}(
@@ -23,16 +22,6 @@
 )
 
 \S4method{calcPriceDelta}{Cournot}(
-  object,
-  levels = FALSE,
-  market = FALSE,
-  party = FALSE,
-  isMax = FALSE,
-  index = c("paasche", "laspeyres"),
-  ...
-)
-
-\S4method{calcPriceDelta}{VertBargBertLogit}(
   object,
   levels = FALSE,
   market = FALSE,

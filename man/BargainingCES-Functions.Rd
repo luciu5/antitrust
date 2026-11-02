@@ -66,7 +66,8 @@ bargaining.ces.alm(
   priceOutside = 1,
   control.slopes,
   control.equ,
-  labels = paste("Prod", 1:length(prices), sep = "")
+  labels = paste("Prod", 1:length(prices), sep = ""),
+  mktElast = NA_real_
 )
 }
 \arguments{
@@ -134,6 +135,9 @@ Default is 1.}
 outside good. Default is 0.}
 
 \item{parmsStart}{A length 2 vector of starting values for ALM demand parameter estimation.}
+
+\item{mktElast}{Optional aggregate market elasticity used by the ALM
+calibration; the default `NA` keeps legacy calibration behavior.}
 }
 \value{
 \code{bargaining.ces} returns an instance of \code{\linkS4class{BargainingCES}},

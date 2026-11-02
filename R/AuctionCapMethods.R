@@ -2,20 +2,7 @@
 #' @name AuctionCap-Methods
 #' @docType methods
 #'
-#' @aliases calcBuyerExpectedCost
-#' calcBuyerValuation
-#' calcExpectedLowestCost
-#' calcExpectedPrice
-#' calcOptimalReserve
-#' calcSellerCostParms
-#' cdfG
-#' calcBuyerExpectedCost,Auction2ndCap-method
-#' calcBuyerValuation,Auction2ndCap-method
-#' calcExpectedLowestCost,Auction2ndCap-method
-#' calcExpectedPrice,Auction2ndCap-method
-#' calcOptimalReserve,Auction2ndCap-method
-#' calcSellerCostParms,Auction2ndCap-method
-#' cdfG,Auction2ndCap-method
+#' @aliases calcBuyerExpectedCost calcBuyerValuation calcExpectedLowestCost calcExpectedPrice calcOptimalReserve calcSellerCostParms cdfG calcBuyerExpectedCost,Auction2ndCap-method calcBuyerValuation,Auction2ndCap-method calcExpectedLowestCost,Auction2ndCap-method calcExpectedPrice,Auction2ndCap-method calcOptimalReserve,Auction2ndCap-method calcSellerCostParms,Auction2ndCap-method cdfG,Auction2ndCap-method
 #'
 #' @param object An instance of the respective class (see description for the classes)
 #' @param  preMerger If TRUE, the pre-merger ownership structure is used. If FALSE, the post-merger ownership structure is used.

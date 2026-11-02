@@ -1,0 +1,937 @@
+## Tests for sequential (multi-step) counterfactual composition: the Markov
+## property (each step solves from the previous step's equilibrium, not the
+## original baseline), quality shocks, entry, exit persistence, and the
+## simultaneous-vs-sequential distinction between combine_counterfactuals()
+## and add_step().
+
+.seq_fit <- function() {
+    calibrate(
+        "logit", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    )
+}
+
+.independent_logit_foc <- function(model, preMerger = FALSE) {
+    prices <- if (preMerger) model@pricePre else model@pricePost
+    marginal_cost <- if (preMerger) model@mcPre else model@mcPost
+    alpha <- as.numeric(model@slopes$alpha)[1]
+    meanval <- as.numeric(model@slopes$meanval)
+    weights <- exp(meanval + alpha * prices)
+    shares <- weights / (1 + sum(weights))
+    demand_jacobian <- alpha * (diag(shares) - tcrossprod(shares))
+    ownership <- ownerToMatrix(model, preMerger = preMerger)
+    foc <- vapply(seq_along(shares), function(j) {
+        shares[j] + sum(ownership[j, ] *
+                            (prices - marginal_cost) * demand_jacobian[, j])
+    }, numeric(1))
+    foc
+}
+
+test_that("sequential ownership -> ownership uses the promoted post-merger state", {
+    fit <- .seq_fit()
+    cf <- counterfactual(ownership = c("A", "A", "C"))
+    cf <- add_step(cf, ownership = c("A", "A", "A"))
+    path <- simulate(fit, cf)
+
+    expect_s4_class(path, "CounterfactualPath")
+    expect_length(path@steps, 2L)
+    expect_length(path@results, 2L)
+
+    step1 <- result_at(path, 1)
+    step2 <- result_at(path, 2)
+
+    ## Markov property: step 2 must start from step 1's solved equilibrium.
+    expect_equal(step2@pricePre, step1@pricePost, tolerance = 1e-8)
+    expect_equal(step2@mcPre, step1@mcPost, tolerance = 1e-8)
+
+    ## Both paths now solve the same final static environment.  Promoted
+    ## prices remain the solver's starting values, while structural costs stay
+    ## fixed, so the unique equilibrium is path-order invariant.
+    naive <- simulate(fit, ownerPost = c("A", "A", "A"))
+    expect_equal(naive@pricePost, step2@pricePost, tolerance = 1e-8)
+
+    expect_identical(final_result(path), step2)
+})
+
+test_that("sequential costs -> costs compound multiplicatively on the current cost state", {
+    fit <- .seq_fit()
+    cf <- counterfactual(costs = c(-.05, 0, 0))
+    cf <- add_step(cf, costs = c(-.05, 0, 0))
+    path <- simulate(fit, cf)
+
+    step2 <- result_at(path, 2)
+    ## Two -5% shocks compound to -9.75%, not -10%.
+    reference <- simulate(fit, ownerPost = fit@model@ownerPre, mcDelta = c(-.0975, 0, 0))
+    expect_equal(step2@mcPost, reference@mcPost, tolerance = 1e-8)
+})
+
+test_that("sequential ownership -> costs and costs -> ownership both use the promoted state", {
+    fit <- .seq_fit()
+
+    cf1 <- counterfactual(ownership = c("A", "A", "C"))
+    cf1 <- add_step(cf1, costs = c(0, -.1, 0))
+    path1 <- simulate(fit, cf1)
+    step1_a <- result_at(path1, 1)
+    step2_a <- result_at(path1, 2)
+    expect_equal(step2_a@pricePre, step1_a@pricePost, tolerance = 1e-8)
+
+    cf2 <- counterfactual(costs = c(0, -.1, 0))
+    cf2 <- add_step(cf2, ownership = c("A", "A", "C"))
+    path2 <- simulate(fit, cf2)
+    step1_b <- result_at(path2, 1)
+    step2_b <- result_at(path2, 2)
+    expect_equal(step2_b@pricePre, step1_b@pricePost, tolerance = 1e-8)
+
+    ## Ownership and cost changes commute when they define the same final
+    ## static environment and the equilibrium is unique.
+    expect_equal(step2_a@pricePost, step2_b@pricePost, tolerance = 1e-8)
+})
+
+test_that("an empty step preserves the solved equilibrium and structural costs", {
+    fit <- .seq_fit()
+    baseline <- simulate(fit, counterfactual())
+    path <- simulate(fit, add_step(counterfactual()))
+    final <- final_result(path)
+
+    expect_equal(final@pricePost, baseline@pricePost, tolerance = 1e-8)
+    expect_equal(final@mcPost, baseline@mcPost, tolerance = 1e-8)
+    expect_equal(unname(final@mcPost), unname(fit@model@mcPre), tolerance = 1e-8)
+})
+
+test_that("ownership and quality changes do not re-identify incumbent costs", {
+    fit <- .seq_fit()
+    expected <- unname(fit@model@mcPre)
+
+    merger <- simulate(fit, counterfactual(ownership = c("A", "A", "C")))
+    quality <- simulate(fit, counterfactual(quality = c(Prod1 = .2)))
+    exit <- simulate(fit, counterfactual(exit = "Prod1"))
+
+    expect_equal(unname(merger@mcPost), expected, tolerance = 1e-8)
+    expect_equal(unname(quality@mcPost), expected, tolerance = 1e-8)
+    expect_equal(unname(exit@mcPost), expected, tolerance = 1e-8)
+})
+
+test_that("preserved cost state still satisfies independent Logit price FOCs", {
+    fit <- .seq_fit()
+    result <- simulate(fit, counterfactual(ownership = c("A", "A", "C")))
+
+    ## Shares and the Jacobian are reconstructed directly from the Logit
+    ## primitives.  The expected FOC is independent of calcMC() and
+    ## calcMargins(), which are the methods under regression here.
+    expect_lt(max(abs(.independent_logit_foc(fit@model, preMerger = TRUE))),
+              1e-8)
+    expect_lt(max(abs(.independent_logit_foc(result, preMerger = FALSE))),
+              1e-7)
+})
+
+test_that("simulate() preserves the ordinary legacy result for one-step Counterfactuals", {
+    fit <- .seq_fit()
+    cf <- counterfactual(ownership = c("A", "A", "C"))
+    result <- simulate(fit, cf)
+    expect_s4_class(result, "Logit")
+    expect_false(methods::is(result, "CounterfactualPath"))
+})
+
+## ---- Quality --------------------------------------------------------------
+
+test_that("quality = 0 reproduces the baseline meanval", {
+    fit <- .seq_fit()
+    cf <- counterfactual(quality = c(Prod1 = 0))
+    result <- simulate(fit, cf)
+    expect_equal(result@slopes$meanval, fit@model@slopes$meanval, tolerance = 1e-12)
+})
+
+test_that("quality applies a proportional choice-weight change to Logit meanval", {
+    fit <- .seq_fit()
+    baseline_meanval <- fit@model@slopes$meanval
+
+    cf <- counterfactual(quality = c(Prod1 = .10))
+    result <- simulate(fit, cf)
+    expect_equal(result@slopes$meanval[["Prod1"]], baseline_meanval[["Prod1"]] + log1p(.10), tolerance = 1e-12)
+
+    cf_neg <- counterfactual(quality = c(Prod1 = -.05))
+    result_neg <- simulate(fit, cf_neg)
+    expect_equal(result_neg@slopes$meanval[["Prod1"]], baseline_meanval[["Prod1"]] + log1p(-.05), tolerance = 1e-12)
+})
+
+test_that("sequential Logit quality shocks compound in choice weights", {
+    fit <- .seq_fit()
+    baseline_meanval <- fit@model@slopes$meanval[["Prod1"]]
+
+    cf <- counterfactual(quality = c(Prod1 = .10))
+    cf <- add_step(cf, quality = c(Prod1 = .20))
+    path <- simulate(fit, cf)
+
+    final <- final_result(path)
+    expect_equal(final@slopes$meanval[["Prod1"]], baseline_meanval + log1p(.10) + log1p(.20), tolerance = 1e-10)
+    expect_equal(final@slopes$meanval[["Prod1"]], baseline_meanval + log(1.32), tolerance = 1e-10)
+})
+
+test_that("quality persists into a later ownership change", {
+    fit <- .seq_fit()
+    baseline_meanval <- fit@model@slopes$meanval[["Prod1"]]
+
+    cf <- counterfactual(quality = c(Prod1 = .10))
+    cf <- add_step(cf, ownership = c("A", "A", "C"))
+    path <- simulate(fit, cf)
+
+    step2 <- result_at(path, 2)
+    expect_equal(step2@slopes$meanval[["Prod1"]], baseline_meanval + log1p(.10), tolerance = 1e-10)
+})
+
+test_that("quality persists into a later cost change", {
+    fit <- .seq_fit()
+    baseline_meanval <- fit@model@slopes$meanval[["Prod1"]]
+
+    cf <- counterfactual(quality = c(Prod1 = .10))
+    cf <- add_step(cf, costs = c(0, -.1, 0))
+    path <- simulate(fit, cf)
+
+    step2 <- result_at(path, 2)
+    expect_equal(step2@slopes$meanval[["Prod1"]], baseline_meanval + log1p(.10), tolerance = 1e-10)
+})
+
+test_that("a quality shock to an exited product errors", {
+    fit <- .seq_fit()
+    cf <- counterfactual(exit = "Prod1")
+    cf <- add_step(cf, quality = c(Prod1 = .10))
+    expect_error(simulate(fit, cf), "not active")
+})
+
+test_that("quality does not mutate the source Fit", {
+    fit <- .seq_fit()
+    baseline_meanval <- fit@model@slopes$meanval
+    simulate(fit, counterfactual(quality = c(Prod1 = .10)))
+    expect_equal(fit@model@slopes$meanval, baseline_meanval, tolerance = 0)
+})
+
+test_that("quality is rejected for unsupported model families", {
+    fit <- calibrate(
+        "linear", "bertrand", prices = c(2, 2.2, 2.5),
+        quantities = c(40, 35, 25), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C")
+    )
+    expect_error(simulate(fit, counterfactual(quality = c(Prod1 = .1))), "does not support")
+})
+
+test_that("quality works for Logit Cournot and CES Bertrand/Cournot", {
+    qa_skip_unless_tier("extended")
+    fit_lc <- calibrate(
+        "logit", "cournot", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    )
+    result_lc <- simulate(fit_lc, counterfactual(quality = c(Prod1 = .1)))
+    expect_equal(result_lc@slopes$meanval[["Prod1"]],
+                 fit_lc@model@slopes$meanval[["Prod1"]] + log1p(.1), tolerance = 1e-10)
+
+    fit_ces <- calibrate(
+        "ces", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    )
+    result_ces <- simulate(fit_ces, counterfactual(quality = c(Prod1 = .1)))
+    expect_equal(result_ces@slopes$meanval[["Prod1"]],
+                 fit_ces@model@slopes$meanval[["Prod1"]] * 1.1, tolerance = 1e-10)
+
+    fit_cesc <- calibrate(
+        "ces", "cournot", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    )
+    result_cesc <- simulate(fit_cesc, counterfactual(quality = c(Prod1 = .1)))
+    expect_equal(result_cesc@slopes$meanval[["Prod1"]],
+                 fit_cesc@model@slopes$meanval[["Prod1"]] * 1.1, tolerance = 1e-10)
+})
+
+test_that("quality applies a sigmaNest-scaled choice-weight change to LogitBLP", {
+    ## Pin deterministic integration draws so this test cannot perturb the
+    ## global RNG stream (sigma = 0 with no demographic dimension falls back
+    ## to Monte Carlo by default, which would otherwise consume random
+    ## draws and could shift a later, unseeded test's solver starting point).
+    nodes <- c(-1, 0, 1)
+    weights <- c(.25, .5, .25)
+
+    ## Unnested (sigmaNest = 1) must exactly match flat Logit's shift.
+    fit_flat <- specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1), shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"), labels = c("A", "B", "C"),
+        parameters = list(alphaMean = -1.2, sigma = 0, sigmaNest = 1,
+                          meanval = c(.5, .2, -.1),
+                          integration = "provided",
+                          draws = nodes, drawWeights = weights)
+    )
+    result_flat <- simulate(fit_flat, counterfactual(quality = c(A = .25)))
+    expect_equal(result_flat@slopes$meanval[["A"]],
+                 fit_flat@model@slopes$meanval[["A"]] + log1p(.25), tolerance = 1e-12)
+
+    ## Nested (sigmaNest < 1): the meanval shift must be sigmaNest-scaled, and
+    ## the resulting choice weight exp(util / sigmaNest) must scale by exactly
+    ## (1 + quality) -- the actual economic target, not just the formula.
+    sigmaNest <- 0.25
+    fit_nested <- specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1), shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"), labels = c("A", "B", "C"),
+        parameters = list(alphaMean = -1.2, sigma = 0, sigmaNest = sigmaNest,
+                          meanval = c(.5, .2, -.1),
+                          integration = "provided",
+                          draws = nodes, drawWeights = weights)
+    )
+    model_before <- fit_nested@model
+    util_before <- model_before@slopes$meanval[["A"]] + model_before@slopes$alphas[1] *
+        (model_before@pricePre[[1]] - model_before@priceOutside)
+
+    quality <- 0.4
+    result_nested <- simulate(fit_nested, counterfactual(quality = c(A = quality)))
+    expect_equal(result_nested@slopes$meanval[["A"]],
+                 fit_nested@model@slopes$meanval[["A"]] + sigmaNest * log1p(quality),
+                 tolerance = 1e-12)
+
+    util_after <- result_nested@slopes$meanval[["A"]] + result_nested@slopes$alphas[1] *
+        (result_nested@pricePre[[1]] - result_nested@priceOutside)
+    weight_ratio <- exp(util_after / sigmaNest) / exp(util_before / sigmaNest)
+    expect_equal(weight_ratio, 1 + quality, tolerance = 1e-10)
+})
+
+## ---- Exit ------------------------------------------------------------------
+
+test_that("sequential exit persists and combines across steps", {
+    fit <- .seq_fit()
+    cf <- counterfactual(exit = "Prod1")
+    cf <- add_step(cf, exit = "Prod2")
+    path <- simulate(fit, cf)
+
+    step1 <- result_at(path, 1)
+    step2 <- result_at(path, 2)
+    expect_equal(step1@subset, c(FALSE, TRUE, TRUE))
+    ## Step 2 must retain Prod1's exit while adding Prod2's.
+    expect_equal(step2@subset, c(FALSE, FALSE, TRUE))
+})
+
+test_that("simultaneous multi-exit removes both products in one step", {
+    fit <- .seq_fit()
+    result <- simulate(fit, counterfactual(exit = c("Prod1", "Prod2")))
+    expect_equal(result@subset, c(FALSE, FALSE, TRUE))
+})
+
+test_that("a cost shock to an exited product errors, not silently ignored", {
+    fit <- .seq_fit()
+    cf <- counterfactual(exit = "Prod1")
+    cf <- add_step(cf, costs = c(Prod1 = -.1, Prod2 = 0, Prod3 = 0))
+    expect_error(simulate(fit, cf), "not active")
+})
+
+## ---- Entry -----------------------------------------------------------------
+
+test_that("one entrant increases product and firm count by one", {
+    qa_skip_unless_tier("extended")
+    fit <- .seq_fit()
+    e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5,
+                  cost = 1, priceStart = 2)
+    result <- simulate(fit, counterfactual(entry = e1))
+
+    expect_equal(length(result@labels), 4L)
+    expect_true("E1" %in% result@labels)
+    owner_mat <- ownerToMatrix(result, preMerger = TRUE)
+    expect_equal(nrow(owner_mat), 4L)
+    ## The entrant is a single-product firm: its ownership row/column has
+    ## exactly one nonzero entry (itself).
+    idx <- match("E1", result@labels)
+    expect_equal(sum(owner_mat[idx, ] != 0), 1L)
+    expect_true(is.finite(result@pricePost[idx]))
+    expect_equal(unname(result@mcPost[idx]), e1@cost, tolerance = 1e-10)
+    expect_equal(unname(result@mcPost[-idx]), unname(fit@model@mcPre), tolerance = 1e-10)
+})
+
+test_that("entrant can receive a later quality shock, cost shock, and merger", {
+    qa_skip_if_not_nightly()
+    fit <- .seq_fit()
+    e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5,
+                  cost = 1, priceStart = 2)
+
+    cf <- counterfactual(entry = e1)
+    cf <- add_step(cf, quality = c(E1 = .1))
+    path <- simulate(fit, cf)
+    step2 <- result_at(path, 2)
+    idx <- match("E1", step2@labels)
+    expect_equal(step2@slopes$meanval[[idx]],
+                 result_at(path, 1)@slopes$meanval[[idx]] + log1p(.1), tolerance = 1e-10)
+
+    cf2 <- counterfactual(entry = e1)
+    cf2 <- add_step(cf2, costs = c(Prod1 = 0, Prod2 = 0, Prod3 = 0, E1 = -.1))
+    path2 <- simulate(fit, cf2)
+    step2b <- result_at(path2, 2)
+    expect_true(is.finite(step2b@mcPost[match("E1", step2b@labels)]))
+
+    cf3 <- counterfactual(entry = e1)
+    ## Firm "A" (position 1, Prod1) is assigned to own the entrant (position
+    ## 4, E1) post-merger; product labels are distinct from these firm IDs.
+    cf3 <- add_step(cf3, ownership = c("A", "A", "C", "A"))
+    path3 <- simulate(fit, cf3)
+    step2c <- result_at(path3, 2)
+    owner_mat <- ownerToMatrix(step2c, preMerger = FALSE)
+    idxProd1 <- match("Prod1", step2c@labels)
+    idxE1 <- match("E1", step2c@labels)
+    expect_equal(owner_mat[idxProd1, idxE1], 1)
+})
+
+test_that("post-entry positional cost shocks cannot recycle across products", {
+    fit <- .seq_fit()
+    e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5,
+                  cost = 1, priceStart = 2)
+    cf <- counterfactual(entry = e1)
+    cf <- add_step(cf, costs = c(-.1, 0, 0))
+    expect_error(simulate(fit, cf), "match the current fitted market dimension")
+})
+
+test_that("two simultaneous entrants and two sequential entrants both work", {
+    qa_skip_unless_tier("extended")
+    fit <- .seq_fit()
+    e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    e2 <- entrant(label = "E2", meanval = fit@model@slopes$meanval[[1]] * .4, cost = 1.1, priceStart = 2)
+
+    simultaneous <- simulate(fit, counterfactual(entry = list(e1, e2)))
+    expect_equal(length(simultaneous@labels), 5L)
+    expect_true(all(c("E1", "E2") %in% simultaneous@labels))
+
+    cf <- counterfactual(entry = e1)
+    cf <- add_step(cf, entry = e2)
+    path <- simulate(fit, cf)
+    final <- final_result(path)
+    expect_equal(length(final@labels), 5L)
+    expect_true(all(c("E1", "E2") %in% final@labels))
+})
+
+test_that("duplicate entrant labels error", {
+    fit <- .seq_fit()
+    e_dup1 <- entrant(label = "E1", meanval = .1, cost = 1, priceStart = 2)
+    e_dup2 <- entrant(label = "E1", meanval = .2, cost = 1, priceStart = 2)
+    expect_error(counterfactual(entry = list(e_dup1, e_dup2)), "duplicate")
+
+    ## An entrant reusing an existing product's label must also error, but
+    ## only once simulate() can check it against the model's current labels
+    ## (counterfactual() alone has no fitted model to compare against).
+    e_existing <- entrant(label = "Prod1", meanval = .1, cost = 1, priceStart = 2)
+    expect_error(simulate(fit, counterfactual(entry = e_existing)), "duplicate")
+})
+
+test_that("entry is rejected for unsupported model families", {
+    fit <- calibrate(
+        "linear", "bertrand", prices = c(2, 2.2, 2.5),
+        quantities = c(40, 35, 25), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C")
+    )
+    e1 <- entrant(label = "E1", meanval = .1, cost = 1, priceStart = 2)
+    expect_error(simulate(fit, counterfactual(entry = e1)), "does not support")
+})
+
+test_that("entry does not mutate the source Fit", {
+    fit <- .seq_fit()
+    baseline_labels <- fit@model@labels
+    e1 <- entrant(label = "E1", meanval = .1, cost = 1, priceStart = 2)
+    simulate(fit, counterfactual(entry = e1))
+    expect_equal(fit@model@labels, baseline_labels)
+})
+
+## ---- Simultaneous vs sequential -------------------------------------------
+
+test_that("combine_counterfactuals() is simultaneous (one step); add_step() is sequential (two steps)", {
+    fit <- .seq_fit()
+    q <- c(Prod1 = .1)
+    merger <- c("A", "A", "C")
+
+    simultaneous <- combine_counterfactuals(
+        counterfactual(quality = q),
+        counterfactual(ownership = merger)
+    )
+    expect_length(simultaneous@steps, 1L)
+    result_simultaneous <- simulate(fit, simultaneous)
+    expect_false(methods::is(result_simultaneous, "CounterfactualPath"))
+
+    sequential <- counterfactual(quality = q)
+    sequential <- add_step(sequential, ownership = merger)
+    expect_length(sequential@steps, 2L)
+    result_sequential <- simulate(fit, sequential)
+    expect_s4_class(result_sequential, "CounterfactualPath")
+    expect_length(result_sequential@steps, 2L)
+})
+
+## ---- Path continuation (simulate(path, cf)) --------------------------------
+
+test_that("simulate() can resume from a CounterfactualPath's final state", {
+    qa_skip_unless_tier("extended")
+    fit <- .seq_fit()
+    cf1 <- counterfactual(ownership = c("A", "A", "C"))
+    cf1 <- add_step(cf1, ownership = c("A", "A", "A"))
+    p1 <- simulate(fit, cf1)
+
+    p2 <- simulate(p1, counterfactual(costs = c(0, -.1, 0)))
+    expect_s4_class(p2, "CounterfactualPath")
+    expect_length(p2@steps, 3L)
+    expect_length(p2@results, 3L)
+
+    resumed_step <- result_at(p2, 3)
+    expect_equal(resumed_step@pricePre, final_result(p1)@pricePost, tolerance = 1e-8)
+
+    ## Continuing again should compose further, not reset to any baseline.
+    p3 <- simulate(p2, counterfactual(costs = c(0, -.1, 0)))
+    expect_length(p3@steps, 4L)
+    step4 <- result_at(p3, 4)
+    expect_equal(step4@mcDelta, c(0, -.19, 0), tolerance = 1e-10)
+})
+
+## ---- Mixed sequence: entry -> quality -> merger -> exit -------------------
+
+test_that("a mixed entry, quality, merger, and exit sequence resolves and tracks labels", {
+    qa_skip_if_not_nightly()
+    fit <- .seq_fit()
+    e1 <- entrant(label = "E1", meanval = fit@model@slopes$meanval[[1]] * .5,
+                  cost = 1, priceStart = 2)
+
+    cf <- counterfactual(entry = e1)
+    cf <- add_step(cf, quality = c(E1 = .1))
+    cf <- add_step(cf, ownership = c("A", "A", "C", "A"))
+    cf <- add_step(cf, exit = "Prod2")
+    path <- simulate(fit, cf)
+
+    expect_length(path@steps, 4L)
+    expect_length(path@results, 4L)
+
+    step_entry <- result_at(path, 1)
+    step_quality <- result_at(path, 2)
+    step_merger <- result_at(path, 3)
+    step_exit <- result_at(path, 4)
+
+    expect_equal(length(step_entry@labels), 4L)
+    idxE1 <- match("E1", step_quality@labels)
+    expect_equal(step_quality@slopes$meanval[[idxE1]],
+                 step_entry@slopes$meanval[[idxE1]] + log1p(.1), tolerance = 1e-10)
+
+    owner_mat <- ownerToMatrix(step_merger, preMerger = FALSE)
+    idxProd1 <- match("Prod1", step_merger@labels)
+    idxE1m <- match("E1", step_merger@labels)
+    expect_equal(owner_mat[idxProd1, idxE1m], 1)
+
+    idxProd2 <- match("Prod2", step_exit@labels)
+    expect_false(step_exit@subset[idxProd2])
+})
+
+## ---- Extended families: nested Logit/CES, second-score auction,        --
+## ---- bargaining, bargaining2nd -- quality, entry, exit, cost sequencing --
+
+.foc_residual <- function(model, preMerger = FALSE) {
+    active <- if (preMerger) rep(TRUE, length(model@pricePre)) else model@subset
+    price <- if (preMerger) model@pricePre else model@pricePost
+    mc <- if (preMerger) model@mcPre else model@mcPost
+    margins_actual <- (price - mc)[active]
+    margins_pred <- calcMargins(model, preMerger = preMerger, level = TRUE)[active]
+    max(abs(margins_actual - margins_pred), na.rm = TRUE)
+}
+
+test_that("quality resolves cleanly for nested Logit and nested CES Bertrand", {
+    qa_skip_if_not_nightly()
+    fn <- suppressWarnings(calibrate(
+        "logit_nests", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), nests = c("N1", "N1", "N2"), insideSize = 100
+    ))
+    baseline <- fn@model@slopes$meanval[["Prod1"]]
+    result <- simulate(fn, counterfactual(quality = c(Prod1 = .10)))
+    expect_equal(result@slopes$meanval[["Prod1"]], baseline * 1.10, tolerance = 1e-10)
+    expect_lt(.foc_residual(result), 1e-6)
+
+    fc <- suppressWarnings(calibrate(
+        "ces_nests", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), nests = c("N1", "N1", "N2"), insideSize = 100
+    ))
+    baseline_c <- fc@model@slopes$meanval[["Prod1"]]
+    result_c <- simulate(fc, counterfactual(quality = c(Prod1 = .10)))
+    expect_equal(result_c@slopes$meanval[["Prod1"]], baseline_c * 1.10, tolerance = 1e-10)
+    expect_lt(.foc_residual(result_c), 1e-6)
+})
+
+test_that("quality resolves cleanly for second-score auction Logit/CES", {
+    qa_skip_if_not_nightly()
+    fa <- suppressWarnings(calibrate(
+        "logit", "auction2nd", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    baseline <- fa@model@slopes$meanval[["Prod1"]]
+    result <- simulate(fa, counterfactual(quality = c(Prod1 = .10)))
+    expect_equal(result@slopes$meanval[["Prod1"]], baseline * 1.10, tolerance = 1e-10)
+
+    fac <- suppressWarnings(calibrate(
+        "ces", "auction2nd", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    baseline_c <- fac@model@slopes$meanval[["Prod1"]]
+    result_c <- simulate(fac, counterfactual(quality = c(Prod1 = .10)))
+    expect_equal(result_c@slopes$meanval[["Prod1"]], baseline_c * 1.10, tolerance = 1e-10)
+})
+
+test_that("quality resolves cleanly for bargaining and bargaining2nd Logit/CES", {
+    qa_skip_if_not_nightly()
+    fb <- suppressWarnings(calibrate(
+        "logit", "bargaining", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    baseline <- fb@model@slopes$meanval[["Prod1"]]
+    result <- simulate(fb, counterfactual(quality = c(Prod1 = .10)))
+    expect_equal(result@slopes$meanval[["Prod1"]], baseline * 1.10, tolerance = 1e-10)
+    expect_lt(.foc_residual(result), 1e-6)
+
+    fb2 <- suppressWarnings(calibrate(
+        "logit", "bargaining2nd", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    baseline2 <- fb2@model@slopes$meanval[["Prod1"]]
+    result2 <- simulate(fb2, counterfactual(quality = c(Prod1 = .10)))
+    expect_equal(result2@slopes$meanval[["Prod1"]], baseline2 * 1.10, tolerance = 1e-10)
+})
+
+test_that("sequential cost shocks compound multiplicatively for nested and bargaining families", {
+    qa_skip_if_not_nightly()
+    fn <- suppressWarnings(calibrate(
+        "logit_nests", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), nests = c("N1", "N1", "N2"), insideSize = 100
+    ))
+    cf <- counterfactual(costs = c(-.1, 0, 0))
+    cf <- add_step(cf, costs = c(-.1, 0, 0))
+    path <- simulate(fn, cf)
+    final <- final_result(path)
+    reference <- simulate(fn, ownerPost = fn@model@ownerPre, mcDelta = c(0.9 * 0.9 - 1, 0, 0))
+    expect_equal(final@mcPost, reference@mcPost, tolerance = 1e-8)
+})
+
+test_that("sequential cost shocks compound additively for Auction2ndLogit but multiplicatively for Auction2ndCES", {
+    qa_skip_if_not_nightly()
+    ## calcMC,Auction2ndLogit-method applies mcDelta additively ("mc <- mc +
+    ## object@mcDelta"), but calcMC,Auction2ndCES-method applies it
+    ## multiplicatively ("mc <- mc * (1 + object@mcDelta)") despite the
+    ## shared "second-score auction" family name -- verified directly
+    ## against both methods; the two demand systems are NOT symmetric here.
+    fa <- suppressWarnings(calibrate(
+        "logit", "auction2nd", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    cf <- counterfactual(costs = c(-.1, 0, 0))
+    cf <- add_step(cf, costs = c(-.1, 0, 0))
+    path <- simulate(fa, cf)
+    final <- final_result(path)
+    ## Additive: two -0.1 level shocks sum to -0.2, NOT compound to -0.19.
+    reference <- simulate(fa, ownerPost = fa@model@ownerPre, mcDelta = c(-.2, 0, 0))
+    expect_equal(final@mcPost, reference@mcPost, tolerance = 1e-8)
+
+    wrong_reference <- simulate(fa, ownerPost = fa@model@ownerPre, mcDelta = c(0.9 * 0.9 - 1, 0, 0))
+    expect_false(isTRUE(all.equal(final@mcPost, wrong_reference@mcPost, tolerance = 1e-8)))
+
+    fac <- suppressWarnings(calibrate(
+        "ces", "auction2nd", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    cf_c <- counterfactual(costs = c(-.1, 0, 0))
+    cf_c <- add_step(cf_c, costs = c(-.1, 0, 0))
+    path_c <- simulate(fac, cf_c)
+    final_c <- final_result(path_c)
+    ## Multiplicative: two -0.1 shocks compound to -0.19, NOT sum to -0.2.
+    reference_c <- simulate(fac, ownerPost = fac@model@ownerPre, mcDelta = c(0.9 * 0.9 - 1, 0, 0))
+    expect_equal(final_c@mcPost, reference_c@mcPost, tolerance = 1e-8)
+
+    wrong_reference_c <- simulate(fac, ownerPost = fac@model@ownerPre, mcDelta = c(-.2, 0, 0))
+    expect_false(isTRUE(all.equal(final_c@mcPost, wrong_reference_c@mcPost, tolerance = 1e-8)))
+})
+
+test_that("exit resolves cleanly for nested Logit/CES and second-score auction/bargaining2nd", {
+    qa_skip_if_not_nightly()
+    fn <- suppressWarnings(calibrate(
+        "logit_nests", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), nests = c("N1", "N1", "N2"), insideSize = 100
+    ))
+    result <- simulate(fn, counterfactual(exit = "Prod1"))
+    expect_equal(result@subset, c(FALSE, TRUE, TRUE))
+    expect_lt(.foc_residual(result), 1e-6)
+
+    fa <- suppressWarnings(calibrate(
+        "logit", "auction2nd", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    result_a <- simulate(fa, counterfactual(exit = "Prod1"))
+    expect_equal(result_a@subset, c(FALSE, TRUE, TRUE))
+
+    fb2 <- suppressWarnings(calibrate(
+        "logit", "bargaining2nd", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    result_b2 <- simulate(fb2, counterfactual(exit = "Prod1"))
+    expect_equal(result_b2@subset, c(FALSE, TRUE, TRUE))
+})
+
+test_that("first-score bargaining Logit and CES both exit cleanly", {
+    qa_skip_if_not_nightly()
+    ## BargainingLogit's calcPrices()/calcMargins() previously operated on
+    ## full-length vectors without ever dropping excluded products -- an
+    ## excluded product's degenerate FOC term (0 * NaN) poisoned every
+    ## other product's result through the matrix multiply, on top of an
+    ## un-subsetted bargpower vector causing an outright length-mismatch
+    ## error. Both methods were fixed to subset/re-expand consistently with
+    ## the rest of the package (see calcMargins,BargainingLogit-method).
+    fb <- suppressWarnings(calibrate(
+        "logit", "bargaining", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    result_b <- simulate(fb, counterfactual(exit = "Prod1"))
+    expect_equal(result_b@subset, c(FALSE, TRUE, TRUE))
+    expect_true(is.na(result_b@pricePost[1]))
+    expect_lt(.foc_residual(result_b), 1e-6)
+
+    fbc <- suppressWarnings(calibrate(
+        "ces", "bargaining", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    result <- simulate(fbc, counterfactual(exit = "Prod1"))
+    expect_equal(result@subset, c(FALSE, TRUE, TRUE))
+    expect_lt(.foc_residual(result), 1e-6)
+})
+
+test_that("entry into second-score auction requires no extra primitive and mcPost matches cost via the additive wedge", {
+    qa_skip_if_not_nightly()
+    fa <- suppressWarnings(calibrate(
+        "logit", "auction2nd", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    e1 <- entrant(label = "E1", meanval = fa@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result <- simulate(fa, counterfactual(entry = e1))
+    idx <- match("E1", result@labels)
+    expect_equal(result@mcPost[idx], 1, tolerance = 1e-8)
+    expect_true(is.finite(result@pricePost[idx]))
+})
+
+test_that("entry into bargaining defaults bargpower to 0.5 or honors a supplied extras$bargpower", {
+    qa_skip_if_not_nightly()
+    fb <- suppressWarnings(calibrate(
+        "logit", "bargaining", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    e_default <- entrant(label = "E1", meanval = fb@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result_default <- simulate(fb, counterfactual(entry = e_default))
+    idx <- match("E1", result_default@labels)
+    expect_equal(result_default@bargpowerPre[idx], 0.5, tolerance = 1e-10)
+    expect_equal(unname(result_default@mcPost[idx]), 1, tolerance = 1e-6)
+
+    e_custom <- entrant(label = "E1", meanval = fb@model@slopes$meanval[[1]] * .5,
+                        cost = 1, priceStart = 2, bargpower = 0.8)
+    result_custom <- simulate(fb, counterfactual(entry = e_custom))
+    expect_equal(result_custom@bargpowerPre[idx], 0.8, tolerance = 1e-10)
+})
+
+test_that("entry into a nested Logit/CES model requires extras$nest and joins or creates a nest", {
+    qa_skip_if_not_nightly()
+    fn <- suppressWarnings(calibrate(
+        "logit_nests", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), nests = c("N1", "N1", "N2"), insideSize = 100
+    ))
+    e1_no_nest <- entrant(label = "E1", meanval = fn@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    expect_error(simulate(fn, counterfactual(entry = e1_no_nest)), "nest")
+
+    e1_join <- entrant(label = "E1", meanval = fn@model@slopes$meanval[[1]] * .5,
+                       cost = 1, priceStart = 2, nest = "N1")
+    result_join <- simulate(fn, counterfactual(entry = e1_join))
+    idx <- match("E1", result_join@labels)
+    expect_equal(as.character(result_join@nests[idx]), "N1")
+    expect_true(is.finite(result_join@pricePost[idx]))
+
+    e1_new <- entrant(label = "E1", meanval = fn@model@slopes$meanval[[1]] * .5,
+                      cost = 1, priceStart = 2, nest = "N3")
+    result_new <- simulate(fn, counterfactual(entry = e1_new))
+    expect_equal(as.character(result_new@nests[idx]), "N3")
+    expect_equal(result_new@slopes$sigma[["N3"]], 1)
+})
+
+test_that("entry into LogitCap requires extras$capacity", {
+    qa_skip_if_not_nightly()
+    fc <- calibrate(
+        "logit_cap", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100, mktSize = 1000,
+        capacitiesPre = c(500, 400, 300)
+    )
+    e1_no_cap <- entrant(label = "E1", meanval = fc@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    expect_error(simulate(fc, counterfactual(entry = e1_no_cap)), "capacity")
+
+    e1 <- entrant(label = "E1", meanval = fc@model@slopes$meanval[[1]] * .5,
+                  cost = 1, priceStart = 2, capacity = 500)
+    result <- simulate(fc, counterfactual(entry = e1))
+    idx <- match("E1", result@labels)
+    expect_equal(result@capacitiesPre[idx], 500)
+    expect_true(is.finite(result@pricePost[idx]))
+})
+
+test_that("quality is verified for LogitCap Bertrand", {
+    qa_skip_if_not_nightly()
+    fc <- calibrate(
+        "logit_cap", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100, mktSize = 1000,
+        capacitiesPre = c(500, 400, 300)
+    )
+    baseline <- fc@model@slopes$meanval[["Prod1"]]
+    result <- simulate(fc, counterfactual(quality = c(Prod1 = .10)))
+    expect_equal(result@slopes$meanval[["Prod1"]], baseline * 1.10, tolerance = 1e-10)
+    expect_lt(.foc_residual(result), 1e-6)
+})
+
+test_that("BLP still rejects entry, but now supports quality", {
+    qa_skip_unless_tier("extended")
+    fit_blp <- suppressWarnings(specify(
+        "blp", "bertrand", prices = c(2, 2.2, 2.5),
+        parameters = list(alphaMean = -1, sigma = 1, meanval = c(0, .1, .2)),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    ))
+    ## Entry remains excluded: BLP's product dimension is not a flat vector
+    ## for entry's ownership/cost-state expansion (see .apply_quality,
+    ## "LogitBLP" method for the supported quality case).
+    e1 <- entrant(label = "E1", meanval = .1, cost = 1, priceStart = 2)
+    expect_error(simulate(fit_blp, counterfactual(entry = e1)), "does not support")
+
+    result <- simulate(fit_blp, counterfactual(quality = c(Prod1 = .1)))
+    sigmaNest <- unname(fit_blp@model@slopes$sigmaNest)
+    expect_equal(result@slopes$meanval[["Prod1"]],
+                 fit_blp@model@slopes$meanval[["Prod1"]] + sigmaNest * log1p(.1),
+                 tolerance = 1e-10)
+})
+
+## ---- Additional coverage: ALM, Cournot-conduct entry, CESNests new-nest, --
+## ---- Bargaining2ndCES -------------------------------------------------------
+
+test_that("entry and quality resolve cleanly for LogitALM and CESALM", {
+    qa_skip_if_not_nightly()
+    p <- c(2, 2.5, 3); s <- c(.40, .35, .25); mgn <- c(.45, .40, .35)
+
+    fit_l <- suppressWarnings(calibrate(
+        model_spec("logit", "bertrand", "alm"), prices = p, shares = s, margins = mgn,
+        ownerPre = c("A", "B", "C"), parmsStart = c(-.5, .1)
+    ))
+    baseline_l <- fit_l@model@slopes$meanval[[1]]
+    result_l <- simulate(fit_l, counterfactual(quality = c(Prod1 = .1)))
+    expect_equal(result_l@slopes$meanval[[1]], baseline_l * 1.1, tolerance = 1e-10)
+
+    e1 <- entrant(label = "E1", meanval = fit_l@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result_e1 <- simulate(fit_l, counterfactual(entry = e1))
+    idx <- match("E1", result_e1@labels)
+    expect_equal(unname(result_e1@mcPost[idx]), 1, tolerance = 1e-6)
+    expect_lt(.foc_residual(result_e1), 1e-6)
+
+    fit_c <- suppressWarnings(calibrate(
+        model_spec("ces", "bertrand", "alm"), prices = p, shares = s, margins = mgn,
+        ownerPre = c("A", "B", "C"), parmsStart = c(1, .1)
+    ))
+    e2 <- entrant(label = "E1", meanval = fit_c@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result_e2 <- simulate(fit_c, counterfactual(entry = e2))
+    idx2 <- match("E1", result_e2@labels)
+    expect_equal(unname(result_e2@mcPost[idx2]), 1, tolerance = 1e-6)
+    expect_lt(.foc_residual(result_e2), 1e-6)
+})
+
+test_that("entry resolves cleanly for Cournot-conduct LogitCournot and CESCournot", {
+    qa_skip_if_not_nightly()
+    fit_lc <- calibrate(
+        "logit", "cournot", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    )
+    e1 <- entrant(label = "E1", meanval = fit_lc@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result_lc <- simulate(fit_lc, counterfactual(entry = e1))
+    idx <- match("E1", result_lc@labels)
+    expect_equal(unname(result_lc@mcPost[idx]), 1, tolerance = 1e-8)
+    expect_lt(.foc_residual(result_lc), 1e-6)
+
+    fit_cc <- calibrate(
+        "ces", "cournot", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), insideSize = 100
+    )
+    e2 <- entrant(label = "E1", meanval = fit_cc@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    result_cc <- simulate(fit_cc, counterfactual(entry = e2))
+    idx2 <- match("E1", result_cc@labels)
+    expect_equal(unname(result_cc@mcPost[idx2]), 1, tolerance = 1e-6)
+    expect_lt(.foc_residual(result_cc), 1e-6)
+})
+
+test_that("entry into CESNests can join an existing nest or form a new one with the correct singleton sigma", {
+    qa_skip_if_not_nightly()
+    ## CESNests' singleton-nest sigma normalization is 0, NOT 1 like
+    ## LogitNests (verified against calcSlopes,CESNests-method: "sigma <-
+    ## as.numeric(!isSingletonNest)"). CES's calcShares() raises
+    ## sharesAcross to the power (1-gamma)/(1-sigma), so sigma=1 there
+    ## divides by zero and produces NaN throughout -- this test locks in
+    ## the family-specific fix.
+    fn <- suppressWarnings(calibrate(
+        "ces_nests", "bertrand", prices = c(2, 2.2, 2.5),
+        shares = c(.35, .25, .2), margins = c(.4, .35, .3),
+        ownerPre = c("A", "B", "C"), nests = c("N1", "N1", "N2"), insideSize = 100
+    ))
+    e1_no_nest <- entrant(label = "E1", meanval = fn@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 2)
+    expect_error(simulate(fn, counterfactual(entry = e1_no_nest)), "nest")
+
+    e1_join <- entrant(label = "E1", meanval = fn@model@slopes$meanval[[1]] * .5,
+                       cost = 1, priceStart = 2, nest = "N1")
+    result_join <- simulate(fn, counterfactual(entry = e1_join))
+    idx <- match("E1", result_join@labels)
+    expect_equal(as.character(result_join@nests[idx]), "N1")
+    expect_equal(unname(result_join@mcPost[idx]), 1, tolerance = 1e-8)
+    expect_lt(.foc_residual(result_join), 1e-6)
+
+    e1_new <- entrant(label = "E1", meanval = fn@model@slopes$meanval[[1]] * .5,
+                      cost = 1, priceStart = 2, nest = "N3")
+    result_new <- simulate(fn, counterfactual(entry = e1_new))
+    expect_equal(as.character(result_new@nests[idx]), "N3")
+    expect_equal(result_new@slopes$sigma[["N3"]], 0)
+    expect_equal(unname(result_new@mcPost[idx]), 1, tolerance = 1e-8)
+    expect_lt(.foc_residual(result_new), 1e-6)
+})
+
+test_that("quality, entry, and exit resolve cleanly for Bargaining2ndCES", {
+    qa_skip_if_not_nightly()
+    ## Uses the same non-degenerate calibration inputs as the existing
+    ## bargaining2nd.ces parity test in test-model-architecture.R --
+    ## prices=c(2,2.2,2.5)/shares=c(.35,.25,.2)/margins=c(.4,.35,.3) produce
+    ## a degenerate zero-margin baseline for this class specifically
+    ## (mcPre == pricePre exactly), which is a pre-existing property of
+    ## this legacy calibration, unrelated to counterfactuals.
+    fb2c <- suppressWarnings(calibrate(
+        "ces", "bargaining2nd", prices = c(1.5, 1.5, 1.5), shares = c(.50, .30, .20),
+        margins = c(.30, .20, .15), ownerPre = c("A", "B", "C")
+    ))
+    baseline <- fb2c@model@slopes$meanval[["Prod1"]]
+    result_q <- simulate(fb2c, counterfactual(quality = c(Prod1 = .1)))
+    expect_equal(result_q@slopes$meanval[["Prod1"]], baseline * 1.1, tolerance = 1e-10)
+
+    e1 <- entrant(label = "E1", meanval = fb2c@model@slopes$meanval[[1]] * .5, cost = 1, priceStart = 1.5)
+    result_e <- simulate(fb2c, counterfactual(entry = e1))
+    idx <- match("E1", result_e@labels)
+    expect_equal(unname(result_e@mcPost[idx]), 1, tolerance = 1e-6)
+    expect_lt(.foc_residual(result_e), 1e-6)
+
+    result_x <- simulate(fb2c, counterfactual(exit = "Prod1"))
+    expect_equal(result_x@subset, c(FALSE, TRUE, TRUE))
+    expect_lt(.foc_residual(result_x), 1e-6)
+})

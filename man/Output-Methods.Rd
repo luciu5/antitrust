@@ -25,17 +25,16 @@
 \alias{calcShares,Auction2ndLogitNests-method}
 \alias{calcShares,Cournot-method}
 \alias{calcShares,LogitBLP-method}
+\alias{calcShares,Auction2ndBLP-method}
+\alias{calcShares,BargainingBLP-method}
 \alias{calcRevenues}
 \alias{calcRevenues,ANY-method}
 \alias{calcRevenues,Bertrand-method}
 \alias{calcRevenues,CES-method}
 \alias{calcRevenues,AIDS-method}
 \alias{calcRevenues,Cournot-method}
-\alias{calcRevenues,VertBargBertLogit-method}
 \alias{calcShares,Auction2ndCap-method}
-\alias{calcQuantities,VertBargBertLogit-method}
-\alias{calcShares,VertBargBertLogit-method}
-\alias{calcShares,VertBarg2ndLogit-method}
+\alias{calcShares,Auction2ndCES-method}
 \title{Output Methods}
 \usage{
 \S4method{calcQuantities}{Cournot}(object, preMerger = TRUE, market = FALSE, ...)
@@ -56,8 +55,6 @@
 
 \S4method{calcRevenues}{Cournot}(object, preMerger = TRUE, market = FALSE)
 
-\S4method{calcRevenues}{VertBargBertLogit}(object, preMerger = TRUE, market = FALSE)
-
 \S4method{calcQuantities}{AIDS}(object, preMerger = TRUE, market = FALSE)
 
 \S4method{calcRevenues}{CES}(object, preMerger = TRUE, market = FALSE)
@@ -67,12 +64,6 @@
 \S4method{calcShares}{Cournot}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{Linear}(object, preMerger = TRUE, revenue = FALSE)
-
-\S4method{calcQuantities}{VertBargBertLogit}(object, preMerger = TRUE, market = FALSE)
-
-\S4method{calcShares}{VertBargBertLogit}(object, preMerger = TRUE, revenue = FALSE)
-
-\S4method{calcShares}{VertBarg2ndLogit}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{Logit}(object, preMerger = TRUE, revenue = FALSE)
 
@@ -87,6 +78,8 @@
 \S4method{calcShares}{Auction2ndLogitNests}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{CES}(object, preMerger = TRUE, revenue = FALSE)
+
+\S4method{calcShares}{Auction2ndCES}(object, preMerger = TRUE, revenue = FALSE)
 
 \S4method{calcShares}{CESNests}(object, preMerger = TRUE, revenue = FALSE)
 }

@@ -2,27 +2,7 @@
 #' @name MarginsAG-Methods
 #' @docType methods
 #'
-#' @aliases calcMarginsAG calcPricesAG
-#' calcMarginsAG,ANY-method
-#' calcPricesAG,ANY-method
-#' calcMarginsAG,Logit-method
-#' calcMarginsAG,CES-method
-#' calcMarginsAG,BargainingLogit-method
-#' calcMarginsAG,BargainingCES-method
-#' calcMarginsAG,Cournot-method
-#' calcPricesAG,Logit-method
-#' calcPricesAG,CES-method
-#' calcPricesAG,BargainingLogit-method
-#' calcPricesAG,BargainingCES-method
-#' calcMarginsAG,Auction2ndLogit-method
-#' calcPricesAG,Auction2ndLogit-method
-#' calcMarginsAG,Auction2ndCES-method
-#' calcPricesAG,Auction2ndCES-method
-#' calcMarginsAG,Bargaining2ndLogit-method
-#' calcPricesAG,Bargaining2ndLogit-method
-#' calcMarginsAG,Bargaining2ndCES-method
-#' calcPricesAG,Bargaining2ndCES-method
-#' calcPricesAG,Cournot-method
+#' @aliases calcMarginsAG calcPricesAG calcMarginsAG,ANY-method calcPricesAG,ANY-method calcMarginsAG,Logit-method calcMarginsAG,CES-method calcMarginsAG,BargainingLogit-method calcMarginsAG,BargainingCES-method calcMarginsAG,Cournot-method calcPricesAG,Logit-method calcPricesAG,CES-method calcPricesAG,BargainingLogit-method calcPricesAG,BargainingCES-method calcMarginsAG,Auction2ndLogit-method calcPricesAG,Auction2ndLogit-method calcMarginsAG,Auction2ndCES-method calcPricesAG,Auction2ndCES-method calcMarginsAG,Bargaining2ndLogit-method calcPricesAG,Bargaining2ndLogit-method calcMarginsAG,Bargaining2ndCES-method calcPricesAG,Bargaining2ndCES-method calcPricesAG,Cournot-method
 #'
 #' @description Computes equilibrium product margins and prices using the aggregative games technique described in
 #' Nocke and Schutz (2018). Assumes that firms are playing a
@@ -104,6 +84,11 @@ setMethod(
     if (missing(subset)) subset <- if (preMerger) rep(TRUE, nprods) else object@subset
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
+    }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      prices <- calcPrices(object, preMerger = preMerger, subset = subset)
+      if (preMerger) object@pricePre <- prices else object@pricePost <- prices
+      return(calcMargins(object, preMerger = preMerger, level = level))
     }
     
     if( preMerger) {
@@ -198,6 +183,11 @@ setMethod(
     if (missing(subset)) subset <- if (preMerger) rep(TRUE, nprods) else object@subset
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
+    }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      prices <- calcPrices(object, preMerger = preMerger, subset = subset)
+      if (preMerger) object@pricePre <- prices else object@pricePost <- prices
+      return(calcMargins(object, preMerger = preMerger, level = level))
     }
 
     ## The closed-form CES aggregation is numerically well behaved for output
@@ -300,6 +290,10 @@ setMethod(
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
     }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      return(calcPrices(object, preMerger = preMerger,
+                        isMax = isMax, subset = subset))
+    }
     
     if(preMerger){
       owner <- object@ownerPre
@@ -331,6 +325,10 @@ setMethod(
     if (missing(subset)) subset <- if (preMerger) rep(TRUE, nprods) else object@subset
     if (!is.logical(subset) || length(subset) != nprods || !any(subset)) {
       stop("'subset' must be a logical vector the same length as 'shares' with at least one TRUE value")
+    }
+    if (.mixed_firm_retention(object, preMerger, subset)) {
+      return(calcPrices(object, preMerger = preMerger,
+                        isMax = isMax, subset = subset))
     }
     ## A homogeneous CES output market without an outside good has constant
     ## total revenue.  A single owner can therefore raise all prices without

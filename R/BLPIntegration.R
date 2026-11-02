@@ -30,6 +30,29 @@ calcBLPintegration <- function(slopes) {
   .blp_integration(slopes)
 }
 
+## Names recognized by the BLP integration selector (.blp_integration()).
+## Shared by every call site that merges these names between top-level
+## specify()/sim() arguments and a model's `parameters`/`demand.param` list,
+## so the merged set cannot drift out of sync across call sites.
+.blp_integration_dot_names <- function() {
+    c("integrationPoints", "draws", "consDraws", "drawWeights", "integrationWeights",
+      "integration", "nNodes", "nDraws", "sigma", "piDemog", "pi",
+      "nDemog", "sigmaChar", "demogMean", "demogCov")
+}
+
+## TRUE when a BLP `parameters`/`demand.param` list carries only the
+## calibrated price-only random coefficient, with none of the demographic,
+## random-characteristic, or nesting fields that route specify() to the
+## legacy constructor. Shared by specify() (which dispatches on this) and
+## sim() (which must not inject its own historical integration default when
+## specify() will not take the price-only path).
+.blp_price_only_parameters <- function(parameters) {
+    !any(c("prodChar", "sigmaChar", "pi", "piDemog", "demogMean",
+           "demogCov") %in% names(parameters)) &&
+        (is.null(parameters$sigmaNest) ||
+         isTRUE(as.numeric(parameters$sigmaNest) == 1))
+}
+
 .blp_single_demographic_dimension <- function(dots) {
     sigma <- dots[["sigma"]]
     n_demog <- dots[["nDemog"]]
@@ -352,7 +375,7 @@ calcBLPintegration <- function(slopes) {
         ))
     }
 
-    n <- if (is.null(dots[["nDraws"]])) 1000L else dots[["nDraws"]]
+    n <- if (is.null(dots[["nDraws"]])) 5000L else dots[["nDraws"]]
     if (length(n) != 1L || !is.finite(n) || n < 1 || n != as.integer(n)) {
         stop("'nDraws' must be a positive integer for Monte Carlo integration.")
     }
@@ -521,7 +544,8 @@ calcBLPintegration <- function(slopes) {
     legacy_vector_state <- is.null(stored_points) && !is.null(legacy_points) &&
         !is.matrix(legacy_points) &&
         (!is.null(slopes[["demogDraws"]]) || !is.null(slopes[["charDraws"]]) ||
-         isTRUE(slopes[["legacyVectorIntegration"]]))
+         (.blp_integration_dimensions(slopes) > 1L &&
+          (length(slopes[["piDemog"]]) > 0L || length(slopes[["sigmaChar"]]) > 0L)))
     integration_sigma <- if (legacy_vector_state) 0 else slopes[["sigma"]]
     integration_n_demog <- if (legacy_vector_state) 0L else slopes[["nDemog"]]
     integration_pi_demog <- if (legacy_vector_state) numeric(0) else slopes[["piDemog"]]

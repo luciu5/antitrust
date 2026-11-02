@@ -24,7 +24,7 @@ qa_classify_warning <- function(message) {
         "ignored-input" = "is only used for BLP|are not used for BLP|Ignoring",
         "economic-input" = "positive values of 'mcDelta'|Negative .*marginal costs|intercepts are negative|own-slope coefficients are positive|Matrix of demand slopes coefficients is not symmetric",
         "capacity-boundary" = "utilization equal capacity|utilization is greater than capacity",
-        "diagnostic-fallback" = "Reporting shares instead of quantities|Calculating CV as|calcQuantities.*yielded all NAs|normalized shares instead of quantities",
+        "diagnostic-fallback" = "Reporting shares instead of quantities|Calculating CV as|calcQuantities.*yielded all NAs|normalized shares instead of quantities|Timing parameter not specified|Slack values show only immediate payoff difference",
         "no-merger-identity" = "ownerPost.*ownerPre.*same"
     )
     hit <- names(patterns)[vapply(patterns, function(pattern) {

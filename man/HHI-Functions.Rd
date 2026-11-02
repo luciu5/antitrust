@@ -40,8 +40,8 @@ commonly owned and 0 otherwise. \sQuote{control} works in a fashion similar
 to \sQuote{owner}.
 }
 \examples{
-## Consider a market with 5 products labeled 1-5. 1,2 are produced
-## by Firm A, 2,3 are produced by Firm B, 3 is produced by Firm C.
+## Consider five products: 1 and 2 belong to Firm A,
+## 3 and 4 to Firm B, and 5 to Firm C.
 ## The pre-merger product market shares are
 
 shares = c(.15,.2,.25,.35,.05)

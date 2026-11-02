@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "release_id": "coordinated-2026-11-01",
+  "manifest_policy": "The completed manifest lives outside the antitrust candidate commit. SHA values below are filled only after each local candidate commit exists.",
+  "packages": {
+    "antitrust": {
+      "repository": "luciu5/antitrust",
+      "version": "0.99.43",
+      "sha": "PENDING",
+      "minimums": {},
+      "remotes": []
+    },
+    "coordination": {
+      "repository": "luciu5/coordination",
+      "version": "0.1.0",
+      "sha": "PENDING",
+      "minimums": {
+        "antitrust": "0.99.43"
+      },
+      "remotes": [
+        "antitrust"
+      ]
+    },
+    "trade": {
+      "repository": "luciu5/trade",
+      "version": "0.9.0",
+      "sha": "PENDING",
+      "minimums": {
+        "antitrust": "0.99.43",
+        "coordination": "0.1.0"
+      },
+      "remotes": [
+        "antitrust",
+        "coordination"
+      ]
+    },
+    "vertical": {
+      "repository": "luciu5/vertical",
+      "version": "0.3.0",
+      "sha": "PENDING",
+      "minimums": {
+        "antitrust": "0.99.43",
+        "trade": "0.9.0"
+      },
+      "remotes": [
+        "antitrust",
+        "trade"
+      ]
+    },
+    "competitiontoolbox": {
+      "repository": "luciu5/competitiontoolbox",
+      "version": "0.9.0",
+      "sha": "PENDING",
+      "minimums": {
+        "antitrust": "0.99.43",
+        "trade": "0.9.0",
+        "vertical": "0.3.0"
+      },
+      "remotes": [
+        "antitrust",
+        "coordination",
+        "trade",
+        "vertical"
+      ]
+    },
+    "financial": {
+      "repository": "luciu5/financial",
+      "version": "0.1.0",
+      "sha": "PENDING",
+      "minimums": {
+        "antitrust": "0.99.43"
+      },
+      "remotes": []
+    },
+    "antitrustBayes": {
+      "repository": "luciu5/antitrustBayes",
+      "version": "0.3.0",
+      "sha": "PENDING",
+      "minimums": {
+        "antitrust": "0.99.43",
+        "coordination": "0.1.0",
+        "trade": "0.9.0"
+      },
+      "remotes": []
+    }
+  }
+}
