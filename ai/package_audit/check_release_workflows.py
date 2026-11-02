@@ -290,6 +290,8 @@ def selector_environment(package: str, temp: Path) -> dict[str, str]:
         "GITHUB_HEAD_REF": "",
         "GITHUB_BASE_REF": "",
         "RELEASE_CERTIFICATION": "false",
+        "RELEASE_PIN_BUILD": "true",
+        "AUTOMATIC_RELEASE_PINS": "true",
         "ANTITRUST_RELEASE_SHA": "",
         "ANTITRUST_RELEASE_SHA_INPUT": "",
         "COORDINATION_RELEASE_SHA": "",

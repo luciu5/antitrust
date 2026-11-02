@@ -1,5 +1,5 @@
 name: antitrust QA
-run-name: ${{ github.event_name == 'workflow_dispatch' && format('certification-{0}', inputs.test_tier) || github.event_name }}
+run-name: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/') && format('release-certification-{0}', github.sha) || github.event_name == 'workflow_dispatch' && format('certification-{0}', inputs.test_tier) || github.event_name }}
 
 on:
   push:
@@ -132,11 +132,14 @@ jobs:
             ${{ runner.temp }}/antitrust-source-revisions.txt
 
   tiered-qa:
-    name: Tiered QA (scheduled/manual)
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    name: Tiered QA (scheduled/manual/release branch)
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/'))
     runs-on: ubuntu-latest
     env:
-      ANTITRUST_TEST_TIER: ${{ github.event_name == 'schedule' && 'nightly' || inputs.test_tier || 'extended' }}
+      ANTITRUST_TEST_TIER: ${{ github.event_name == 'schedule' && 'nightly' || (github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/')) && 'nightly' || inputs.test_tier || 'extended' }}
       _R_CHECK_FORCE_SUGGESTS_: "false"
     steps:
       - uses: actions/checkout@v4

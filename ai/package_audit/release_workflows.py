@@ -2,10 +2,12 @@
 """Plan, push and certify the frozen coordinated release in a GitHub terminal.
 
 Default is an offline plan. --push-and-certify advances the seven reviewed
-release branches, dispatches their full release tiers and waits for results.
+release branches and waits for their automatic full release-tier checks.
 Requires Python 3.10+, Git and an authenticated GitHub CLI (`gh`). No mainline
 branch, tag, release or package registry is changed. Matching certification
 runs are reused on restart. Failed runs require --retry-failed to retry.
+Push events work before promotion; manual workflow dispatch would require
+workflow definitions on protected default branches and is not used here.
 """
 
 from __future__ import annotations
@@ -55,7 +57,7 @@ def run_name_expression(name):
     keys = (["release_certification"] if deps else []) + [f"{dep}_release_sha" for dep in deps] + list(extra)
     template = "certification-" + "-".join("{" + str(i) + "}" for i in range(len(keys)))
     fields = ", ".join("inputs." + key for key in keys)
-    return "${{ github.event_name == 'workflow_dispatch' && format('" + template + "', " + fields + ") || github.event_name }}"
+    return "${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/release/') && format('release-certification-{0}', github.sha) || github.event_name == 'workflow_dispatch' && format('" + template + "', " + fields + ") || github.event_name }}"
 
 
 def gh_api(path, payload=None):
@@ -85,37 +87,30 @@ def verify_branch(item):
 
 
 def matches(item, run):
-    return (run.get("head_sha") == item["sha"] and run.get("event") == "workflow_dispatch"
+    return (run.get("head_sha") == item["sha"] and run.get("event") == "push"
             and run.get("display_title") == item["run_name"]
-            and run.get("workflow_id") == item["workflow_id"]
+            and isinstance(run.get("workflow_id"), int)
+            and (not item.get("workflow_id") or run["workflow_id"] == item["workflow_id"])
             and run.get("head_branch") == item["ref"].removeprefix("refs/heads/")
             and run.get("path", "").split("@", 1)[0] == ".github/workflows/" + item["workflow"])
 
 
 def matching_run(item):
-    if item.get("dispatch_receipt", {}).get("workflow_run_id"):
-        run = gh_api(endpoint(item, "actions/runs/" + str(item["dispatch_receipt"]["workflow_run_id"])))
-        if not matches(item, run):
-            raise push.PushError(f"{item['package']}: dispatched run does not match the frozen source/inputs.")
-        return run
-    query = urlencode({"event": "workflow_dispatch", "branch": item["ref"].removeprefix("refs/heads/"),
+    query = urlencode({"event": "push", "branch": item["ref"].removeprefix("refs/heads/"),
                        "head_sha": item["sha"], "per_page": 100})
-    data = gh_api(endpoint(item, f"actions/workflows/{item['workflow_id']}/runs?{query}"))
+    data = gh_api(endpoint(item, f"actions/runs?{query}"))
     runs = [r for r in data.get("workflow_runs", []) if matches(item, r)]
     return max(runs, key=lambda r: r["id"]) if runs else None
 
 
 def remember_run(item, run):
-    item.update(run_id=run["id"], run_attempt=run.get("run_attempt", 1), url=run["html_url"], status=run["status"], conclusion=run.get("conclusion"))
+    item.update(run_id=run["id"], workflow_id=run["workflow_id"], run_attempt=run.get("run_attempt", 1), url=run["html_url"], status=run["status"], conclusion=run.get("conclusion"))
 
 
 def certify(plan, retry_failed=False, poll_seconds=30, timeout_seconds=10800):
-    # Every workflow and branch is checked before the first dispatch.
+    # Every branch is checked before optional retries. Initial checks are
+    # triggered by the release push, even if no workflow exists on main/master.
     for item in plan:
-        workflow = gh_api(endpoint(item, "actions/workflows/" + item["workflow"]))
-        if workflow.get("state") != "active" or workflow.get("path") != ".github/workflows/" + item["workflow"]:
-            raise push.PushError(f"{item['package']}: expected workflow is missing or disabled.")
-        item["workflow_id"] = workflow["id"]
         verify_branch(item)
     started = time.monotonic()
     for item in plan:
@@ -129,12 +124,7 @@ def certify(plan, retry_failed=False, poll_seconds=30, timeout_seconds=10800):
                 gh_api(endpoint(item, f"actions/runs/{existing['id']}/rerun-failed-jobs"), {})
                 item["status"] = "retry-requested"
         else:
-            item["status"] = "dispatch-outcome-unknown"
-            receipt = gh_api(endpoint(item, f"actions/workflows/{item['workflow_id']}/dispatches"),
-                             {"ref": item["ref"].removeprefix("refs/heads/"), "inputs": item["inputs"]})
-            if receipt.get("workflow_run_id"):
-                item["dispatch_receipt"] = {key: receipt[key] for key in ("workflow_run_id", "run_url", "html_url") if key in receipt}
-            item["status"] = "dispatch-requested"
+            item["status"] = "waiting-for-push-run"
         verify_branch(item)
         print(f"Certification: {item['package']} {item['status']}", flush=True)
     # Runs are independent because every dependency source has already been
@@ -169,8 +159,8 @@ def parser():
     p.add_argument("--repositories-root", type=Path, default=push.WORKSPACE.parent)
     p.add_argument("--transport", choices=("https", "ssh"), default="https")
     modes = p.add_mutually_exclusive_group()
-    modes.add_argument("--push-and-certify", action="store_true", help="push reviewed updates, dispatch exact certification tiers, wait for results")
-    modes.add_argument("--certify", action="store_true", help="dispatch/monitor candidates already pushed")
+    modes.add_argument("--push-and-certify", action="store_true", help="push reviewed updates and monitor automatic exact-pin full-tier checks")
+    modes.add_argument("--certify", action="store_true", help="monitor automatic checks for candidates already pushed")
     p.add_argument("--retry-failed", action="store_true", help="retry failed jobs of matching certification runs")
     p.add_argument("--report", type=Path, help="new JSON report path; existing reports are preserved")
     return p
@@ -188,7 +178,7 @@ def main(argv=None):
         for item in plan:
             name = item["package"]
             item.update(workflow=WORKFLOWS[name][0], inputs=certification_inputs(name, packages))
-            item["run_name"] = run_name(item["inputs"])
+            item["run_name"] = "release-certification-" + item["sha"]
             print(f"{name}: {item['sha']} {item['workflow']} {json.dumps(item['inputs'])}", flush=True)
         if not (args.certify or args.push_and_certify):
             print("Offline plan verified. Run --push-and-certify in a terminal with GitHub/gh access.")
@@ -199,13 +189,12 @@ def main(argv=None):
         with destination.open("x") as output:
             output.write("{}\n")
         report = destination
-        # Verify Actions access before pushing new candidate refs.
+        # Repository run listing works even when the new workflow exists only
+        # on the release branch; workflow_dispatch/default-branch lookup does not.
         for item in plan:
-            workflow = gh_api(endpoint(item, "actions/workflows/" + item["workflow"]))
-            if workflow.get("state") != "active" or workflow.get("path") != ".github/workflows/" + item["workflow"]:
-                raise push.PushError(f"{item['package']}: Actions workflow is unavailable or disabled.")
+            gh_api(endpoint(item, "actions/runs?per_page=1"))
         if args.push_and_certify and push.main(push_args + ["--push"]):
-            raise push.PushError("Candidate push stopped; no certification runs were dispatched.")
+            raise push.PushError("Candidate push stopped; rerun to verify/resume the partial release push and its automatic checks.")
         completed = certify(plan, retry_failed=args.retry_failed)
         if not completed:
             error = "One or more certification runs failed; see their recorded GitHub URLs."
