@@ -1,4 +1,4 @@
-Work only on refactor; never modify/merge/rebase master.
+Use `master`, the repository default branch, for routine work. The `refactor` migration is integrated; do not recreate that branch. Start any necessary isolated task branch from `master`.
 Preserve uncommitted local changes.
 Legacy S4 economics are the behavioral source of truth.
 calibrate, update, respecify, counterfactual, and simulate have distinct semantics.
