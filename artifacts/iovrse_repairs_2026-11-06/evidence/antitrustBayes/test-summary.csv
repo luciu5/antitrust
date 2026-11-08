@@ -1,0 +1,445 @@
+"file","test","nb","failed","error","warning","skipped","passed"
+"test-auction-policy-models.R","auction realization preserves the public cost-based baseline",16,0,FALSE,0,FALSE,16
+"test-auction-policy-models.R","latent auction value and costs remain fixed under cost and ownership policies",8,0,FALSE,0,FALSE,8
+"test-auction-policy-models.R","auction policy realization does not broaden unsupported demand or side",2,0,FALSE,0,FALSE,2
+"test-auction-policy-models.R","collapsed joint quality is realized once in an auction policy plan",11,0,FALSE,0,FALSE,11
+"test-backend-policy-equivalence.R","identical backend states give the same quality, roles and merger effects",175,0,FALSE,0,FALSE,175
+"test-backend-policy-equivalence.R","Nutpie conditional-k scheduling forwards backend and preserves failed support",11,0,FALSE,0,FALSE,11
+"test-baseline-lifecycle-consumption.R","posterior realization uses the public observed-baseline lifecycle",72,0,FALSE,0,FALSE,72
+"test-bma.R","bayes_avg returns exactly the requested allocation",4,0,FALSE,0,FALSE,4
+"test-bma.R","bayes_avg preserves zero model weights",2,0,FALSE,0,FALSE,2
+"test-bma.R","BMA preserves weights and exposes joint source attrition",7,0,FALSE,0,FALSE,7
+"test-bma.R","simulation summaries report failures without shifting draw IDs",11,0,FALSE,0,FALSE,11
+"test-bma.R","bridge weights never replace missing evidence with predictive stacking",8,0,FALSE,0,FALSE,8
+"test-bma.R","comparison contract permits common-outcome Logit and CES fits",1,0,FALSE,0,FALSE,1
+"test-bma.R","comparison contract rejects different observations",1,0,FALSE,0,FALSE,1
+"test-bma.R","bayes_compare dispatches exact-k restrictions through one fit",7,0,FALSE,0,FALSE,7
+"test-bma.R","evidence decomposition accepts common or model-specific share evidence",3,0,FALSE,0,FALSE,3
+"test-bridge-context-restoration.R","CmdStan bridge evidence requires the exact current source",6,0,FALSE,0,FALSE,6
+"test-bridge-context-restoration.R","LOO log-likelihood extraction preserves chain and unit axes",4,0,FALSE,0,FALSE,4
+"test-bridge-performance-migration.R","LOO and bridge evidence reject non-HMC inference",3,0,FALSE,0,FALSE,3
+"test-calibrated-market.R","calibrated Logit markets share one seeded geometry across conduct",290,0,FALSE,0,FALSE,290
+"test-calibrated-market.R","explicit primitives calibrate each conduct and re-solve with fixed alpha",169,0,FALSE,1,FALSE,168
+"test-calibrated-market.R","outside share is an independent baseline primitive and remains endogenous after shocks",20,0,FALSE,0,FALSE,20
+"test-calibrated-market.R","parameter-driven mode retains supplied alpha and one observed margin",7,0,FALSE,0,FALSE,7
+"test-calibrated-market.R","explicit costs and alpha are common primitives across conduct",41,0,FALSE,0,FALSE,41
+"test-calibrated-market.R","calibrated market validates conduct-specific role counts",7,0,FALSE,0,FALSE,7
+"test-ces-intercept-normalization.R","CES conditional shares are recovered at 10, 20 and 40 percent outside with a free intercept",37,0,FALSE,0,FALSE,37
+"test-ces-intercept-normalization.R","CES single-market utility normalization is a sampled free intercept in both kernels",14,0,FALSE,0,FALSE,14
+"test-ces-intercept-normalization.R","all four Stan programs still parse after the CES normalization",4,0,FALSE,0,FALSE,4
+"test-ces-intercept-normalization.R","specification 14 rejects earlier fits, including Logit and CES single-market fits",9,0,FALSE,0,FALSE,9
+"test-ces-intercept-normalization.R","the single-market flag that selects the free intercept reaches both Stan kernels",4,0,FALSE,0,FALSE,4
+"test-ces-intercept-normalization.R","CES posterior draws with a nonzero intercept reproduce observed equilibria and costs",160,0,FALSE,0,FALSE,160
+"test-ces-intercept-normalization.R","a CES intercept shift moves the share mean once and leaves the equilibrium unchanged",3,0,FALSE,0,FALSE,3
+"test-ces-intercept-normalization.R","CES kernels recover the conditional shares and the R margins at fixed parameters",1,0,FALSE,0,TRUE,0
+"test-ces-intercept-normalization.R","CES single-period, multi-period and multi-market layouts keep per-market-year outside revenue shares",1,0,FALSE,0,TRUE,0
+"test-ces-intercept-normalization.R","the CES intercept prior is one normalized Normal(0, 1) in every layout",1,0,FALSE,0,TRUE,0
+"test-classes.R","fit specification validation rejects stale fits",3,0,FALSE,0,FALSE,3
+"test-cmdstan-cache-race.R","a competitor having already created the cache directory and source is not an error",4,0,FALSE,0,FALSE,4
+"test-cmdstan-cache-race.R","the disk cache separates CmdStan versions and resolved paths",7,0,FALSE,0,FALSE,7
+"test-cmdstan-cache-race.R","a pre-existing directory without a model compiles once and leaves no staging files",5,0,FALSE,0,FALSE,5
+"test-cmdstan-cache-race.R","concurrent first use of the same cache succeeds in every process",3,0,FALSE,0,FALSE,3
+"test-cmdstan-cache-race.R","a cache location that cannot be created still fails clearly",2,0,FALSE,0,FALSE,2
+"test-collapsed-gaussian-api.R","collapsed Gaussian API records routine and explicit legacy modes",18,0,FALSE,0,FALSE,18
+"test-collapsed-gaussian-api.R","missing margins and all four direct model paths encode the same contract",5,0,FALSE,0,FALSE,5
+"test-collapsed-gaussian-api.R","exact ordered-k rho restriction distinguishes rho zero from active rho",4,0,FALSE,0,FALSE,4
+"test-collapsed-gaussian-api.R","fringe and Stackelberg Logit/CES preparations retain BF/CF/BS/CS data",4,0,FALSE,0,FALSE,4
+"test-collapsed-gaussian-stan-source.R","collapsed Gaussian Stan paths are sparse, normalized, and scalar-accounted",75,0,FALSE,0,FALSE,75
+"test-collapsed-gaussian-stan-source.R","production source keeps the common share score outside ordered-k mixtures",2,0,FALSE,0,FALSE,2
+"test-conditional-k.R","conditional calls retain observations and priors across rich conduct",76,0,FALSE,0,FALSE,76
+"test-conditional-k.R","conditional enumeration rejects unsupported market/state definitions",4,0,FALSE,0,FALSE,4
+"test-conditional-k.R","conditional evidence matches direct integration with nonuniform k prior",8,0,FALSE,0,FALSE,8
+"test-conditional-k.R","component scheduling preserves failed fits and explicit numerical options",4,0,FALSE,0,FALSE,4
+"test-conditional-k.R","conditional evidence retains failed repetitions without dropping any k state",14,0,FALSE,0,FALSE,14
+"test-conditional-k.R","conditional repeat variability stays unavailable without two joint complete attempts",11,0,FALSE,0,FALSE,11
+"test-conduct.R","conduct classes reproduce fitted Logit and CES quantity shares",2,0,FALSE,0,FALSE,2
+"test-conduct.R","Logit conduct margins match all five Stan FOCs",5,0,FALSE,0,FALSE,5
+"test-conduct.R","CES conduct margins match all five Stan FOCs",5,0,FALSE,0,FALSE,5
+"test-conduct.R","bargaining nests or rescales Bertrand as specified",2,0,FALSE,0,FALSE,2
+"test-conduct.R","auction conduct supports antitrust ex-ante margin arguments",2,0,FALSE,0,FALSE,2
+"test-conduct.R","cutoff conduct is recomputed from post-merger firm shares",1,0,FALSE,0,FALSE,1
+"test-conduct.R","monopolistic conduct is ownership-independent",2,0,FALSE,0,FALSE,2
+"test-conduct.R","CES conduct objects retain antitrust demand methods",4,0,FALSE,0,FALSE,4
+"test-decisions.R","Bayes decision responds to asymmetric error costs",3,0,FALSE,0,FALSE,3
+"test-decisions.R","decision regret is zero for the oracle",2,0,FALSE,0,FALSE,2
+"test-default-model.R","new entry points expose the Gaussian collapsed market defaults",10,0,FALSE,0,FALSE,10
+"test-default-model.R","omitted likelihood settings resolve to the new contract",12,0,FALSE,0,FALSE,12
+"test-default-model.R","explicit legacy likelihood and global scope remain available",7,0,FALSE,0,FALSE,7
+"test-evidence-availability.R","public mixed evidence retains partial attempts without a sampler permission gate",18,0,FALSE,0,FALSE,18
+"test-evidence-availability.R","unavailable positive-prior evidence withholds weights for the complete set",10,0,FALSE,0,FALSE,10
+"test-evidence-availability.R","zero-prior evidence does not suppress required candidates or cause numerical underflow",2,0,FALSE,0,FALSE,2
+"test-exact-k-api-ranking.R","exact ordered-k validates positional support and prior",8,0,FALSE,0,FALSE,8
+"test-exact-k-api-ranking.R","one fixed firm-market rank applies across the complete panel",6,0,FALSE,0,FALSE,6
+"test-exact-k-api-ranking.R","ranking and observation mappings survive a row permutation",6,0,FALSE,0,FALSE,6
+"test-exact-k-api-ranking.R","Stack data keeps caller rows and uses separate traversal maps",6,0,FALSE,0,FALSE,6
+"test-exact-k-api-ranking.R","preparers route explicit exact structures and ignore k for simultaneous",9,0,FALSE,0,FALSE,9
+"test-exact-k-api-ranking.R","specified exact fits retain requested and resolved k provenance",5,0,FALSE,0,FALSE,5
+"test-exact-k-api-ranking.R","CES exact ranking uses conditional inside revenue shares",5,0,FALSE,0,FALSE,5
+"test-exact-k-stan-source.R","exact ordered-k Stan sources use one market mixture",39,0,FALSE,0,FALSE,39
+"test-global-exact-k-quality-panel.R","global collapsed quality reduces exact-k states to market scope",3,0,FALSE,0,FALSE,3
+"test-helpers.R","validate_inputs catches mismatched lengths",2,0,FALSE,0,FALSE,2
+"test-helpers.R","validate_inputs rejects empty data and missing identifiers",2,0,FALSE,0,FALSE,2
+"test-helpers.R","validate_inputs catches bad margins",2,0,FALSE,0,FALSE,2
+"test-helpers.R","logit preparation allows input markdown ratios above one",2,0,FALSE,0,FALSE,2
+"test-helpers.R","validate_inputs catches bad quantities",1,0,FALSE,0,FALSE,1
+"test-helpers.R","default outside-share prior has mean 20% and 5th percentile 10%",2,0,FALSE,0,FALSE,2
+"test-helpers.R","single-market CES vector data retain Stan dimensions",3,0,FALSE,0,FALSE,3
+"test-helpers.R","custom outside-share prior does not calibrate alpha from outcomes",3,0,FALSE,0,FALSE,3
+"test-helpers.R","prepare_stan_data computes quantity shares correctly",2,0,FALSE,0,FALSE,2
+"test-helpers.R","compositional share outcomes are scale invariant",1,0,FALSE,0,FALSE,1
+"test-helpers.R","predictive clusters must respect equilibrium cells",1,0,FALSE,0,FALSE,1
+"test-helpers.R","strategic FOCs receive firm shares and market direction",2,0,FALSE,0,FALSE,2
+"test-helpers.R","Logit alpha prior follows the standardized price scale",1,0,FALSE,0,FALSE,1
+"test-helpers.R","prepare_stan_data handles constant prices and custom grainsize",3,0,FALSE,0,FALSE,3
+"test-helpers.R","prepare_stan_data handles single market",2,0,FALSE,0,FALSE,2
+"test-helpers.R","prepare_stan_data respects custom priors",2,0,FALSE,0,FALSE,2
+"test-helpers.R","prepare_stan_data accepts s0 covariates",2,0,FALSE,0,FALSE,2
+"test-helpers.R","prepare_stan_data validates s0 covariate rows",1,0,FALSE,0,FALSE,1
+"test-helpers.R","preparation validates outside prices, priors, and covariates",3,0,FALSE,0,FALSE,3
+"test-helpers.R","all-masked margins remain finite when HMT is disabled",3,0,FALSE,0,FALSE,3
+"test-helpers.R","prepare_stan_data warns on unknown prior",1,0,FALSE,0,FALSE,1
+"test-helpers.R","prepare_ces_stan_data computes revenue shares correctly",3,0,FALSE,0,FALSE,3
+"test-helpers.R","CES uses the data-independent standardized prior",2,0,FALSE,0,FALSE,2
+"test-helpers.R","CES FOC priors use unconditional revenue shares",4,0,FALSE,0,FALSE,4
+"test-hierarchical-sd-priors.R","structural hierarchy Gamma defaults and named alternatives resolve",94,0,FALSE,0,FALSE,94
+"test-hierarchical-sd-priors.R","both demand systems and all conduct families forward both hierarchy priors",448,0,FALSE,0,FALSE,448
+"test-hierarchical-sd-priors.R","public estimation forwards the new families before HMC",12,0,FALSE,0,FALSE,12
+"test-hierarchical-sd-priors.R","active prior identity includes exactly the selected hierarchy densities",19,0,FALSE,0,FALSE,19
+"test-latent-exact-k-plan.R","singleton ordered-k support retains its count in public policy plans",24,0,FALSE,0,FALSE,24
+"test-latent-exact-k-plan.R","policy draw plans bind exact-k role semantics and validate reuse",19,0,FALSE,0,FALSE,19
+"test-latent-exact-k-plan.R","an exact-k latent plan simulates only with matching role controls",8,0,FALSE,0,FALSE,8
+"test-latent-quality-input-nonzero.R","public input Logit keeps nonzero quality fixed through a value shock",68,0,FALSE,2,FALSE,66
+"test-latent-quality-simulation.R","posterior policy plans are reusable and strict about conflicts",10,0,FALSE,0,FALSE,10
+"test-latent-quality-simulation.R","draw plans bind quality and role states to the selected posterior rows",5,0,FALSE,0,FALSE,5
+"test-latent-quality-simulation.R","sampled and collapsed quality maps retain fitted group labels",7,0,FALSE,0,FALSE,7
+"test-latent-quality-simulation.R","latent demand replacement keeps the observed cost primitive and solves pre FOCs",15,0,FALSE,3,FALSE,12
+"test-latent-quality-simulation.R","latent mode supports output Logit and CES policy paths",10,0,FALSE,0,FALSE,10
+"test-latent-quality-simulation.R","latent input Logit preserves value primitives across B/C policies",22,0,FALSE,2,FALSE,20
+"test-latent-quality-simulation.R","nonzero input quality moves the baseline without changing values",12,0,FALSE,2,FALSE,10
+"test-latent-quality-simulation.R","latent input Logit supports native Stackelberg and core-fringe paths",14,0,FALSE,0,FALSE,14
+"test-latent-quality-simulation.R","a repeated firm quality is kept fixed through a multiproduct policy",3,0,FALSE,0,FALSE,3
+"test-latent-quality-simulation.R","exact-k plans share one role draw across native policy simulations",24,0,FALSE,0,FALSE,24
+"test-latent-quality-simulation.R","latent mode rejects unsupported normalization and conduct combinations",3,0,FALSE,0,FALSE,3
+"test-latent-quality-simulation.R","the observed-share route remains the default and numerically unchanged",3,0,FALSE,0,FALSE,3
+"test-latent-quality-simulation.R","policy-plan state hashes retain versioned key sets",6,0,FALSE,0,FALSE,6
+"test-market-intercept-collapse.R","market-intercept API preserves sampled defaults and emits stable codes",14,0,FALSE,0,FALSE,14
+"test-market-intercept-collapse.R","multi-market collapse validates the reviewed Gaussian coordinate contract",11,0,FALSE,0,FALSE,11
+"test-market-intercept-collapse.R","collapsed intercept data accepts partially or wholly missing margins",5,0,FALSE,0,FALSE,5
+"test-market-intercept-collapse.R","all four production kernels expose the collapsed-intercept contract",16,0,FALSE,0,FALSE,16
+"test-market-intercept-collapse.R","joint intercept and centered quality moments match a dense Gaussian oracle",10,0,FALSE,0,FALSE,10
+"test-market-intercept-collapse.R","policy plans bind reconstructed intercepts and reuse their state in scores",6,0,FALSE,0,FALSE,6
+"test-market-intercept-collapse.R","exact-k joint quality and intercept recovery share sampled market states",19,0,FALSE,0,FALSE,19
+"test-market-intercept-collapse.R","intercept collapse preserves hypothesis identity but enters policy provenance",6,0,FALSE,0,FALSE,6
+"test-market-intercept-sd-prior.R","market SD family names and valid hyperparameters resolve canonically",39,0,FALSE,0,FALSE,39
+"test-market-intercept-sd-prior.R","all conduct and demand kernels receive the selected market SD prior",144,0,FALSE,0,FALSE,144
+"test-market-intercept-sd-prior.R","the public estimation route forwards priors before sampling",8,0,FALSE,0,FALSE,8
+"test-market-intercept-sd-prior.R","evidence identity tracks active market SD choices only",7,0,FALSE,0,FALSE,7
+"test-market-quality-R.R","market quality incidence has a separate contiguous CSR map",9,0,FALSE,0,FALSE,9
+"test-market-quality-R.R","fully Gaussian likelihood has no active df coordinate",3,0,FALSE,0,FALSE,3
+"test-market-quality-R.R","missing historical quality scope is explicitly global",2,0,FALSE,0,FALSE,2
+"test-market-quality-R.R","scope metadata must agree and economic group stays independent",1,0,FALSE,0,FALSE,1
+"test-market-quality-R.R","market quality persists by group across years and centers per market",6,0,FALSE,0,FALSE,6
+"test-market-quality-R.R","posterior quality uses scoped blocks and accepts missing margins",6,0,FALSE,0,FALSE,6
+"test-market-quality-R.R","exact-k quality recovery maps one supported state per market",3,0,FALSE,0,FALSE,3
+"test-market-quality-R.R","current specification missing scope errors even through non-strict callers",1,0,FALSE,0,FALSE,1
+"test-market-quality-R.R","one-market global and market quality share a model-universe identity",2,0,FALSE,0,FALSE,2
+"test-market-quality-R.R","market exact-k policy cache is shared across panel years",2,0,FALSE,0,FALSE,2
+"test-market-quality-stan.R","all production Stan programs expose the scoped quality contract",24,0,FALSE,0,FALSE,24
+"test-market-quality-stan.R","scoped quality Stan sources parse",4,0,FALSE,0,FALSE,4
+"test-market-quality-stan.R","market collapsed helpers use margin-first joint Gaussian conditioning",16,0,FALSE,0,FALSE,16
+"test-market-s0-rotation-api.R","market s0 rotation resolver distinguishes requested and active modes",23,0,FALSE,0,FALSE,23
+"test-market-s0-rotation-api.R","helpers record rotation mode and keep one-market NC pooling a no-op",14,0,FALSE,0,FALSE,14
+"test-market-s0-rotation-api.R","multi-market helpers activate the rotated contract for both demand models",10,0,FALSE,0,FALSE,10
+"test-market-s0-rotation-api.R","multi-market helpers expose the narrow joint orthogonal contract",13,0,FALSE,0,FALSE,13
+"test-market-s0-rotation-api.R","all four Stan kernels retain rotation diagnostics and economic equations",85,0,FALSE,0,FALSE,85
+"test-market-year-size.R","market-year totals preserve original units for unequal panel cells",9,0,FALSE,0,FALSE,9
+"test-market-year-size.R","market-year size mapping follows input row order",3,0,FALSE,0,FALSE,3
+"test-market-year-size.R","CES retains quantity totals without changing normalized outcomes",3,0,FALSE,0,FALSE,3
+"test-market-year-size.R","market-year totals reject invalid quantities",1,0,FALSE,0,FALSE,1
+"test-market-year-size.R","specified fits expose the one-cell original quantity total",4,0,FALSE,0,FALSE,4
+"test-model-spec.R","Stan likelihoods implement the current model contract",29,0,FALSE,0,FALSE,29
+"test-model-universe.R","the public universe route accepts named collections and named fits",2,0,FALSE,0,FALSE,2
+"test-model-universe.R","prior identity uses active Stan values rather than provenance labels",5,0,FALSE,0,FALSE,5
+"test-model-universe.R","the descriptor requires explicit named scientific prior weights",4,0,FALSE,0,FALSE,4
+"test-model-universe.R","strict interior uses the ranked firm union in every panel market",4,0,FALSE,0,FALSE,4
+"test-model-universe.R","overlapping exact family rectangles and duplicate atomics are rejected",1,0,FALSE,0,FALSE,1
+"test-model-universe.R","multimarket evidence uses a finite-mixture identity",3,0,FALSE,0,FALSE,3
+"test-model-universe.R","the existing restriction helper supplies the shared-theta correction",7,0,FALSE,0,FALSE,7
+"test-model-universe.R","incomplete positive-prior evidence withholds all universe probabilities",7,0,FALSE,0,FALSE,7
+"test-model-universe.R","partial source repetitions remain visible without suppressing finite universe probabilities",12,0,FALSE,0,FALSE,12
+"test-model-universe.R","public universe result preserves mixed-backend repetition and sampler metadata",6,0,FALSE,0,FALSE,6
+"test-model-universe.R","sampler provenance cannot create duplicate scientific universe hypotheses",2,0,FALSE,0,FALSE,2
+"test-model-universe.R","matching statistical fingerprints govern duplicate detection",7,0,FALSE,0,FALSE,7
+"test-model-universe.R","ordered-k fingerprints retain effective full and conditional priors",14,0,FALSE,0,FALSE,14
+"test-model-universe.R","interior restrictions retain supplied support without enlarging it",2,0,FALSE,0,FALSE,2
+"test-model-universe.R","dimension aggregation sums atomic probabilities without relabeling MC or auction",5,0,FALSE,0,FALSE,5
+"test-model-universe.R","the universe table retains the ordinary bayes_weights contract",1,0,FALSE,0,FALSE,1
+"test-model-universe.R","inactive prior settings do not encode additional canonical hypotheses",14,0,FALSE,0,FALSE,14
+"test-nutpie-backend.R","Nutpie preserves explicit common controls and separates adaptation",15,0,FALSE,0,FALSE,15
+"test-nutpie-backend.R","Nutpie rejects unsupported and ignored sampler requests",11,0,FALSE,0,FALSE,11
+"test-nutpie-backend.R","Nutpie validates integer and probability controls before native work",26,0,FALSE,0,FALSE,26
+"test-nutpie-backend.R","Nutpie diagnostic arrays use explicit chain and draw identities",9,0,FALSE,0,FALSE,9
+"test-nutpie-backend.R","Nutpie completion requires all requested usable posterior draws",11,0,FALSE,0,FALSE,11
+"test-nutpie-backend.R","only documented zero-prior partition scores may be negative infinite",4,0,FALSE,0,FALSE,4
+"test-nutpie-backend.R","Nutpie enumerates each frozen kernel data universe without compilation",18,0,FALSE,0,FALSE,18
+"test-nutpie-backend.R","native Nutpie cache follows the option and restores the environment",4,0,FALSE,0,FALSE,4
+"test-nutpie-backend.R","native Nutpie draws retain generated quantities, log density, and provenance",16,0,FALSE,0,FALSE,16
+"test-nutpie-backend.R","Nutpie compiles exactly the shared kernel in an external cache",1,0,FALSE,0,TRUE,0
+"test-nutpie-backend.R","public backend defaults and explicit CmdStanR requests agree",3,0,FALSE,0,FALSE,3
+"test-nutpie-backend.R","public Nutpie capability and dependency errors occur before sampling",3,0,FALSE,0,FALSE,3
+"test-nutpie-certification-pilot.R","certification pilot cannot start inference without explicit opt-in",1,0,FALSE,0,FALSE,1
+"test-nutpie-certification-pilot.R","one bad chain or unavailable diagnostic prevents pilot eligibility",16,0,FALSE,0,FALSE,16
+"test-nutpie-certification-pilot.R","pilot collection preserves failures and never certifies a successful subset",8,0,FALSE,0,FALSE,8
+"test-nutpie-certification-pilot.R","prepared pilot rejects runtime changes before inspecting or mutating fits",1,0,FALSE,0,FALSE,1
+"test-nutpie-certification-pilot.R","constant fields are allowed but cannot hide unavailable nonconstant diagnostics",6,0,FALSE,0,FALSE,6
+"test-nutpie-closeout-runner.R","closeout schedules every feasible original k state without retuning",8,0,FALSE,0,FALSE,8
+"test-nutpie-closeout-runner.R","closeout uncertainty retains failed repetitions and precision limits",10,0,FALSE,0,FALSE,10
+"test-nutpie-closeout-runner.R","every public closeout comparison receives a distinct prespecified RNG seed",3,0,FALSE,0,FALSE,3
+"test-nutpie-closeout-runner.R","conditional policy mixing retains scientific weights after attrition",6,0,FALSE,0,FALSE,6
+"test-nutpie-closeout-runner.R","collection records all unexecuted tasks without fitting or compiling",5,0,FALSE,0,FALSE,5
+"test-nutpie-closeout-runner.R","policy collection distinguishes exact identities from different constants",8,0,FALSE,0,FALSE,8
+"test-nutpie-closeout-uncertainty.R","policy uncertainty sums source errors without assuming independent quality noise",4,0,FALSE,0,FALSE,4
+"test-nutpie-closeout-uncertainty.R","uncertainty audit perturbs one component while retaining every chain axis",4,0,FALSE,0,FALSE,4
+"test-nutpie-closeout-uncertainty.R","revised comparison sums backend bounds and keeps exact identities explicit",8,0,FALSE,0,FALSE,8
+"test-nutpie-closeout-uncertainty.R","saved policy uncertainty restores both chain axes and retains paired failures",9,0,FALSE,0,FALSE,9
+"test-nutpie-closeout-uncertainty.R","uncertainty audit rejects result files from another producer manifest",2,0,FALSE,0,FALSE,2
+"test-nutpie-evidence-portability.R","verified saved Nutpie libraries restore without compilation or fit mutation",11,0,FALSE,0,FALSE,11
+"test-nutpie-evidence-portability.R","missing and changed Nutpie libraries reconstruct without loading rejected bytes",13,0,FALSE,0,FALSE,13
+"test-nutpie-evidence-portability.R","source data JSON and seed failures precede any native restoration",7,0,FALSE,0,FALSE,7
+"test-nutpie-evidence-portability.R","reconstructed source or binary mismatch fails before its native load",2,0,FALSE,0,FALSE,2
+"test-nutpie-evidence-portability.R","platform and loader failures reconstruct but incompatible ABIs remain unavailable",8,0,FALSE,0,FALSE,8
+"test-nutpie-evidence-portability.R","reconstructed targets must reproduce saved sampler densities",1,0,FALSE,0,FALSE,1
+"test-nutpie-evidence-portability.R","evidence reconstruction restores the user's external cache option after failure",2,0,FALSE,0,FALSE,2
+"test-nutpie-evidence-portability.R","restored libraries get distinct content names without changing compiler artifacts",5,0,FALSE,0,FALSE,5
+"test-nutpie-evidence-portability.R","saved-library density disagreements cannot trigger a compilation rescue",1,0,FALSE,0,FALSE,1
+"test-nutpie-evidence-portability.R","same-basename libraries with different contents get different native loader names",3,0,FALSE,0,FALSE,3
+"test-nutpie-evidence-runner.R","evidence runner has a fixed full kernel/model plan without inference on source",6,0,FALSE,0,FALSE,6
+"test-nutpie-evidence-runner.R","evidence budgets are durable and separate from historical sampling clocks",7,0,FALSE,0,FALSE,7
+"test-nutpie-evidence-runner.R","native target checks detect omitted constants and Jacobians",5,0,FALSE,0,FALSE,5
+"test-nutpie-evidence-runner.R","shared evidence arguments retain B observations and priors across candidates",16,0,FALSE,0,FALSE,16
+"test-nutpie-evidence-runner.R","bridge equivalence retains every repetition and rejects low precision",7,0,FALSE,0,FALSE,7
+"test-nutpie-evidence-runner.R","analytic evidence reference has unit mass including both Jacobians",2,0,FALSE,0,FALSE,2
+"test-nutpie-evidence-runner.R","evidence collection with missing fits retains the entire planned support",5,0,FALSE,0,FALSE,5
+"test-nutpie-evidence-runner.R","evidence precision cannot certify poor or missing HMC diagnostics",3,0,FALSE,0,FALSE,3
+"test-nutpie-evidence.R","Nutpie predictive units preserve chain identity and explicit indexing",5,0,FALSE,0,FALSE,5
+"test-nutpie-evidence.R","Nutpie source provenance uses the exact existing kernel and HMC",4,0,FALSE,0,FALSE,4
+"test-nutpie-evidence.R","backend choice does not restrict evidence and metadata cannot bypass target contracts",5,0,FALSE,0,FALSE,5
+"test-nutpie-evidence.R","normalized bridge coordinates exclude generated quantities and include one Jacobian",7,0,FALSE,0,FALSE,7
+"test-nutpie-evidence.R","bridge restoration requires immutable Stan data provenance",3,0,FALSE,0,FALSE,3
+"test-nutpie-evidence.R","one-dimensional bridge coordinates retain each iteration and chain",4,0,FALSE,0,FALSE,4
+"test-nutpie-pilot-diagnostic-audit.R","both Nutpie adaptations use native reference constants without changing CmdStan",3,0,FALSE,0,FALSE,3
+"test-nutpie-pilot-diagnostic-audit.R","precision correction preserves exact constant identity and missing-diagnostic failures",5,0,FALSE,0,FALSE,5
+"test-nutpie-pilot-diagnostic-audit.R","diagnostic audit cannot run accidentally when sourced",1,0,FALSE,0,FALSE,1
+"test-nutpie-serialization-runner.R","optional-free workers exclude entire native package libraries",1,0,FALSE,0,FALSE,1
+"test-nutpie-serialization-runner.R","optional-free audit rejects both loaded and discoverable native packages",3,0,FALSE,0,FALSE,3
+"test-nutpie-serialization-runner.R","saved-fit audit requires explicit execution and correct rejection reasons",4,0,FALSE,0,FALSE,4
+"test-nutpie-validation-runner.R","validation workers cannot bypass the explicit inference opt-in",1,0,FALSE,0,FALSE,1
+"test-nutpie-validation-runner.R","worker failures are durably recorded before any inference",5,0,FALSE,0,FALSE,5
+"test-nutpie-validation-runner.R","paired validation summaries detect shifts without normalizing away failed pairs",8,0,FALSE,0,FALSE,8
+"test-nutpie-validation-runner.R","validation fixtures preserve fixed conduct and active hierarchical routes",13,0,FALSE,0,FALSE,13
+"test-nutpie-validation-runner.R","validation collection retains every absent backend pair explicitly",4,0,FALSE,0,FALSE,4
+"test-nutpie-validation-runner.R","policy MCSE restores iteration and chain axes and withholds holes",4,0,FALSE,0,FALSE,4
+"test-nutpie-validation-runner.R","validation budgets are fresh invocation controls, with matched retained draws",5,0,FALSE,0,FALSE,5
+"test-nutpie-validation-runner.R","postfit validation reuses identical saved draws without compiling or sampling",6,0,FALSE,0,FALSE,6
+"test-nutpie-validation-runner.R","runtime seal detects source changes before validation can reuse scientific output",4,0,FALSE,0,FALSE,4
+"test-nutpie-validation-runner.R","CES Stackelberg validation runs merger and tariff policies with inherited leaders",11,0,FALSE,0,FALSE,11
+"test-params.R","bayes_params requires exactly one of alpha/gamma",2,0,FALSE,0,FALSE,2
+"test-params.R","bayes_params validates gamma, s0, bargaining_power, supply_model",4,0,FALSE,0,FALSE,4
+"test-params.R","bayes_params accepts a point estimate and a draws vector",4,0,FALSE,0,FALSE,4
+"test-params.R","bayes_market validates lengths and defaults",5,0,FALSE,0,FALSE,5
+"test-params.R","build_conduct_object reproduces the supplied quantity shares",2,0,FALSE,0,FALSE,2
+"test-params.R","build_conduct_object builds CES objects with revenue shares",1,0,FALSE,0,FALSE,1
+"test-params.R","as_antitrust_fit wraps a conduct object with a solved model",8,0,FALSE,0,FALSE,8
+"test-params.R","as_antitrust_fit rejects non-conduct objects",1,0,FALSE,0,FALSE,1
+"test-params.R","no-cutoff posterior realizations use truthful registered conduct classes",49,0,FALSE,0,FALSE,49
+"test-params.R","multiproduct Logit bargaining keeps its explicit custom equation",4,0,FALSE,1,FALSE,3
+"test-params.R","custom posterior fits are scenario-neutral baselines",13,0,FALSE,1,FALSE,12
+"test-params.R","MonCom registration preserves ownership-invariant margins and prices",3,0,FALSE,0,FALSE,3
+"test-params.R","FOCs recover model costs and positive cost shocks raise prices",4,0,FALSE,1,FALSE,3
+"test-params.R","as_antitrust_fit does not mutate the conduct object",5,0,FALSE,0,FALSE,5
+"test-params.R","AntitrustFit slots survive an RDS round trip",4,0,FALSE,0,FALSE,4
+"test-plan-k-key-compatibility.R","one-year exact-k plans retain their market state under a year selector",3,0,FALSE,0,FALSE,3
+"test-policy-roles.R","rich-game roles follow post-merger ownership without reranking",9,0,FALSE,0,FALSE,9
+"test-posterior-k.R","posterior_k aggregates exact Stan components by mapped market",13,0,FALSE,0,FALSE,13
+"test-posterior-k.R","posterior_k distinguishes fringe core states and specified priors",5,0,FALSE,0,FALSE,5
+"test-posterior-k.R","posterior_k fails clearly on missing or malformed generated draws",3,0,FALSE,0,FALSE,3
+"test-posterior-k.R","posterior_k rejects overlapping legacy component ranges",1,0,FALSE,0,FALSE,1
+"test-posterior-k.R","posterior_k validates each market distribution separately",1,0,FALSE,0,FALSE,1
+"test-posterior-policy-models.R","finite negative fringe costs retain draw identity and a typed failure",4,0,FALSE,0,FALSE,4
+"test-posterior-policy-models.R","finite negative baseline costs are typed for every candidate model",24,0,FALSE,0,FALSE,24
+"test-posterior-policy-models.R","public realization preserves canonical baseline state without post simulation",78,0,FALSE,0,FALSE,78
+"test-posterior-policy-models.R","native realizations preserve planned k and demand across anchoring modes",144,0,FALSE,0,FALSE,144
+"test-posterior-policy-models.R","specified realization handles missing margins and absent structure metadata",4,0,FALSE,0,FALSE,4
+"test-posterior-policy-models.R","default product labels remain usable for multiproduct firms",7,0,FALSE,0,FALSE,7
+"test-posterior-policy-models.R","realization failures keep draw positions and posterior identities",12,0,FALSE,4,FALSE,8
+"test-posterior-policy-models.R","realization rejects incompatible plans, selectors and models",5,0,FALSE,0,FALSE,5
+"test-posterior-predictive.R","Gaussian rho replication matches the joint Stan residual law",2,0,FALSE,0,FALSE,2
+"test-posterior-predictive.R","Student-t rho replication matches the conditional t law",2,0,FALSE,0,FALSE,2
+"test-posterior-predictive.R","observed shares condition Gaussian margins at rho zero and nonzero",8,0,FALSE,0,FALSE,8
+"test-posterior-predictive.R","observed shares condition Student-t margins including rho zero",5,0,FALSE,0,FALSE,5
+"test-posterior-predictive.R","default residual replication is unchanged and holdout mask is not conditioning data",3,0,FALSE,0,FALSE,3
+"test-posterior-predictive.R","conditional prediction marks fixed shares and never reads held-out margins",9,0,FALSE,0,FALSE,9
+"test-posterior-predictive.R","predictive masks keep off-likelihood outcomes NA and impute hidden margins",5,0,FALSE,0,FALSE,5
+"test-posterior-predictive.R","replicated Gaussian residuals recover the fitted scale and rho",3,0,FALSE,0,FALSE,3
+"test-posterior-predictive.R","collapsed quality prediction reuses plan state without changing the fit",8,0,FALSE,0,FALSE,8
+"test-posterior-predictive.R","exact-k FOC means accept explicit market-year component states",5,0,FALSE,0,FALSE,5
+"test-posterior-predictive.R","exact-k mixture realizations recover known conditional role probabilities",1,0,FALSE,0,FALSE,1
+"test-posterior-quality.R","posterior_quality matches dense expanded Gaussian conditioning",4,0,FALSE,0,FALSE,4
+"test-posterior-quality.R","posterior_quality draws have the dense conditional covariance",1,0,FALSE,0,FALSE,1
+"test-posterior-quality.R","posterior_quality handles one global group as zero quality",5,0,FALSE,0,FALSE,5
+"test-posterior-quality.R","posterior_quality uses repeated multiproduct panel groups",6,0,FALSE,0,FALSE,6
+"test-posterior-quality.R","posterior_quality seed is deterministic and preserves RNG state",5,0,FALSE,0,FALSE,5
+"test-posterior-quality.R","posterior_quality rejects unsupported modes and malformed draws",6,0,FALSE,0,FALSE,6
+"test-posterior-quality.R","Gaussian rho quality recovery matches original joint conditioning",15,0,FALSE,0,FALSE,15
+"test-posterior-quality.R","scalar vector arrays are accepted without changing draw alignment",1,0,FALSE,0,FALSE,1
+"test-posterior-quality.R","posterior_quality uses economic quality scale under total/fraction coordinates",6,0,FALSE,0,FALSE,6
+"test-priors.R","prior manifests preserve centers and scale dispersion",11,0,FALSE,0,FALSE,11
+"test-priors.R","bank model priors implement institutional and sensitivity sets",4,0,FALSE,0,FALSE,4
+"test-priors.R","invalid bargaining prior bounds are rejected",1,0,FALSE,0,FALSE,1
+"test-quality-coordinates.R","centered quality basis is orthonormal and zero-sum",50,0,FALSE,0,FALSE,50
+"test-quality-coordinates.R","all Stan graphs use the centered quality coordinate contract",28,0,FALSE,0,FALSE,28
+"test-quality-scale-parameterization.R","quality-scale coordinate API is explicit and restricted",6,0,FALSE,0,FALSE,6
+"test-quality-scale-parameterization.R","Logit and CES data record total/fraction coordinates",6,0,FALSE,0,FALSE,6
+"test-quality-scale-parameterization.R","total/fraction map and Jacobian recover historical scales",12,0,FALSE,0,FALSE,12
+"test-quality-scale-parameterization.R","all Stan kernels retain normalized legacy and total/fraction paths",20,0,FALSE,0,FALSE,20
+"test-real-rate-simulation.R","input fringe MRP adds the markdown for BF and CF",16,0,FALSE,0,FALSE,16
+"test-real-rate-simulation.R","real rate domains are explicit and reject unsupported economics",11,0,FALSE,0,FALSE,11
+"test-real-rate-simulation.R","atomic input Logit signed rates require the real-domain option",40,0,FALSE,0,FALSE,40
+"test-real-rate-simulation.R","latent input Logit simulation carries the selected rate domain",3,0,FALSE,0,FALSE,3
+"test-real-rate-simulation.R","failure metadata retains domain obstruction and solver stage",6,0,FALSE,0,FALSE,6
+"test-real-rate-simulation.R","assembly preserves failed draw positions and undefined ratios",12,0,FALSE,0,FALSE,12
+"test-real-rate-simulation.R","native real rates reuse policy plans and preserve value primitives",30,0,FALSE,0,FALSE,30
+"test-real-rate-simulation.R","native Bertrand role games retain signed input rates",6,0,FALSE,0,FALSE,6
+"test-real-rate-simulation.R","the positive native route remains the default",3,0,FALSE,0,FALSE,3
+"test-relative-share-api.R","relative quantity-share basis is explicit and defaults in both demands",74,0,FALSE,0,FALSE,74
+"test-relative-share-api.R","unsupported relative-share coordinates and errors fail explicitly",6,0,FALSE,0,FALSE,6
+"test-relative-share-api.R","conditional-k call generation forwards scientific basis unchanged",2,0,FALSE,0,FALSE,2
+"test-relative-share-evidence-contract.R","evidence compares samplers within one share observation measure",5,0,FALSE,0,FALSE,5
+"test-relative-share-evidence-contract.R","conditional evidence keeps one family and basis while permitting mixed samplers",7,0,FALSE,0,FALSE,7
+"test-relative-share-math.R","relative likelihood and quality moments match expanded panel Gaussians",384,0,FALSE,0,FALSE,384
+"test-relative-share-math.R","cell levels carry no relative-share information",4,0,FALSE,0,FALSE,4
+"test-relative-share-math.R","normalization and inference do not depend on contrast orientation",7,0,FALSE,0,FALSE,7
+"test-relative-share-math.R","singleton cells retain proper quality uncertainty but no share dimension",6,0,FALSE,0,FALSE,6
+"test-relative-share-math.R","positive square-root factorization retains the thin-noise ridge",3,0,FALSE,0,FALSE,3
+"test-relative-share-math.R","conditional quality draws preserve centered posterior correlations",7,0,FALSE,0,FALSE,7
+"test-relative-share-math.R","relative Gaussian rejects malformed incidence and scale contracts",8,0,FALSE,0,FALSE,8
+"test-relative-share-posterior.R","relative quality recovery equals dense masked joint Gaussian conditioning",6,0,FALSE,0,FALSE,6
+"test-relative-share-posterior.R","relative plans calibrate each market-year after the same quality draw",32,0,FALSE,0,FALSE,32
+"test-relative-share-posterior.R","relative predictive fixed shares give a dense conditional margin law",5,0,FALSE,0,FALSE,5
+"test-relative-share-posterior.R","relative latent policies retain the structural cost primitive",28,0,FALSE,0,FALSE,28
+"test-relative-share-posterior.R","relative posterior prediction returns normalized aligned compositions",30,0,FALSE,0,FALSE,30
+"test-relative-share-posterior.R","relative exact-role policies reuse their rho-conditioned quality and k state",88,0,FALSE,0,FALSE,88
+"test-residual-sd-prior.R","all hierarchy SD defaults are Gamma without enabling residual heterogeneity",65,0,FALSE,0,FALSE,65
+"test-residual-sd-prior.R","all conduct and demand families forward residual SD prior choices",320,0,FALSE,0,FALSE,320
+"test-residual-sd-prior.R","public estimation forwards residual prior families before HMC",20,0,FALSE,0,FALSE,20
+"test-residual-sd-prior.R","evidence identity includes exactly the active residual SD prior",8,0,FALSE,0,FALSE,8
+"test-restriction-comparison.R","one-market composite restrictions preserve support order",6,0,FALSE,0,FALSE,6
+"test-restriction-comparison.R","joint restrictions average products within draws",3,0,FALSE,0,FALSE,3
+"test-restriction-comparison.R","share-only posterior probabilities give unit evidence",2,0,FALSE,0,FALSE,2
+"test-restriction-comparison.R","zero posterior event mass is reported as negative infinity",3,0,FALSE,0,FALSE,3
+"test-restriction-comparison.R","zero prior restriction fails clearly",1,0,FALSE,0,FALSE,1
+"test-restriction-comparison.R","specified exact fits use their coherent prior as posterior",4,0,FALSE,0,FALSE,4
+"test-restriction-comparison.R","malformed maps and probabilities fail through exact-k validation",2,0,FALSE,0,FALSE,2
+"test-rho-studentt.R","factorized bivariate Student-t matches the joint density across a grid",400,0,FALSE,0,FALSE,400
+"test-rho-studentt.R","fixed and estimated df fits compile and produce finite draws",1,0,FALSE,0,TRUE,0
+"test-rho-studentt.R","rho is never instantiated when no margins are observed",1,0,FALSE,0,TRUE,0
+"test-rho-studentt.R","log_lik matches an independent Student-t computation for share/margin-only modes",1,0,FALSE,0,TRUE,0
+"test-rho-studentt.R","CES rho and Student-t log_lik agree with independent calculations",1,0,FALSE,0,TRUE,0
+"test-rho-studentt.R","predicted shares distinguish conditional and unconditional identities",1,0,FALSE,0,TRUE,0
+"test-rho-studentt.R","share-only likelihood does not use the equilibrium-margin information that identifies s0",1,0,FALSE,0,TRUE,0
+"test-s0-information-ladder.R","outside-share pooling resolver follows the information ladder",10,0,FALSE,0,FALSE,10
+"test-s0-information-ladder.R","Logit and CES preparation retain pooling and X_s0 parity",12,0,FALSE,0,FALSE,12
+"test-s0-information-ladder.R","single-market market pooling uses a direct prior source",16,0,FALSE,0,FALSE,16
+"test-s0-information-ladder.R","automatic one-market panels share one direct outside share",1,0,FALSE,0,TRUE,0
+"test-s0-pooling.R","multi-market intercept hierarchies are noncentered",1,0,FALSE,0,TRUE,0
+"test-s0-pooling.R","use_s0_market_pool and use_s0_market_year_pool are mutually exclusive",2,0,FALSE,0,FALSE,2
+"test-s0-pooling.R","CES market-level s0 pooling reaches the Stan data contract",12,0,FALSE,0,FALSE,12
+"test-s0-pooling.R","market-level s0 pooling yields one outside share per market (constant across years)",1,0,FALSE,0,TRUE,0
+"test-s0-pooling.R","CES market-level s0 pooling keeps quantity s0 fixed but transforms R0 by prices",1,0,FALSE,0,TRUE,0
+"test-s0-pooling.R","market-year s0 pooling gives a distinct outside share per market-year",1,0,FALSE,0,TRUE,0
+"test-sampler-backend.R","backend extraction retains chain order and Stan matrix indices",12,0,FALSE,0,FALSE,12
+"test-sampler-backend.R","indexed extraction rejects missing or malformed Stan coordinates",5,0,FALSE,0,FALSE,5
+"test-sampler-backend.R","backend extraction reconstructs vectors and higher Stan dimensions",7,0,FALSE,0,FALSE,7
+"test-sampler-backend.R","saved Nutpie fits summarize and expose diagnostics without native objects",6,0,FALSE,0,FALSE,6
+"test-sampler-backend.R","common diagnostics report native depth hits and unavailable metrics",17,0,FALSE,0,FALSE,17
+"test-sampler-backend.R","legacy CmdStan objects retain their extraction and summary paths",13,0,FALSE,0,FALSE,13
+"test-sampler-backend.R","collapsed quality can reconstruct directly from a retained Nutpie fit",4,0,FALSE,0,FALSE,4
+"test-sampler-backend.R","saved Nutpie policy plans retain posterior rows and reject changed provenance",5,0,FALSE,0,FALSE,5
+"test-sampling-contract.R","CmdStan fitting rejects incomplete processes and missing draws",5,0,FALSE,0,FALSE,5
+"test-sampling-contract.R","CmdStan fitting accepts complete HMC and Pathfinder draws",2,0,FALSE,0,FALSE,2
+"test-sampling-contract.R","failed CmdStan processes retain their return codes and output",5,0,FALSE,0,FALSE,5
+"test-sampling-contract.R","failure reporting remains usable when process output is unavailable",2,0,FALSE,0,FALSE,2
+"test-sampling-contract.R","long process output retains the final failure reason",2,0,FALSE,0,FALSE,2
+"test-selective-extraction.R","policy plans use one selected union and normalize s0 aliases",5,0,FALSE,0,FALSE,5
+"test-selective-extraction.R","missing active quality fields fail before a plan is constructed",1,0,FALSE,0,FALSE,1
+"test-selective-extraction.R","one-group sampled quality retains the zero-centered fallback",3,0,FALSE,0,FALSE,3
+"test-selective-extraction.R","active rho quality conditioning extracts its union once",4,0,FALSE,0,FALSE,4
+"test-selective-extraction.R","numeric Stan quality codes work without metadata while contradictions remain rejected",5,0,FALSE,0,FALSE,5
+"test-selective-extraction.R","s0 logit aliases become probabilities without changing native probabilities",5,0,FALSE,0,FALSE,5
+"test-selective-extraction.R","required NULL fields fail while absent known optional fields are skipped",4,0,FALSE,0,FALSE,4
+"test-selective-extraction.R","retained pars schema takes precedence over compiled model pars",2,0,FALSE,0,FALSE,2
+"test-selective-extraction.R","draw count follows retained dimensions and prioritizes a_market",1,0,FALSE,0,FALSE,1
+"test-selective-extraction.R","v2 canonical fingerprints ignore selected-field order and aliases",2,0,FALSE,0,FALSE,2
+"test-simulate-dispatch.R","BayesFit supplies the StructuralFit simulation contract",6,0,FALSE,0,FALSE,6
+"test-simulate-dispatch.R","simulate handles point and multi-draw specified fits",8,0,FALSE,0,FALSE,8
+"test-simulate-dispatch.R","legacy ownership and Counterfactual interfaces agree",2,0,FALSE,0,FALSE,2
+"test-simulate-dispatch.R","bayes_sim is a thin wrapper around simulate",4,0,FALSE,0,FALSE,4
+"test-simulate-dispatch.R","parallel and serial simulation are deterministic after draw selection",3,0,FALSE,0,FALSE,3
+"test-simulate-dispatch.R","simulate validates workers and isolates a bad draw",5,0,FALSE,0,FALSE,5
+"test-simulate-dispatch.R","antitrust scenario machinery supports non-merger counterfactuals",4,0,FALSE,0,FALSE,4
+"test-simulate-dispatch.R","entry changes the assembled product dimension",3,0,FALSE,1,FALSE,2
+"test-simulate-dispatch.R","multi-step paths remain stored while downstream methods terminalize",3,0,FALSE,0,FALSE,3
+"test-simulate-dispatch.R","antitrust's Counterfactual grammar is not copied into this namespace",1,0,FALSE,0,FALSE,1
+"test-simulate-dispatch.R","estimated fits dispatch through the same S4 method",1,0,FALSE,0,TRUE,0
+"test-single-market-intercept-identification.R","free Logit intercept supports outside shares beyond the old seven-firm ceiling",18,0,FALSE,0,FALSE,18
+"test-single-market-intercept-identification.R","MC margins leave outside-share identification to the prior and share level",6,0,FALSE,0,FALSE,6
+"test-single-market-intercept-identification.R","heterogeneous Cournot margins identify alpha and outside share independently of the intercept",5,0,FALSE,0,FALSE,5
+"test-single-market-intercept-identification.R","fresh-target protocol is bounded and preserves all four market-time layouts",7,0,FALSE,0,FALSE,7
+"test-single-market-intercept-policy.R","single-market prediction and latent scores inherit a nonzero intercept once",9,0,FALSE,0,FALSE,9
+"test-single-market-intercept-policy.R","nonzero single-market intercepts preserve observed equilibria costs and roles",120,0,FALSE,0,FALSE,120
+"test-single-market-intercept-policy.R","collapsed quality conditions on the single sampled intercept without refitting it",6,0,FALSE,0,FALSE,6
+"test-single-market-intercept-policy.R","nonzero single-market intercept states retain tariff costs and inherited roles",40,0,FALSE,0,FALSE,40
+"test-single-market-intercept.R","Logit kernels retain one proper inside-market intercept in a single market",12,0,FALSE,0,FALSE,12
+"test-single-market-intercept.R","intercept estimation preserves market flags, quality blocks and outside-share pools",864,0,FALSE,0,FALSE,864
+"test-single-market-intercept.R","seven-firm positive-cost equilibria retain fixed conditional shares at 10, 20 and 40 percent outside",103,0,FALSE,4,FALSE,99
+"test-stackelberg-comparison.R","predictive units retain the marginalized equilibrium count",8,0,FALSE,0,FALSE,8
+"test-stackelberg-comparison.R","exact fringe retains one k at the whole-market predictive unit",5,0,FALSE,0,FALSE,5
+"test-stackelberg-comparison.R","evidence rejects non-normalized factors and improper pools",5,0,FALSE,0,FALSE,5
+"test-stackelberg-comparison.R","comparison ignores hyperparameters of absent role priors",3,0,FALSE,0,FALSE,3
+"test-stackelberg-comparison.R","evidence requires verified native normalized fits",4,0,FALSE,0,FALSE,4
+"test-stackelberg-r-contract.R","Stackelberg preparation preserves unique firm-MY and partition maps",9,0,FALSE,0,FALSE,9
+"test-stackelberg-r-contract.R","fringe cutoff scales remain prespecified and are carried into data",3,0,FALSE,0,FALSE,3
+"test-stackelberg-r-contract.R","singleton CES common vectors retain one-dimensional Stan shapes",1,0,FALSE,0,FALSE,1
+"test-stackelberg-r-contract.R","Stack summaries distinguish cutoff mixtures and direct ordered-k",15,0,FALSE,0,FALSE,15
+"test-stackelberg-r-contract.R","component role probabilities include firms absent from a period",1,0,FALSE,0,FALSE,1
+"test-stackelberg-r-contract.R","fringe smooth core summaries retain cutoff and outside-share dependence",5,0,FALSE,0,FALSE,5
+"test-stackelberg-r-contract.R","role offsets reject selected tied boundaries only",5,0,FALSE,0,FALSE,5
+"test-stackelberg-r-contract.R","bridge and canonical preparation agree on tied firm ranks",3,0,FALSE,0,FALSE,3
+"test-stackelberg-r-contract.R","ordered-k reconstruction preserves the stored market ranking",3,0,FALSE,0,FALSE,3
+"test-stackelberg-r-contract.R","estimated Stack bridge fails closed when component GQ is absent",1,0,FALSE,0,FALSE,1
+"test-stackelberg-r-contract.R","shared-market cache uses full component support for selected years",1,0,FALSE,0,FALSE,1
+"test-stackelberg-r-contract.R","specified Stackelberg simulation uses the native one-step route",4,0,FALSE,0,FALSE,4
+"test-stackelberg-r-contract.R","exact fringe cutoff summary reports ordered strategic-core states",4,0,FALSE,0,FALSE,4
+"test-stackelberg-r-contract.R","exact fringe reconstructs and simulates through coordination",13,0,FALSE,0,FALSE,13
+"test-stackelberg-r-contract.R","exact fringe maps merged core ownership and permits k zero",3,0,FALSE,0,FALSE,3
+"test-stan-control-policy.R","a metric override preserves package adaptation and depth defaults",24,0,FALSE,0,FALSE,24
+"test-stan-control-policy.R","partial adaptation and depth overrides preserve other defaults",9,0,FALSE,0,FALSE,9
+"test-stan-control-policy.R","complete controls and top-level aliases retain their explicit values",16,0,FALSE,0,FALSE,16
+"test-stan-control-policy.R","explicit NULL controls continue to delegate to CmdStan",6,0,FALSE,0,FALSE,6
+"test-stan-core-policy.R","default Stan cores follow mc.cores and resolved chain count",4,0,FALSE,0,FALSE,4
+"test-stan-core-policy.R","explicit Stan cores override the mc.cores default",6,0,FALSE,0,FALSE,6
+"test-stan-core-policy.R","invalid core and chain settings fail clearly",21,0,FALSE,0,FALSE,21
+"test-stan-core-policy.R","bayes_est passes the resolved chain policy to sampling",8,0,FALSE,0,FALSE,8
+"test-theory.R","local conduct slopes match the analytical expansions",1,0,FALSE,0,FALSE,1
+"test-theory.R","profiling unknown outside share enlarges equivalence",2,0,FALSE,0,FALSE,2
+"test-theory.R","CES bargaining is exactly a Bertrand rescaling",1,0,FALSE,0,FALSE,1
+"test-theory.R","CES Cournot schedule includes the outside revenue share",1,0,FALSE,0,FALSE,1
+"test-theory.R","pairwise information matrix is well formed",2,0,FALSE,0,FALSE,2
+"test-theory.R","information distance supports CES schedules",2,0,FALSE,0,FALSE,2
+"test-theory.R","conduct_schedule rejects jointly infeasible firm shares",5,0,FALSE,0,FALSE,5
+"test-theory.R","conduct_schedule accepts partially enumerated and fully enumerated markets",7,0,FALSE,0,FALSE,7
+"test-theory.R","conduct_distance profiles s0 up to 1 - sum(q), not 1 - max(q)",12,0,FALSE,0,FALSE,12
+"test-theory.R","a partially enumerated market profiles over its whole feasible range",5,0,FALSE,0,FALSE,5
+"test-theory.R","fully enumerated markets profile without numerical failure",3,0,FALSE,0,FALSE,3
+"test-theory.R","shipped conduct validation designs remain feasible",2,0,FALSE,0,FALSE,2
+"test-validation.R","fast conduct validation returns reproducible theory-linked output",4,0,FALSE,0,FALSE,4

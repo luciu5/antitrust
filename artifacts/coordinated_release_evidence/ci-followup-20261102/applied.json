@@ -1,0 +1,187 @@
+{
+  "applied_files": [
+    {
+      "package": "competitiontoolbox",
+      "path": ".ci/README.md",
+      "sha256": "35a0b6d1631e4456473d7e9cd2dfc5a26bfc283d27ccaaba3fb814e3a7e57b12"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": ".ci/require-vertical-read-token.sh",
+      "sha256": "65cb9e5150a5162aefad0935dfb9d36768404afd1ddfd840524aa3cb64a633ab"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": ".ci/resolve-private-vertical-checkout.sh",
+      "sha256": "5b3070351191e932fad00cf766efb7e9aea4dcd1869b1a7d79b2f171a56da21f"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": ".ci/run-private-vertical-command.sh",
+      "sha256": "c793c7a18104a38525bbfd263146b2284792c413d4afa150200f2355f6d8879b"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": ".ci/test-private-vertical-checkout.sh",
+      "sha256": "da020ec83d28e73d246fd4522082c58e6cd2ff5d3e641f41077f9c385758a903"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": ".github/workflows/dependency-stack-qa.yml",
+      "sha256": "1489531ca72dd9b8ce16d2a6e8cdcd928a2bfaae413701e5270b2b9820f28d6a"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": ".github/workflows/qa.yml",
+      "sha256": "351e9d4a3dbb7ce0fe5d311f1ca1c19d1eefc382f9539e63aa7afe58ac50ee1c"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "ci/README.md",
+      "sha256": "b3263d4951cf6bc216375a7d6fbf8dbc2e4e7aef420dd9b9899cf8eb55cb0b5e"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "ci/test-verified-dependency-metadata.R",
+      "sha256": "8fe2eaebb503670316b7d9925e27cc0671e80db691387eec12a89a20d8ca173c"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/README.md",
+      "sha256": "47c02a3c38fcbef8ea4f65dee1de36b96a305d4ab5968fdac90a70a88ad4137c"
+    }
+  ],
+  "candidate_ref": "refs/heads/release/coordinated-2026-11-01",
+  "manifest": {
+    "schema_version": 1,
+    "release_id": "coordinated-2026-11-01",
+    "manifest_policy": "The completed manifest lives outside the antitrust candidate commit. SHA values below are filled only after each local candidate commit exists.",
+    "packages": {
+      "antitrust": {
+        "repository": "luciu5/antitrust",
+        "version": "0.99.43",
+        "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+        "minimums": {},
+        "remotes": []
+      },
+      "coordination": {
+        "repository": "luciu5/coordination",
+        "version": "0.1.0",
+        "sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+        "minimums": {
+          "antitrust": "0.99.43"
+        },
+        "remotes": [
+          "antitrust"
+        ]
+      },
+      "trade": {
+        "repository": "luciu5/trade",
+        "version": "0.9.0",
+        "sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+        "minimums": {
+          "antitrust": "0.99.43",
+          "coordination": "0.1.0"
+        },
+        "remotes": [
+          "antitrust",
+          "coordination"
+        ]
+      },
+      "vertical": {
+        "repository": "luciu5/vertical",
+        "version": "0.3.0",
+        "sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+        "minimums": {
+          "antitrust": "0.99.43",
+          "trade": "0.9.0"
+        },
+        "remotes": [
+          "antitrust",
+          "trade"
+        ]
+      },
+      "competitiontoolbox": {
+        "repository": "luciu5/competitiontoolbox",
+        "version": "0.9.0",
+        "sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+        "minimums": {
+          "antitrust": "0.99.43",
+          "trade": "0.9.0",
+          "vertical": "0.3.0"
+        },
+        "remotes": [
+          "antitrust",
+          "coordination",
+          "trade",
+          "vertical"
+        ]
+      },
+      "financial": {
+        "repository": "luciu5/financial",
+        "version": "0.1.0",
+        "sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+        "minimums": {
+          "antitrust": "0.99.43"
+        },
+        "remotes": []
+      },
+      "antitrustBayes": {
+        "repository": "luciu5/antitrustBayes",
+        "version": "0.3.0",
+        "sha": "b252fa1b37d4a834d2fdb4660cfa2937695975ed",
+        "minimums": {
+          "antitrust": "0.99.43",
+          "coordination": "0.1.0",
+          "trade": "0.9.0"
+        },
+        "remotes": []
+      }
+    },
+    "revision": 3
+  },
+  "preserved_original_state": {
+    "antitrust": {
+      "head": "20f0923fc560295e04310aed5615c19dadf672cb",
+      "protected_refs": "refs/heads/master e6ca9d595668f37f0a1e518db30ce53de61361d1\nrefs/heads/refactor 20f0923fc560295e04310aed5615c19dadf672cb\n",
+      "index": "/mnt/d/Projects/antitrust/.git/index",
+      "index_sha256": "0b15cc100efa3fbd995c64548f31089449dbba6c67ea9a2461a8e2abd15109f2"
+    },
+    "coordination": {
+      "head": "6955c4845df0c1de98eb540423118b53732211e5",
+      "protected_refs": "refs/heads/main 6955c4845df0c1de98eb540423118b53732211e5\n",
+      "index": "/mnt/d/Projects/coordination/.git/index",
+      "index_sha256": "473cacf465d76aa72c9ee954af534ae9a28a46a6e4d9e30bf73a904d584aacd0"
+    },
+    "trade": {
+      "head": "2826df0fc3530c01066000725f643b060e71d136",
+      "protected_refs": "refs/heads/master e621956242d7b9c0376acc2c76ec76bcf7d91d1c\nrefs/heads/refactor 2826df0fc3530c01066000725f643b060e71d136\n",
+      "index": "/mnt/d/Projects/trade/.git/index",
+      "index_sha256": "cb3dd8a29f4579c19b23444accddc43476d22fd33e89f1141f508f1263c88488"
+    },
+    "vertical": {
+      "head": "dbb99804bfe76746c13374d341beb1bd20af79c2",
+      "protected_refs": "refs/heads/main dbb99804bfe76746c13374d341beb1bd20af79c2\n",
+      "index": "/mnt/d/Projects/vertical/.git/index",
+      "index_sha256": "067c7e5c5bb92ecf85a0032576e91181a792080cbf4b8be1b67201ac5b9fe62b"
+    },
+    "competitiontoolbox": {
+      "head": "a5030868e5831b4c7951a8cb7eee469af0675c7a",
+      "protected_refs": "refs/heads/master e81fc704bec56cd56c92097b282177573b57fd83\nrefs/heads/refactor a5030868e5831b4c7951a8cb7eee469af0675c7a\n",
+      "index": "/mnt/d/Projects/competitiontoolbox/.git/index",
+      "index_sha256": "7ecf5c0f7aace013a5e133f38e3f6ae589fcce822be10f687e671946abda0f5b"
+    },
+    "financial": {
+      "head": "80e2720b0e40b30e819c028110d2085abca26da0",
+      "protected_refs": "refs/heads/main 80e2720b0e40b30e819c028110d2085abca26da0\n",
+      "index": "/mnt/d/Projects/financial/.git/index",
+      "index_sha256": "3d7da19f396f6a07a48b93642e00989c5e292269e358640283e0d2007a70523a"
+    },
+    "antitrustBayes": {
+      "head": "fb1f026c0e301f17343ebd611afe657cbaafc5f2",
+      "protected_refs": "refs/heads/main fb1f026c0e301f17343ebd611afe657cbaafc5f2\n",
+      "index": "/mnt/d/Projects/antitrustBayes/.git/index",
+      "index_sha256": "a7ba5fb6e9b47e802607858043d28b79aebcdb98766eee066e2d3a37e3fc53e6"
+    }
+  }
+}

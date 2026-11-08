@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "release_id": "coordinated-2026-11-01",
+  "manifest_policy": "The completed manifest lives outside the antitrust candidate commit. SHA values below are filled only after each local candidate commit exists.",
+  "packages": {
+    "antitrust": {
+      "repository": "luciu5/antitrust",
+      "version": "0.99.43",
+      "sha": "abc8f9457cc9cbb2e3f252c6b82fe5b87da3dd79",
+      "minimums": {},
+      "remotes": []
+    },
+    "coordination": {
+      "repository": "luciu5/coordination",
+      "version": "0.1.0",
+      "sha": "761cb49fbae87744de99b2dce4eb597e81feb7a1",
+      "minimums": {
+        "antitrust": "0.99.43"
+      },
+      "remotes": [
+        "antitrust"
+      ]
+    },
+    "trade": {
+      "repository": "luciu5/trade",
+      "version": "0.9.0",
+      "sha": "c99a6ac6d7505b63e6c369246b0ef650d9af2421",
+      "minimums": {
+        "antitrust": "0.99.43",
+        "coordination": "0.1.0"
+      },
+      "remotes": [
+        "antitrust",
+        "coordination"
+      ]
+    },
+    "vertical": {
+      "repository": "luciu5/vertical",
+      "version": "0.3.0",
+      "sha": "eaf12d4505f77b1802071574145874a8c415cec3",
+      "minimums": {
+        "antitrust": "0.99.43",
+        "trade": "0.9.0"
+      },
+      "remotes": [
+        "antitrust",
+        "trade"
+      ]
+    },
+    "competitiontoolbox": {
+      "repository": "luciu5/competitiontoolbox",
+      "version": "0.9.0",
+      "sha": "bcec374b2c56c9f1120728b97c42dfb59b47f5b1",
+      "minimums": {
+        "antitrust": "0.99.43",
+        "trade": "0.9.0",
+        "vertical": "0.3.0"
+      },
+      "remotes": [
+        "antitrust",
+        "coordination",
+        "trade",
+        "vertical"
+      ]
+    },
+    "financial": {
+      "repository": "luciu5/financial",
+      "version": "0.1.0",
+      "sha": "20d2830c07d699f7c1a4da88a72e54cc2b912bb1",
+      "minimums": {
+        "antitrust": "0.99.43"
+      },
+      "remotes": []
+    },
+    "antitrustBayes": {
+      "repository": "luciu5/antitrustBayes",
+      "version": "0.3.0",
+      "sha": "6f34dd2f34656dd749b594b22157ff475c9dc186",
+      "minimums": {
+        "antitrust": "0.99.43",
+        "coordination": "0.1.0",
+        "trade": "0.9.0"
+      },
+      "remotes": []
+    }
+  }
+}

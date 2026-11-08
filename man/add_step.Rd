@@ -20,6 +20,7 @@ add_step(object, ...)
   products = NULL,
   quality = NULL,
   entry = NULL,
+  core = NULL,
   ...
 )
 }
@@ -54,6 +55,9 @@ attractiveness, keyed by product label. Logit applies an additive
 `log1p(quality)` utility shift; CES applies a multiplicative change.}
 
 \item{entry}{An `Entrant` object, or a list of `Entrant` objects.}
+
+\item{core}{Core-firm IDs for downstream native coordination games;
+unsupported by ordinary antitrust fits.}
 }
 \value{
 A `Counterfactual` object with the new step appended.

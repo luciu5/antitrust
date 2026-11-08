@@ -1,0 +1,67 @@
+
+R version 4.6.1 (2026-06-24) -- "Happy Hop"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(testthat)
+> library(antitrustBayes)
+> 
+> test_check("antitrustBayes")
+[ FAIL 0 | WARN 23 | SKIP 35 | PASS 7192 ]
+
+══ Skipped tests (35) ══════════════════════════════════════════════════════════
+• {nutpieR} is not installed (1): 'test-nutpie-backend.R:221:3'
+• CmdStan must be installed to parse Stan sources (2):
+  'test-ces-intercept-normalization.R:85:3', 'test-market-quality-stan.R:22:3'
+• On CRAN (8): 'test-ces-intercept-normalization.R:279:3',
+  'test-ces-intercept-normalization.R:326:3',
+  'test-ces-intercept-normalization.R:351:3',
+  'test-s0-information-ladder.R:107:3', 'test-s0-pooling.R:56:3',
+  'test-s0-pooling.R:167:3', 'test-s0-pooling.R:200:3',
+  'test-s0-pooling.R:254:3'
+• Repository-only certification experiment. (1):
+  'test-nutpie-certification-pilot.R:3:1'
+• Repository-only no-HMC pilot audit. (1):
+  'test-nutpie-pilot-diagnostic-audit.R:2:1'
+• Repository-only research runner is excluded from the source package. (1):
+  'test-nutpie-validation-runner.R:3:1'
+• Research audit is excluded from built package. (5):
+  'test-nutpie-closeout-uncertainty.R:10:3',
+  'test-nutpie-closeout-uncertainty.R:23:3',
+  'test-nutpie-closeout-uncertainty.R:40:3',
+  'test-nutpie-closeout-uncertainty.R:61:3',
+  'test-nutpie-closeout-uncertainty.R:85:3'
+• Research runner checks require the repository doc/ tree (excluded from the
+  installed package). (1): 'test-nutpie-evidence-runner.R:3:1'
+• Research runner is excluded from the built package. (6):
+  'test-nutpie-closeout-runner.R:10:3', 'test-nutpie-closeout-runner.R:25:3',
+  'test-nutpie-closeout-runner.R:47:3', 'test-nutpie-closeout-runner.R:65:3',
+  'test-nutpie-closeout-runner.R:78:3', 'test-nutpie-closeout-runner.R:91:3'
+• Research runner is excluded from the source package. (1):
+  'test-single-market-intercept-identification.R:62:3'
+• Saved-fit research audit requires the repository doc/ tree. (1):
+  'test-nutpie-serialization-runner.R:3:1'
+• Set ANTITRUSTBAYES_RUN_STAN_TESTS=true for the opt-in Stan test (1):
+  'test-simulate-dispatch.R:206:3'
+• Stan sampling tests are opt-in; set ANTITRUSTBAYES_RUN_STAN_TESTS=true to run
+  them. (6): 'test-rho-studentt.R:90:3', 'test-rho-studentt.R:146:3',
+  'test-rho-studentt.R:165:3', 'test-rho-studentt.R:214:3',
+  'test-rho-studentt.R:283:3', 'test-rho-studentt.R:323:3'
+
+[ FAIL 0 | WARN 23 | SKIP 35 | PASS 7192 ]
+> 
+> proc.time()
+   user  system elapsed 
+ 48.130   5.018  52.182 

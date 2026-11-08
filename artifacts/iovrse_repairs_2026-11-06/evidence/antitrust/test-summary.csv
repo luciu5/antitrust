@@ -1,0 +1,279 @@
+"file","test","nb","failed","error","warning","skipped","passed"
+"test-advance-market.R","A: advancing a tariff equilibrium retains physical costs and entry primitives without a solve",6,0,FALSE,0,FALSE,6
+"test-advance-market.R","A: advancing after exit leaves a valid inside mass for later entry",3,0,FALSE,0,FALSE,3
+"test-advance-market.R","A: ordinary exit then merger has the independent logsum welfare change",2,0,FALSE,0,FALSE,2
+"test-advance-market.R","A: ordinary entry then merger and exit retains aligned pre-choice sets",5,0,FALSE,0,FALSE,5
+"test-analytical-benchmarks.R","Logit Bertrand pre-merger margin matches exact analytical formula",3,0,FALSE,0,FALSE,3
+"test-analytical-benchmarks.R","CES Bargaining pre-merger margin scales exactly by (1 - barg) from base CES margin",1,0,FALSE,0,FALSE,1
+"test-analytical-benchmarks.R","Symmetric firm merger produces identical post-merger price predictions",1,0,FALSE,0,FALSE,1
+"test-audit-regressions.R","sim initializes BLP, CES, and bargaining2nd CES correctly",10,0,FALSE,0,FALSE,10
+"test-audit-regressions.R","bargaining CES ALM and second-score calibration respect bargaining power",4,0,FALSE,0,FALSE,4
+"test-audit-regressions.R","AG solver honors post-merger subsets",2,0,FALSE,0,FALSE,2
+"test-audit-regressions.R","AG CES and second-score wrappers preserve model-specific equations",4,0,FALSE,0,FALSE,4
+"test-audit-regressions.R","labels remain positional-compatible after solver addition",1,0,FALSE,0,FALSE,1
+"test-audit-regressions.R","symmetric linear calibration handles complete diversion matrices",2,0,FALSE,0,FALSE,2
+"test-blp-bargaining-kernel.R","BargainingBLP vectorized kernel matches an independent draw loop",6,0,FALSE,0,FALSE,6
+"test-blp-bargaining-kernel.R","mixed-retention BLP bargaining satisfies numerical Nash gradients",4,0,FALSE,0,FALSE,4
+"test-blp-bargaining-kernel.R","adaptive multistart fallback decision is deterministic",6,0,FALSE,0,FALSE,6
+"test-blp-calibration-recovery.R","BLP calibration recovers price heterogeneity under all supported conducts",1,0,FALSE,0,TRUE,0
+"test-blp-calibration-recovery.R","BLP calibration retains the sigma-zero boundary",16,0,FALSE,4,FALSE,12
+"test-blp-calibration-recovery.R","BLP diagnostics expose the fixed outside share and contraction state",7,0,FALSE,1,FALSE,6
+"test-blp-calibration-recovery.R","adaptive BLP multistart is economically identical to exhaustive mode",1,0,FALSE,0,TRUE,0
+"test-blp-calibration-recovery.R","BLP contraction reuses a price utility component without changing shares",2,0,FALSE,0,FALSE,2
+"test-blp-calibration-recovery.R","no-demographics price-random-coefficient calibration works under both integration rules",1,0,FALSE,0,TRUE,0
+"test-blp-conduct-regressions.R","sigma-zero Auction2ndBLP margins match homogeneous Auction2ndLogit",7,0,FALSE,3,FALSE,4
+"test-blp-conduct-regressions.R","sigma-zero BargainingBLP margins match homogeneous BargainingLogit",7,0,FALSE,3,FALSE,4
+"test-blp-conduct-regressions.R","Auction2ndBLP integrates heterogeneous firm winning margins draw by draw",4,0,FALSE,2,FALSE,2
+"test-blp-conduct-regressions.R","BargainingBLP solves the aggregate heterogeneous bargaining FOC",4,0,FALSE,2,FALSE,2
+"test-blp-conduct-regressions.R","zero buyer bargaining power satisfies the aggregate Bertrand FOC",2,0,FALSE,0,FALSE,2
+"test-blp-conduct-regressions.R","sigma-zero BLP auction allocation uses values net of cost",2,0,FALSE,0,FALSE,2
+"test-blp-elast-kernel.R","flat LogitBLP elasticities match the independent draw loop",10,0,FALSE,0,FALSE,10
+"test-blp-integration-2d.R","two-dimensional Gauss-Hermite is a correctly ordered product rule",10,0,FALSE,0,FALSE,10
+"test-blp-integration-2d.R","two-dimensional node counts are per axis",4,0,FALSE,0,FALSE,4
+"test-blp-integration-2d.R","provided two-dimensional points have an unambiguous API",7,0,FALSE,0,FALSE,7
+"test-blp-integration-2d.R","price and demographic draws materialize from one tensor state",3,0,FALSE,0,FALSE,3
+"test-blp-integration-2d.R","correlated demographic quadrature uses the full Cholesky block",3,0,FALSE,0,FALSE,3
+"test-blp-integration-2d.R","price and characteristic heterogeneity enter utility independently",3,0,FALSE,0,FALSE,3
+"test-blp-integration-2d.R","higher dimensions fall back to Monte Carlo but explicit GH fails",5,0,FALSE,0,FALSE,5
+"test-blp-integration-2d.R","a specified two-dimensional BLP stores and reuses exact state",14,0,FALSE,0,FALSE,14
+"test-blp-integration-2d.R","calcMeanval contracts over the stored two-dimensional rule",7,0,FALSE,0,FALSE,7
+"test-blp-integration-2d.R","legacy materialized vector states retain every heterogeneous component",3,0,FALSE,0,FALSE,3
+"test-blp-integration-2d.R","multidimensional BLP calibration is explicitly unsupported",1,0,FALSE,0,FALSE,1
+"test-blp-integration-2d.R","advanced BLP conduct routing is explicit and truthful",6,0,FALSE,0,FALSE,6
+"test-blp-integration-regressions.R","Gauss-Hermite normal rule reproduces standard moments",6,0,FALSE,0,FALSE,6
+"test-blp-integration-regressions.R","Gauss-Hermite shares agree with direct one-dimensional integration",1,0,FALSE,0,FALSE,1
+"test-blp-integration-regressions.R","flat BLP draw-level slopes reduce to the Logit derivative",1,0,FALSE,0,FALSE,1
+"test-blp-integration-regressions.R","BLP dimension selection ignores empty demographics and mean-only characteristics",3,0,FALSE,0,FALSE,3
+"test-blp-integration-regressions.R","Monte Carlo BLP integration defaults to 5000 draws",3,0,FALSE,0,FALSE,3
+"test-blp-integration-regressions.R","BLP specify forwards market metadata into the new builder",4,0,FALSE,0,FALSE,4
+"test-blp-integration-regressions.R","BLP specify derives no-outside shares from supplied meanval",4,0,FALSE,0,FALSE,4
+"test-blp-integration-regressions.R","default BLP specify dispatches registered auction conduct",2,0,FALSE,0,FALSE,2
+"test-blp-integration-regressions.R","default BLP specify dispatches registered bargaining conduct",2,0,FALSE,0,FALSE,2
+"test-blp-integration-regressions.R","one demographic with zero price sigma defaults to Gauss-Hermite",4,0,FALSE,0,FALSE,4
+"test-blp-integration-regressions.R","price-only BLP simulation selects the requested integration rule",6,0,FALSE,0,FALSE,6
+"test-blp-integration-regressions.R","BLP aggregate derivatives pass a finite-difference check",1,0,FALSE,0,FALSE,1
+"test-blp-integration-regressions.R","integration node and weight validation is strict",3,0,FALSE,0,FALSE,3
+"test-blp-integration-regressions.R","BLP aggregate shares honor supplied integration weights",2,0,FALSE,0,FALSE,2
+"test-blp-integration-regressions.R","BLP aggregate derivatives honor supplied integration weights",1,0,FALSE,0,FALSE,1
+"test-blp-integration-regressions.R","provided BLP points and weights are normalized without RNG use",7,0,FALSE,0,FALSE,7
+"test-blp-integration-regressions.R","BLP consDraws and integrationWeights aliases are exact",6,0,FALSE,0,FALSE,6
+"test-blp-integration-regressions.R","BLP repeated share and derivative evaluations are deterministic",2,0,FALSE,0,FALSE,2
+"test-blp-integration-regressions.R","legacy BLP clips wrong-sign draws under the explicit domain contract",2,0,FALSE,0,FALSE,2
+"test-blp-integration-regressions.R","BLP fits reuse their integration rule across counterfactual simulations",8,0,FALSE,3,FALSE,5
+"test-blp-integration-regressions.R","BLP fits with demographic heterogeneity honor top-level integration dots",2,0,FALSE,0,FALSE,2
+"test-blp-integration-regressions.R","BLP CV trimming uses integration-weighted quantiles and means",2,0,FALSE,0,FALSE,2
+"test-blp-integration-regressions.R","calcMeanval keeps wrong-mean correction consistent with draw clipping",22,0,FALSE,2,FALSE,20
+"test-counterfactual.R","Counterfactual translates legacy antitrust scenario arguments",4,0,FALSE,0,FALSE,4
+"test-counterfactual.R","an empty Counterfactual preserves the baseline equilibrium",1,0,FALSE,0,FALSE,1
+"test-counterfactual.R","Counterfactual supports exit and rejects model changes",7,0,FALSE,1,FALSE,6
+"test-counterfactual.R","Counterfactuals compose without mutation",4,0,FALSE,0,FALSE,4
+"test-counterfactual.R","counterfactual() and add_step() build proper S4 objects",8,0,FALSE,0,FALSE,8
+"test-economic-invariants.R","no-merger and zero-efficiency identities hold",4,0,FALSE,0,FALSE,4
+"test-economic-invariants.R","permutation and ownership-label invariance hold",3,0,FALSE,0,FALSE,3
+"test-economic-invariants.R","unit scaling preserves Logit percentage effects",2,0,FALSE,0,FALSE,2
+"test-economic-invariants.R","subset simulation excludes products from post-merger outputs",4,0,FALSE,0,FALSE,4
+"test-economic-invariants.R","standalone HHI has an independently calculated ownership oracle",2,0,FALSE,0,FALSE,2
+"test-elasticities.R","Output market elasticities have negative own-price and positive cross-price signs",6,0,FALSE,0,FALSE,6
+"test-elasticities.R","Input market elasticities have positive own-price and negative cross-price signs",6,0,FALSE,0,FALSE,6
+"test-fitted-rum-validity.R","fitted ALM wrappers retain known normalization and demand",35,0,FALSE,0,FALSE,35
+"test-fitted-rum-validity.R","fitted single-product ALM state needs no identifying margin pair",4,0,FALSE,0,FALSE,4
+"test-fitted-rum-validity.R","fitted RUM eligibility rejects invalid signs, bounds, sizes, and normalization",11,0,FALSE,0,FALSE,11
+"test-independent-oracles.R","Logit shares, margins, and accounting satisfy hand-coded oracles",5,0,FALSE,0,FALSE,5
+"test-independent-oracles.R","CES revenue and quantity shares satisfy the independent CES oracle",4,0,FALSE,0,FALSE,4
+"test-independent-oracles.R","Linear calibration recovers the hand-coded diversion-to-slope map",2,0,FALSE,0,FALSE,2
+"test-independent-oracles.R","AIDS and PCAIDS use documented price-share transformations",7,0,FALSE,0,FALSE,7
+"test-legacy-model-parity.R","update genuinely recalibrates from stored baseline inputs",5,0,FALSE,0,FALSE,5
+"test-legacy-model-parity.R","update reruns the same calibration while respecify changes conduct",8,0,FALSE,0,FALSE,8
+"test-legacy-model-parity.R","respecify transitions are explicit and do not mutate the source fit",9,0,FALSE,3,FALSE,6
+"test-legacy-model-parity.R","legacy sim remains a wrapper for migrated Logit combinations",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","CES Bertrand and Cournot retain distinct model-specific parity",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","legacy sim routes CES Bertrand and Cournot through the fit pipeline",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","nested Logit and CES models retain model-specific calibration parity",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","legacy sim routes nested Bertrand models through specify and simulate",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","LogitCap calibration and supplied parameters use the shared simulation boundary",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","BLP supplied parameters reuse the existing Bertrand and Cournot solvers",12,0,FALSE,0,FALSE,12
+"test-legacy-model-parity.R","legacy BLP aliases preserve their conduct mapping",2,0,FALSE,0,FALSE,2
+"test-legacy-model-parity.R","ALM model variants calibrate and simulate through their legacy methods",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","second-score auction calibration and simulation retain model-specific parity",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","legacy sim routes second-score auction models through specify and simulate",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","bargaining calibration and simulation retain model-specific parity",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","bargaining AG solver selection is retained by calibrate and simulate",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","legacy sim routes bargaining models through specify and simulate",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","Linear, LogLin, and AIDS calibration preserve their Bertrand equations",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","supplied Linear, LogLin, and AIDS parameters use the shared simulation boundary",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","BLP contraction matches its outside-good share equation",3,0,FALSE,0,FALSE,3
+"test-legacy-model-parity.R","BLP contraction honors a no-outside-good normalization",4,0,FALSE,0,FALSE,4
+"test-legacy-model-parity.R","PCAIDS calibration and simulation preserve legacy parity",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","nested PCAIDS calibration and simulation preserve legacy parity",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","capacity-constrained auction calibration and simulation preserve parity",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","linear and log-linear Cournot calibration and simulation preserve parity",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","linear Stackelberg calibration and simulation preserve parity",1,0,FALSE,0,TRUE,0
+"test-legacy-model-parity.R","log-linear Stackelberg calibration and simulation preserve parity",1,0,FALSE,0,TRUE,0
+"test-local-demand-translations.R","flat Logit and CES translations require and use target primitives",34,0,FALSE,7,FALSE,27
+"test-local-demand-translations.R","demand translations retain bargaining primitives",16,0,FALSE,4,FALSE,12
+"test-local-demand-translations.R","flat Logit/CES translations retain Cournot conduct",16,0,FALSE,4,FALSE,12
+"test-local-demand-translations.R","Logit auction2nd respecification uses outside-good mean utilities",5,0,FALSE,2,FALSE,3
+"test-local-demand-translations.R","Logit auction2nd respecification retains mean utilities without an outside good",4,0,FALSE,2,FALSE,2
+"test-local-demand-translations.R","auction2nd to Logit reconstructs price-dependent mean utilities",4,0,FALSE,2,FALSE,2
+"test-local-demand-translations.R","nested-to-flat transitions are structural restrictions",34,0,FALSE,9,FALSE,25
+"test-local-demand-translations.R","nested Logit/CES translations preserve nests and derive curvature",33,0,FALSE,7,FALSE,26
+"test-local-demand-translations.R","flat-to-nested transitions require all new structural primitives",32,0,FALSE,9,FALSE,23
+"test-local-demand-translations.R","first-order Linear and LogLin translations are canonical",58,0,FALSE,15,FALSE,43
+"test-local-demand-translations.R","AIDS can be translated to tangent Linear and LogLin demand",28,0,FALSE,6,FALSE,22
+"test-local-demand-translations.R","respecification is deterministic, explicit, and non-mutating",11,0,FALSE,4,FALSE,7
+"test-local-demand-translations.R","translation validates CES and nested-Logit parameter domains",6,0,FALSE,3,FALSE,3
+"test-local-demand-translations.R","respecify preserves output/input orientation and disables update",15,0,FALSE,8,FALSE,7
+"test-logit-nests-inactive-nest-shares.R","LogitNests assigns zero shares to an entirely inactive nest",4,0,FALSE,0,FALSE,4
+"test-missing-data-alm.R","logit.alm recovers unobserved outside share s0 from multiple margins",4,0,FALSE,1,FALSE,3
+"test-missing-data-alm.R","ces.alm recovers unobserved outside share from multiple margins",4,0,FALSE,1,FALSE,3
+"test-missing-data-alm.R","Partial margin calibration (N-1 missing margins) recovers implied margins for all products",5,0,FALSE,0,FALSE,5
+"test-missing-data-alm.R","bargaining.ces.alm estimates unobserved outside share under Nash Bargaining",3,0,FALSE,1,FALSE,2
+"test-model-api-contracts.R","calibrate and simulate retain the canonical Logit public contract",6,0,FALSE,0,FALSE,6
+"test-model-api-contracts.R","specify and legacy sim share the supplied-parameter boundary",3,0,FALSE,0,FALSE,3
+"test-model-api-contracts.R","calibration and specification reject post-state fields",2,0,FALSE,0,FALSE,2
+"test-model-api-contracts.R","update recalibrates the same model while respecify changes conduct",5,0,FALSE,0,FALSE,5
+"test-model-api-contracts.R","respecify retains source baseline metadata",8,0,FALSE,3,FALSE,5
+"test-model-combinations.R","all documented sim demand/supply combinations have formal coverage",1,0,FALSE,0,TRUE,0
+"test-model-combinations.R","LogitCap solves binding-capacity KKT conditions",4,0,FALSE,0,FALSE,4
+"test-model-combinations.R","LogitCap direct simulation accepts structurally consistent meanval",4,0,FALSE,0,FALSE,4
+"test-model-combinations.R","unsupported sim combinations fail explicitly",4,0,FALSE,0,FALSE,4
+"test-model-registry.R","the registry covers generalized and migrated model combinations",1,0,FALSE,0,FALSE,1
+"test-model-registry.R","model specifications normalize names and reject unsupported combinations",20,0,FALSE,0,FALSE,20
+"test-model-registry.R","demand transition registry is explicit and non-duplicated",6,0,FALSE,0,FALSE,6
+"test-model-registry.R","model_transition exposes the registered transition record",6,0,FALSE,0,FALSE,6
+"test-model-registry.R","model_transition requires valid antitrust model specifications",3,0,FALSE,0,FALSE,3
+"test-moncom-blp.R","MonCom BLP uses the integrated draw-level own derivative",6,0,FALSE,2,FALSE,4
+"test-moncom-blp.R","MonCom BLP calibration uses the integrated own derivative",6,0,FALSE,2,FALSE,4
+"test-moncom-blp.R","MonCom BLP preserves provided, Gauss-Hermite, and Monte Carlo integration",1,0,FALSE,0,TRUE,0
+"test-moncom-blp.R","MonCom BLP sigma zero has the homogeneous Logit limit",3,0,FALSE,2,FALSE,1
+"test-moncom-blp.R","MonCom BLP ownership is irrelevant but cost shocks are not",4,0,FALSE,2,FALSE,2
+"test-moncom.R","MonCom Logit calibration uses own-product FOCs",10,0,FALSE,0,FALSE,10
+"test-moncom.R","MonCom CES calibration uses the direct CES own derivative",8,0,FALSE,0,FALSE,8
+"test-moncom.R","MonCom CES preserves the confirmed input-market sign convention",4,0,FALSE,0,FALSE,4
+"test-moncom.R","MonCom supports input-market Logit sign conventions",4,0,FALSE,0,FALSE,4
+"test-moncom.R","MonCom known primitives use the ordinary specify and sim APIs",6,0,FALSE,2,FALSE,4
+"test-moncom.R","MonCom is a first-class conduct transition",21,0,FALSE,5,FALSE,16
+"test-moncom.R","MonCom Cournot transitions work for CES when both targets are complete",5,0,FALSE,2,FALSE,3
+"test-moncom.R","ownership, costs, quality, and product-set changes use MonCom economics",10,0,FALSE,0,FALSE,10
+"test-moncom.R","Bertrand and MonCom differ on multiproduct ownership but both respond to costs",5,0,FALSE,1,FALSE,4
+"test-moncom.R","unsupported MonCom demand families fail explicitly",7,0,FALSE,0,FALSE,7
+"test-moncom.R","flat Logit MonCom has the atomistic markup, not Bertrand's share wedge",3,0,FALSE,0,FALSE,3
+"test-public-output-methods.R","public output, diagnostic, and ownership methods work on Bertrand families",11,0,FALSE,0,FALSE,11
+"test-public-output-methods.R","capacity, auction, and bargaining-specific methods have formal coverage",8,0,FALSE,0,FALSE,8
+"test-public-output-methods.R","Cournot and Stackelberg paths expose stable outputs",10,0,FALSE,0,FALSE,10
+"test-refactor-oracle.R","master Logit-Bertrand behavior is anchored before refactoring",13,0,FALSE,0,FALSE,13
+"test-refactor-oracle.R","master Logit-Cournot behavior is anchored before refactoring",13,0,FALSE,0,FALSE,13
+"test-release-economic-regressions.R","input level margins survive zero aggregate revenue",3,0,FALSE,0,FALSE,3
+"test-release-economic-regressions.R","input BLP solves its level FOCs instead of accepting a tail root",9,0,FALSE,4,FALSE,5
+"test-release-economic-regressions.R","signed input BLP uses both quadrature factors in its FOCs",3,0,FALSE,0,FALSE,3
+"test-release-economic-regressions.R","signed input Cournot BLP satisfies its inverse-demand FOCs",6,0,FALSE,0,FALSE,6
+"test-release-economic-regressions.R","legacy vector price draws keep independent demographic draws",4,0,FALSE,0,FALSE,4
+"test-release-economic-regressions.R","recalibrating a legacy BLP object keeps random characteristics",2,0,FALSE,0,FALSE,2
+"test-release-economic-regressions.R","input level FOCs preserve fractional self-ownership weights",4,0,FALSE,0,FALSE,4
+"test-release-economic-regressions.R","rare-share input BLP checks relative FOCs before accepting prices",2,0,FALSE,0,FALSE,2
+"test-revenue-retention.R","mixed product retention satisfies physical Bertrand profit FOCs",10,0,FALSE,0,FALSE,10
+"test-revenue-retention.R","retention API validates vectors and preserves omitted states",8,0,FALSE,0,FALSE,8
+"test-revenue-retention.R","mixed-retention Logit bargaining satisfies product Nash gradients",4,0,FALSE,0,FALSE,4
+"test-revenue-retention.R","mixed-retention CES Cournot satisfies physical quantity FOCs",14,0,FALSE,0,FALSE,14
+"test-revenue-retention.R","CES Cournot rejects a failed positive interior equilibrium",1,0,FALSE,0,FALSE,1
+"test-revenue-retention.R","mixed retention within an auction firm is rejected",5,0,FALSE,0,FALSE,5
+"test-revenue-retention.R","auction retention accepts vector ownership used by downstream models",3,0,FALSE,0,FALSE,3
+"test-sequential-counterfactuals.R","sequential ownership -> ownership uses the promoted post-merger state",7,0,FALSE,0,FALSE,7
+"test-sequential-counterfactuals.R","sequential costs -> costs compound multiplicatively on the current cost state",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","sequential ownership -> costs and costs -> ownership both use the promoted state",3,0,FALSE,0,FALSE,3
+"test-sequential-counterfactuals.R","an empty step preserves the solved equilibrium and structural costs",3,0,FALSE,0,FALSE,3
+"test-sequential-counterfactuals.R","ownership and quality changes do not re-identify incumbent costs",3,0,FALSE,0,FALSE,3
+"test-sequential-counterfactuals.R","preserved cost state still satisfies independent Logit price FOCs",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","simulate() preserves the ordinary legacy result for one-step Counterfactuals",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","quality = 0 reproduces the baseline meanval",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","quality applies a proportional choice-weight change to Logit meanval",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","sequential Logit quality shocks compound in choice weights",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","quality persists into a later ownership change",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","quality persists into a later cost change",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","a quality shock to an exited product errors",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","quality does not mutate the source Fit",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","quality is rejected for unsupported model families",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","quality works for Logit Cournot and CES Bertrand/Cournot",5,0,FALSE,2,FALSE,3
+"test-sequential-counterfactuals.R","quality applies a sigmaNest-scaled choice-weight change to LogitBLP",5,0,FALSE,2,FALSE,3
+"test-sequential-counterfactuals.R","sequential exit persists and combines across steps",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","simultaneous multi-exit removes both products in one step",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","a cost shock to an exited product errors, not silently ignored",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","one entrant increases product and firm count by one",7,0,FALSE,0,FALSE,7
+"test-sequential-counterfactuals.R","entrant can receive a later quality shock, cost shock, and merger",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","post-entry positional cost shocks cannot recycle across products",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","two simultaneous entrants and two sequential entrants both work",4,0,FALSE,0,FALSE,4
+"test-sequential-counterfactuals.R","duplicate entrant labels error",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","entry is rejected for unsupported model families",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","entry does not mutate the source Fit",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","combine_counterfactuals() is simultaneous (one step); add_step() is sequential (two steps)",5,0,FALSE,0,FALSE,5
+"test-sequential-counterfactuals.R","simulate() can resume from a CounterfactualPath's final state",6,0,FALSE,0,FALSE,6
+"test-sequential-counterfactuals.R","a mixed entry, quality, merger, and exit sequence resolves and tracks labels",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","quality resolves cleanly for nested Logit and nested CES Bertrand",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","quality resolves cleanly for second-score auction Logit/CES",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","quality resolves cleanly for bargaining and bargaining2nd Logit/CES",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","sequential cost shocks compound multiplicatively for nested and bargaining families",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","sequential cost shocks compound additively for Auction2ndLogit but multiplicatively for Auction2ndCES",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","exit resolves cleanly for nested Logit/CES and second-score auction/bargaining2nd",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","first-score bargaining Logit and CES both exit cleanly",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","entry into second-score auction requires no extra primitive and mcPost matches cost via the additive wedge",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","entry into bargaining defaults bargpower to 0.5 or honors a supplied extras$bargpower",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","entry into a nested Logit/CES model requires extras$nest and joins or creates a nest",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","entry into LogitCap requires extras$capacity",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","quality is verified for LogitCap Bertrand",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","BLP still rejects entry, but now supports quality",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","entry and quality resolve cleanly for LogitALM and CESALM",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","entry resolves cleanly for Cournot-conduct LogitCournot and CESCournot",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","entry into CESNests can join an existing nest or form a new one with the correct singleton sigma",1,0,FALSE,0,TRUE,0
+"test-sequential-counterfactuals.R","quality, entry, and exit resolve cleanly for Bargaining2ndCES",1,0,FALSE,0,TRUE,0
+"test-signed-input-rates.R","input Logit simulation requires an explicit real domain for signed rates",33,0,FALSE,0,FALSE,33
+"test-signed-input-rates.R","signed input rates persist through sequential and resumed policies",6,0,FALSE,0,FALSE,6
+"test-signed-input-rates.R","input Logit dollar markdowns stay finite at an exact zero rate",3,0,FALSE,0,FALSE,3
+"test-signed-input-rates.R","nested Logit and BLP preserve input orientation and signed rates",13,0,FALSE,0,FALSE,13
+"test-signed-input-rates.R","capacity Logit input rates satisfy level FOCs and capacity bounds",15,0,FALSE,0,FALSE,15
+"test-signed-input-rates.R","BLP conduct models retain finite negative input rates",16,0,FALSE,0,FALSE,16
+"test-solver-parity.R","Pre- and post-merger equilibria match between nleqslv and AG solvers on Logit package examples",3,0,FALSE,0,FALSE,3
+"test-solver-parity.R","Pre- and post-merger equilibria match between nleqslv and AG solvers on CES package examples",5,0,FALSE,2,FALSE,3
+"test-solver-parity.R","Pre- and post-merger equilibria match on simulated 5-product asymmetric markets with efficiencies",3,0,FALSE,0,FALSE,3
+"test-solver-parity.R","Pre- and post-merger equilibria match on Bargaining Logit models",3,0,FALSE,0,FALSE,3
+"test-solver-parity.R","Speed-Nocke-Schutz Logit AG regression retains constructor parity",1,0,FALSE,0,TRUE,0
+"test-solver-parity.R","Speed-Nocke-Schutz bargaining CES AG regression remains finite",1,0,FALSE,0,TRUE,0
+"test-stochastic-reproducibility.R","fixed BLP draws are repeatable and preserve caller RNG state",4,0,FALSE,0,FALSE,4
+"test-stochastic-reproducibility.R","seeded generated BLP draws are repeatable",2,0,FALSE,0,FALSE,2
+"test-structural-fit.R","StructuralFit exposes the shared extension contract",6,0,FALSE,0,FALSE,6
+"test-structural-fit.R","unsupported StructuralFit subclasses fail before running economics",2,0,FALSE,0,FALSE,2
+"test-structural-fit.R","antitrust keeps ordinary stats::simulate dispatch",1,0,FALSE,0,FALSE,1
+"test-structural-public-hooks.R","persistent structural cost state is initialized without changing the fit",5,0,FALSE,0,FALSE,5
+"test-structural-public-hooks.R","supplied flat demand can bind an observed baseline without solving",12,0,FALSE,0,FALSE,12
+"test-structural-public-hooks.R","cost shocks preserve multiplicative and second-score additive conventions",3,0,FALSE,1,FALSE,2
+"test-structural-public-hooks.R","counterfactual validation dispatches through StructuralFit",2,0,FALSE,0,FALSE,2
+"test-structural-public-hooks.R","CounterfactualPath resume uses the public validation generic",3,0,FALSE,0,FALSE,3
+"test-structural-public-hooks.R","the old antitrust vertical constructor is an explicit migration error",1,0,FALSE,0,FALSE,1
+"test-synthetic-market-adapter.R","realize_market solves prices from observed costs and margin",6,0,FALSE,0,FALSE,6
+"test-synthetic-market-adapter.R","realize_market rejects unidentified models and conflicting slope",2,0,FALSE,0,FALSE,2
+"test-synthetic-market-design.R","observed design retains complete heterogeneous costs and ownership",8,0,FALSE,0,FALSE,8
+"test-synthetic-market-design.R","common and bounded heterogeneous cost rules are reproducible",4,0,FALSE,0,FALSE,4
+"test-synthetic-market-design.R","invalid cost, share, and margin designs are rejected",7,0,FALSE,0,FALSE,7
+"test-synthetic-market-design.R","primitives design still uses its complete price contract",3,0,FALSE,0,FALSE,3
+"test-synthetic-market-design.R","batch rejection records failed economic designs",2,0,FALSE,0,FALSE,2
+"test-synthetic-market.R","Logit Bertrand preserves heterogeneous costs and all-product FOCs",9,0,FALSE,0,FALSE,9
+"test-synthetic-market.R","single-product Logit margin changes demand scale and prices",4,0,FALSE,0,FALSE,4
+"test-synthetic-market.R","heterogeneous ownership and cost scales satisfy independent Logit FOCs",6,0,FALSE,0,FALSE,6
+"test-synthetic-market.R","each implemented conduct reproduces shares, costs, and native FOCs",76,0,FALSE,0,FALSE,76
+"test-synthetic-market.R","conduct alternatives imply different prices with common design",2,0,FALSE,0,FALSE,2
+"test-synthetic-market.R","Cournot, auction and bargaining invert their distinct margin equations",5,0,FALSE,0,FALSE,5
+"test-synthetic-market.R","nested Logit uses supplied nesting curvature and its own Jacobian",4,0,FALSE,0,FALSE,4
+"test-synthetic-market.R","nested CES identifies cross-nest curvature from a revenue FOC",7,0,FALSE,0,FALSE,7
+"test-synthetic-market.R","Linear Bertrand identifies only slope scale from the reference margin",6,0,FALSE,1,FALSE,5
+"test-synthetic-market.R","Log-linear Bertrand identifies elasticity scale from a singleton reference FOC",6,0,FALSE,1,FALSE,5
+"test-synthetic-market.R","PCAIDS defaults identify demand from the reference elasticity",5,0,FALSE,0,FALSE,5
+"test-synthetic-market.R","ALM Bertrand retains a passive outside share and active reference firm",15,0,FALSE,0,FALSE,15
+"test-synthetic-market.R","ALM Cournot auction and bargaining obey their distinct margin equations",38,0,FALSE,0,FALSE,38
+"test-synthetic-market.R","nested Logit ALM uses a passive outside option and supplied nests",6,0,FALSE,0,FALSE,6
+"test-synthetic-market.R","inadmissible and underidentified observed designs fail explicitly",6,0,FALSE,0,FALSE,6
+"test-synthetic-market.R","primitives mode still passes supplied parameters",3,0,FALSE,0,FALSE,3
+"test-upp-cmcr.R","cmcr.bertrand calculates compensating marginal cost reductions",1,0,FALSE,0,FALSE,1
+"test-upp-cmcr.R","upp.bertrand calculates upward pricing pressure",1,0,FALSE,0,FALSE,1
+"test-validation-errors.R","standalone helpers reject malformed dimensions and values",8,0,FALSE,0,FALSE,8
+"test-validation-errors.R","constructors reject malformed core inputs",20,0,FALSE,0,FALSE,20
+"test-validation-errors.R","BLP dimensions, nesting, capacities, and stochastic controls are validated",8,0,FALSE,0,FALSE,8
+"test-validation-errors.R","LogitCap accepts +Inf as the unbounded-capacity sentinel",2,0,FALSE,0,FALSE,2

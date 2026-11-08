@@ -1,0 +1,51 @@
+{
+  "antitrust": {
+    "source": "/mnt/d/Projects/antitrust",
+    "snapshot": "/tmp/iovrse-fixes-20261106/sources/antitrust",
+    "files": 341,
+    "baseline": "bbcb53f0be6c90ad67447c6a2f01699c999f82ed",
+    "original_head": "20f0923fc560295e04310aed5615c19dadf672cb"
+  },
+  "trade": {
+    "source": "/mnt/d/Projects/trade",
+    "snapshot": "/tmp/iovrse-fixes-20261106/sources/trade",
+    "files": 103,
+    "baseline": "35cd6cdae8061727dc7ca4b1f156fc7c8e079493",
+    "original_head": "2826df0fc3530c01066000725f643b060e71d136"
+  },
+  "coordination": {
+    "source": "/mnt/d/Projects/coordination",
+    "snapshot": "/tmp/iovrse-fixes-20261106/sources/coordination",
+    "files": 47,
+    "baseline": "94380315ff24e24ca56f52273c09e4a0c06b8600",
+    "original_head": "6955c4845df0c1de98eb540423118b53732211e5"
+  },
+  "vertical": {
+    "source": "/mnt/d/Projects/vertical",
+    "snapshot": "/tmp/iovrse-fixes-20261106/sources/vertical",
+    "files": 60,
+    "baseline": "23aa09fb5205163c2e2683f5a9251703deb554e3",
+    "original_head": "dbb99804bfe76746c13374d341beb1bd20af79c2"
+  },
+  "financial": {
+    "source": "/mnt/d/Projects/financial",
+    "snapshot": "/tmp/iovrse-fixes-20261106/sources/financial",
+    "files": 76,
+    "baseline": "f497abc1dc9c1ef0408670260006a663e5c2ae82",
+    "original_head": "80e2720b0e40b30e819c028110d2085abca26da0"
+  },
+  "competitiontoolbox": {
+    "source": "/mnt/d/Projects/competitiontoolbox",
+    "snapshot": "/tmp/iovrse-fixes-20261106/sources/competitiontoolbox",
+    "files": 71,
+    "baseline": "0e34327dbdb48bc99ff24cc4c6b3696e5600c61e",
+    "original_head": "a5030868e5831b4c7951a8cb7eee469af0675c7a"
+  },
+  "antitrustBayes": {
+    "source": "/mnt/d/Projects/antitrustBayes",
+    "snapshot": "/tmp/iovrse-fixes-20261106/sources/antitrustBayes",
+    "files": 940,
+    "baseline": "3c67883d4b274c488d198141b3b440ab136bfa19",
+    "original_head": "fb1f026c0e301f17343ebd611afe657cbaafc5f2"
+  }
+}

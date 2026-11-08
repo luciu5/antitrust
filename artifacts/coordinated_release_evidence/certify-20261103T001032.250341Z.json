@@ -1,0 +1,171 @@
+{
+  "status": "stopped",
+  "error": "One or more certification runs failed; see their recorded GitHub URLs.",
+  "packages": [
+    {
+      "package": "antitrust",
+      "repository": "luciu5/antitrust",
+      "version": "0.99.43",
+      "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "ref": "refs/heads/release/coordinated-2026-11-01",
+      "target_ref": "refs/heads/master",
+      "target_sha": "e6ca9d595668f37f0a1e518db30ce53de61361d1",
+      "previous_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "url": "https://github.com/luciu5/antitrust/actions/runs/41530940717",
+      "status": "completed",
+      "workflow": "qa.yml",
+      "inputs": {
+        "test_tier": "nightly"
+      },
+      "run_name": "release-certification-7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "run_id": 41530940717,
+      "workflow_id": 346121399,
+      "run_attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "package": "coordination",
+      "repository": "luciu5/coordination",
+      "version": "0.1.0",
+      "sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+      "ref": "refs/heads/release/coordinated-2026-11-01",
+      "target_ref": "refs/heads/main",
+      "target_sha": "6955c4845df0c1de98eb540423118b53732211e5",
+      "previous_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+      "url": "https://github.com/luciu5/coordination/actions/runs/41530939533",
+      "status": "completed",
+      "workflow": "R-CMD-check.yaml",
+      "inputs": {
+        "release_certification": true,
+        "antitrust_release_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53"
+      },
+      "run_name": "release-certification-6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+      "run_id": 41530939533,
+      "workflow_id": 355349579,
+      "run_attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "package": "trade",
+      "repository": "luciu5/trade",
+      "version": "0.9.0",
+      "sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+      "ref": "refs/heads/release/coordinated-2026-11-01",
+      "target_ref": "refs/heads/master",
+      "target_sha": "e621956242d7b9c0376acc2c76ec76bcf7d91d1c",
+      "previous_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+      "url": "https://github.com/luciu5/trade/actions/runs/41530948797",
+      "status": "completed",
+      "workflow": "qa.yml",
+      "inputs": {
+        "release_certification": true,
+        "antitrust_release_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+        "coordination_release_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+        "test_tier": "nightly"
+      },
+      "run_name": "release-certification-181e71dae426aa59ba565c065bddf0714636f02f",
+      "run_id": 41530948797,
+      "workflow_id": 351288333,
+      "run_attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "package": "vertical",
+      "repository": "luciu5/vertical",
+      "version": "0.3.0",
+      "sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+      "ref": "refs/heads/release/coordinated-2026-11-01",
+      "target_ref": "refs/heads/main",
+      "target_sha": "dbb99804bfe76746c13374d341beb1bd20af79c2",
+      "previous_sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+      "url": "https://github.com/luciu5/vertical/actions/runs/41530957476",
+      "status": "completed",
+      "workflow": "R-CMD-check.yaml",
+      "inputs": {
+        "release_certification": true,
+        "antitrust_release_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+        "coordination_release_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+        "trade_release_sha": "181e71dae426aa59ba565c065bddf0714636f02f"
+      },
+      "run_name": "release-certification-36bf089b8c9a9825b28d9295f9d246e4707039f6",
+      "run_id": 41530957476,
+      "workflow_id": 355803801,
+      "run_attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "package": "competitiontoolbox",
+      "repository": "luciu5/competitiontoolbox",
+      "version": "0.9.0",
+      "sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+      "ref": "refs/heads/release/coordinated-2026-11-01",
+      "target_ref": "refs/heads/master",
+      "target_sha": "e81fc704bec56cd56c92097b282177573b57fd83",
+      "previous_sha": "2135927ab5406c421870eadb5b7d7eddbedd7457",
+      "url": "https://github.com/luciu5/competitiontoolbox/actions/runs/41550958772",
+      "status": "completed",
+      "workflow": "dependency-stack-qa.yml",
+      "inputs": {
+        "release_certification": true,
+        "antitrust_release_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+        "coordination_release_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+        "trade_release_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+        "vertical_release_sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+        "test_tier": "NIGHTLY"
+      },
+      "run_name": "release-certification-d369fc71a95df9ce0f39b180d62f688435d8af0f",
+      "run_id": 41550958772,
+      "workflow_id": 355962361,
+      "run_attempt": 1,
+      "conclusion": "failure"
+    },
+    {
+      "package": "financial",
+      "repository": "luciu5/financial",
+      "version": "0.1.0",
+      "sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+      "ref": "refs/heads/release/coordinated-2026-11-01",
+      "target_ref": "refs/heads/main",
+      "target_sha": "80e2720b0e40b30e819c028110d2085abca26da0",
+      "previous_sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+      "url": "https://github.com/luciu5/financial/actions/runs/41530978188",
+      "status": "completed",
+      "workflow": "qa.yml",
+      "inputs": {
+        "release_certification": true,
+        "antitrust_release_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+        "extended": true
+      },
+      "run_name": "release-certification-979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+      "run_id": 41530978188,
+      "workflow_id": 404830254,
+      "run_attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "package": "antitrustBayes",
+      "repository": "luciu5/antitrustBayes",
+      "version": "0.3.0",
+      "sha": "b252fa1b37d4a834d2fdb4660cfa2937695975ed",
+      "ref": "refs/heads/release/coordinated-2026-11-01",
+      "target_ref": "refs/heads/main",
+      "target_sha": "fb1f026c0e301f17343ebd611afe657cbaafc5f2",
+      "previous_sha": "4c965e877cfcc10bb3571c49d6c177693d9d8113",
+      "url": "https://github.com/luciu5/antitrustBayes/actions/runs/41550962666",
+      "status": "completed",
+      "workflow": "qa.yml",
+      "inputs": {
+        "release_certification": true,
+        "antitrust_release_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+        "coordination_release_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+        "trade_release_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+        "run_stan_tests": false
+      },
+      "run_name": "release-certification-b252fa1b37d4a834d2fdb4660cfa2937695975ed",
+      "run_id": 41550962666,
+      "workflow_id": 355709965,
+      "run_attempt": 1,
+      "conclusion": "failure"
+    }
+  ]
+}

@@ -1,0 +1,273 @@
+diff --git a/.ci/README.md b/.ci/README.md
+index 0d776fc..9af83ca 100755
+--- a/.ci/README.md
++++ b/.ci/README.md
+@@ -1,5 +1,9 @@
+ # Dependency stack CI setup
+ 
++For local application verification and the remaining browser gate, see
++[release readiness](READINESS.md). Server tests and checkout fixtures do not
++replace a real browser run or an actual hosted dependency-stack certification.
++
+ The dependency stack workflow checks out `luciu5/vertical`, which is a private
+ repository. Configure a repository Actions secret named `VERTICAL_READ_TOKEN`
+ with a fine-grained personal access token limited to the `luciu5/vertical`
+diff --git a/README.md b/README.md
+index beb4645..a3071e3 100755
+--- a/README.md
++++ b/README.md
+@@ -45,3 +45,7 @@ package. Select release certification and provide full 40-character SHAs for
+ antitrust, coordination, trade, and vertical to validate a fixed candidate
+ stack. It also checks the toolbox `Remotes` entries and the public Stackelberg
+ helpers required by trade.
++
++See [application and release verification](.ci/READINESS.md) for local server
++and standalone R-code checks, the required browser interactions, and the
++distinction between a hosted CI waiver and a passing certification.
+diff --git a/inst/ct_shiny/server.R b/inst/ct_shiny/server.R
+index bf23a38..9798bb8 100755
+--- a/inst/ct_shiny/server.R
++++ b/inst/ct_shiny/server.R
+@@ -1,18 +1,22 @@
+ 
+-get_vignette_link <- function(...) {
+-    x <- vignette(...)
+-    if (nzchar(out <- x$PDF)) {
+-        ext <- tools::file_ext(out)
+-        port <- if (tolower(ext) == "html")
+-            tools::startDynamicHelp(NA)
+-        else 0L
+-        if (port > 0L) {
+-            out <- sprintf("http://127.0.0.1:%d/library/%s/doc/%s",
+-                           port, basename(x$Dir), out)
+-            return(out)
+-        }
++get_vignette_link <- function(topic, package) {
++    path <- system.file("doc", paste0(topic, ".html"), package = package)
++    if (!nzchar(path) || !file.exists(path)) return(NULL)
++    # Serve documentation through this app. A localhost dynamic-help URL
++    # points at the visitor's computer when Shiny runs on a remote server.
++    prefix <- paste0("ct-doc-", package)
++    shiny::addResourcePath(prefix, dirname(path))
++    paste0(prefix, "/", basename(path))
++}
++
++reference_panel <- function(topic, package, id) {
++    link <- get_vignette_link(topic, package = package)
++    if (is.null(link)) {
++        return(helpText(paste("The", topic, "vignette is not included in the installed",
++                              package, "package. Install a package build with vignettes to view it here.")))
+     }
+-    stop("no html help found")
++    tags$iframe(id = id, src = link, width = "100%", height = 768,
++                frameborder = 0, marginheight = 0)
+ }
+ 
+ 
+@@ -313,25 +317,13 @@ shinyServer(function(input, output, session) {
+     # antitrust
+     output$referenceATR <-
+       renderUI({
+-        tags$iframe(id = "referenceATR",
+-                    src = get_vignette_link("Reference", package = "antitrust"),
+-                    width = "100%",
+-                    height = 768,
+-                    frameborder = 0,
+-                    marginheight = 0
+-        )
++        reference_panel("Workflow", "antitrust", "referenceATR")
+       })
+ 
+     # trade
+     output$referenceTrade <-
+         renderUI({
+-            tags$iframe(id = "referenceTrade",
+-                        src = get_vignette_link("Reference", package = "trade"),
+-                        width = "100%",
+-                        height = 768,
+-                        frameborder = 0,
+-                        marginheight = 0
+-            )
++            reference_panel("Reference", "trade", "referenceTrade")
+         })
+ 
+ })
+diff --git a/tests/testthat/helper-competitiontoolbox.R b/tests/testthat/helper-competitiontoolbox.R
+index 44eae8b..01a4939 100755
+--- a/tests/testthat/helper-competitiontoolbox.R
++++ b/tests/testthat/helper-competitiontoolbox.R
+@@ -41,14 +41,14 @@ ct_require_stack <- function() {
+   ## older user library may contain the legacy packages but not the lifecycle
+   ## release required by this package's DESCRIPTION.
+   for (pkg in c("antitrust", "trade", "vertical")) {
+-    if (pkg == "antitrust" && utils::packageVersion(pkg) < "0.99.42") {
+-      testthat::skip("antitrust >= 0.99.42 is required for lifecycle tests")
++    if (pkg == "antitrust" && utils::packageVersion(pkg) < "0.99.43") {
++      testthat::skip("antitrust >= 0.99.43 is required for lifecycle tests")
+     }
+-    if (pkg == "trade" && utils::packageVersion(pkg) < "0.8.9.9002") {
+-      testthat::skip("trade >= 0.8.9.9002 is required for lifecycle tests")
++    if (pkg == "trade" && utils::packageVersion(pkg) < "0.9.0") {
++      testthat::skip("trade >= 0.9.0 is required for lifecycle tests")
+     }
+-    if (pkg == "vertical" && utils::packageVersion(pkg) < "0.2.0") {
+-      testthat::skip("vertical >= 0.2.0 is required for lifecycle tests")
++    if (pkg == "vertical" && utils::packageVersion(pkg) < "0.3.0") {
++      testthat::skip("vertical >= 0.3.0 is required for lifecycle tests")
+     }
+   }
+ 
+diff --git a/.ci/READINESS.md b/.ci/READINESS.md
+new file mode 100644
+index 0000000..b3bec5c
+--- /dev/null
++++ b/.ci/READINESS.md
+@@ -0,0 +1,48 @@
++# Local application and hosted release gates
++
++Run development-source tests with an explicitly compatible isolated library:
++
++```sh
++R_LIBS=/path/to/compatible/library \
++  Rscript --vanilla -e 'testthat::test_local(filter="app-interactions", reporter="summary")'
++COMPETITIONTOOLBOX_TEST_TIER=FAST R_LIBS=/path/to/compatible/library \
++  Rscript --vanilla -e 'testthat::test_local(reporter="summary")'
++bash .ci/test-private-vertical-checkout.sh
++```
++
++The application-interaction tests run the actual Shiny server, exercise all
++four pages, show an invalid-price error and recover, and execute copied R code
++for edited scenarios in independent R processes. These protect reactive wiring
++and standalone reproducibility that registry/construction checks miss. They
++provide no browser evidence. Warnings remain visible; finite solver output
++alone does not certify an equilibrium. The core and extended economic tests
++provide the separate numerical/economic checks.
++
++Reference panels use antitrust's current `Workflow` vignette and trade's
++`Reference`. Installed HTML is served through the application's resource path,
++so a remote visitor does not receive a server-local dynamic-help address.
++Development installs without vignettes show an explicit unavailable message.
++
++A socket-enabled browser run remains required before a public release:
++
++1. Launch the installed frozen app and record package/source provenance.
++2. Navigate Horizontal, Vertical, Tariffs and Quotas; edit an input and run each
++   scenario. Inspect summary, details, elasticities, diagnostics and R Code.
++3. Change a model and rerun; check that displayed results follow the selected
++   inputs. Trigger a deliberate invalid input, inspect the visible message,
++   restore valid data and rerun.
++4. Inspect numerical-simulation plots and installed reference links. Execute
++   copied R code in a fresh R session and compare the selected scenario's
++   results. Retain browser-console/app errors and screenshots.
++
++There is currently no user-facing download handler/button/link in the app.
++The export feature is copied R code; a “download smoke” is inapplicable until
++such a feature exists. Do not add a new download feature merely to clear a
++historical checklist item.
++
++The existing November 3 hosted private-vertical dependency CI waiver remains
++separate from passing checks. A real hosted certification requires the exact
++frozen dependency commits and the dedicated read-only private checkout described
++in [the setup instructions](README.md). Local fixture/server tests do not turn
++the waiver into a hosted pass. Keep workflow guards, repository visibility and
++publication holds unchanged.
+diff --git a/tests/testthat/test-app-interactions.R b/tests/testthat/test-app-interactions.R
+new file mode 100644
+index 0000000..8bb1842
+--- /dev/null
++++ b/tests/testthat/test-app-interactions.R
+@@ -0,0 +1,94 @@
++test_that("A: copied R code reproduces edited UI economics in a clean R process", {
++  # The former evaluation environment inherited application objects. A snippet
++  # could therefore pass while depending on Shiny state or stale default data.
++  ct_load_core(include_templates = TRUE)
++  directory <- tempfile("ct-standalone-"); dir.create(directory)
++  on.exit(unlink(directory, recursive = TRUE), add = TRUE)
++  ct_app_env$input <- list(calcElast = "market elasticity", enterElast = -1,
++    calcElastTariffs = "market elasticity", enterElastTariffs = -1,
++    calcElastQuota = "market elasticity", enterElastQuota = -1)
++  ct_app_env$supply <- function() "Bertrand"
++  ct_app_env$demand <- function() "logit"
++  for (page in c("Horizontal", "Vertical", "Tariffs", "Quotas")) {
++    data <- ct_default_inputs(page)
++    data$Name[1L] <- "Product 'one'"
++    if (page == "Horizontal") data[[grep("Cost Changes", names(data))]][1L] <- -.04
++    if (page == "Vertical") {
++      data <- ct_app_env$mergersInputs(10L, "Vertical", "Downstream")
++      data$Name[1L] <- "Product 'one'"
++    }
++    if (page == "Tariffs") data[[grep("^New", names(data))]][1:2] <- .15
++    if (page == "Quotas") data[[grep("^New", names(data))]][1:2] <- .8
++    field <- switch(page, Horizontal = "values", Vertical = "valuesVertical",
++                    Tariffs = "valuesTariffs", Quotas = "valuesQuota")
++    ct_app_env[[field]] <- list(inputData = data)
++    row <- ct_app_env$model_registry()
++    row <- row[row$page == page & row$supply == "Bertrand" & row$demand_label == "logit", , drop = FALSE]
++    expected <- suppressWarnings(ct_run_row(row, data))
++    code <- if (page %in% c("Horizontal", "Vertical")) ct_app_env$mergersTemplateCode(page) else ct_app_env$tradeTemplateCode(page)
++    object <- if (page == "Vertical") "simres_vert" else "simres"
++    package <- row$upstream_package
++    script <- file.path(directory, paste0(page, ".R"))
++    result <- file.path(directory, paste0(page, ".rds"))
++    writeLines(c(code, paste0("saveRDS(list(prices=", package, "::calcPrices(", object,
++      ",preMerger=FALSE),shares=", package, "::calcShares(", object,
++      ",preMerger=FALSE)),", encodeString(result, quote = '"'), ")")), script)
++    log <- file.path(directory, paste0(page, ".log"))
++    status <- system2(file.path(R.home("bin"), "Rscript"), c("--vanilla", shQuote(script)), stdout = log, stderr = log)
++    expect_equal(status, 0L, info = paste(page, paste(readLines(log), collapse = "\n")))
++    if (status != 0L) next
++    actual <- readRDS(result)
++    price <- getExportedValue(package, "calcPrices")
++    shares <- getExportedValue(package, "calcShares")
++    expect_equal(ct_unname_recursive(actual$prices), ct_unname_recursive(price(expected, preMerger = FALSE)), tolerance = 1e-7, info = page)
++    expect_equal(ct_unname_recursive(actual$shares), ct_unname_recursive(shares(expected, preMerger = FALSE)), tolerance = 1e-7, info = page)
++  }
++})
++
++test_that("A: actual Shiny session routes pages and recovers from invalid edited inputs", {
++  # Static route tests miss reactive wiring, event buttons, page state and error
++  # rendering. This exercises the actual server without claiming browser coverage.
++  ct_require_stack()
++  app_dir <- dirname(ct_app_file("server.R"))
++  shiny::testServer(shiny::shinyAppDir(normalizePath(app_dir)), {
++    session$setInputs(menu = "Horizontal", supply = "Bertrand", supplyTariffs = "Bertrand",
++      supplyQuota = "Bertrand", supplyVertical = "Bertrand", demand1 = "logit",
++      demandTariffs1 = "logit", demandQuota1 = "logit", demandVertical1 = "logit",
++      calcElast = "market elasticity AND 1 or more margins", enterElast = -1,
++      calcElastTariffs = "market elasticity AND 1 or more margins", enterElastTariffs = -1,
++      calcElastQuota = "market elasticity AND 1 or more margins", enterElastQuota = -1,
++      addRowsTariffs = 10L, addRowsQuota = 10L, addRowsVertical = 10L,
++      mergerTypeVertical = "Upstream", simulate = 0L, simulateVertical = 0L,
++      simulateTariffs = 0L, simulateQuota = 0L, inTabset = "respanel",
++      inTabsetVertical = "respanelVertical", inTabsetTariffs = "respanelTariffs", inTabsetQuota = "respanelQuota")
++    session$setInputs(simulate = 1L)
++    expect_null(values$msg$error)
++    expect_true(all(is.finite(antitrust::calcPrices(values$sim, preMerger = FALSE))))
++    baseline <- antitrust::calcPrices(values$sim, preMerger = FALSE)
++    valid <- values$inputData
++    invalid <- valid; invalid[[grep("^Prices", names(invalid))]][1L] <- -1
++    values$inputData <- invalid
++    session$setInputs(simulate = 2L)
++    expect_null(values$sim)
++    expect_true(length(values$msg$error) > 0L)
++    session$setInputs(inTabset = "msgpanel")
++    expect_match(output$errors, "price", ignore.case = TRUE)
++    values$inputData <- valid
++    session$setInputs(simulate = 3L)
++    expect_null(values$msg$error)
++    expect_equal(antitrust::calcPrices(values$sim, preMerger = FALSE), baseline)
++    session$setInputs(menu = "Tariffs", simulateTariffs = 1L)
++    expect_null(valuesTariffs$msg$error)
++    expect_true(all(is.finite(trade::calcPrices(valuesTariffs$sim, preMerger = FALSE))))
++    session$setInputs(menu = "Quotas", simulateQuota = 1L)
++    expect_null(valuesQuota$msg$error)
++    expect_true(all(is.finite(trade::calcPrices(valuesQuota$sim, preMerger = FALSE))))
++    session$setInputs(menu = "Vertical", simulateVertical = 1L)
++    expect_null(valuesVertical$msg$error)
++    expect_true(all(is.finite(unlist(vertical::calcPrices(valuesVertical$sim, preMerger = FALSE)))))
++    expect_equal(antitrust::calcPrices(values$sim, preMerger = FALSE), baseline)
++    # No-vignette development installs should present an explicit message;
++    # complete builds should link the current Workflow rather than old Reference.
++    expect_match(output$referenceATR$html, "Workflow|iframe")
++  })
++})

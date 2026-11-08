@@ -1,0 +1,533 @@
+{
+  "updated_utc": "2026-11-03T15:56:26.845292+00:00",
+  "status": "All six required hosted certifications passed; toolbox certification explicitly waived; release integration/publication pending",
+  "release_id": "coordinated-2026-11-01",
+  "user_confirmed_antitrust_version": "0.99.43",
+  "versions_changed": true,
+  "candidate_commits_created": true,
+  "local_candidate_refs_imported": true,
+  "pushed": true,
+  "merged": false,
+  "published": false,
+  "manifest": "artifacts/coordinated_release_manifest.json",
+  "verification": [
+    {
+      "package": "antitrust",
+      "version": "0.99.43",
+      "candidate_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "package_check": "OK",
+      "failures": 0,
+      "passed_expectations": 2017,
+      "test_warning_expectations": 161,
+      "skips": 0,
+      "full_vignette_build": true,
+      "check_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/antitrust/00check.log",
+      "test_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/antitrust/testthat.Rout",
+      "source_provenance": {
+        "git_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+        "tree_sha": "bf494bf20fb8306dc705706a401108e7cac7173e",
+        "raw_exported_blobs": 272,
+        "raw_blob_mismatches": 0,
+        "source_sha256": "b5c18117ccee7a95af0225731ebd6a38824cdf34cacfa7a4eb6e7a43799748d1",
+        "source_hash_policy": "SHA256 of sorted relative-path NUL SHA256(raw file) entries; Python caches excluded"
+      },
+      "git_diff_check_passed": true,
+      "tier": "nightly"
+    },
+    {
+      "package": "coordination",
+      "version": "0.1.0",
+      "candidate_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+      "package_check": "OK",
+      "failures": 0,
+      "passed_expectations": 733,
+      "test_warning_expectations": 15,
+      "skips": 0,
+      "full_vignette_build": true,
+      "check_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/coordination/00check.log",
+      "test_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/coordination/testthat.Rout",
+      "source_provenance": {
+        "git_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+        "tree_sha": "3b17c2f1a967e87899c482dd8bb20f2fbfc8f1c3",
+        "raw_exported_blobs": 47,
+        "raw_blob_mismatches": 0,
+        "source_sha256": "22770d940500b81ef69241b4e5aae5734727d326636c21bfedc2ade8f9f254f1",
+        "source_hash_policy": "SHA256 of sorted relative-path NUL SHA256(raw file) entries; Python caches excluded"
+      },
+      "git_diff_check_passed": true,
+      "tier": "ordinary"
+    },
+    {
+      "package": "trade",
+      "version": "0.9.0",
+      "candidate_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+      "package_check": "OK",
+      "failures": 0,
+      "passed_expectations": 2078,
+      "test_warning_expectations": 112,
+      "skips": 0,
+      "full_vignette_build": true,
+      "check_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/trade/00check.log",
+      "test_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/trade/testthat.Rout",
+      "source_provenance": {
+        "git_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+        "tree_sha": "f92a1264b772d4b397daba8d1a627d4c4fb19b7a",
+        "raw_exported_blobs": 102,
+        "raw_blob_mismatches": 0,
+        "source_sha256": "e4b1c786afa2e92063909248f94ddf9046d7f085c60e8838c9f84e532de1ae7f",
+        "source_hash_policy": "SHA256 of sorted relative-path NUL SHA256(raw file) entries; Python caches excluded"
+      },
+      "git_diff_check_passed": true,
+      "tier": "nightly"
+    },
+    {
+      "package": "vertical",
+      "version": "0.3.0",
+      "candidate_sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+      "package_check": "OK",
+      "failures": 0,
+      "passed_expectations": 1381,
+      "test_warning_expectations": 46,
+      "skips": 0,
+      "full_vignette_build": true,
+      "check_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/vertical/00check.log",
+      "test_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/vertical/testthat.Rout",
+      "source_provenance": {
+        "git_sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+        "tree_sha": "56d5076916935952128dbb2622ffe7dd828993e0",
+        "raw_exported_blobs": 60,
+        "raw_blob_mismatches": 0,
+        "source_sha256": "36bac74df5cfe0cb17178668c0753147ab225da918fda6511b4056a1efe51ba8",
+        "source_hash_policy": "SHA256 of sorted relative-path NUL SHA256(raw file) entries; Python caches excluded"
+      },
+      "git_diff_check_passed": true,
+      "tier": "ordinary"
+    },
+    {
+      "package": "competitiontoolbox",
+      "version": "0.9.0",
+      "candidate_sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+      "package_check": "OK",
+      "failures": 0,
+      "passed_expectations": 1375,
+      "test_warning_expectations": 48,
+      "skips": 0,
+      "full_vignette_build": true,
+      "check_log": "artifacts/coordinated_release_evidence/ci-followup-20261102/competitiontoolbox/00check.log",
+      "test_log": "artifacts/coordinated_release_evidence/ci-followup-20261102/competitiontoolbox/testthat.Rout",
+      "source_provenance": {
+        "previous_sha": "2135927ab5406c421870eadb5b7d7eddbedd7457",
+        "sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+        "changed_paths": [
+          ".ci/README.md",
+          ".ci/require-vertical-read-token.sh",
+          ".ci/resolve-private-vertical-checkout.sh",
+          ".ci/run-private-vertical-command.sh",
+          ".ci/test-private-vertical-checkout.sh",
+          ".github/workflows/dependency-stack-qa.yml"
+        ],
+        "tree": "f2ed4da1e3ba14fbab3a4ecf7f6ac97e149e4de3",
+        "raw_exported_blobs": 71,
+        "raw_blob_mismatches": 0
+      },
+      "git_diff_check_passed": true,
+      "tier": "nightly"
+    },
+    {
+      "package": "financial",
+      "version": "0.1.0",
+      "candidate_sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+      "package_check": "OK",
+      "failures": 0,
+      "passed_expectations": 168,
+      "test_warning_expectations": 0,
+      "skips": 0,
+      "full_vignette_build": true,
+      "check_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/financial/00check.log",
+      "test_log": "artifacts/coordinated_release_evidence/ci-repair-20261102/financial/testthat.Rout",
+      "source_provenance": {
+        "git_sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+        "tree_sha": "31b82ee83c00b25f341c71e353a5e3ff0cafc076",
+        "raw_exported_blobs": 76,
+        "raw_blob_mismatches": 0,
+        "source_sha256": "f567c43894afc71b94c9525ec00aa8f90d1faa83e74f474c8b09a9d93c2c61b6",
+        "source_hash_policy": "SHA256 of sorted relative-path NUL SHA256(raw file) entries; Python caches excluded"
+      },
+      "git_diff_check_passed": true,
+      "tier": "extended; actual CI script certification",
+      "exact_core_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53"
+    },
+    {
+      "package": "antitrustBayes",
+      "version": "0.3.0",
+      "candidate_sha": "dab192abc18044ae439da49b42395e025549c4c7",
+      "package_check": "OK",
+      "failures": 0,
+      "passed_expectations": 7192,
+      "test_warning_expectations": 23,
+      "skips": 35,
+      "full_vignette_build": true,
+      "check_log": "/mnt/d/Projects/antitrust/artifacts/coordinated_release_evidence/ci-cache-20261103/00check.log",
+      "test_log": "/mnt/d/Projects/antitrust/artifacts/coordinated_release_evidence/ci-cache-20261103/testthat.Rout",
+      "source_provenance": {
+        "previous_sha": "b252fa1b37d4a834d2fdb4660cfa2937695975ed",
+        "sha": "dab192abc18044ae439da49b42395e025549c4c7",
+        "changed_paths": [
+          "tests/testthat/test-cmdstan-cache-race.R"
+        ],
+        "tree": "7d4d02eb77c80a69ee1ef8ebbfe0e60ebf174b92",
+        "raw_exported_blobs": 940,
+        "raw_blob_mismatches": 0
+      },
+      "git_diff_check_passed": true,
+      "tier": "optional-free; sampling disabled",
+      "hmc_rerun": false,
+      "force_suggests": false,
+      "cmdstan_available": false
+    }
+  ],
+  "prior_validation": "artifacts/coordinated_release_evidence/previous_validation_2026-11-01.json",
+  "statistical_evidence": {
+    "statistical_fits": 2,
+    "inference_gates_passed": 20,
+    "independent_policy_focs_passed": 32,
+    "policy_foc_max_residual": 9.11085e-09,
+    "statistical_report": "/mnt/d/Projects/antitrustBayes/doc/validation/coordinated_release_gate_results.md",
+    "status": "previous executed bounded specification-14 evidence retained",
+    "scope": "Two actual HMC fits, 20 frozen inference gates and 32 independent policy FOCs; not broad recovery certification.",
+    "rerun_this_freeze": false
+  },
+  "dependencies_verified": {
+    "cubature": {
+      "version": "2.1.4.1",
+      "library": "/tmp/coordinated-release-fixed-lib",
+      "independent_integral": "hcubature of x1^2+x2^2 on [0,1]^2 equals 2/3 within 1e-7",
+      "financial_namespace_load": "PASS"
+    }
+  },
+  "financial_debt_disposition": {
+    "production_solver_changed": false,
+    "stored_oracles_changed": false,
+    "tolerances_relaxed": false,
+    "temporary_parity_B": [
+      "low_uniform",
+      "high_uniform",
+      "zero_beta"
+    ],
+    "sunset": "2027-11-01",
+    "permanent_A": "Beta calibration primitives, conditional share identities, and bounded ownership/markup FOCs",
+    "legacy_trap_C": "zero_uniform nonconvergence and invalid low/high-beta default-adjusted equilibria; no assertion that NaNs are economically valid",
+    "report": "/mnt/d/Projects/financial/design/debt-parity-diagnostic-addendum-2026-11-01.md"
+  },
+  "applied_release_files": [],
+  "preserved_original_state": {
+    "antitrust": {
+      "head": "20f0923fc560295e04310aed5615c19dadf672cb",
+      "protected_refs": "refs/heads/master e6ca9d595668f37f0a1e518db30ce53de61361d1\nrefs/heads/refactor 20f0923fc560295e04310aed5615c19dadf672cb\n",
+      "index": "/mnt/d/Projects/antitrust/.git/index",
+      "index_sha256": "0b15cc100efa3fbd995c64548f31089449dbba6c67ea9a2461a8e2abd15109f2"
+    },
+    "coordination": {
+      "head": "6955c4845df0c1de98eb540423118b53732211e5",
+      "protected_refs": "refs/heads/main 6955c4845df0c1de98eb540423118b53732211e5\n",
+      "index": "/mnt/d/Projects/coordination/.git/index",
+      "index_sha256": "473cacf465d76aa72c9ee954af534ae9a28a46a6e4d9e30bf73a904d584aacd0"
+    },
+    "trade": {
+      "head": "2826df0fc3530c01066000725f643b060e71d136",
+      "protected_refs": "refs/heads/master e621956242d7b9c0376acc2c76ec76bcf7d91d1c\nrefs/heads/refactor 2826df0fc3530c01066000725f643b060e71d136\n",
+      "index": "/mnt/d/Projects/trade/.git/index",
+      "index_sha256": "cb3dd8a29f4579c19b23444accddc43476d22fd33e89f1141f508f1263c88488"
+    },
+    "vertical": {
+      "head": "dbb99804bfe76746c13374d341beb1bd20af79c2",
+      "protected_refs": "refs/heads/main dbb99804bfe76746c13374d341beb1bd20af79c2\n",
+      "index": "/mnt/d/Projects/vertical/.git/index",
+      "index_sha256": "067c7e5c5bb92ecf85a0032576e91181a792080cbf4b8be1b67201ac5b9fe62b"
+    },
+    "competitiontoolbox": {
+      "head": "a5030868e5831b4c7951a8cb7eee469af0675c7a",
+      "protected_refs": "refs/heads/master e81fc704bec56cd56c92097b282177573b57fd83\nrefs/heads/refactor a5030868e5831b4c7951a8cb7eee469af0675c7a\n",
+      "index": "/mnt/d/Projects/competitiontoolbox/.git/index",
+      "index_sha256": "7ecf5c0f7aace013a5e133f38e3f6ae589fcce822be10f687e671946abda0f5b"
+    },
+    "financial": {
+      "head": "80e2720b0e40b30e819c028110d2085abca26da0",
+      "protected_refs": "refs/heads/main 80e2720b0e40b30e819c028110d2085abca26da0\n",
+      "index": "/mnt/d/Projects/financial/.git/index",
+      "index_sha256": "3d7da19f396f6a07a48b93642e00989c5e292269e358640283e0d2007a70523a"
+    },
+    "antitrustBayes": {
+      "head": "fb1f026c0e301f17343ebd611afe657cbaafc5f2",
+      "protected_refs": "refs/heads/main fb1f026c0e301f17343ebd611afe657cbaafc5f2\n",
+      "index": "/mnt/d/Projects/antitrustBayes/.git/index",
+      "index_sha256": "a7ba5fb6e9b47e802607858043d28b79aebcdb98766eee066e2d3a37e3fc53e6"
+    }
+  },
+  "preserved_local_work": [
+    "trade/artifacts/antitrust-promotion.patch",
+    "antitrustBayes/.scratch unrelated work",
+    "existing vertical policy draft evolved in place; unrelated modifications preserved"
+  ],
+  "independent_review": {
+    "model": "gpt-6.1-sol",
+    "effort": "xhigh",
+    "resolved_findings": [
+      "fractional self-ownership weighting in input level FOCs",
+      "rare-share false BLP convergence under unnormalized residuals",
+      "financial circular residual and boundary fixture",
+      "policy auction HHI omitting physical winner-share changes"
+    ],
+    "bayes_sealed_runner": "reviewed without substantive findings",
+    "release_configuration_review": "Sol xhigh reviewed CI dependency provenance, strict YAML, exact SHA/version gates and financial parity scope; substantive findings resolved."
+  },
+  "limitations": [
+    "All six required hosted certifications passed for the selected manifest SHAs. Toolbox hosted certification is explicitly waived and is not counted as passed.",
+    "This execution environment cannot resolve github.com, including after escalation; GitHub CLI configuration is denied by the read policy. The connector cannot upload exact frozen commits.",
+    "Live Shiny interaction/download smoke remains blocked by denied socket creation; complete it in an environment permitting sockets.",
+    "Bayes certification is optional-free with run_stan_tests=false; prior bounded HMC/FOC evidence is retained and no new statistical certification is claimed.",
+    "Optional competitiontoolbox Suggests is excluded from upstream core/trade hosted provisioning and may produce an optional-package NOTE. Its own dependency-stack workflow covers downstream behavior.",
+    "Financial legacy debt convergence and unsupported vertical second-score policy limitations remain documented.",
+    "Remote CRAN incoming checks could not run here; preserved toolbox --as-cran attempt stopped at blocked incoming feasibility.",
+    "The existing toolbox workflow and historical GitHub failure remain unchanged; only this release gate is waived. No token, visibility, permission or branch-protection changes were made."
+  ],
+  "hosted_ci_evidence": "artifacts/coordinated_release_evidence/hosted-ci-final-status.json",
+  "candidate_revision": 4,
+  "previous_revision_pushed": true,
+  "previous_manifest": "artifacts/coordinated_release_previous_manifest.json",
+  "previous_validation": "artifacts/coordinated_release_evidence/ci-followup-20261102/previous-validation.json",
+  "release_tool_verification": {
+    "integration_tests_passed": 17,
+    "workflow_files_checked": 8,
+    "automatic_pin_selectors_executed": 6,
+    "valid_but_stale_ci_sha_pin_rejected": true,
+    "corrected_ci_sha_pin_accepted": true,
+    "certification_trigger": "automatic full-tier release-branch push; no workflow_dispatch/default-branch changes required",
+    "reviewer": "gpt-6.1-sol xhigh; final CI/helper/apply reviews accepted",
+    "production_R_or_Stan_changed": false
+  },
+  "previous_push_report": "artifacts/coordinated_release_evidence/push-20261103T001035.368624Z.json",
+  "hosted_ci_passed": 6,
+  "hosted_ci_failed": 0,
+  "hosted_ci_pending": 0,
+  "previous_revision_hosted_failures": 2,
+  "previous_ci_repair_changes": {
+    "antitrust": {
+      "previous_sha": "abc8f9457cc9cbb2e3f252c6b82fe5b87da3dd79",
+      "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "changed_paths": [
+        ".github/workflows/qa.yml",
+        ".gitignore",
+        "ai/package_audit/check_release_manifest.py",
+        "ai/package_audit/check_release_workflows.py",
+        "ai/package_audit/push_coordinated_release.py",
+        "ai/package_audit/release_workflows.py",
+        "ai/package_audit/test_push_coordinated_release.py",
+        "ai/package_audit/test_release_workflows.py"
+      ],
+      "tree": "bf494bf20fb8306dc705706a401108e7cac7173e",
+      "raw_exported_blobs": 272,
+      "raw_blob_mismatches": 0
+    },
+    "coordination": {
+      "previous_sha": "761cb49fbae87744de99b2dce4eb597e81feb7a1",
+      "sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+      "changed_paths": [
+        ".github/workflows/R-CMD-check.yaml",
+        "DESCRIPTION"
+      ],
+      "tree": "3b17c2f1a967e87899c482dd8bb20f2fbfc8f1c3",
+      "raw_exported_blobs": 47,
+      "raw_blob_mismatches": 0
+    },
+    "trade": {
+      "previous_sha": "c99a6ac6d7505b63e6c369246b0ef650d9af2421",
+      "sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+      "changed_paths": [
+        ".github/workflows/qa.yml",
+        "DESCRIPTION"
+      ],
+      "tree": "f92a1264b772d4b397daba8d1a627d4c4fb19b7a",
+      "raw_exported_blobs": 102,
+      "raw_blob_mismatches": 0
+    },
+    "vertical": {
+      "previous_sha": "eaf12d4505f77b1802071574145874a8c415cec3",
+      "sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+      "changed_paths": [
+        ".Rbuildignore",
+        ".github/workflows/R-CMD-check.yaml",
+        "DESCRIPTION",
+        "ci/release-dependencies.json"
+      ],
+      "tree": "56d5076916935952128dbb2622ffe7dd828993e0",
+      "raw_exported_blobs": 60,
+      "raw_blob_mismatches": 0
+    },
+    "competitiontoolbox": {
+      "previous_sha": "bcec374b2c56c9f1120728b97c42dfb59b47f5b1",
+      "sha": "2135927ab5406c421870eadb5b7d7eddbedd7457",
+      "changed_paths": [
+        ".github/workflows/dependency-stack-qa.yml",
+        "DESCRIPTION"
+      ],
+      "tree": "2bce6a0ea72e49135d469ad558ceb623dba18afa",
+      "raw_exported_blobs": 66,
+      "raw_blob_mismatches": 0
+    },
+    "financial": {
+      "previous_sha": "20d2830c07d699f7c1a4da88a72e54cc2b912bb1",
+      "sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+      "changed_paths": [
+        ".github/workflows/qa.yml",
+        "ci/release-dependencies.json"
+      ],
+      "tree": "31b82ee83c00b25f341c71e353a5e3ff0cafc076",
+      "raw_exported_blobs": 76,
+      "raw_blob_mismatches": 0
+    },
+    "antitrustBayes": {
+      "previous_sha": "6f34dd2f34656dd749b594b22157ff475c9dc186",
+      "sha": "4c965e877cfcc10bb3571c49d6c177693d9d8113",
+      "changed_paths": [
+        ".Rbuildignore",
+        ".github/workflows/qa.yml",
+        "ci/README.md",
+        "ci/release-dependencies.json",
+        "doc/README.md"
+      ],
+      "tree": "d526febbcb9f70da8d8ea00c6291b5d6a63da763",
+      "raw_exported_blobs": 939,
+      "raw_blob_mismatches": 0
+    }
+  },
+  "ci_followup_changes": {
+    "antitrust": {
+      "previous_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "changed_paths": [],
+      "tree": "bf494bf20fb8306dc705706a401108e7cac7173e",
+      "raw_exported_blobs": 272,
+      "raw_blob_mismatches": 0
+    },
+    "coordination": {
+      "previous_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+      "sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+      "changed_paths": [],
+      "tree": "3b17c2f1a967e87899c482dd8bb20f2fbfc8f1c3",
+      "raw_exported_blobs": 47,
+      "raw_blob_mismatches": 0
+    },
+    "trade": {
+      "previous_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+      "sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+      "changed_paths": [],
+      "tree": "f92a1264b772d4b397daba8d1a627d4c4fb19b7a",
+      "raw_exported_blobs": 102,
+      "raw_blob_mismatches": 0
+    },
+    "vertical": {
+      "previous_sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+      "sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+      "changed_paths": [],
+      "tree": "56d5076916935952128dbb2622ffe7dd828993e0",
+      "raw_exported_blobs": 60,
+      "raw_blob_mismatches": 0
+    },
+    "competitiontoolbox": {
+      "previous_sha": "2135927ab5406c421870eadb5b7d7eddbedd7457",
+      "sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+      "changed_paths": [
+        ".ci/README.md",
+        ".ci/require-vertical-read-token.sh",
+        ".ci/resolve-private-vertical-checkout.sh",
+        ".ci/run-private-vertical-command.sh",
+        ".ci/test-private-vertical-checkout.sh",
+        ".github/workflows/dependency-stack-qa.yml"
+      ],
+      "tree": "f2ed4da1e3ba14fbab3a4ecf7f6ac97e149e4de3",
+      "raw_exported_blobs": 71,
+      "raw_blob_mismatches": 0
+    },
+    "financial": {
+      "previous_sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+      "sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+      "changed_paths": [],
+      "tree": "31b82ee83c00b25f341c71e353a5e3ff0cafc076",
+      "raw_exported_blobs": 76,
+      "raw_blob_mismatches": 0
+    },
+    "antitrustBayes": {
+      "previous_sha": "4c965e877cfcc10bb3571c49d6c177693d9d8113",
+      "sha": "b252fa1b37d4a834d2fdb4660cfa2937695975ed",
+      "changed_paths": [
+        ".github/workflows/qa.yml",
+        "ci/README.md",
+        "ci/test-verified-dependency-metadata.R",
+        "doc/README.md"
+      ],
+      "tree": "5907d1e4d81715e97d59542f23e9ca36d401309d",
+      "raw_exported_blobs": 940,
+      "raw_blob_mismatches": 0
+    }
+  },
+  "ci_followup_validation": {
+    "metadata_cases_passed": 16,
+    "verifier_copies_executed": 2,
+    "private_checkout_and_diagnostic_redaction_fixtures": "PASS",
+    "source_workflow_checks": "PASS; all8 workflows/all6 selectors",
+    "five_passing_candidates_unchanged": true,
+    "production_R_or_Stan_changed": false,
+    "independent_security_review": "accepted; gpt-6.1-sol xhigh",
+    "actual_authenticated_private_checkout_verified": false,
+    "required_repository_secret": {
+      "repository": "luciu5/competitiontoolbox",
+      "name": "VERTICAL_READ_TOKEN",
+      "required_access": "fine-grained Contents read-only on luciu5/vertical",
+      "configured_by_agent": false,
+      "credential_value_handled_by_agent": false,
+      "required_for_remaining_certification": false,
+      "setup_waived_by_user": true
+    }
+  },
+  "cache_fixture_repair": {
+    "changed_file": "tests/testthat/test-cmdstan-cache-race.R",
+    "production_R_or_Stan_changed": false,
+    "old_no_toolchain_failure_reproduced": true,
+    "independent_review": "Luna xhigh accepted; focused 21 assertions pass",
+    "built_archive_no_cmdstan_check": "OK",
+    "sampling_enabled": false
+  },
+  "toolbox_secret_retry": {
+    "run_id": 41550958772,
+    "job_id": 125679155790,
+    "attempt": 2,
+    "conclusion": "failure",
+    "failed_step": "Require private vertical read token",
+    "secret_visible": false,
+    "user_reported_token_added": true,
+    "secret_location_question_pending": false,
+    "secret_value_handled": false,
+    "required_for_release": false,
+    "waived_by_user": true
+  },
+  "certification_waivers": {
+    "competitiontoolbox": {
+      "candidate_sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+      "workflow": ".github/workflows/dependency-stack-qa.yml",
+      "authorized_by": "user",
+      "requested_on": "2026-11-03",
+      "reason": "User requested skipping the private vertical dependency CI check after token setup difficulties."
+    }
+  },
+  "hosted_ci_waived": 1,
+  "waiver_validation": {
+    "workflow_tests_passed": 9,
+    "real_workspace_offline_plan": "PASS; toolbox shown WAIVED and six other checks retained",
+    "independent_review": "Luna xhigh accepted after verifying active handoff",
+    "frozen_package_candidates_changed": false,
+    "remote_workflows_or_permissions_changed": false
+  },
+  "push_report": "artifacts/coordinated_release_evidence/push-20261103T153129.916804Z.json",
+  "certification_report": "artifacts/coordinated_release_evidence/certify-20261103T153126.980144Z.json"
+}

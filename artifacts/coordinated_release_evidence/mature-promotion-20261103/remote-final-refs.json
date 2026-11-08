@@ -1,0 +1,26 @@
+[
+  {
+    "package": "antitrust",
+    "master_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+    "legacy_sha": "e6ca9d595668f37f0a1e518db30ce53de61361d1",
+    "release_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+    "master_updated": true,
+    "verified": true
+  },
+  {
+    "package": "trade",
+    "master_sha": "a0edb920c21ab398c57dbd7dd8a6b0701d7239f6",
+    "legacy_sha": "e621956242d7b9c0376acc2c76ec76bcf7d91d1c",
+    "release_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+    "master_updated": true,
+    "verified": true
+  },
+  {
+    "package": "competitiontoolbox",
+    "master_sha": "176308a680c4514aa32463f4c82b45da4ad7d5da",
+    "legacy_sha": "e81fc704bec56cd56c92097b282177573b57fd83",
+    "release_sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+    "master_updated": true,
+    "verified": true
+  }
+]

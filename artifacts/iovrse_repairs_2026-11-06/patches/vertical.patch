@@ -1,0 +1,665 @@
+diff --git a/NEWS.md b/NEWS.md
+index 037fc37..4dc2099 100755
+--- a/NEWS.md
++++ b/NEWS.md
+@@ -23,3 +23,8 @@
+ - Added `merger_type()` and tier-specific HHI reporting for hybrid mergers.
+ - Added a residual-checked second-score solver fallback for hybrid ownership
+   structures.
++
++* Counterfactual linked-product exits now remove both tiers, persist through
++  ordinary and policy sequences/resumes, preserve originating quota anchors,
++  and clear exited capacity rents. Promoted pre-state outputs retain the
++  preceding active market without recalibration.
+diff --git a/R/VerticalArchitecture.R b/R/VerticalArchitecture.R
+index 7b2bd83..f8fef86 100755
+--- a/R/VerticalArchitecture.R
++++ b/R/VerticalArchitecture.R
+@@ -28,7 +28,10 @@ setClass(
+       anyNA(subset) || !any(subset)) {
+     stop("vertical model contains an invalid active-product subset")
+   }
+-  if (preMerger) rep(TRUE, n_products) else subset
++  if (preMerger) {
++    previous <- attr(object, "vertical_pre_subset", exact = TRUE)
++    if (is.null(previous)) rep(TRUE, n_products) else previous
++  } else subset
+ }
+ 
+ .vertical_conditions <- function(expr) {
+diff --git a/R/VerticalCounterfactualMethods.R b/R/VerticalCounterfactualMethods.R
+index 034dcfe..44549fc 100755
+--- a/R/VerticalCounterfactualMethods.R
++++ b/R/VerticalCounterfactualMethods.R
+@@ -2,6 +2,30 @@
+ # sequential-state transitions. Equilibrium calculations dispatch through
+ # antitrust generics and the vertical economic methods in this package.
+ 
++.vertical_exit_subset <- function(model, exit = NULL) {
++  n <- length(model@down@prices)
++  active <- model@down@subset
++  if (is.null(exit)) return(active)
++  if (is.logical(exit)) {
++    if (length(exit) != n || anyNA(exit)) stop("'exit' must be a length-k logical active-product vector without NAs")
++    keep <- exit
++  } else {
++    if (is.character(exit)) {
++      if (anyNA(exit) || any(!exit %in% model@down@labels))
++        stop("character 'exit' values must match fitted product labels")
++      exit <- match(exit, model@down@labels)
++    }
++    if (!is.numeric(exit) || anyNA(exit) || any(!is.finite(exit)) ||
++        any(exit < 1 | exit > n | exit != as.integer(exit)))
++      stop("'exit' must contain valid product indices or labels")
++    keep <- rep(TRUE, n)
++    keep[as.integer(exit)] <- FALSE
++  }
++  active <- active & keep
++  if (!any(active)) stop("'exit' must retain at least one active linked product")
++  active
++}
++
+ .vertical_validate_owner <- function(model, ownerPost) {
+   n_up <- length(model@up@prices)
+   n_down <- length(model@down@prices)
+@@ -92,6 +116,7 @@
+ 
+ .vertical_promote <- function(model) {
+   .vertical_assert_model(model)
++  attr(model, "vertical_pre_subset") <- model@down@subset
+   model@up@ownerPre <- model@up@ownerPost
+   model@down@ownerPre <- model@down@ownerPost
+   model@up@bargpowerPre <- model@up@bargpowerPost
+@@ -129,7 +154,7 @@
+     }
+     result <- .vertical_simulate_model(
+       state, ownerPost = changes$ownership, mcDelta = cumulative,
+-      dots = dots
++      subset = .vertical_exit_subset(state, changes$exit), dots = dots
+     )
+     result <- .vertical_attach_merger_metadata(result)
+     results[[i]] <- result
+@@ -140,8 +165,8 @@
+ 
+ #' Validate a vertical counterfactual
+ #'
+-#' Ownership and cost changes have defined vertical bargaining mechanics.
+-#' Other counterfactual fields fail explicitly.
++#' Ownership, cost changes and cumulative linked-product exit have defined
++#' vertical bargaining mechanics. Other fields fail explicitly.
+ #' @param object A calibrated `VerticalFit`.
+ #' @param counterfactual A `Counterfactual` created by [counterfactual()].
+ #' @return The validated counterfactual, invisibly.
+@@ -151,8 +176,10 @@ setMethod("validate_counterfactual", "VerticalFit",
+     if (!methods::is(counterfactual, "Counterfactual")) {
+       stop("'counterfactual' must be a Counterfactual object")
+     }
++    state <- object@model
+     for (step in counterfactual@steps) {
+-      unsupported <- setdiff(names(step@changes), c("ownership", "costs"))
++      state@down@subset <- .vertical_exit_subset(state, step@changes$exit)
++      unsupported <- setdiff(names(step@changes), c("ownership", "costs", "exit"))
+       if (length(unsupported)) {
+         stop("model '", object@spec$id,
+              "' does not support counterfactual field(s): ",
+@@ -180,9 +207,9 @@ setMethod("simulate_steps", "VerticalFit",
+         !all(vapply(steps, methods::is, logical(1), "CounterfactualStep"))) {
+       stop("'steps' must be a non-empty list of CounterfactualStep objects")
+     }
+-    validate_counterfactual(object, new(
+-      "Counterfactual", steps = steps
+-    ))
++    current <- object
++    current@model <- last_result
++    validate_counterfactual(current, new("Counterfactual", steps = steps))
+     state <- .vertical_promote(last_result)
+     cumulative <- cumulative_costs
+     if (!is.null(cumulative)) cumulative <- .vertical_validate_costs(state, cumulative)
+@@ -247,7 +274,7 @@ setMethod("simulate", "VerticalFit",
+       result <- .vertical_simulate_model(
+         object@model, ownerPost = changes$ownership,
+         mcDelta = changes$costs,
+-        dots = dots
++        subset = .vertical_exit_subset(object@model, changes$exit), dots = dots
+       )
+       attr(result, "counterfactual") <- list(model_spec = object@spec,
+                                                fields = ownerPost)
+diff --git a/R/VerticalMarginsMethods.R b/R/VerticalMarginsMethods.R
+index d58b958..bcda155 100755
+--- a/R/VerticalMarginsMethods.R
++++ b/R/VerticalMarginsMethods.R
+@@ -9,6 +9,20 @@ setMethod(
+     if (!is.null(.vertical_policy_state(object))) {
+       return(.vertical_policy_margins(object, preMerger, level))
+     }
++    if (preMerger && any(!.vertical_active_subset(object, TRUE))) {
++      # This pre-state is a promoted, already solved market. Evaluate its
++      # physical profit identity directly, excluding links absent there,
++      # rather than asking an inner all-products pre-state to price NA goods.
++      active <- .vertical_active_subset(object, TRUE)
++      up <- object@up@pricePre - object@up@mcPre
++      down <- object@down@pricePre - object@up@pricePre - object@down@mcPre
++      if (!level) {
++        up <- up / object@up@pricePre
++        down <- down / object@down@pricePre
++      }
++      up[!active] <- down[!active] <- NA_real_
++      return(list(up = as.vector(up), down = as.vector(down)))
++    }
+     is2nd <- any(grepl("2nd", class(object)))
+     up <- object@up
+     down <- object@down
+@@ -124,6 +138,20 @@ setMethod(
+     if (!is.null(.vertical_policy_state(object))) {
+       return(.vertical_policy_margins(object, preMerger, level))
+     }
++    if (preMerger && any(!.vertical_active_subset(object, TRUE))) {
++      # This pre-state is a promoted, already solved market. Evaluate its
++      # physical profit identity directly, excluding links absent there,
++      # rather than asking an inner all-products pre-state to price NA goods.
++      active <- .vertical_active_subset(object, TRUE)
++      up <- object@up@pricePre - object@up@mcPre
++      down <- object@down@pricePre - object@up@pricePre - object@down@mcPre
++      if (!level) {
++        up <- up / object@up@pricePre
++        down <- down / object@down@pricePre
++      }
++      up[!active] <- down[!active] <- NA_real_
++      return(list(up = as.vector(up), down = as.vector(down)))
++    }
+     is2nd <- any(grepl("2nd", class(object)))
+     up <- object@up
+     down <- object@down
+diff --git a/R/VerticalOutputMethods.R b/R/VerticalOutputMethods.R
+index 07ebf2d..ca52ee2 100755
+--- a/R/VerticalOutputMethods.R
++++ b/R/VerticalOutputMethods.R
+@@ -1,9 +1,73 @@
+ # Vertical output methods.
+ 
++# Demand-only view of a promoted pre-market; local copies retain the fitted
++# utility index and use existing antitrust derivatives on survivor products.
++.vertical_reduced_down <- function(down, active) {
++  n <- length(active)
++  normalizer <- down@normIndex
++  for (field in methods::slotNames(down)) {
++    value <- methods::slot(down, field)
++    if (is.matrix(value) && identical(dim(value), c(n, n))) {
++      methods::slot(down, field) <- value[active, active, drop = FALSE]
++    } else if (is.atomic(value) && length(value) == n) {
++      value <- value[active]
++      if (is.factor(value)) value <- droplevels(value)
++      methods::slot(down, field) <- value
++    }
++  }
++  if (length(normalizer) == 1L && !is.na(normalizer)) {
++    position <- match(normalizer, which(active))
++    down@normIndex <- if (is.na(position)) 1 else position
++  }
++  down@slopes$meanval <- down@slopes$meanval[active]
++  if (methods::is(down, "LogitNests")) {
++    down@slopes$sigma <- down@slopes$sigma[levels(down@nests)]
++  }
++  down
++}
++
++.vertical_pre_derivative <- function(object, method, market = FALSE, revenue = TRUE) {
++  active <- .vertical_active_subset(object, TRUE)
++  down <- .vertical_reduced_down(object@down, active)
++  if (methods::is(down, "LogitNests") && !market) {
++    # The inner implementation's diag(scalar) is ambiguous after a whole
++    # nest exits. Write the same nested derivative with explicit dimensions.
++    share <- calcShares(down, TRUE)
++    nest <- as.character(down@nests)
++    scale <- as.numeric(down@slopes$sigma[nest])
++    nest_share <- as.numeric(tapply(share, nest, sum)[nest])
++    same <- outer(nest, nest, "==")
++    elasticity <- -down@slopes$alpha *
++      matrix(share * down@pricePre, length(share), length(share), byrow = TRUE) *
++      (1 + same * ((1 - scale) / scale / nest_share))
++    diag(elasticity) <- diag(elasticity) + down@slopes$alpha * down@pricePre / scale
++    if (method == "elast") {
++      value <- elasticity
++    } else {
++      if (revenue) {
++        value <- t(elasticity) / (diag(elasticity) - 1)
++        value <- -value / diag(value)
++      } else value <- -t(elasticity) / diag(elasticity)
++      output <- calcShares(down, TRUE, revenue = revenue)
++      value <- value * tcrossprod(1 / output, output)
++    }
++  } else {
++    value <- if (method == "elast") elast(down, TRUE, market = market) else
++      diversion(down, TRUE, revenue = revenue)
++  }
++  if (market) return(value)
++  result <- matrix(NA_real_, length(active), length(active),
++    dimnames = list(object@down@labels, object@down@labels))
++  result[active, active] <- value
++  result
++}
++
++
+ #' @rdname vertical-methods
+ #' @export
+ setMethod("calcRevenues", "VertBargBertLogit", function(object, preMerger = TRUE, market = FALSE) {
+-  if (!is.null(.vertical_policy_state(object))) {
++  if (!is.null(.vertical_policy_state(object)) ||
++      any(!.vertical_active_subset(object, preMerger))) {
+     prices <- if (preMerger) object@down@pricePre else object@down@pricePost
+     revenue <- prices * calcQuantities(object, preMerger)
+     if (market) return(sum(revenue, na.rm = TRUE))
+@@ -15,7 +79,8 @@ setMethod("calcRevenues", "VertBargBertLogit", function(object, preMerger = TRUE
+ #' @rdname vertical-methods
+ #' @export
+ setMethod("calcQuantities", "VertBargBertLogit", function(object, preMerger = TRUE, market = FALSE) {
+-  if (!is.null(.vertical_policy_state(object))) {
++  if (!is.null(.vertical_policy_state(object)) ||
++      any(!.vertical_active_subset(object, preMerger))) {
+     size <- object@down@mktSize
+     if (is.na(size)) size <- 1
+     quantity <- calcShares(object, preMerger) * size
+@@ -28,7 +93,15 @@ setMethod("calcQuantities", "VertBargBertLogit", function(object, preMerger = TR
+ #' @rdname vertical-methods
+ #' @export
+ setMethod("calcShares", "VertBargBertLogit", function(object, preMerger = TRUE, revenue = FALSE) {
+-  calcShares(object@down, preMerger = preMerger, revenue = revenue)
++  down <- object@down
++  active <- .vertical_active_subset(object, preMerger)
++  if (preMerger && any(!active)) {
++    down@slopes$meanval[!active] <- -Inf
++    down@pricePre[!active] <- 0
++  }
++  shares <- calcShares(down, preMerger = preMerger, revenue = revenue)
++  shares[!active] <- 0
++  shares
+ })
+ 
+ #' @rdname vertical-methods
+@@ -38,20 +111,32 @@ setMethod("calcShares", "VertBarg2ndLogit", function(object, preMerger = TRUE, r
+   up <- object@up
+   priceOutside <- down@priceOutside
+   upPrice <- if (preMerger) up@pricePre else up@pricePost
++  active <- .vertical_active_subset(object, preMerger)
++  if (preMerger && any(!active)) {
++    down@slopes$meanval[!active] <- -Inf
++    down@pricePre[!active] <- 0
++    upPrice[!active] <- 0
++  }
+   meanval <- down@slopes$meanval
+   alpha <- down@slopes$alpha
+   down@slopes$meanval <- meanval + alpha * (upPrice - priceOutside)
+-  calcShares(down, preMerger = preMerger, revenue = revenue)
++  shares <- calcShares(down, preMerger = preMerger, revenue = revenue)
++  shares[!active] <- NA_real_
++  shares
+ })
+ 
+ #' @rdname vertical-methods
+ #' @export
+ setMethod("elast", "VertBargBertLogit", function(object, preMerger = TRUE, market = FALSE) {
++  if (preMerger && any(!.vertical_active_subset(object, TRUE)))
++    return(.vertical_pre_derivative(object, "elast", market = market))
+   elast(object@down, preMerger = preMerger, market = market)
+ })
+ 
+ #' @rdname vertical-methods
+ #' @export
+ setMethod("diversion", "VertBargBertLogit", function(object, preMerger = TRUE, revenue = TRUE) {
++  if (preMerger && any(!.vertical_active_subset(object, TRUE)))
++    return(.vertical_pre_derivative(object, "diversion", revenue = revenue))
+   diversion(object@down, preMerger = preMerger, revenue = revenue)
+ })
+diff --git a/R/VerticalTradePolicy.R b/R/VerticalTradePolicy.R
+index f4e0534..346d348 100755
+--- a/R/VerticalTradePolicy.R
++++ b/R/VerticalTradePolicy.R
+@@ -26,7 +26,7 @@ setClass("VerticalTradeFit", contains = "VerticalFit",
+ #' @param ownerPost A `Counterfactual` for the simulation method.
+ #' @param mcDelta,subset,priceStart,capacitiesPost,bargpowerPost,solver,isMax
+ #'   Legacy scenario arguments; supplying these with a policy counterfactual
+-#'   is rejected. Product exit is unsupported.
++#'   is rejected. Linked-product exit removes both tiers through the antitrust Counterfactual API.
+ #' @param last_result Last solved vertical policy model when resuming.
+ #' @param steps Non-empty list of antitrust `CounterfactualStep` objects.
+ #' @param cumulative_costs Cumulative tier-specific cost shocks. When omitted,
+@@ -103,6 +103,10 @@ setGeneric("as_vertical_trade_fit", function(object, ...)
+ }
+ 
+ .vertical_policy_check <- function(model, tariff, quota, quantity) {
++  active <- model@down@subset
++  tariff <- lapply(tariff, function(x) x[active])
++  quota <- lapply(quota, function(x) x[active])
++  quantity <- quantity[active]
+   for (tier in c("up", "down")) {
+     if (any(tariff[[tier]] != 0) && any(is.finite(quota[[tier]]))) {
+       stop("tariff and quota simultaneously on the same tier ('", tier,
+@@ -442,6 +446,8 @@ setMethod("as_vertical_trade_fit", "VerticalFit",
+     policy$tariffPost)
+   quota <- .vertical_policy_list(changes$quota, n, "quota", "quota",
+     policy$quotaPost)
++  subset <- .vertical_exit_subset(state, changes$exit)
++  state@down@subset <- subset
+   .vertical_policy_check(state, tariff, quota, policy$baseline_quantity)
+   policy$tariffPost <- tariff
+   policy$quotaPost <- quota
+@@ -450,7 +456,7 @@ setMethod("as_vertical_trade_fit", "VerticalFit",
+   policy$shadowPost <- lapply(quota, function(x) rep(0, length(x)))
+   attr(state, "vertical_trade_policy") <- policy
+   result <- .vertical_simulate_model(state, ownerPost = changes$ownership,
+-    mcDelta = cumulative, dots = dots)
++    mcDelta = cumulative, subset = subset, dots = dots)
+   .vertical_attach_merger_metadata(result)
+ }
+ 
+@@ -476,9 +482,11 @@ setMethod("validate_counterfactual", "VerticalTradeFit",
+       stop("'counterfactual' must be a Counterfactual object")
+     policy <- .vertical_policy_state(object)
+     n <- length(object@model@down@prices)
++    model <- object@model
+     for (step in counterfactual@steps) {
+       changes <- step@changes
+-      unsupported <- setdiff(names(changes), c("ownership", "costs", "tariff", "quota"))
++      model@down@subset <- .vertical_exit_subset(model, changes$exit)
++      unsupported <- setdiff(names(changes), c("ownership", "costs", "tariff", "quota", "exit"))
+       if (length(unsupported)) stop("vertical policy does not support counterfactual field(s): ",
+         paste(unsupported, collapse = ", "))
+       if (!is.null(changes$ownership)) .vertical_validate_owner(object@model, changes$ownership)
+@@ -487,7 +495,7 @@ setMethod("validate_counterfactual", "VerticalTradeFit",
+         policy$tariffPost)
+       policy$quotaPost <- .vertical_policy_list(changes$quota, n, "quota", "quota",
+         policy$quotaPost)
+-      .vertical_policy_check(object@model, policy$tariffPost, policy$quotaPost,
++      .vertical_policy_check(model, policy$tariffPost, policy$quotaPost,
+         policy$baseline_quantity)
+     }
+     invisible(counterfactual)
+diff --git a/R/VerticalWelfareMethods.R b/R/VerticalWelfareMethods.R
+index 711a22c..d580896 100755
+--- a/R/VerticalWelfareMethods.R
++++ b/R/VerticalWelfareMethods.R
+@@ -26,6 +26,9 @@ setMethod("hhi", "VertBargBertLogit", function(object, preMerger = TRUE,
+   hhiWithOwner <- function(owner) {
+     thisDown <- down
+     if (preMerger) thisDown@ownerPre <- owner else thisDown@ownerPost <- owner
++    if (preMerger && any(!.vertical_active_subset(object, TRUE))) {
++      thisDown <- .vertical_reduced_down(thisDown, .vertical_active_subset(object, TRUE))
++    }
+     hhi(thisDown, preMerger = preMerger, revenue = revenue,
+       insideonly = insideonly)
+   }
+@@ -66,14 +69,16 @@ setMethod("hhi", "VertBargBertLogit", function(object, preMerger = TRUE,
+     }
+     owner <- ownerDown
+   }
+-  if (preMerger) down@ownerPre <- owner else down@ownerPost <- owner
+-  hhi(down, preMerger = preMerger, revenue = revenue, insideonly = insideonly)
++  hhiWithOwner(owner)
+ })
+ 
+ #' @rdname vertical-methods
+ #' @export
+ setMethod("CV", "VertBargBertLogit", function(object) {
+   down <- object@down
++  previous <- .vertical_active_subset(object, TRUE)
++  down@slopes$meanval[!previous] <- -Inf
++  down@pricePre[!previous] <- 0
+   logitCV <- selectMethod("CV", class(down))
+   logitCV(down)
+ })
+@@ -102,7 +107,8 @@ setMethod("CV", "VertBarg2ndLogit", function(object) {
+     mcDeltaOut <- down@mcDelta[idx]
+   }
+   meanvalPost <- meanvalPre + alpha * (priceDelta$up + down@mcDelta - mcDeltaOut)
+-  VPre <- sum(exp(meanvalPre), na.rm = TRUE) + outVal
++  previous <- .vertical_active_subset(object, TRUE)
++  VPre <- sum(exp(meanvalPre[previous]), na.rm = TRUE) + outVal
+   VPost <- sum(exp(meanvalPost[subset]), na.rm = TRUE) + outVal
+   result <- result + log(VPost / VPre) / alpha
+   if (!is.na(mktSize)) result <- mktSize * result
+@@ -128,8 +134,8 @@ setMethod("calcDiagnostics", "VertBargBertLogit", function(object,
+   preUpPrices <- unname(drop(up@pricePre))
+   preDownPrices <- unname(drop(down@pricePre))
+   preMargins <- calcMargins(object, preMerger = TRUE)
+-  preShares <- drop(calcShares(down, preMerger = TRUE))
+-  preShares <- drop(preShares / sum(preShares))
++  preShares <- drop(calcShares(object, preMerger = TRUE))
++  preShares <- drop(preShares / sum(preShares, na.rm = TRUE))
+   preElast <- elast(object, preMerger = TRUE, market = TRUE)
+   res <- data.frame(
+     upPrices = 1 - obsUpPrices / preUpPrices,
+@@ -157,6 +163,8 @@ setMethod("calcProducerSurplus", "VertBargBertLogit", function(object,
+   }
+   psup <- margins$up * output * mktSize
+   psdown <- margins$down * output * mktSize
++  inactive <- !.vertical_active_subset(object, preMerger)
++  psup[inactive] <- psdown[inactive] <- 0
+   names(psup) <- names(psdown) <- object@down@labels
+   list(up = psup, down = psdown)
+ })
+diff --git a/docs/vertical-trade-policy.md b/docs/vertical-trade-policy.md
+index ecbbf56..3434702 100755
+--- a/docs/vertical-trade-policy.md
++++ b/docs/vertical-trade-policy.md
+@@ -18,7 +18,7 @@ Tier fields are named lists with optional `up` and `down` numeric vectors.
+ Scalars expand to all products. Omitted tiers retain the preceding policy;
+ initial tariffs are zero and initial quotas are `Inf`. Supplying `0` tariffs or
+ `Inf` quotas explicitly removes the indicated restriction. Policies may accompany
+-ownership and cost changes. Product exit remains unsupported.
++ownership and cost changes. Linked-product exit removes the corresponding upstream and downstream flow without recalibration. Use product indices, fitted labels, or a logical active-product mask. Exit is cumulative through sequences and resumes; at least one product must remain active. Originating quantity anchors remain fixed, and exited products carry no capacity rents.
+ 
+ ## Physical prices, costs and profits
+ 
+@@ -156,3 +156,19 @@ pre equilibrium. The policy layer preserves that behavior and tests identity
+ against ordinary simulation. It does not relabel that legacy difference as a
+ policy effect. Physical auction quantities consistently use the model's vertical
+ winner probabilities, rather than evaluating the downstream auction in isolation.
++
++```r
++# Remove the third linked product while retaining the original vector positions.
++result <- simulate(policy_fit, counterfactual(exit = 3L))
++```
++
++Exited Bertrand products have zero shares, quantities and producer surplus,
++and `NA` prices and margins. Second-score products retain the source convention
++of `NA` inactive shares and quantities. Survivor demand and bargaining parameters
++are held fixed. A resumed result's pre-state uses its preceding active market.
++
++Known inherited limitation: nested Logit market elasticity reporting uses the
++inner antitrust normalization, which omits normalization by total inside share.
++This pre-existing reporting discrepancy affects pre and post states and is not
++changed by linked-product exit. Product derivatives, demand and equilibrium
++calculations retain their existing definitions.
+diff --git a/man/as_vertical_trade_fit.Rd b/man/as_vertical_trade_fit.Rd
+index b749113..90a1a86 100755
+--- a/man/as_vertical_trade_fit.Rd
++++ b/man/as_vertical_trade_fit.Rd
+@@ -46,7 +46,7 @@ ownership, costs, tariff and quota changes.}
+ \item{ownerPost}{A \code{Counterfactual} for the simulation method.}
+ 
+ \item{mcDelta, subset, priceStart, capacitiesPost, bargpowerPost, solver, isMax}{Legacy scenario arguments; supplying these with a policy counterfactual
+-is rejected. Product exit is unsupported.}
++is rejected. Linked-product exit removes both tiers through the antitrust Counterfactual API.}
+ 
+ \item{last_result}{Last solved vertical policy model when resuming.}
+ 
+diff --git a/man/validate_counterfactual-VerticalFit-method.Rd b/man/validate_counterfactual-VerticalFit-method.Rd
+index 8fa8b30..af82731 100755
+--- a/man/validate_counterfactual-VerticalFit-method.Rd
++++ b/man/validate_counterfactual-VerticalFit-method.Rd
+@@ -15,6 +15,6 @@
+ The validated counterfactual, invisibly.
+ }
+ \description{
+-Ownership and cost changes have defined vertical bargaining mechanics.
+-Other counterfactual fields fail explicitly.
++Ownership, cost changes and cumulative linked-product exit have defined
++vertical bargaining mechanics. Other fields fail explicitly.
+ }
+diff --git a/tests/testthat/helper-vertical-policy.R b/tests/testthat/helper-vertical-policy.R
+index 2c3df69..7aef958 100755
+--- a/tests/testthat/helper-vertical-policy.R
++++ b/tests/testthat/helper-vertical-policy.R
+@@ -46,11 +46,13 @@ policy_expect_stationarity <- function(model, tariff = list(up = 0, down = 0),
+   q <- policy_quantities(model)
+   mu <- ru * w - cu - shadow$up
+   md <- rd * p - w - cd - shadow$down
++  active <- model@down@subset
++  mu[!active] <- md[!active] <- 0
+   derivative <- function(f, x) {
+     h <- max(abs(x), 1) * 1e-5
+     unname((f(x + h) - f(x - h)) / (2 * h))
+   }
+-  for (j in seq_len(n)) {
++  for (j in which(active)) {
+     if (uowner[j] == downer[j]) {
+       # Source convention: internal transfers have zero net operating margin,
+       # with scarce upstream capacity valued at its opportunity cost.
+@@ -83,6 +85,7 @@ policy_expect_stationarity <- function(model, tariff = list(up = 0, down = 0),
+         candidate[j] <- price
+         quantity <- policy_quantities(model, retail = candidate)
+         margins <- rd * candidate - w - cd - shadow$down
++        margins[!active] <- 0
+         sum(margins[downer == downer[j]] * quantity[downer == downer[j]]) +
+           sum(mu[uowner == downer[j]] * quantity[uowner == downer[j]])
+       }
+diff --git a/tests/testthat/test-lifecycle-dispatch.R b/tests/testthat/test-lifecycle-dispatch.R
+index 988415a..181a319 100755
+--- a/tests/testthat/test-lifecycle-dispatch.R
++++ b/tests/testthat/test-lifecycle-dispatch.R
+@@ -24,14 +24,7 @@ test_that("vertical lifecycle dispatch is explicit", {
+     validate_counterfactual(fit, counterfactual(bargaining = rep(.5, 4L))),
+     "does not support"
+   )
+-  testthat::expect_error(
+-    validate_counterfactual(fit, counterfactual(exit = 3L)),
+-    "does not support counterfactual field\\(s\\): exit"
+-  )
+-  testthat::expect_error(
+-    simulate(fit, counterfactual(exit = 3L)),
+-    "does not support counterfactual field\\(s\\): exit"
+-  )
++
+ 
+   result <- simulate(fit, ownerPost = owner_post)
+   testthat::expect_s4_class(result, "VertBargBertLogit")
+diff --git a/tests/testthat/test-vertical-trade-policy.R b/tests/testthat/test-vertical-trade-policy.R
+index a44a8c5..c0cafea 100755
+--- a/tests/testthat/test-vertical-trade-policy.R
++++ b/tests/testthat/test-vertical-trade-policy.R
+@@ -212,7 +212,7 @@ test_that("A: unsupported rationing and exit fail before solving an economically
+     "one finite quota tier")
+   expect_error(simulate(fit, counterfactual(quota = list(down = 0))),
+     "zero quota.*no finite-price")
+-  expect_error(simulate(fit, counterfactual(exit = 1L)), "does not support.*exit")
++  expect_error(simulate(fit, counterfactual(exit = seq_len(4L))), "retain at least one")
+   expect_error(simulate(fit, counterfactual(tariff = list(up = 1))), "less than 1")
+   expect_error(simulate(fit, counterfactual(quota = list(up = -1))), "non-negative")
+   partial <- fit
+diff --git a/tests/testthat/test-linked-exit.R b/tests/testthat/test-linked-exit.R
+new file mode 100644
+index 0000000..1d422f9
+--- /dev/null
++++ b/tests/testthat/test-linked-exit.R
+@@ -0,0 +1,101 @@
++# A (permanent): API exit must remove the linked physical flow and preserve
++# survivor incentives, policies and cumulative masks through path promotion.
++# Existing subset tests do not cover Counterfactual routing or resumed policy.
++exit_foc <- function(model) {
++  active <- model@down@subset
++  margin <- calcMargins(model, FALSE, level = TRUE)
++  c((model@up@pricePost - model@up@mcPost - margin$up)[active],
++    (model@down@pricePost - model@up@pricePost - model@down@mcPost - margin$down)[active])
++}
++
++test_that("A: linked exits preserve survivor FOCs without demand recalibration", {
++  for (kind in c("flat_vertical", "nested_bertrand")) {
++    fit <- suppressWarnings(vertical_calibrate(kind))
++    original <- serialize(fit, NULL)
++    removed <- if (kind == "nested_bertrand") c(3L, 4L) else 3L
++    model <- simulate(fit, counterfactual(exit = removed))
++    expect_identical(model@down@slopes, fit@model@down@slopes)
++    expect_identical(serialize(fit, NULL), original)
++    expect_equal(unname(calcShares(model, FALSE)[removed]), rep(0, length(removed)))
++    expect_true(all(is.na(model@up@pricePost[removed])))
++    expect_true(all(is.na(model@down@pricePost[removed])))
++    expect_lt(max(abs(exit_foc(model))), 1e-7)
++    expect_equal(unname(calcQuantities(model, FALSE)),
++      unname(policy_quantities(model)), tolerance = 1e-7)
++    expect_equal(calcProducerSurplus(model, FALSE)$up[removed],
++      setNames(rep(0, length(removed)), model@down@labels[removed]))
++    expect_true(is.finite(CV(model)))
++    promoted <- final_result(simulate(fit, add_step(counterfactual(exit = removed),
++      exit = rep(TRUE, length(model@down@prices)))))
++    survivor <- promoted@down@subset
++    expect_true(all(is.finite(calcMargins(promoted, TRUE, level = TRUE)$down[survivor])))
++    expect_true(is.finite(elast(promoted, TRUE, market = TRUE)))
++    expect_true(all(is.finite(diversion(promoted, TRUE)[survivor, survivor])))
++    expect_true(is.finite(CV(promoted)))
++  }
++})
++
++test_that("A: policy exits retain capacity anchors and resume without reentry", {
++  fit <- suppressWarnings(as_vertical_trade_fit(vertical_calibrate()))
++  anchor <- calcQuantities(fit@model, TRUE)
++  quota <- list(up = c(.8, Inf, Inf, Inf), down = rep(Inf, 4))
++  path <- simulate(fit, add_step(counterfactual(quota = quota), exit = 3L))
++  current <- final_result(path)
++  policy_expect_kkt(current, quota, anchor)
++  expect_equal(vertical_policy_diagnostics(current)$up$shadow_value[3], 0)
++  expect_true(is.finite(CV(current)))
++  resumed <- simulate(path, counterfactual(exit = c(TRUE, TRUE, TRUE, FALSE),
++    costs = list(up = rep(-.01, 4), down = rep(0, 4))))
++  last <- final_result(resumed)
++  expect_identical(last@down@subset, c(TRUE, TRUE, FALSE, FALSE))
++  policy_expect_kkt(last, quota, anchor)
++  expect_true(all(is.finite(calcShares(last, TRUE)[c(1, 2, 4)])))
++  expect_equal(unname(calcShares(last, TRUE)[3]), 0)
++  expect_equal(vertical_policy_diagnostics(last)$up$capacity,
++    vertical_policy_diagnostics(current)$up$capacity)
++  expect_true(is.finite(CV(last)))
++  expect_error(simulate(resumed, counterfactual(exit = c(1L, 2L))),
++    "retain at least one")
++})
++
++test_that("A: ordinary resumed exits preserve old masks and reject malformed requests", {
++  fit <- suppressWarnings(vertical_calibrate())
++  path <- simulate(fit, add_step(counterfactual(exit = fit@model@down@labels[3]),
++    exit = 4L))
++  last <- final_result(path)
++  expect_identical(last@down@subset, c(TRUE, TRUE, FALSE, FALSE))
++  expect_lt(max(abs(exit_foc(last))), 1e-7)
++  expect_true(is.finite(CV(last)))
++  expect_equal(unname(calcQuantities(last, TRUE)[3]), 0)
++  expect_true(is.finite(elast(last, TRUE, market = TRUE)))
++  expect_lt(elast(last, TRUE, market = TRUE), 0)
++  expect_true(all(is.finite(diversion(last, TRUE)[c(1, 2, 4), c(1, 2, 4)])))
++  expect_true(all(is.finite(hhi(last, TRUE))))
++  expect_true(all(is.finite(calcMargins(last, TRUE, level = TRUE)$down[c(1, 2, 4)])))
++  resumed <- simulate(path, counterfactual(exit = rep(TRUE, 4)))
++  expect_identical(final_result(resumed)@down@subset, last@down@subset)
++  expect_lt(max(abs(exit_foc(final_result(resumed)))), 1e-7)
++  expect_error(simulate(fit, counterfactual(exit = c(TRUE, NA, TRUE, TRUE))), "without NAs")
++  expect_error(simulate(fit, counterfactual(exit = "missing")), "labels")
++  expect_error(simulate(fit, counterfactual(exit = 1.5)), "valid product")
++})
++
++test_that("A: second-score linked exits preserve survivor auction equations", {
++  x <- vertical_inputs()
++  fit <- suppressWarnings(vertical::calibrate("logit", "vertical_bargaining",
++    prices = x$prices_down, shares = x$shares_down, margins = x$margins_down,
++    ownerPre = x$owner_pre_down, pricesUp = x$prices_up,
++    marginsUp = x$margins_up, ownerPreUp = x$owner_pre_up,
++    insideSize = x$inside_size, priceOutside = x$price_outside,
++    labels = x$labels, variant = "auction2nd"))
++  model <- simulate(fit, counterfactual(exit = 3L))
++  expect_true(is.na(calcShares(model, FALSE)[3]))
++  expect_true(all(is.finite(calcShares(model, FALSE)[c(1, 2, 4)])))
++  # Physical winner probabilities independently follow wholesale costs.
++  expect_equal(unname(calcShares(model, FALSE)[c(1, 2, 4)]),
++    unname(policy_quantities(model)[c(1, 2, 4)]) / model@down@mktSize,
++    tolerance = 1e-7)
++  resumed <- simulate(simulate(fit, add_step(counterfactual(exit = 3L),
++    exit = 4L)), counterfactual(exit = rep(TRUE, 4)))
++  expect_identical(final_result(resumed)@down@subset, c(TRUE, TRUE, FALSE, FALSE))
++})

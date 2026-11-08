@@ -1,0 +1,850 @@
+{
+  "repository": "cran/cubature",
+  "commit": "37d942bc38c96384380252412e9ca60f22ac186d",
+  "files": [
+    {
+      "path": "NAMESPACE",
+      "sha": "0aa3dc82e0582ddd4c6e59c5b22250bec871f488",
+      "endsNewline": true,
+      "size": 250,
+      "chars": 250
+    },
+    {
+      "path": "DESCRIPTION",
+      "sha": "8964d27f565b5a690e21d5d2996ac190812cb6b0",
+      "endsNewline": true,
+      "size": 1849,
+      "chars": 1845
+    },
+    {
+      "path": "NEWS.md",
+      "sha": "59d12240ab815e2f73b0e4185c872a0839829abd",
+      "endsNewline": true,
+      "size": 6911,
+      "chars": 6911
+    },
+    {
+      "path": "MD5",
+      "sha": "4b7f2fc993ea1e30a80d4b06c0020d81c421ec4a",
+      "endsNewline": true,
+      "size": 8467,
+      "chars": 8467
+    },
+    {
+      "path": "R/RcppExports.R",
+      "sha": "e5b7fa1a7e2ae46692a10248fb9499880d521ac3",
+      "endsNewline": true,
+      "size": 1891,
+      "chars": 1891
+    },
+    {
+      "path": "R/cubature-package.R",
+      "sha": "43529d5e89520a96835ac93bfe3520cbbc65f603",
+      "endsNewline": true,
+      "size": 681,
+      "chars": 679
+    },
+    {
+      "path": "R/cubintegrate.R",
+      "sha": "c24b59987ce86a5bff2d9a370ad56a696dc13b43",
+      "endsNewline": true,
+      "size": 7040,
+      "chars": 7040
+    },
+    {
+      "path": "R/cuhre.R",
+      "sha": "d3a470ad1cc77580cd6fd647a7e93b6fc298d061",
+      "endsNewline": true,
+      "size": 8882,
+      "chars": 8882
+    },
+    {
+      "path": "R/divonne.R",
+      "sha": "93c9b53226996a58f543cd64c07dfca2d7a4eae1",
+      "endsNewline": true,
+      "size": 12513,
+      "chars": 12513
+    },
+    {
+      "path": "R/hcubature.R",
+      "sha": "92edc9d175527dfa5a1c052113d582ce876a6dc3",
+      "endsNewline": true,
+      "size": 15606,
+      "chars": 15606
+    },
+    {
+      "path": "README.md",
+      "sha": "ecb3f91a0477e348abe2763cfe6e0742378adb1b",
+      "endsNewline": true,
+      "size": 1315,
+      "chars": 1313
+    },
+    {
+      "path": "R/suave.R",
+      "sha": "c155b29b80f30f5906aeb9eaae31927037a23055",
+      "endsNewline": true,
+      "size": 5813,
+      "chars": 5813
+    },
+    {
+      "path": "R/vegas.R",
+      "sha": "e23aa583b458f688cbbbd6557965b2fa3e586f8e",
+      "endsNewline": true,
+      "size": 7393,
+      "chars": 7393
+    },
+    {
+      "path": "inst/include/cuba.h",
+      "sha": "8f09ac3e991a2e5779128cb51b56453923fb164c",
+      "endsNewline": true,
+      "size": 2879,
+      "chars": 2879
+    },
+    {
+      "path": "inst/include/cubature.h",
+      "sha": "08e3b6af80f410541a699d5fb0bc04ea39bd0613",
+      "endsNewline": true,
+      "size": 5337,
+      "chars": 5337
+    },
+    {
+      "path": "inst/include/exp_cubature.h",
+      "sha": "191a93973ba06274234eae40f02df8a342298830",
+      "endsNewline": true,
+      "size": 4027,
+      "chars": 4027
+    },
+    {
+      "path": "cleanup",
+      "sha": "17be3c26c51c2999dc9e3d7cab9edab99b7b5c60",
+      "endsNewline": true,
+      "size": 131,
+      "chars": 131
+    },
+    {
+      "path": "src/Cuba-win/README.md",
+      "sha": "56ff9a4cc47c86b029a612310dc001cbadc51e92",
+      "endsNewline": true,
+      "size": 678,
+      "chars": 678
+    },
+    {
+      "path": "src/Cuba-win/Makefile",
+      "sha": "8f78d1020bf29e22807b5429eb33bbb61709b24b",
+      "endsNewline": true,
+      "size": 3549,
+      "chars": 3549
+    },
+    {
+      "path": "inst/include/exp_cubature_typedefs.h",
+      "sha": "8828b641aed76144cedd3a04533bd87727af22b9",
+      "endsNewline": true,
+      "size": 1874,
+      "chars": 1874
+    },
+    {
+      "path": "inst/include/rcubature.h",
+      "sha": "d506c22ebb9259599f902f2394079c76d5f50ea7",
+      "endsNewline": true,
+      "size": 455,
+      "chars": 455
+    },
+    {
+      "path": "src/Cuba-win/config.h",
+      "sha": "a76d2d2d90e991ef8c382f629fc57e475131da0c",
+      "endsNewline": true,
+      "size": 3948,
+      "chars": 3948
+    },
+    {
+      "path": "src/Cuba/COPYING",
+      "sha": "65c5ca88a67c30becee01c5a8816d964b03862f9",
+      "endsNewline": true,
+      "size": 7651,
+      "chars": 7651
+    },
+    {
+      "path": "src/Cuba/VERSION",
+      "sha": "16c21eaa6f557b834ffcf4ba480182a8e27db06a",
+      "endsNewline": true,
+      "size": 21,
+      "chars": 21
+    },
+    {
+      "path": "src/Cuba/ChangeLog",
+      "sha": "e3387df167665cce45f0afe7a456a3b5cb26c00d",
+      "endsNewline": true,
+      "size": 12643,
+      "chars": 12643
+    },
+    {
+      "path": "src/Cuba/a.wasm",
+      "error": "Error: {\"content\":[{\"type\":\"text\",\"text\":\"HTTPError: 400: GitHub Fetch only accepts UTF-8 text. (Response: None)\"}],\"structuredContent\":{\"error\":\"HTTPError: 400: GitHub Fetch only accepts"
+    },
+    {
+      "path": "src/Cuba/config.h.in",
+      "sha": "5e009c64f201f1ad54a1f4bfbb82d22fa6649297",
+      "endsNewline": true,
+      "size": 3434,
+      "chars": 3434
+    },
+    {
+      "path": "src/Cuba/config.sub",
+      "sha": "3d35cde174de9cd9788e4bff9b5391c1b06a2fbe",
+      "endsNewline": true,
+      "size": 39943,
+      "chars": 39943
+    },
+    {
+      "path": "src/Cuba/config.guess",
+      "sha": "32f10619a4a84e02074f3b142f4706f2c0301fc4",
+      "endsNewline": true,
+      "size": 50998,
+      "chars": 50998
+    },
+    {
+      "path": "src/Cuba/cuba.h",
+      "sha": "65ff4ad34ffb6d9854c0c0604ded3ee9c8963954",
+      "endsNewline": true,
+      "size": 4927,
+      "chars": 4927
+    },
+    {
+      "path": "src/Cuba/configure",
+      "sha": "9e5100235f9d0993370b2a4d58aa27a43f9ce4f5",
+      "endsNewline": true,
+      "size": 177291,
+      "chars": 177291
+    },
+    {
+      "path": "src/Cuba/configure.ac",
+      "sha": "2b4e14ec686828db109ecb11d8c797021743611f",
+      "endsNewline": true,
+      "size": 4758,
+      "chars": 4754
+    },
+    {
+      "path": "src/Cuba/demo/cuba.F",
+      "sha": "a227d4fe8f8844bc66c11ce08dd407bb633c3302",
+      "endsNewline": true,
+      "size": 2548,
+      "chars": 2548
+    },
+    {
+      "path": "src/Cuba/demo/demo-c.c",
+      "sha": "79f49eca52eaf430193c82c9a6c3610817752c5e",
+      "endsNewline": true,
+      "size": 4089,
+      "chars": 4089
+    },
+    {
+      "path": "src/Cuba/cuba.tex",
+      "sha": "b08fdba9961f97d81377ff8019096716cdc70fe3",
+      "endsNewline": true,
+      "size": 96336,
+      "chars": 96336
+    },
+    {
+      "path": "src/Cuba/demo/demo-fortran.F",
+      "sha": "8a6ac735e9e5938d4fd7033d63045e658c57625f",
+      "endsNewline": true,
+      "size": 4532,
+      "chars": 4532
+    },
+    {
+      "path": "src/Cuba/demo/demo-c.out",
+      "sha": "531971d3291caf4c01b574e118c82685aadef9b1",
+      "endsNewline": true,
+      "size": 362,
+      "chars": 362
+    },
+    {
+      "path": "src/Cuba/install-sh",
+      "sha": "7c56c9c015103600a06f59ab1183eb3966a513ab",
+      "endsNewline": true,
+      "size": 15425,
+      "chars": 15425
+    },
+    {
+      "path": "src/Cuba/demo/testsuite.m",
+      "sha": "9804b033a9d7ecde1db152979923344be63b497c",
+      "endsNewline": true,
+      "size": 2864,
+      "chars": 2864
+    },
+    {
+      "path": "src/Cuba/demo/demo-math.m",
+      "sha": "2fe5a3d468dcda5c412d36c8ea8c325b784f8917",
+      "endsNewline": true,
+      "size": 756,
+      "chars": 756
+    },
+    {
+      "path": "src/Cuba/makefile.in",
+      "sha": "12da4c046e7db3b6ba0c145ffd732441c6721c93",
+      "endsNewline": true,
+      "size": 4942,
+      "chars": 4942
+    },
+    {
+      "path": "src/Cuba/src/common/CSample.c",
+      "sha": "9ee11946873491ab0ae0584058d7020bada18101",
+      "endsNewline": true,
+      "size": 1802,
+      "chars": 1802
+    },
+    {
+      "path": "src/Cuba/src/common/ChiSquare.c",
+      "sha": "fc257887b7918a294998e41f73b5c209b8c33bef",
+      "endsNewline": true,
+      "size": 1134,
+      "chars": 1134
+    },
+    {
+      "path": "src/Cuba/src/common/Erf.c",
+      "sha": "c94d106de6974959a4ae92ab56a99878ef14ff89",
+      "endsNewline": true,
+      "size": 1419,
+      "chars": 1419
+    },
+    {
+      "path": "src/Cuba/src/common/Data.c",
+      "sha": "aebfa5a99fc3adc794cd88e873e51e41d8c39abe",
+      "endsNewline": true,
+      "size": 576,
+      "chars": 576
+    },
+    {
+      "path": "src/Cuba/src/common/Global.c",
+      "sha": "7ab1e9c4f90b34125c919219c0f8b9b6dab856b1",
+      "endsNewline": true,
+      "size": 1042,
+      "chars": 1042
+    },
+    {
+      "path": "src/Cuba/src/common/Fork.c",
+      "sha": "f328d81e459cd4e826fabbc7c20130f487df2b31",
+      "endsNewline": true,
+      "size": 3716,
+      "chars": 3716
+    },
+    {
+      "path": "src/Cuba/src/common/KorobovCoeff.c-3319",
+      "sha": "286cb280943ae4ab53ff86ef452bbaa63a0a8e54",
+      "endsNewline": true,
+      "size": 32827,
+      "chars": 32827
+    },
+    {
+      "path": "src/Cuba/src/common/KorobovCoeff.c-2423",
+      "sha": "658b94ac83a71e3de3866b56750984fafdf60d85",
+      "endsNewline": true,
+      "size": 23917,
+      "chars": 23917
+    },
+    {
+      "path": "src/Cuba/src/common/KorobovCoeff.c",
+      "sha": "e8ace85e1523cce544cd700a3bee7f834caec425",
+      "endsNewline": true,
+      "size": 89594,
+      "chars": 89594
+    },
+    {
+      "path": "src/Cuba/src/common/KorobovCoeff.c-16033",
+      "sha": "d242fdc8ffba236f3afe54bbfb76cebf9e021486",
+      "endsNewline": true,
+      "size": 896681,
+      "chars": 896681
+    },
+    {
+      "path": "src/Cuba/src/common/Parallel.c",
+      "sha": "be459dcdedffd0de774966a5ed0ca28e80891b25",
+      "endsNewline": true,
+      "size": 11756,
+      "chars": 11756
+    },
+    {
+      "path": "src/Cuba/src/common/MSample.c",
+      "sha": "e0c48142e57c4e9016143ad5dd1853bdf87a40e8",
+      "endsNewline": true,
+      "size": 2006,
+      "chars": 2006
+    },
+    {
+      "path": "src/Cuba/src/common/KorobovCoeff.c-5879",
+      "sha": "fc4588e178eed145160ab8950973111ed0f92766",
+      "endsNewline": true,
+      "size": 55118,
+      "chars": 55118
+    },
+    {
+      "path": "src/Cuba/src/common/KorobovCoeff.c-9689",
+      "sha": "e8ace85e1523cce544cd700a3bee7f834caec425",
+      "endsNewline": true,
+      "size": 89594,
+      "chars": 89594
+    },
+    {
+      "path": "src/Cuba/src/common/sock.h",
+      "sha": "c5361e8fc5cf417441ae2d9300b1b306391ed97d",
+      "endsNewline": true,
+      "size": 2496,
+      "chars": 2496
+    },
+    {
+      "path": "src/Cuba/src/common/Random.c",
+      "sha": "d11ecbbd88c472ef6244ca8ae7cb23905cd27b4b",
+      "endsNewline": true,
+      "size": 9215,
+      "chars": 9215
+    },
+    {
+      "path": "src/Cuba/src/common/r_helpers.h",
+      "sha": "008ebb5f7cefce2c0230cd0c206f4aa05829428a",
+      "endsNewline": true,
+      "size": 334,
+      "chars": 334
+    },
+    {
+      "path": "src/Cuba/src/common/r_helpers.c",
+      "sha": "1b654d917c807bad757ba7eacaa8139ec831c554",
+      "endsNewline": true,
+      "size": 1038,
+      "chars": 1038
+    },
+    {
+      "path": "src/Cuba/src/cuhre/Cuhre.tm",
+      "sha": "1902ab94f48ab5295764827379afc5b2a00dcd6a",
+      "endsNewline": true,
+      "size": 7037,
+      "chars": 7037
+    },
+    {
+      "path": "src/Cuba/src/cuhre/Cuhre.c",
+      "sha": "6dc0aaa1d58f0633b12a6e67ae42c03814005f85",
+      "endsNewline": true,
+      "size": 2006,
+      "chars": 2006
+    },
+    {
+      "path": "src/Cuba/src/cuhre/Integrate.c",
+      "sha": "76c8c2aaf700f1e8356ef9e46ad0536f4d515b3c",
+      "endsNewline": true,
+      "size": 7536,
+      "chars": 7536
+    },
+    {
+      "path": "src/Cuba/src/common/stddecl.h",
+      "sha": "1506926f7a88796f9ec99e83f0ba72975010e8a2",
+      "endsNewline": true,
+      "size": 12470,
+      "chars": 12470
+    },
+    {
+      "path": "src/Cuba/src/cuhre/Rule.c",
+      "sha": "62b37c08e238d8749bca540e8b6aa1b56b303c23",
+      "endsNewline": true,
+      "size": 23251,
+      "chars": 23251
+    },
+    {
+      "path": "src/Cuba/src/cuhre/common.c",
+      "sha": "e37805b4165f788ce1296a338eba0238ada6d3a2",
+      "endsNewline": true,
+      "size": 368,
+      "chars": 368
+    },
+    {
+      "path": "src/Cuba/src/divonne/Divonne.c",
+      "sha": "444dddde8c6b2bb356079437b814a2a5d055dc92",
+      "endsNewline": true,
+      "size": 3130,
+      "chars": 3130
+    },
+    {
+      "path": "src/Cuba/src/cuhre/decl.h",
+      "sha": "bf924ba0126e2152eac6c8f9f600b8a55f71a8e7",
+      "endsNewline": true,
+      "size": 1526,
+      "chars": 1526
+    },
+    {
+      "path": "src/Cuba/src/divonne/Explore.c",
+      "sha": "e29520cb426243f0a887defb75e1e48ede26e27c",
+      "endsNewline": true,
+      "size": 3919,
+      "chars": 3919
+    },
+    {
+      "path": "src/Cuba/src/divonne/Integrate.c",
+      "sha": "8d4591b14ac9cfc8dc6b88cef8a48a4574d0bd72",
+      "endsNewline": true,
+      "size": 15156,
+      "chars": 15156
+    },
+    {
+      "path": "src/Cuba/src/divonne/Divonne.tm",
+      "sha": "f7d0a753686295f233e0d63e6fac01fa0f9c1843",
+      "endsNewline": true,
+      "size": 14015,
+      "chars": 14015
+    },
+    {
+      "path": "src/Cuba/src/divonne/FindMinimum.c",
+      "sha": "ac7fd901e5efa45689a8ed6b206e7280394babbd",
+      "endsNewline": true,
+      "size": 17545,
+      "chars": 17545
+    },
+    {
+      "path": "src/Cuba/src/divonne/Iterate.c",
+      "sha": "ac4a4cda060153ab160a054a68cfe9e50cd700df",
+      "endsNewline": true,
+      "size": 3579,
+      "chars": 3579
+    },
+    {
+      "path": "src/Cuba/src/divonne/Rule.c",
+      "sha": "5665d37761ce3f447ea3ab5935878261e852f3c2",
+      "endsNewline": true,
+      "size": 21790,
+      "chars": 21790
+    },
+    {
+      "path": "src/Cuba/src/divonne/Split.c",
+      "sha": "17a27498f32d5e98b62548a99b1e793493ba9594",
+      "endsNewline": true,
+      "size": 7372,
+      "chars": 7372
+    },
+    {
+      "path": "src/Cuba/src/divonne/Sample.c",
+      "sha": "2effd3b5933f55070ed9057ffb05f9f9d262b225",
+      "endsNewline": true,
+      "size": 6803,
+      "chars": 6803
+    },
+    {
+      "path": "src/Cuba/src/divonne/decl.h",
+      "sha": "98023ec52838642cd6012e72a64058f53dcdf0be",
+      "endsNewline": true,
+      "size": 3251,
+      "chars": 3251
+    },
+    {
+      "path": "src/Cuba/src/suave/Fluct.c",
+      "sha": "c226d0cc237bea84eb2d7f23f2df5c4af52786b9",
+      "endsNewline": true,
+      "size": 1575,
+      "chars": 1575
+    },
+    {
+      "path": "src/Cuba/src/divonne/common.c",
+      "sha": "34be0c2b89f7db7ca6b14eebb097f89caadeefb4",
+      "endsNewline": true,
+      "size": 1715,
+      "chars": 1715
+    },
+    {
+      "path": "src/Cuba/src/suave/Grid.c",
+      "sha": "5ba2c3b5ba5ad4f9fa54bcff17ba6e0410d67bda",
+      "endsNewline": true,
+      "size": 3085,
+      "chars": 3085
+    },
+    {
+      "path": "src/Cuba/src/suave/Integrate.c",
+      "sha": "9d6ec54bb91cc601cbefa8fdb9266d5b46f37ad3",
+      "endsNewline": true,
+      "size": 10030,
+      "chars": 10030
+    },
+    {
+      "path": "src/Cuba/src/suave/Suave.tm",
+      "sha": "da02012df2df0285d16ce58eb038bd902b524625",
+      "endsNewline": true,
+      "size": 9548,
+      "chars": 9548
+    },
+    {
+      "path": "src/Cuba/src/suave/Sample.c",
+      "sha": "078ec0fb5422c743b255b2d936015eae783a2c67",
+      "endsNewline": true,
+      "size": 4609,
+      "chars": 4609
+    },
+    {
+      "path": "src/Cuba/src/suave/Suave.c",
+      "sha": "3bd55a025f3ba6ad2c5dfc4c0c4e0611a653dc48",
+      "endsNewline": true,
+      "size": 2258,
+      "chars": 2258
+    },
+    {
+      "path": "src/Cuba/src/vegas/Grid.c",
+      "sha": "7fff0aa95c98b753c0d848bd8dbc578943a435af",
+      "endsNewline": true,
+      "size": 2415,
+      "chars": 2415
+    },
+    {
+      "path": "src/Cuba/src/suave/decl.h",
+      "sha": "4d738b37b96235cc9f4585c95e186000cb4e6365",
+      "endsNewline": true,
+      "size": 1322,
+      "chars": 1322
+    },
+    {
+      "path": "src/Cuba/src/vegas/Integrate.c",
+      "sha": "5eac205a023657ccf97eef9f8ec858c8b80c528e",
+      "endsNewline": true,
+      "size": 5833,
+      "chars": 5833
+    },
+    {
+      "path": "src/Cuba/src/suave/common.c",
+      "sha": "163f11167b5a15b84a11eed7b68eb32f6359f898",
+      "endsNewline": true,
+      "size": 804,
+      "chars": 804
+    },
+    {
+      "path": "src/Cuba/src/vegas/decl.h",
+      "sha": "d528c2b8b2f0c9e4a8ee336e57b0826db3bf6e2a",
+      "endsNewline": true,
+      "size": 1103,
+      "chars": 1103
+    },
+    {
+      "path": "src/Cuba/src/vegas/common.c",
+      "sha": "eaa59a42b799903bcf6e3366a73ffdd11092648a",
+      "endsNewline": true,
+      "size": 452,
+      "chars": 452
+    },
+    {
+      "path": "src/Cuba/src/vegas/Vegas.c",
+      "sha": "46a3fd858fe9738ea3aed5bd0e31302db5153447",
+      "endsNewline": true,
+      "size": 2238,
+      "chars": 2238
+    },
+    {
+      "path": "src/Cuba/src/vegas/Vegas.tm",
+      "sha": "839f16ce34f9d2b0018e1628f45a5c4b85915731",
+      "endsNewline": true,
+      "size": 8467,
+      "chars": 8467
+    },
+    {
+      "path": "src/Cuba/tools/mkdist.c",
+      "sha": "45c5e60f473d41609a8c814712ed0bb58c5c2d70",
+      "endsNewline": true,
+      "size": 4035,
+      "chars": 4035
+    },
+    {
+      "path": "src/Cuba/tools/fcc",
+      "sha": "0ad9917d7b5c7797b09511f576420379b70ef31b",
+      "endsNewline": true,
+      "size": 1279,
+      "chars": 1279
+    },
+    {
+      "path": "src/Cuba/tools/mcc",
+      "sha": "9881bfbf9fe6bbc2df83153266df2f0aab276c63",
+      "endsNewline": true,
+      "size": 2822,
+      "chars": 2822
+    },
+    {
+      "path": "src/Cuba/tools/mkstatic",
+      "sha": "562473cf57b2093504e4727c5d2e9e80a1450f04",
+      "endsNewline": true,
+      "size": 516,
+      "chars": 516
+    },
+    {
+      "path": "src/Cuba/tools/partview.pro",
+      "sha": "7084a8546b2cd0fdb105d9374bcc99609795c6af",
+      "endsNewline": true,
+      "size": 114,
+      "chars": 114
+    },
+    {
+      "path": "src/Cuba/tools/partview.cpp",
+      "sha": "da2b2d2ff2e46c6df917bd9be89bdadbbf08ab25",
+      "endsNewline": true,
+      "size": 6025,
+      "chars": 6025
+    },
+    {
+      "path": "src/Cuba/tools/print.xpm",
+      "sha": "7368f3ca481ffc55849b98f1c9bd1f691e2b9061",
+      "endsNewline": true,
+      "size": 8171,
+      "chars": 8171
+    },
+    {
+      "path": "src/Cuba/tools/partview.m",
+      "sha": "579f4f2208e251a462d9a48b840f4468dd6d9ff4",
+      "endsNewline": true,
+      "size": 978,
+      "chars": 978
+    },
+    {
+      "path": "src/Cuba/tools/quit.xpm",
+      "sha": "57d45c7b13fba1706dabed5d0515c81ab88c3664",
+      "endsNewline": true,
+      "size": 9578,
+      "chars": 9578
+    },
+    {
+      "path": "src/Makevars.webr",
+      "sha": "db4662167131b1fb32c71a8eae241a297b95e7b0",
+      "endsNewline": true,
+      "size": 1619,
+      "chars": 1619
+    },
+    {
+      "path": "src/Makevars.win",
+      "sha": "5d056955afca1267f3f1fc263cba2d06feeadf48",
+      "endsNewline": true,
+      "size": 1113,
+      "chars": 1113
+    },
+    {
+      "path": "src/Makevars",
+      "sha": "00dacd084843fc315aee36064de4c7e962fedb33",
+      "endsNewline": true,
+      "size": 1036,
+      "chars": 1036
+    },
+    {
+      "path": "src/RcppExports.cpp",
+      "sha": "e28da5bb86c86955ae77eeae51712f61739241e7",
+      "endsNewline": true,
+      "size": 10641,
+      "chars": 10641
+    },
+    {
+      "path": "src/Rcpp-cubature.cpp",
+      "sha": "1f6e3f0ff64c58c463683d688ad500f18e9e393d",
+      "endsNewline": true,
+      "size": 4320,
+      "chars": 4320
+    },
+    {
+      "path": "src/cubature-1.0.4/CMakeLists.txt",
+      "sha": "43786d4f0340e3dff11d49ae674d1629bce078ef",
+      "endsNewline": true,
+      "size": 604,
+      "chars": 604
+    },
+    {
+      "path": "src/Rcpp-Cuba.cpp",
+      "sha": "aad290e1c82d6d0b1deb7764c442098dfc75aba4",
+      "endsNewline": true,
+      "size": 11126,
+      "chars": 11126
+    },
+    {
+      "path": "src/cubature-1.0.4/Makefile",
+      "sha": "d4937b13059cb43a5e07a72be6ed26f930ca88c5",
+      "endsNewline": true,
+      "size": 251,
+      "chars": 251
+    },
+    {
+      "path": "src/cubature-1.0.4/COPYING.md",
+      "sha": "5a33e2914bcd73ae83462d97ef8281f27aa656f2",
+      "endsNewline": true,
+      "size": 36004,
+      "chars": 36004
+    },
+    {
+      "path": "src/cubature-1.0.4/Makefile.orig",
+      "sha": "2f6a1c4b1c0e566512ab295c9f539c609e2b00be",
+      "endsNewline": true,
+      "size": 1710,
+      "chars": 1710
+    },
+    {
+      "path": "src/cubature-1.0.4/NEWS.md",
+      "sha": "acd8c4f083a557d36d9ff593ae4b4ba3af39eafe",
+      "endsNewline": true,
+      "size": 1078,
+      "chars": 1078
+    },
+    {
+      "path": "src/cubature-1.0.4/clencurt.h",
+      "sha": "1c95bd1816179eb92f3e8c3c2cc5478650d5b2e1",
+      "endsNewline": true,
+      "size": 5111610,
+      "chars": 5111610
+    },
+    {
+      "path": "src/cubature-1.0.4/README.md",
+      "sha": "a041972d543f92fce8f91c202bb6c7a5dae384de",
+      "endsNewline": true,
+      "size": 18342,
+      "chars": 17794
+    },
+    {
+      "path": "src/cubature-1.0.4/clencurt_gen.c",
+      "sha": "7a1066e8d8799eca00aef9ae7c6095dcececb55b",
+      "endsNewline": true,
+      "size": 5988,
+      "chars": 5988
+    },
+    {
+      "path": "src/cubature-1.0.4/cubature.h",
+      "sha": "08e3b6af80f410541a699d5fb0bc04ea39bd0613",
+      "endsNewline": true,
+      "size": 5337,
+      "chars": 5337
+    },
+    {
+      "path": "src/cubature-1.0.4/converged.h",
+      "sha": "aad6970c95af94ce283e61d38e95484a05dcef43",
+      "endsNewline": true,
+      "size": 2399,
+      "chars": 2399
+    },
+    {
+      "path": "src/cubature-1.0.4/test.c",
+      "sha": "916c045978d91dbb25bb1996e7af70cd395414c7",
+      "endsNewline": true,
+      "size": 8811,
+      "chars": 8811
+    },
+    {
+      "path": "src/cubature-1.0.4/pcubature.c",
+      "sha": "15dd723c4365e7cfb88f33675fdbcbe8b2c75487",
+      "endsNewline": true,
+      "size": 13564,
+      "chars": 13564
+    },
+    {
+      "path": "src/cubature-1.0.4/vwrapper.h",
+      "sha": "20e25200d1400cfe6406831c4b6bb02b8378215b",
+      "endsNewline": true,
+      "size": 513,
+      "chars": 513
+    },
+    {
+      "path": "src/cubature-1.0.4/hcubature.c",
+      "sha": "61f5acc288bdde7690ba005d4c2adfda8d1bb9d6",
+      "endsNewline": true,
+      "size": 34326,
+      "chars": 34326
+    },
+    {
+      "path": "src/cubature_init.c",
+      "sha": "019ba12b84a2bfc55fe6b0f8fc33651c963edacb",
+      "endsNewline": true,
+      "size": 3058,
+      "chars": 3058
+    }
+  ]
+}

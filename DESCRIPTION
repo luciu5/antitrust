@@ -65,6 +65,7 @@ Collate:
     'Counterfactual.R'
     'CounterfactualPath.R'
     'CounterfactualPromotion.R'
+    'MarketAdvance.R'
     'CournotFunctions.R'
     'HHIFunctions.R'
     'LinearFunctions.R'

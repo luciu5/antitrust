@@ -1,0 +1,79 @@
+{
+  "status": "complete_with_waivers",
+  "passed": 6,
+  "waived": 1,
+  "failed_required_checks": 0,
+  "report": "artifacts/coordinated_release_evidence/certify-20261103T153126.980144Z.json",
+  "push_report": "artifacts/coordinated_release_evidence/push-20261103T153129.916804Z.json",
+  "results": [
+    {
+      "package": "antitrust",
+      "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530940717,
+      "url": "https://github.com/luciu5/antitrust/actions/runs/41530940717",
+      "waiver": null
+    },
+    {
+      "package": "coordination",
+      "sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530939533,
+      "url": "https://github.com/luciu5/coordination/actions/runs/41530939533",
+      "waiver": null
+    },
+    {
+      "package": "trade",
+      "sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530948797,
+      "url": "https://github.com/luciu5/trade/actions/runs/41530948797",
+      "waiver": null
+    },
+    {
+      "package": "vertical",
+      "sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530957476,
+      "url": "https://github.com/luciu5/vertical/actions/runs/41530957476",
+      "waiver": null
+    },
+    {
+      "package": "competitiontoolbox",
+      "sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+      "status": "waived",
+      "conclusion": null,
+      "run_id": null,
+      "url": "https://github.com/luciu5/competitiontoolbox.git",
+      "waiver": {
+        "candidate_sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+        "workflow": ".github/workflows/dependency-stack-qa.yml",
+        "authorized_by": "user",
+        "requested_on": "2026-11-03",
+        "reason": "User requested skipping the private vertical dependency CI check after token setup difficulties."
+      }
+    },
+    {
+      "package": "financial",
+      "sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530978188,
+      "url": "https://github.com/luciu5/financial/actions/runs/41530978188",
+      "waiver": null
+    },
+    {
+      "package": "antitrustBayes",
+      "sha": "dab192abc18044ae439da49b42395e025549c4c7",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41664812192,
+      "url": "https://github.com/luciu5/antitrustBayes/actions/runs/41664812192",
+      "waiver": null
+    }
+  ]
+}

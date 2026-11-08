@@ -1,0 +1,128 @@
+{
+  "release_id": "coordinated-2026-11-01",
+  "prepared_utc": "2026-11-02T04:05:51.446565+00:00",
+  "status": "candidate branches pushed and verified; hosted CI remediation required",
+  "manifest": "artifacts/coordinated_release_manifest.json",
+  "validation": "artifacts/coordinated_release_validation.json",
+  "publication_order": [
+    "antitrust",
+    "coordination",
+    "trade",
+    "vertical",
+    "competitiontoolbox",
+    "financial",
+    "antitrustBayes"
+  ],
+  "proposals": [
+    {
+      "package": "antitrust",
+      "repository": "luciu5/antitrust",
+      "version": "0.99.43",
+      "local_candidate_ref": "refs/heads/release/coordinated-2026-11-01",
+      "candidate_sha": "abc8f9457cc9cbb2e3f252c6b82fe5b87da3dd79",
+      "proposed_remote_candidate_branch": "release/coordinated-2026-11-01",
+      "proposed_target_branch": "master",
+      "observed_target_sha": "e6ca9d595668f37f0a1e518db30ce53de61361d1",
+      "observed_target_source": "https://api.github.com/repos/luciu5/antitrust/git/refs/heads/master",
+      "target_is_candidate_ancestor": true,
+      "proposed_pr_title": "Release antitrust 0.99.43 with coordinated dependency stack",
+      "proposed_pr_body": "Prepare antitrust 0.99.43 from the reviewed coordinated release candidate. Internal dependency versions and source pins match the release manifest. Full-vignette build and R CMD check --no-manual pass locally; see the manifest and package-specific durable check evidence. Hosted CI and required browser checks must pass before promotion."
+    },
+    {
+      "package": "coordination",
+      "repository": "luciu5/coordination",
+      "version": "0.1.0",
+      "local_candidate_ref": "refs/heads/release/coordinated-2026-11-01",
+      "candidate_sha": "761cb49fbae87744de99b2dce4eb597e81feb7a1",
+      "proposed_remote_candidate_branch": "release/coordinated-2026-11-01",
+      "proposed_target_branch": "main",
+      "observed_target_sha": "6955c4845df0c1de98eb540423118b53732211e5",
+      "observed_target_source": "https://api.github.com/repos/luciu5/coordination/git/refs/heads/main",
+      "target_is_candidate_ancestor": true,
+      "proposed_pr_title": "Release coordination 0.1.0 with coordinated dependency stack",
+      "proposed_pr_body": "Prepare coordination 0.1.0 from the reviewed coordinated release candidate. Internal dependency versions and source pins match the release manifest. Full-vignette build and R CMD check --no-manual pass locally; see the manifest and package-specific durable check evidence. Hosted CI and required browser checks must pass before promotion."
+    },
+    {
+      "package": "trade",
+      "repository": "luciu5/trade",
+      "version": "0.9.0",
+      "local_candidate_ref": "refs/heads/release/coordinated-2026-11-01",
+      "candidate_sha": "c99a6ac6d7505b63e6c369246b0ef650d9af2421",
+      "proposed_remote_candidate_branch": "release/coordinated-2026-11-01",
+      "proposed_target_branch": "master",
+      "observed_target_sha": "e621956242d7b9c0376acc2c76ec76bcf7d91d1c",
+      "observed_target_source": "https://api.github.com/repos/luciu5/trade/git/refs/heads/master",
+      "target_is_candidate_ancestor": true,
+      "proposed_pr_title": "Release trade 0.9.0 with coordinated dependency stack",
+      "proposed_pr_body": "Prepare trade 0.9.0 from the reviewed coordinated release candidate. Internal dependency versions and source pins match the release manifest. Full-vignette build and R CMD check --no-manual pass locally; see the manifest and package-specific durable check evidence. Hosted CI and required browser checks must pass before promotion."
+    },
+    {
+      "package": "vertical",
+      "repository": "luciu5/vertical",
+      "version": "0.3.0",
+      "local_candidate_ref": "refs/heads/release/coordinated-2026-11-01",
+      "candidate_sha": "eaf12d4505f77b1802071574145874a8c415cec3",
+      "proposed_remote_candidate_branch": "release/coordinated-2026-11-01",
+      "proposed_target_branch": "main",
+      "observed_target_sha": "dbb99804bfe76746c13374d341beb1bd20af79c2",
+      "observed_target_source": "https://api.github.com/repos/luciu5/vertical/git/refs/heads/main",
+      "target_is_candidate_ancestor": true,
+      "proposed_pr_title": "Release vertical 0.3.0 with coordinated dependency stack",
+      "proposed_pr_body": "Prepare vertical 0.3.0 from the reviewed coordinated release candidate. Internal dependency versions and source pins match the release manifest. Full-vignette build and R CMD check --no-manual pass locally; see the manifest and package-specific durable check evidence. Hosted CI and required browser checks must pass before promotion."
+    },
+    {
+      "package": "competitiontoolbox",
+      "repository": "luciu5/competitiontoolbox",
+      "version": "0.9.0",
+      "local_candidate_ref": "refs/heads/release/coordinated-2026-11-01",
+      "candidate_sha": "bcec374b2c56c9f1120728b97c42dfb59b47f5b1",
+      "proposed_remote_candidate_branch": "release/coordinated-2026-11-01",
+      "proposed_target_branch": "master",
+      "observed_target_sha": "e81fc704bec56cd56c92097b282177573b57fd83",
+      "observed_target_source": "https://api.github.com/repos/luciu5/competitiontoolbox/git/refs/heads/master",
+      "target_is_candidate_ancestor": true,
+      "proposed_pr_title": "Release competitiontoolbox 0.9.0 with coordinated dependency stack",
+      "proposed_pr_body": "Prepare competitiontoolbox 0.9.0 from the reviewed coordinated release candidate. Internal dependency versions and source pins match the release manifest. Full-vignette build and R CMD check --no-manual pass locally; see the manifest and package-specific durable check evidence. Hosted CI and required browser checks must pass before promotion."
+    },
+    {
+      "package": "financial",
+      "repository": "luciu5/financial",
+      "version": "0.1.0",
+      "local_candidate_ref": "refs/heads/release/coordinated-2026-11-01",
+      "candidate_sha": "20d2830c07d699f7c1a4da88a72e54cc2b912bb1",
+      "proposed_remote_candidate_branch": "release/coordinated-2026-11-01",
+      "proposed_target_branch": "main",
+      "observed_target_sha": "80e2720b0e40b30e819c028110d2085abca26da0",
+      "observed_target_source": "https://api.github.com/repos/luciu5/financial/git/refs/heads/main",
+      "target_is_candidate_ancestor": true,
+      "proposed_pr_title": "Release financial 0.1.0 with coordinated dependency stack",
+      "proposed_pr_body": "Prepare financial 0.1.0 from the reviewed coordinated release candidate. Internal dependency versions and source pins match the release manifest. Full-vignette build and R CMD check --no-manual pass locally; see the manifest and package-specific durable check evidence. Hosted CI and required browser checks must pass before promotion."
+    },
+    {
+      "package": "antitrustBayes",
+      "repository": "luciu5/antitrustBayes",
+      "version": "0.3.0",
+      "local_candidate_ref": "refs/heads/release/coordinated-2026-11-01",
+      "candidate_sha": "6f34dd2f34656dd749b594b22157ff475c9dc186",
+      "proposed_remote_candidate_branch": "release/coordinated-2026-11-01",
+      "proposed_target_branch": "main",
+      "observed_target_sha": "fb1f026c0e301f17343ebd611afe657cbaafc5f2",
+      "observed_target_source": "https://api.github.com/repos/luciu5/antitrustBayes/git/refs/heads/main",
+      "target_is_candidate_ancestor": true,
+      "proposed_pr_title": "Release antitrustBayes 0.3.0 with coordinated dependency stack",
+      "proposed_pr_body": "Prepare antitrustBayes 0.3.0 from the reviewed coordinated release candidate. Internal dependency versions and source pins match the release manifest. Full-vignette build and R CMD check --no-manual pass locally; see the manifest and package-specific durable check evidence. Hosted CI and required browser checks must pass before promotion."
+    }
+  ],
+  "remaining_steps": [
+    "Fix hosted CI dependency provisioning/workflow failures, refresh frozen candidates and downstream SHA pins for any changed trees, and push reviewed candidate updates with exact-target authorization. The original create-only push helper deliberately rejects conflicting existing branch SHAs.",
+    "Run hosted release_certification workflows against the exact manifest dependency SHAs; complete live Shiny browser and download smoke in an environment permitting sockets.",
+    "Review each candidate against its observed main/master target; recheck target heads before promotion. Any changed source tree requires a new manifest and validation.",
+    "Obtain exact-target authorization for mainline promotion. Antitrust AGENTS.md currently forbids modifying/merging/rebasing master; this handoff does not authorize that action.",
+    "Publish packages in dependency order only after approved mainline integration and release gates. Keep the completed manifest outside the core candidate commit."
+  ],
+  "environment_blocks": [
+    "Local socket creation is denied; live Shiny browser smoke could not start."
+  ],
+  "push_report": "artifacts/coordinated_release_evidence/push-20261102T180148.922575Z.json",
+  "hosted_ci_evidence": "artifacts/coordinated_release_evidence/hosted-ci-20261102.json"
+}

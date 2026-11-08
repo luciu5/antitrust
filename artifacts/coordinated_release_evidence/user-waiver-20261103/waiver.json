@@ -1,0 +1,11 @@
+{
+  "release_id": "coordinated-2026-11-01",
+  "waiver": {
+    "candidate_sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+    "workflow": ".github/workflows/dependency-stack-qa.yml",
+    "authorized_by": "user",
+    "requested_on": "2026-11-03",
+    "reason": "User requested skipping the private vertical dependency CI check after token setup difficulties."
+  },
+  "other_certifications_required": true
+}

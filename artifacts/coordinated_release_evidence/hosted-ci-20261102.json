@@ -1,0 +1,225 @@
+{
+  "observed_utc": "2026-11-02 20:52:55 UTC",
+  "runs": [
+    {
+      "package": "antitrust",
+      "total": 1,
+      "runs": [
+        {
+          "id": 41496691692,
+          "name": "antitrust QA",
+          "event": "push",
+          "sha": "abc8f9457cc9cbb2e3f252c6b82fe5b87da3dd79",
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/luciu5/antitrust/actions/runs/41496691692",
+          "jobs_url": "https://api.github.com/repos/luciu5/antitrust/actions/runs/41496691692/jobs"
+        }
+      ]
+    },
+    {
+      "package": "coordination",
+      "total": 1,
+      "runs": [
+        {
+          "id": 41496701198,
+          "name": "R-CMD-check",
+          "event": "push",
+          "sha": "761cb49fbae87744de99b2dce4eb597e81feb7a1",
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/luciu5/coordination/actions/runs/41496701198",
+          "jobs_url": "https://api.github.com/repos/luciu5/coordination/actions/runs/41496701198/jobs"
+        }
+      ]
+    },
+    {
+      "package": "trade",
+      "total": 1,
+      "runs": [
+        {
+          "id": 41496711951,
+          "name": "trade QA",
+          "event": "push",
+          "sha": "c99a6ac6d7505b63e6c369246b0ef650d9af2421",
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/luciu5/trade/actions/runs/41496711951",
+          "jobs_url": "https://api.github.com/repos/luciu5/trade/actions/runs/41496711951/jobs"
+        }
+      ]
+    },
+    {
+      "package": "vertical",
+      "total": 0,
+      "runs": []
+    },
+    {
+      "package": "competitiontoolbox",
+      "total": 0,
+      "runs": []
+    },
+    {
+      "package": "financial",
+      "total": 1,
+      "runs": [
+        {
+          "id": 41496739426,
+          "name": ".github/workflows/qa.yml",
+          "event": "push",
+          "sha": "20d2830c07d699f7c1a4da88a72e54cc2b912bb1",
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/luciu5/financial/actions/runs/41496739426",
+          "jobs_url": "https://api.github.com/repos/luciu5/financial/actions/runs/41496739426/jobs"
+        }
+      ]
+    },
+    {
+      "package": "antitrustBayes",
+      "total": 1,
+      "runs": [
+        {
+          "id": 41496750358,
+          "name": "antitrust dependency-stack QA",
+          "event": "push",
+          "sha": "6f34dd2f34656dd749b594b22157ff475c9dc186",
+          "status": "completed",
+          "conclusion": "failure",
+          "url": "https://github.com/luciu5/antitrustBayes/actions/runs/41496750358",
+          "jobs_url": "https://api.github.com/repos/luciu5/antitrustBayes/actions/runs/41496750358/jobs"
+        }
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "package": "antitrust",
+      "run": 41496691692,
+      "jobs": [
+        {
+          "id": 125453390710,
+          "name": "R oldrel-1",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Run r-lib/actions/setup-r-dependencies@v2",
+              "conclusion": "failure"
+            }
+          ]
+        },
+        {
+          "id": 125453391106,
+          "name": "Canonical R 4.6.1 check --as-cran",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Run r-lib/actions/setup-r-dependencies@v2",
+              "conclusion": "failure"
+            }
+          ]
+        },
+        {
+          "id": 125453391147,
+          "name": "R release",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Run r-lib/actions/setup-r-dependencies@v2",
+              "conclusion": "failure"
+            }
+          ]
+        },
+        {
+          "id": 125453391192,
+          "name": "R devel",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Run r-lib/actions/setup-r-dependencies@v2",
+              "conclusion": "failure"
+            }
+          ]
+        },
+        {
+          "id": 125453393151,
+          "name": "Tiered QA (scheduled/manual)",
+          "conclusion": "skipped",
+          "steps": []
+        }
+      ]
+    },
+    {
+      "package": "coordination",
+      "run": 41496701198,
+      "jobs": [
+        {
+          "id": 125453423533,
+          "name": "R release",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Check package",
+              "conclusion": "failure"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "trade",
+      "run": 41496711951,
+      "jobs": [
+        {
+          "id": 125453459686,
+          "name": "R 4.6.1 dependency-stack check",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Run r-lib/actions/setup-r-dependencies@v2",
+              "conclusion": "failure"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "package": "financial",
+      "run": 41496739426,
+      "jobs": []
+    },
+    {
+      "package": "antitrustBayes",
+      "run": 41496750358,
+      "jobs": [
+        {
+          "id": 125453597328,
+          "name": "optional-free QA",
+          "conclusion": "failure",
+          "steps": [
+            {
+              "name": "Install and record verified structural dependencies",
+              "conclusion": "failure"
+            }
+          ]
+        },
+        {
+          "id": 125453599273,
+          "name": "CmdStan smoke tests",
+          "conclusion": "skipped",
+          "steps": []
+        }
+      ]
+    }
+  ],
+  "diagnosis": {
+    "antitrust": "setup-r-dependencies fails because any::competitiontoolbox is unavailable; other requested dependencies consequently report conflict",
+    "trade": "setup-r-dependencies fails because any::competitiontoolbox is unavailable; other requested dependencies consequently report conflict",
+    "coordination": "Push bootstrap installs old antitrust; R CMD check rejects its version",
+    "antitrustBayes": "Push bootstrap installs antitrust 0.99.35; coordination requires at least 0.99.41",
+    "financial": "Workflow run failed with no jobs; exact workflow validation diagnostic not retrieved",
+    "vertical": "No release-branch workflow run observed; push trigger filters main",
+    "competitiontoolbox": "No release-branch workflow run observed; push trigger filters main/master/refactor"
+  },
+  "remote_workflows_dispatched": false
+}

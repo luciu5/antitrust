@@ -16,6 +16,7 @@ counterfactual(
   products = NULL,
   quality = NULL,
   entry = NULL,
+  core = NULL,
   ...
 )
 }
@@ -49,6 +50,9 @@ multiplicative mean-value convention.}
 
 \item{entry}{An `Entrant` object, or a list of `Entrant` objects, each
 describing a new single-product firm to add to the market.}
+
+\item{core}{Core-firm IDs for downstream native coordination games;
+unsupported by ordinary antitrust fits.}
 
 \item{...}{Reserved; model specification fields are rejected.}
 }

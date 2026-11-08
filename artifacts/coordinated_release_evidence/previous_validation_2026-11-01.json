@@ -1,0 +1,513 @@
+{
+  "date_utc": "2026-11-01T13:50:46.471701+00:00",
+  "status": "implemented; financial extended debt parity requires investigation; live-browser verification blocked",
+  "versions_changed": false,
+  "committed_pushed_merged_published": false,
+  "sources": [
+    {
+      "package": "antitrust",
+      "branch": "refactor",
+      "baseline_commit": "20f0923fc560295e04310aed5615c19dadf672cb",
+      "version": "0.99.42",
+      "structural_source_sha256": "27b177cf43c8f8128d9fe7fac13a5550c1982861ea8b675a7b2db55de8c2f103",
+      "git_diff_check_passed": true
+    },
+    {
+      "package": "coordination",
+      "branch": "main",
+      "baseline_commit": "6955c4845df0c1de98eb540423118b53732211e5",
+      "version": "0.0.0.9006",
+      "structural_source_sha256": "d616fc9339507c029943e824d48342b71a794d14a8069f9ac362dac87eecdb14",
+      "git_diff_check_passed": true
+    },
+    {
+      "package": "trade",
+      "branch": "refactor",
+      "baseline_commit": "2826df0fc3530c01066000725f643b060e71d136",
+      "version": "0.8.9.9002",
+      "structural_source_sha256": "58a03e5624c591cf4fa9130f572e4aa04b5893b1ad2638a6fe3fc469e81fd237",
+      "git_diff_check_passed": true
+    },
+    {
+      "package": "vertical",
+      "branch": "main",
+      "baseline_commit": "dbb99804bfe76746c13374d341beb1bd20af79c2",
+      "version": "0.2.0",
+      "structural_source_sha256": "9647fdb20529a6013f2d7524535da67d4b8d4d459a9cce9bc8f9d9e23d3c5d1e",
+      "git_diff_check_passed": true
+    },
+    {
+      "package": "competitiontoolbox",
+      "branch": "refactor",
+      "baseline_commit": "a5030868e5831b4c7951a8cb7eee469af0675c7a",
+      "version": "0.8.0",
+      "structural_source_sha256": "6d1dbe1ac48a72cf1813a496477e63e7e88749090c81440c4758353a59192daf",
+      "git_diff_check_passed": true
+    },
+    {
+      "package": "financial",
+      "branch": "main",
+      "baseline_commit": "80e2720b0e40b30e819c028110d2085abca26da0",
+      "version": "0.0.0.9000",
+      "structural_source_sha256": "ba4374ceaa83f85fcae2053c5519663e49c81a434f59e3cc2b023f356234a9da",
+      "git_diff_check_passed": true
+    },
+    {
+      "package": "antitrustBayes",
+      "branch": "main",
+      "baseline_commit": "fb1f026c0e301f17343ebd611afe657cbaafc5f2",
+      "version": "0.2.0.9009",
+      "structural_source_sha256": "4251e6effef607f3526fcbbba68cf053a294ab705f0e4179eaf12485a86c118b",
+      "git_diff_check_passed": true
+    }
+  ],
+  "verification": [
+    {
+      "package": "antitrust",
+      "tier": "nightly",
+      "passed_expectations": 2017,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "test_warning_expectations": 161,
+      "captured_warning_records": 158,
+      "unclassified_warnings": 0,
+      "package_check": "OK",
+      "check_log": "/tmp/antitrust-final-check.log",
+      "qa_report": "/tmp/antitrust-release-final-qa/report.md"
+    },
+    {
+      "package": "coordination",
+      "tier": "ordinary",
+      "passed_expectations": 733,
+      "failures": 0,
+      "skips": 0,
+      "warnings": 15,
+      "package_check": "OK"
+    },
+    {
+      "package": "trade",
+      "tier": "nightly",
+      "passed_expectations": 2078,
+      "failures": 0,
+      "skips": 0,
+      "warnings": 112,
+      "package_check": "OK"
+    },
+    {
+      "package": "vertical",
+      "tier": "ordinary plus permanent policy gates",
+      "passed_expectations": 1381,
+      "failures": 0,
+      "skips": 0,
+      "warnings": 46,
+      "new_policy_expectations": 402,
+      "new_policy_warnings": 0,
+      "package_check": "OK"
+    },
+    {
+      "package": "competitiontoolbox",
+      "tier": "nightly",
+      "passed_expectations": 1375,
+      "failures": 0,
+      "skips": 0,
+      "warnings": 48,
+      "package_check": "OK"
+    },
+    {
+      "package": "antitrustBayes",
+      "tier": "ordinary source",
+      "passed_expectations": 7428,
+      "failures": 0,
+      "errors": 0,
+      "skips": 16,
+      "warnings": 22,
+      "sampler_contract_expectations": 124,
+      "final_core_policy_expectations": 803,
+      "package_check": "OK; zero errors/warnings/NOTEs",
+      "statistical_fits": 2,
+      "inference_gates_passed": 20,
+      "independent_policy_focs_passed": 32,
+      "policy_foc_max_residual": 9.11085e-09,
+      "statistical_report": "/mnt/d/Projects/antitrustBayes/doc/validation/coordinated_release_gate_results.md"
+    },
+    {
+      "package": "financial",
+      "tier": "extended source suite",
+      "passed_expectations": 163,
+      "failures": 4,
+      "full_package_check": "1 ERROR: four extended debt parity assertions fail; all loading, static, documentation and example checks pass",
+      "evidence": "/tmp/financial-unblocked-extended.log",
+      "errors": 0,
+      "warnings": 0,
+      "skips": 0,
+      "bank_economic_gate_passed_expectations": 18,
+      "failed_debt_parity_assertions": [
+        "zero_uniform pricePost",
+        "zero_uniform sharesPre",
+        "zero_uniform sharesPost",
+        "low_beta shareOutParm"
+      ],
+      "interpretation": "Stored-fixture discrepancies; zero_uniform is documented nonconvergent. No fixture updates or tolerance changes made.",
+      "check_log": "/tmp/financial-unblocked-validation/check.log"
+    }
+  ],
+  "applied_sibling_files": [
+    {
+      "package": "trade",
+      "path": "DESCRIPTION",
+      "sha256": "e18d1422d9ee5741aca81ba8b76ef436076bb5f9aa94ec8df4155f9f9efdac82"
+    },
+    {
+      "package": "trade",
+      "path": "tests/testthat/test-cross-package-parity.R",
+      "sha256": "ee4f992bc16efec254fdc92f40366e5fdb1b76692d4301b7d9015d534beb2719"
+    },
+    {
+      "package": "trade",
+      "path": "tests/testthat/TESTING.md",
+      "sha256": "f9355b4a1c9af0b335ea01d8c2ae60875fbde85c0345f8aaa3de3666378a312f"
+    },
+    {
+      "package": "trade",
+      "path": "tests/testthat/test-tariff-summary-import-reporting.R",
+      "sha256": "670c95cd7fe561dd4a280af03f24d162d7109d419a66a65aaf2374b074e686bc"
+    },
+    {
+      "package": "trade",
+      "path": "docs/promotion.md",
+      "sha256": "56385a98ca02969af17cd19d192964a85bcfce6d854703f6d41a54d89ca1e816"
+    },
+    {
+      "package": "trade",
+      "path": ".github/workflows/qa.yml",
+      "sha256": "e20f5a717e5b4518dd52076884eb580388a69a292134d8afcfbd454542de94b4"
+    },
+    {
+      "package": "trade",
+      "path": "R/summary-methods.R",
+      "sha256": "7efecd3a6ccf7038f2e182e068c04df54f15223dac6d9e4a306df9bf1f4808ee"
+    },
+    {
+      "package": "trade",
+      "path": "R/SyntheticMarket.R",
+      "sha256": "992677b651f7dbb205461c836a31dd7d66856ce2007ad556eb265570edc8473e"
+    },
+    {
+      "package": "trade",
+      "path": "artifacts/trade_refactor_architecture.md",
+      "sha256": "a75dd0d1fc36bb9835b182ed6b45c253d6ba10f4b3218103e6efb8c9bab9d378"
+    },
+    {
+      "package": "trade",
+      "path": "artifacts/trade_refactor_migration_report.md",
+      "sha256": "1dcff2c648de0109df8efeaea8bcd90bfdd68c90ec44753590d2be765348d65c"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": "README.md",
+      "sha256": "6a12841dd7ab293e605a033965381181538c07702ccf327941eb7bd9f99d51fd"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": "cran-comments.md",
+      "sha256": "118dd61e8b89b14d45904c5ed1ec4905af03169000c5cce075e563a9840aeb57"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": "DESCRIPTION",
+      "sha256": "1b40726eb0cc4ae85b744d41a8755654136b06db85b52bea84380b63ab9c725b"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": "tests/testthat/test-shiny-model-registry.R",
+      "sha256": "8670d80ef39b9eb5c20f5dfb6e4be83e7ce5c540965234caa81314e1daabde30"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": "tests/testthat/helper-competitiontoolbox.R",
+      "sha256": "9ddc8a05e7fd326f51f93f6994291367b76b1fa2af02f24d5fd0376754ab2b8e"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": ".github/workflows/dependency-stack-qa.yml",
+      "sha256": "d1b050decfc691b2e1ece668970c00a5c819460757371b2f576c9d83c1ef1dca"
+    },
+    {
+      "package": "coordination",
+      "path": "README.md",
+      "sha256": "c297f4848fb12a76b25cd49770842820181a1cfd6f5079d05ed239bbb5ae895d"
+    },
+    {
+      "package": "coordination",
+      "path": "NAMESPACE",
+      "sha256": "e239cec4a66ddc379839149a0b2b7a0566034b8d58b042f1b3f46e59cb56e88e"
+    },
+    {
+      "package": "coordination",
+      "path": "DESCRIPTION",
+      "sha256": "c6236ee7f7b0af9d3a22e9eda8218e4bb6b50bb62c1aa33f2a3ae9e7d2651292"
+    },
+    {
+      "package": "coordination",
+      "path": "man/stackelberg_ces_multipliers.Rd",
+      "sha256": "1e6aab293a84f7a338da60ab83b492e150d207394bc49ee6a18e7f7a1640a4ef"
+    },
+    {
+      "package": "coordination",
+      "path": "man/stackelberg_logit_h.Rd",
+      "sha256": "9a33fcd0429366e9f0ab206ea71f927374fcdb68ca567e635119ec4b0a6a066a"
+    },
+    {
+      "package": "coordination",
+      "path": "tests/testthat/test-stackelberg-ces.R",
+      "sha256": "9e598925f042d6c80a8bddf185e41c0ef3a95f03d8cef7456258fd167d5146de"
+    },
+    {
+      "package": "coordination",
+      "path": "tests/testthat/test-stackelberg-logit.R",
+      "sha256": "e07877e82268b83ef1156da576c547e2967e8e2028402d0b826ae42236991371"
+    },
+    {
+      "package": "coordination",
+      "path": ".github/workflows/R-CMD-check.yaml",
+      "sha256": "cb0326f8972100146f6c4e3a4fbdd5f8f90153fa2d63f3497660cd220f90dd98"
+    },
+    {
+      "package": "coordination",
+      "path": "R/StackelbergLogit.R",
+      "sha256": "dcb242b3ddfd0ee22d1bb04a5ba7e493448c92c110b22c2d73d1c448adee4aa6"
+    },
+    {
+      "package": "coordination",
+      "path": "R/StackelbergCES.R",
+      "sha256": "de468098d8430872536d59107b8e77776ce2b7251edd88e81e6ccf423c0f475b"
+    },
+    {
+      "package": "financial",
+      "path": ".Rbuildignore",
+      "sha256": "139fd23152e39635fb849485012a45de3f25b4326aa3e0c9623ca1a5df548d4b"
+    },
+    {
+      "package": "financial",
+      "path": "README.md",
+      "sha256": "556dcada347c7ac1074a554cbec481d8045fee85667d423c16601b0b30f7abe4"
+    },
+    {
+      "package": "financial",
+      "path": "DESCRIPTION",
+      "sha256": "9c5d074badeb206e5685b3fd8e247080edbaf3c978f8c7e2456679439cd5acd0"
+    },
+    {
+      "package": "financial",
+      "path": "tests/testthat/test-bank-release-economic-gate.R",
+      "sha256": "f1b6b9acb81183b0866aface75331bbd5affc6caf073aa6c7200a14744a3aaef"
+    },
+    {
+      "package": "financial",
+      "path": ".github/workflows/qa.yml",
+      "sha256": "0c7dd7c31ad2a51e6be6d3885ed2545554a0413b680a5319632372f21385c2ff"
+    },
+    {
+      "package": "financial",
+      "path": "ci/build-check.sh",
+      "sha256": "cc5fbd0b12c9322b7994322ca9e569459c39b887b3af5738e52c114529b2fade"
+    },
+    {
+      "package": "financial",
+      "path": "ci/PINNED_SHAS",
+      "sha256": "31ac983de7165d20ae4bba2120fba4ac8621e71c8e4b07f50b98b2d413f94bd9"
+    },
+    {
+      "package": "vertical",
+      "path": "NEWS.md",
+      "sha256": "85fa9ac0fca41b334b01d8c38454830b3291b4741a3fef972ddab9f937f0641e"
+    },
+    {
+      "package": "vertical",
+      "path": "NAMESPACE",
+      "sha256": "f00cdbe11d1f71a82a9d052b7761417fcabe47ced2a6284b9e7f661cbfd0defa"
+    },
+    {
+      "package": "vertical",
+      "path": "DESCRIPTION",
+      "sha256": "aebd345b6b48be2ffb320187615171a982f1b7df7d3dfd5ebd9fb049b5ed50d7"
+    },
+    {
+      "package": "vertical",
+      "path": "man/VerticalTradeFit-class.Rd",
+      "sha256": "be779699cdd9a648890909eb067d6f49cb2c771977f8c047137acb0e8e340019"
+    },
+    {
+      "package": "vertical",
+      "path": "man/Vertical-Classes.Rd",
+      "sha256": "66103c01efaade772bbf6dfb6599a76104d016674f43fc03f363931d8bdca096"
+    },
+    {
+      "package": "vertical",
+      "path": "man/as_vertical_trade_fit.Rd",
+      "sha256": "66cef2937f394690e22bf8b3f4202a8462025980541973c2ed4ecfdce0fbb60a"
+    },
+    {
+      "package": "vertical",
+      "path": "man/vertical_policy_diagnostics.Rd",
+      "sha256": "8c0cfe5ea02e9ea293054fccfdffb666e9c197378885006f951ef37a07dd1698"
+    },
+    {
+      "package": "vertical",
+      "path": "tests/testthat/test-vertical-trade-policy.R",
+      "sha256": "6eba48fb2aa834eac8b824135f373aef4920736671cb398952e6cf1ee6cffb2d"
+    },
+    {
+      "package": "vertical",
+      "path": "tests/testthat/helper-vertical-policy.R",
+      "sha256": "1c307d993bda478833df83505e19e44f5a4f86e8aa57d1aae784810d59edb84a"
+    },
+    {
+      "package": "vertical",
+      "path": "docs/vertical-trade-policy.md",
+      "sha256": "881b8617edaa442adbba4f79d27108b1c8e49b08efc1454b7c1eb85cd7f6aa55"
+    },
+    {
+      "package": "vertical",
+      "path": "R/VerticalWelfareMethods.R",
+      "sha256": "2afbae260f7c033da3a72226ff18b7b0cc683b5ac61089ad874c6fdc22fa48b6"
+    },
+    {
+      "package": "vertical",
+      "path": "R/VerticalTradePolicy.R",
+      "sha256": "fe00c2d5fcbc94547c3d1e791c608827a834e1fde1a7a76c99daca7b407ed6a3"
+    },
+    {
+      "package": "vertical",
+      "path": "R/VerticalOutputMethods.R",
+      "sha256": "dd73e3a1d538f308e87335b3b66b3c315665f640dbf03cb0c110efcea3504b71"
+    },
+    {
+      "package": "vertical",
+      "path": "R/VerticalCostMethods.R",
+      "sha256": "b154316393e170ada368bf44316a9b1e9db40e8864d6599b87f4e41cd095f64b"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": ".gitignore",
+      "sha256": "fdfa39965991ded9239d489ffd947369f7d99a2463a41f0d498445eee31578cb"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "README.md",
+      "sha256": "145321b3192a23d9117a24084b0bf80338f6f19297731adc7e5015e6aa7cff73"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "NEWS.md",
+      "sha256": "3919594ed8ec39ae39fde2d300cda83c3aedf24b15ba06a75b4c427f2dfff4e9"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "DESCRIPTION",
+      "sha256": "10f9d324c0ccc75c3f961e76cf66071c732849d7ecedf3909e188d8fced3e8c5"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/README.md",
+      "sha256": "61428b4fdf6047e415317b1c2052d8000a802e060f3bf0fc2c04338eb61baabc"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate_results.md",
+      "sha256": "cd40fae22f57b18122dac1af286c5bcbcdfbd1a83ddb14f4f6c4da3bf7e827ce"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/README.md",
+      "sha256": "c0118792836c9d30921514539b46b55c953f898a44d07de9fdccc8b57aebe7c3"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate.R",
+      "sha256": "05184a3561a0f54b38f478d1b99bb1405c9a10d9aa0d8d74e23ead2eab869870"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate/policy_focs.csv",
+      "sha256": "a4354b894d00164cab138d5da19342c8b1b8ce79102eb9f68285983a4371326f"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate/active_parameter_diagnostics.csv",
+      "sha256": "deab51b584b5e6fc6779ca664a85343277f123e712a3ffcee04293c56ed2cea3"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate/artifact_hashes.csv",
+      "sha256": "f1c4ed1caaa4036e025151b3d1d24efb9041228d7f267b374268e7f326d73b9a"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate/runtime_hashes.csv",
+      "sha256": "392e53c2371d4c8866b163a4a2eb99b0b585a42feab2cd937d0b700d9fdfc057"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate/fit_identity.csv",
+      "sha256": "22decb1d7f0e649176e48831143db37817212f3d3e628bbb2d75a711b4028e01"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate/source_hashes.csv",
+      "sha256": "0b993203fa80dee0b8832ae4c08e2de0de158444cc716c4e45e269ff93a0eb69"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate/noise.csv",
+      "sha256": "cffa1b75c0775a74023c384ab651d7140478f0ac753c68b4fcaf67b33db78ebe"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate/recovery.csv",
+      "sha256": "92b90620aa5da373329f03e3f391861ba6c8853b1b436c684f8939a18836fa75"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/validation/coordinated_release_gate/gates.csv",
+      "sha256": "e332f75b87af37ab32be425e3109d3f81f10cf9074a0f5afc1968d9246e61ab0"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "R/cmdstan_backend.R",
+      "sha256": "6a16f8c2b4d6428afd0289ec49de1aaa455e3f860b7543b6c0f9395bf831a18d"
+    }
+  ],
+  "independent_review": {
+    "model": "gpt-6.1-sol",
+    "effort": "xhigh",
+    "resolved_findings": [
+      "fractional self-ownership weighting in input level FOCs",
+      "rare-share false BLP convergence under unnormalized residuals",
+      "financial circular residual and boundary fixture",
+      "policy auction HHI omitting physical winner-share changes"
+    ],
+    "bayes_sealed_runner": "reviewed without substantive findings"
+  },
+  "limitations": [
+    "cubature installation is verified and financial loads. Extended source suite has four debt-fixture parity failures requiring diagnosis; the independent bank FOC gate passes.",
+    "Live Shiny browser smoke could not start: createTcpServer operation not permitted even after escalation. No browser interaction or download check claimed.",
+    "Downstream second-score vertical tariffs explicitly rejected pending a valid net-of-tax winner-allocation derivation; finite second-score quotas remain unsupported.",
+    "Remote CRAN incoming checks and hosted CI were not executed; final immutable release refs and stable package versions remain release-step work."
+  ],
+  "preserved_local_work": [
+    "trade/artifacts/antitrust-promotion.patch",
+    "antitrustBayes/.scratch unrelated work",
+    "existing vertical policy draft evolved in place; unrelated modifications preserved"
+  ],
+  "updated_utc": "2026-11-01T14:29:51.709689+00:00",
+  "dependencies_verified": {
+    "cubature": {
+      "version": "2.1.4.1",
+      "library": "/tmp/coordinated-release-fixed-lib",
+      "independent_integral": "hcubature of x1^2+x2^2 on [0,1]^2 equals 2/3 within 1e-7",
+      "financial_namespace_load": "PASS"
+    }
+  }
+}

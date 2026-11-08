@@ -560,6 +560,7 @@ print.antitrust_model_spec <- function(x, ...) {
         capacity = cls %in% c("LogitCap", "LogitCapALM", "Stackelberg"),
         bargaining = spec$conduct %in% c("bargaining", "bargaining2nd"),
         leader = cls == "Stackelberg",
+        core = FALSE,
         products = cls == "Stackelberg",
         tariff = FALSE,
         quota = FALSE,

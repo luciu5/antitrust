@@ -8,6 +8,8 @@ branch, tag, release or package registry is changed. Matching certification
 runs are reused on restart. Failed runs require --retry-failed to retry.
 Push events work before promotion; manual workflow dispatch would require
 workflow definitions on protected default branches and is not used here.
+Explicit, SHA-bound user waivers in the handoff skip only the named workflow;
+reports retain waived results separately from successful certifications.
 """
 
 from __future__ import annotations
@@ -107,6 +109,22 @@ def remember_run(item, run):
     item.update(run_id=run["id"], workflow_id=run["workflow_id"], run_attempt=run.get("run_attempt", 1), url=run["html_url"], status=run["status"], conclusion=run.get("conclusion"))
 
 
+def apply_waivers(plan, handoff):
+    waivers = handoff.get("certification_waivers", {})
+    if not isinstance(waivers, dict) or set(waivers) - {"competitiontoolbox"}:
+        raise push.PushError("Only the explicitly waived competitiontoolbox workflow may be skipped.")
+    for item in plan:
+        waiver = waivers.get(item["package"])
+        if waiver is None:
+            continue
+        if (not isinstance(waiver, dict) or waiver.get("candidate_sha") != item["sha"]
+            or waiver.get("workflow") != ".github/workflows/" + item["workflow"]
+            or waiver.get("authorized_by") != "user"
+            or not isinstance(waiver.get("reason"), str) or not waiver["reason"].strip()):
+            raise push.PushError("Toolbox waiver must name this exact candidate/workflow and the user's reason.")
+        item["waiver"] = dict(waiver)
+
+
 def certify(plan, retry_failed=False, poll_seconds=30, timeout_seconds=10800):
     # Every branch is checked before optional retries. Initial checks are
     # triggered by the release push, even if no workflow exists on main/master.
@@ -114,6 +132,10 @@ def certify(plan, retry_failed=False, poll_seconds=30, timeout_seconds=10800):
         verify_branch(item)
     started = time.monotonic()
     for item in plan:
+        if item.get("waiver"):
+            item.update(status="waived", conclusion=None)
+            print(f"Certification: {item['package']} WAIVED: {item['waiver']['reason']}", flush=True)
+            continue
         verify_branch(item)
         existing = matching_run(item)
         if existing:
@@ -132,7 +154,7 @@ def certify(plan, retry_failed=False, poll_seconds=30, timeout_seconds=10800):
     while True:
         pending = False
         for item in plan:
-            if item.get("status") == "completed":
+            if item.get("status") in ("completed", "waived"):
                 continue
             run = matching_run(item)
             if run:
@@ -145,7 +167,7 @@ def certify(plan, retry_failed=False, poll_seconds=30, timeout_seconds=10800):
                 pending = True
             print(f"{item['package']}: {item.get('conclusion') or item['status']} {item.get('url', '')}", flush=True)
         if not pending:
-            return all(item.get("conclusion") == "success" for item in plan)
+            return all(item.get("status") == "waived" or item.get("conclusion") == "success" for item in plan)
         if time.monotonic() - started >= timeout_seconds:
             raise push.PushError("Certification wait timed out. Rerun to reuse matching runs and continue monitoring.")
         time.sleep(poll_seconds)
@@ -179,6 +201,12 @@ def main(argv=None):
             name = item["package"]
             item.update(workflow=WORKFLOWS[name][0], inputs=certification_inputs(name, packages))
             item["run_name"] = "release-certification-" + item["sha"]
+        apply_waivers(plan, json.loads(args.handoff.read_text()))
+        for item in plan:
+            name = item["package"]
+            if item.get("waiver"):
+                print(f"{name}: WAIVED for {item['sha']}: {item['waiver']['reason']}", flush=True)
+                continue
             print(f"{name}: {item['sha']} {item['workflow']} {json.dumps(item['inputs'])}", flush=True)
         if not (args.certify or args.push_and_certify):
             print("Offline plan verified. Run --push-and-certify in a terminal with GitHub/gh access.")
@@ -192,6 +220,8 @@ def main(argv=None):
         # Repository run listing works even when the new workflow exists only
         # on the release branch; workflow_dispatch/default-branch lookup does not.
         for item in plan:
+            if item.get("waiver"):
+                continue
             gh_api(endpoint(item, "actions/runs?per_page=1"))
         if args.push_and_certify and push.main(push_args + ["--push"]):
             raise push.PushError("Candidate push stopped; rerun to verify/resume the partial release push and its automatic checks.")
@@ -210,7 +240,9 @@ def main(argv=None):
         return 130
     finally:
         if report:
-            report.write_text(json.dumps(dict(status="complete" if completed else "stopped", error=error, packages=plan), indent=2) + "\n")
+            waived = [item["package"] for item in plan if item.get("waiver")]
+            status = ("complete_with_waivers" if waived else "complete") if completed else "stopped"
+            report.write_text(json.dumps(dict(status=status, waived_packages=waived, error=error, packages=plan), indent=2) + "\n")
             print(f"Certification report: {report}", flush=True)
 
 

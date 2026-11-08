@@ -1,0 +1,29 @@
+
+R version 4.6.1 (2026-06-24) -- "Happy Hop"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(testthat)
+> test_check("competitiontoolbox")
+Loading required package: competitiontoolbox
+Loading required package: shiny
+Loading required package: rhandsontable
+[ FAIL 0 | WARN 48 | SKIP 0 | PASS 1375 ]
+
+[ FAIL 0 | WARN 48 | SKIP 0 | PASS 1375 ]
+> 
+> proc.time()
+   user  system elapsed 
+ 22.273   0.628  22.897 

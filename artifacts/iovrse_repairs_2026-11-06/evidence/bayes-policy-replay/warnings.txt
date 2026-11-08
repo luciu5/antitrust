@@ -1,0 +1,32 @@
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'Logit', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'Logit', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'Logit', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'Logit', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'Logit', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'Logit', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'Logit', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'Logit', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'CES', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'CES', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'CES', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'CES', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'CES', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'CES', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'CES', shares will be ignored.
+'ownerPost' and 'ownerPre' are the same
+'shares' argument is only used for BLP demand (for BLP contraction mapping). For 'CES', shares will be ignored.

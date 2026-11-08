@@ -1,0 +1,20 @@
+[
+  {
+    "package": "trade",
+    "path": ".github/workflows/qa.yml",
+    "source_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+    "source_tree": "f92a1264b772d4b397daba8d1a627d4c4fb19b7a",
+    "content_path": "/tmp/mature-promotion/trade/.github/workflows/qa.yml",
+    "old_blob": "3bbbf4976c58cc061890698f8bf30db22adcae4c",
+    "new_blob": "5110b41e978adb0522bf6ccd28451c993f640811"
+  },
+  {
+    "package": "competitiontoolbox",
+    "path": ".github/workflows/dependency-stack-qa.yml",
+    "source_sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+    "source_tree": "f2ed4da1e3ba14fbab3a4ecf7f6ac97e149e4de3",
+    "content_path": "/tmp/mature-promotion/competitiontoolbox/.github/workflows/dependency-stack-qa.yml",
+    "old_blob": "fcec30a917e2a3537c0161cb816f57c9952bd424",
+    "new_blob": "e4f81bd5373770d2d1366dd31400645ac7ddd222"
+  }
+]

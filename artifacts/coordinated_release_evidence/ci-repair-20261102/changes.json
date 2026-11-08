@@ -1,0 +1,90 @@
+{
+  "antitrust": {
+    "previous_sha": "abc8f9457cc9cbb2e3f252c6b82fe5b87da3dd79",
+    "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+    "changed_paths": [
+      ".github/workflows/qa.yml",
+      ".gitignore",
+      "ai/package_audit/check_release_manifest.py",
+      "ai/package_audit/check_release_workflows.py",
+      "ai/package_audit/push_coordinated_release.py",
+      "ai/package_audit/release_workflows.py",
+      "ai/package_audit/test_push_coordinated_release.py",
+      "ai/package_audit/test_release_workflows.py"
+    ],
+    "tree": "bf494bf20fb8306dc705706a401108e7cac7173e",
+    "raw_exported_blobs": 272,
+    "raw_blob_mismatches": 0
+  },
+  "coordination": {
+    "previous_sha": "761cb49fbae87744de99b2dce4eb597e81feb7a1",
+    "sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+    "changed_paths": [
+      ".github/workflows/R-CMD-check.yaml",
+      "DESCRIPTION"
+    ],
+    "tree": "3b17c2f1a967e87899c482dd8bb20f2fbfc8f1c3",
+    "raw_exported_blobs": 47,
+    "raw_blob_mismatches": 0
+  },
+  "trade": {
+    "previous_sha": "c99a6ac6d7505b63e6c369246b0ef650d9af2421",
+    "sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+    "changed_paths": [
+      ".github/workflows/qa.yml",
+      "DESCRIPTION"
+    ],
+    "tree": "f92a1264b772d4b397daba8d1a627d4c4fb19b7a",
+    "raw_exported_blobs": 102,
+    "raw_blob_mismatches": 0
+  },
+  "vertical": {
+    "previous_sha": "eaf12d4505f77b1802071574145874a8c415cec3",
+    "sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+    "changed_paths": [
+      ".Rbuildignore",
+      ".github/workflows/R-CMD-check.yaml",
+      "DESCRIPTION",
+      "ci/release-dependencies.json"
+    ],
+    "tree": "56d5076916935952128dbb2622ffe7dd828993e0",
+    "raw_exported_blobs": 60,
+    "raw_blob_mismatches": 0
+  },
+  "competitiontoolbox": {
+    "previous_sha": "bcec374b2c56c9f1120728b97c42dfb59b47f5b1",
+    "sha": "2135927ab5406c421870eadb5b7d7eddbedd7457",
+    "changed_paths": [
+      ".github/workflows/dependency-stack-qa.yml",
+      "DESCRIPTION"
+    ],
+    "tree": "2bce6a0ea72e49135d469ad558ceb623dba18afa",
+    "raw_exported_blobs": 66,
+    "raw_blob_mismatches": 0
+  },
+  "financial": {
+    "previous_sha": "20d2830c07d699f7c1a4da88a72e54cc2b912bb1",
+    "sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+    "changed_paths": [
+      ".github/workflows/qa.yml",
+      "ci/release-dependencies.json"
+    ],
+    "tree": "31b82ee83c00b25f341c71e353a5e3ff0cafc076",
+    "raw_exported_blobs": 76,
+    "raw_blob_mismatches": 0
+  },
+  "antitrustBayes": {
+    "previous_sha": "6f34dd2f34656dd749b594b22157ff475c9dc186",
+    "sha": "4c965e877cfcc10bb3571c49d6c177693d9d8113",
+    "changed_paths": [
+      ".Rbuildignore",
+      ".github/workflows/qa.yml",
+      "ci/README.md",
+      "ci/release-dependencies.json",
+      "doc/README.md"
+    ],
+    "tree": "d526febbcb9f70da8d8ea00c6291b5d6a63da763",
+    "raw_exported_blobs": 939,
+    "raw_blob_mismatches": 0
+  }
+}

@@ -1,0 +1,156 @@
+{
+  "date": "2026-11-06",
+  "scope": "Local working sources and saved coordinated-release evidence; live remote state was not queried.",
+  "package_source_changed_by_assessment": false,
+  "fresh_tests": [
+    {
+      "package": "antitrust",
+      "filter": "^(counterfactual|sequential-counterfactuals)$",
+      "tier": "nightly",
+      "cases": 52,
+      "passed": 162,
+      "failed": 0,
+      "errors": 0,
+      "warnings": 6,
+      "skips": 0
+    },
+    {
+      "package": "trade",
+      "filter": "counterfactual|tariff-game|tariff-economic-contract|fitted-tariff-equivalence|tariff-summary-import-reporting",
+      "tier": "nightly",
+      "cases": 58,
+      "passed": 796,
+      "failed": 0,
+      "errors": 0,
+      "warnings": 43,
+      "skips": 0
+    },
+    {
+      "package": "vertical",
+      "filter": "vertical-trade-policy",
+      "cases": 10,
+      "passed": 402,
+      "failed": 0,
+      "errors": 0,
+      "warnings": 0,
+      "skips": 0
+    },
+    {
+      "package": "coordination",
+      "filter": "core-fringe|revenue-retention|real-rate",
+      "cases": 25,
+      "passed": 328,
+      "failed": 0,
+      "errors": 0,
+      "warnings": 0,
+      "skips": 0
+    }
+  ],
+  "additional_experiment": {
+    "script": "long-chains.R",
+    "family": "output Logit Bertrand only",
+    "parameter_seed": 7261106,
+    "paths": 24,
+    "steps_per_path": 6,
+    "total_solved_steps": 144,
+    "orders": [
+      "entry -> merger -> merger -> quality -> costs -> exit",
+      "entry -> exit -> quality -> merger -> costs -> merger"
+    ],
+    "checks_passed": 936,
+    "checks_failed": 0,
+    "warnings": 0,
+    "max_share_normalized_independent_foc": 1.61945653861e-08,
+    "checks": [
+      "independently tracked costs, utility, ownership and active products",
+      "per-step independent demand and profit FOCs",
+      "price continuity",
+      "resume equivalence",
+      "source immutability",
+      "independent cold-start nleqslv equilibrium"
+    ]
+  },
+  "confirmed_capability_limits": [
+    {
+      "family": "AntitrustFit",
+      "limit": "Tariff shocks are rejected."
+    },
+    {
+      "family": "ordinary TradeFit",
+      "limit": "Ownership and entry counterfactuals are rejected."
+    },
+    {
+      "family": "TariffGameFit",
+      "limit": "Multi-step Counterfactual paths and entry are rejected; simultaneous ownership, costs, exit and tariff changes are supported."
+    },
+    {
+      "family": "VerticalTradeFit",
+      "limit": "Exit is unsupported; second-score downstream tariffs and finite quotas are unsupported."
+    }
+  ],
+  "known_unrepaired_economic_failure": {
+    "package": "financial",
+    "cases": [
+      "zero_uniform",
+      "low_beta",
+      "high_beta"
+    ],
+    "behavior": "Nonconverged prices or nonfinite default-adjusted shares; calibration/parity checks do not certify these equilibria.",
+    "evidence": "../financial/design/debt-parity-diagnostic-addendum-2026-11-01.md",
+    "rerun_today": false
+  },
+  "verification_limits": [
+    "This is focused validation, not a fresh full seven-package check.",
+    "A broad coordination test process was interrupted by the server restart before final totals; only its completed focused rerun is reported.",
+    "Default installed packages are stale; fresh tests selected /tmp/iovrse-assessment-20261106/library and test_local development sources.",
+    "Financial was not rerun: cubature is missing from the available default/assessment libraries.",
+    "No new HMC, broad statistical recovery, live browser or CRAN incoming check was run.",
+    "Saved release evidence is dated November 2-3 and is not a live remote-status assertion."
+  ],
+  "saved_release_evidence": "artifacts/coordinated_release_validation.json",
+  "saved_release_handoff": "artifacts/coordinated_release_handoff.json",
+  "packages": {
+    "antitrust": {
+      "branch": "refactor",
+      "head": "20f0923fc560295e04310aed5615c19dadf672cb",
+      "source_digest_policy": "SHA256 of sorted DESCRIPTION/NAMESPACE/R/*.R relative path, NUL and raw-file SHA256 digest entries",
+      "source_sha256": "4e295ff1a30ffd6bc89d2669e7ea0d40d6fd7ac604b67aa35c7d5335db066041"
+    },
+    "coordination": {
+      "branch": "main",
+      "head": "6955c4845df0c1de98eb540423118b53732211e5",
+      "source_digest_policy": "SHA256 of sorted DESCRIPTION/NAMESPACE/R/*.R relative path, NUL and raw-file SHA256 digest entries",
+      "source_sha256": "6a48ee3be67679910453343251220716e152c60fc4decff4fabdf62c8dacdd5a"
+    },
+    "trade": {
+      "branch": "refactor",
+      "head": "2826df0fc3530c01066000725f643b060e71d136",
+      "source_digest_policy": "SHA256 of sorted DESCRIPTION/NAMESPACE/R/*.R relative path, NUL and raw-file SHA256 digest entries",
+      "source_sha256": "9e45e2056935e10fe01d385035b24a9d67dd8b93d0be7764a109ff05e569dc18"
+    },
+    "vertical": {
+      "branch": "main",
+      "head": "dbb99804bfe76746c13374d341beb1bd20af79c2",
+      "source_digest_policy": "SHA256 of sorted DESCRIPTION/NAMESPACE/R/*.R relative path, NUL and raw-file SHA256 digest entries",
+      "source_sha256": "04fe286dd4d41df49411de3140a91a07ee02f1148498f8ab8d89a3b3acd6bc94"
+    },
+    "financial": {
+      "branch": "main",
+      "head": "80e2720b0e40b30e819c028110d2085abca26da0",
+      "source_digest_policy": "SHA256 of sorted DESCRIPTION/NAMESPACE/R/*.R relative path, NUL and raw-file SHA256 digest entries",
+      "source_sha256": "e249d9bc3c3e7997a79ed6cc11080e9a6805168c57b6ae5dd5610a24fbbe3710"
+    },
+    "competitiontoolbox": {
+      "branch": "refactor",
+      "head": "a5030868e5831b4c7951a8cb7eee469af0675c7a",
+      "source_digest_policy": "SHA256 of sorted DESCRIPTION/NAMESPACE/R/*.R relative path, NUL and raw-file SHA256 digest entries",
+      "source_sha256": "1d61f085b59684e4f19a49a2d6acc5b436badb352dcb4e9f3123f424ffa769d2"
+    },
+    "antitrustBayes": {
+      "branch": "main",
+      "head": "fb1f026c0e301f17343ebd611afe657cbaafc5f2",
+      "source_digest_policy": "SHA256 of sorted DESCRIPTION/NAMESPACE/R/*.R relative path, NUL and raw-file SHA256 digest entries",
+      "source_sha256": "3de64638fc45c69b745c0883ce64c468ed3fdf1330cc92b353e9ec644321773b"
+    }
+  }
+}

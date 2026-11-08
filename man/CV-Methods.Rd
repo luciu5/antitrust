@@ -24,7 +24,7 @@ CV(object, ...)
 
 \S4method{CV}{Linear}(object)
 
-\S4method{CV}{Logit}(object)
+\S4method{CV}{Logit}(object, subsetPre = NULL)
 
 \S4method{CV}{LogitBLP}(object, lim = c(0, 1))
 
@@ -34,9 +34,9 @@ CV(object, ...)
 
 \S4method{CV}{LogitNests}(object)
 
-\S4method{CV}{Auction2ndLogit}(object)
+\S4method{CV}{Auction2ndLogit}(object, subsetPre = NULL)
 
-\S4method{CV}{CES}(object)
+\S4method{CV}{CES}(object, subsetPre = NULL)
 
 \S4method{CV}{CESNests}(object)
 }
@@ -44,6 +44,11 @@ CV(object, ...)
 \item{object}{An instance of one of the classes listed above.}
 
 \item{...}{Additional arguments to pass to the method.}
+
+\item{subsetPre}{Optional logical pre-market product mask for Logit, CES,
+and standard Logit second-score models. Defaults to the retained pre-market
+mask after a transition, otherwise all products; use it
+when advancing a market with prior exits or newly entering products.}
 
 \item{lim}{\dQuote{LogitBLP} class only. A length 2 numeric vector equal to the lower and upper quantiles of the price coefficient distribution over which to compute CV. Default c(0,1).}
 }

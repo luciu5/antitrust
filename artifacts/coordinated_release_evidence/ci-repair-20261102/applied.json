@@ -1,0 +1,227 @@
+{
+  "applied_files": [
+    {
+      "package": "antitrust",
+      "path": ".github/workflows/qa.yml",
+      "sha256": "22c991b10e080b75231cbd772eef931592d6d799d96d9d336f07eefca2e0a464"
+    },
+    {
+      "package": "coordination",
+      "path": ".github/workflows/R-CMD-check.yaml",
+      "sha256": "09a9eaca4d4cefa36735f390e56244a417d71169ecb733a1374267b3f14f619b"
+    },
+    {
+      "package": "coordination",
+      "path": "DESCRIPTION",
+      "sha256": "5c1b3c7a54bfb2ad8e4ce33350a49707849a0dd49f6a576402d940cc633fbdbf"
+    },
+    {
+      "package": "trade",
+      "path": ".github/workflows/qa.yml",
+      "sha256": "1052598ca43bc59a399ace38b7a452f522825fe4e1825048bf4ea777a90fb6b2"
+    },
+    {
+      "package": "trade",
+      "path": "DESCRIPTION",
+      "sha256": "e06244ac8aa39a5db19110e3ed71accd98bf7b5d4d552a7162e3216e63c76ab8"
+    },
+    {
+      "package": "vertical",
+      "path": ".Rbuildignore",
+      "sha256": "c0bf86de40caa3d73a35189af50395896b2d5fa24436e8d6e9bd524fd737ac4a"
+    },
+    {
+      "package": "vertical",
+      "path": ".github/workflows/R-CMD-check.yaml",
+      "sha256": "d8ba15b83b920354e0909e1ea70b0d55baa3140011daa4f839c7cf7e2d168a67"
+    },
+    {
+      "package": "vertical",
+      "path": "DESCRIPTION",
+      "sha256": "47097a269feeb3d215ffc5b1b65143952703b3a75db60b80e4f55f3316cf4aed"
+    },
+    {
+      "package": "vertical",
+      "path": "ci/release-dependencies.json",
+      "sha256": "1b6c90be68482fba230c6ff8e087d39d1b0b75166bae2c0a35590adcbe280ae1"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": ".github/workflows/dependency-stack-qa.yml",
+      "sha256": "6b3cd002d1b4ef566fed482874139b15ff9614ab3ab2d9a5b64ee00ae6d5e29f"
+    },
+    {
+      "package": "competitiontoolbox",
+      "path": "DESCRIPTION",
+      "sha256": "48bc8d273c2b6b3de1609c4b832819d87a80af3cf1b1be7c7ee2fdebf30cb57c"
+    },
+    {
+      "package": "financial",
+      "path": ".github/workflows/qa.yml",
+      "sha256": "8dde036d8cf3b23fe5645aebbc22b19b09a522f6baadc0a7cce207760c213169"
+    },
+    {
+      "package": "financial",
+      "path": "ci/release-dependencies.json",
+      "sha256": "908ace18c5d13e3dbaa7451aa7119e18ee1bcc7d667fa246d268e0738aca245f"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": ".Rbuildignore",
+      "sha256": "26717b121458152bbb700b2a7a2efd06f96918e45f72f43a036bd9fbc4166e31"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": ".github/workflows/qa.yml",
+      "sha256": "6c73d1fd0b750427302240d527808df77be4e89f2d50d64cde2e46aec32ff309"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "ci/README.md",
+      "sha256": "abd265c9bd3156d8ce2cb1488f3922aeec31f48161c5fb701fcc6092a11ac833"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "ci/release-dependencies.json",
+      "sha256": "862931103c0cfe03cdfd991238e6cbf853339842a843b37d08d8226bd284ef6c"
+    },
+    {
+      "package": "antitrustBayes",
+      "path": "doc/README.md",
+      "sha256": "47e97e6be9d7f682ecefd66800d9dac7dc22221c5b1dc88f2f7d0a79a7f1dd55"
+    }
+  ],
+  "candidate_ref": "refs/heads/release/coordinated-2026-11-01",
+  "manifest": {
+    "schema_version": 1,
+    "release_id": "coordinated-2026-11-01",
+    "manifest_policy": "The completed manifest lives outside the antitrust candidate commit. SHA values below are filled only after each local candidate commit exists.",
+    "packages": {
+      "antitrust": {
+        "repository": "luciu5/antitrust",
+        "version": "0.99.43",
+        "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+        "minimums": {},
+        "remotes": []
+      },
+      "coordination": {
+        "repository": "luciu5/coordination",
+        "version": "0.1.0",
+        "sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+        "minimums": {
+          "antitrust": "0.99.43"
+        },
+        "remotes": [
+          "antitrust"
+        ]
+      },
+      "trade": {
+        "repository": "luciu5/trade",
+        "version": "0.9.0",
+        "sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+        "minimums": {
+          "antitrust": "0.99.43",
+          "coordination": "0.1.0"
+        },
+        "remotes": [
+          "antitrust",
+          "coordination"
+        ]
+      },
+      "vertical": {
+        "repository": "luciu5/vertical",
+        "version": "0.3.0",
+        "sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+        "minimums": {
+          "antitrust": "0.99.43",
+          "trade": "0.9.0"
+        },
+        "remotes": [
+          "antitrust",
+          "trade"
+        ]
+      },
+      "competitiontoolbox": {
+        "repository": "luciu5/competitiontoolbox",
+        "version": "0.9.0",
+        "sha": "2135927ab5406c421870eadb5b7d7eddbedd7457",
+        "minimums": {
+          "antitrust": "0.99.43",
+          "trade": "0.9.0",
+          "vertical": "0.3.0"
+        },
+        "remotes": [
+          "antitrust",
+          "coordination",
+          "trade",
+          "vertical"
+        ]
+      },
+      "financial": {
+        "repository": "luciu5/financial",
+        "version": "0.1.0",
+        "sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+        "minimums": {
+          "antitrust": "0.99.43"
+        },
+        "remotes": []
+      },
+      "antitrustBayes": {
+        "repository": "luciu5/antitrustBayes",
+        "version": "0.3.0",
+        "sha": "4c965e877cfcc10bb3571c49d6c177693d9d8113",
+        "minimums": {
+          "antitrust": "0.99.43",
+          "coordination": "0.1.0",
+          "trade": "0.9.0"
+        },
+        "remotes": []
+      }
+    },
+    "revision": 2
+  },
+  "preserved_original_state": {
+    "antitrust": {
+      "head": "20f0923fc560295e04310aed5615c19dadf672cb",
+      "protected_refs": "refs/heads/master e6ca9d595668f37f0a1e518db30ce53de61361d1\nrefs/heads/refactor 20f0923fc560295e04310aed5615c19dadf672cb\n",
+      "index": "/mnt/d/Projects/antitrust/.git/index",
+      "index_sha256": "0b15cc100efa3fbd995c64548f31089449dbba6c67ea9a2461a8e2abd15109f2"
+    },
+    "coordination": {
+      "head": "6955c4845df0c1de98eb540423118b53732211e5",
+      "protected_refs": "refs/heads/main 6955c4845df0c1de98eb540423118b53732211e5\n",
+      "index": "/mnt/d/Projects/coordination/.git/index",
+      "index_sha256": "473cacf465d76aa72c9ee954af534ae9a28a46a6e4d9e30bf73a904d584aacd0"
+    },
+    "trade": {
+      "head": "2826df0fc3530c01066000725f643b060e71d136",
+      "protected_refs": "refs/heads/master e621956242d7b9c0376acc2c76ec76bcf7d91d1c\nrefs/heads/refactor 2826df0fc3530c01066000725f643b060e71d136\n",
+      "index": "/mnt/d/Projects/trade/.git/index",
+      "index_sha256": "cb3dd8a29f4579c19b23444accddc43476d22fd33e89f1141f508f1263c88488"
+    },
+    "vertical": {
+      "head": "dbb99804bfe76746c13374d341beb1bd20af79c2",
+      "protected_refs": "refs/heads/main dbb99804bfe76746c13374d341beb1bd20af79c2\n",
+      "index": "/mnt/d/Projects/vertical/.git/index",
+      "index_sha256": "067c7e5c5bb92ecf85a0032576e91181a792080cbf4b8be1b67201ac5b9fe62b"
+    },
+    "competitiontoolbox": {
+      "head": "a5030868e5831b4c7951a8cb7eee469af0675c7a",
+      "protected_refs": "refs/heads/master e81fc704bec56cd56c92097b282177573b57fd83\nrefs/heads/refactor a5030868e5831b4c7951a8cb7eee469af0675c7a\n",
+      "index": "/mnt/d/Projects/competitiontoolbox/.git/index",
+      "index_sha256": "7ecf5c0f7aace013a5e133f38e3f6ae589fcce822be10f687e671946abda0f5b"
+    },
+    "financial": {
+      "head": "80e2720b0e40b30e819c028110d2085abca26da0",
+      "protected_refs": "refs/heads/main 80e2720b0e40b30e819c028110d2085abca26da0\n",
+      "index": "/mnt/d/Projects/financial/.git/index",
+      "index_sha256": "3d7da19f396f6a07a48b93642e00989c5e292269e358640283e0d2007a70523a"
+    },
+    "antitrustBayes": {
+      "head": "fb1f026c0e301f17343ebd611afe657cbaafc5f2",
+      "protected_refs": "refs/heads/main fb1f026c0e301f17343ebd611afe657cbaafc5f2\n",
+      "index": "/mnt/d/Projects/antitrustBayes/.git/index",
+      "index_sha256": "a7ba5fb6e9b47e802607858043d28b79aebcdb98766eee066e2d3a37e3fc53e6"
+    }
+  }
+}

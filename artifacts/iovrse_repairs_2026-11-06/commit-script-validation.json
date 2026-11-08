@@ -1,0 +1,28 @@
+{
+  "script": "commit_and_integrate.py",
+  "script_sha256": "663142ec182a6a227e339103541318272b3723b89e1cc54a2181290b01969dcd",
+  "tests": 7,
+  "result": "passed",
+  "test_scope": "Seven temporary fixture repositories and local bare remotes only; no GitHub pushes.",
+  "covered": [
+    "partially staged work plus ignored/unignored scratch exclusion",
+    "literal filenames without pathspec expansion",
+    "remote-only mainline workflow preservation and integrated dependency pins",
+    "vertical publication manual opt-in",
+    "incomplete recovery report rejection",
+    "last remote destination advance aborts before first push",
+    "local source branch advance aborts before first push",
+    "failure after first repository push and successful resume"
+  ],
+  "independent_review": "gpt-6.1-sol; accepted final hardening",
+  "actual_vertical_workflow": "YAML parse, explicit manual opt-in and idempotence checked in a temporary copy",
+  "live_commit_or_push_performed": false,
+  "ignored_tracked_parent_regression": "Reproduced exact ai/doc + ai/examples failure before fix; passes after tracked/untracked staging split.",
+  "real_repository_staging": "All seven real working layouts staged into private indexes and private object stores; original HEADs/indexes unchanged.",
+  "actual_source_integration_rehearsal": {
+    "passed": true,
+    "repositories": 7,
+    "scope": "Isolated copies of actual working sources and local stand-in bare remotes; no live commits or pushes.",
+    "report": "real-source-integration-rehearsal.json"
+  }
+}

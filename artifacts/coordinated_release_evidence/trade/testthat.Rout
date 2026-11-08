@@ -1,0 +1,68 @@
+
+R version 4.6.1 (2026-06-24) -- "Happy Hop"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(testthat)
+> library(trade)
+> 
+> test_check("trade")
+  pricePre pricePost quantityPre quantityPost physicalProducerSurplusDelta
+1     2.16      2.16         100          100                            0
+  importingGovernmentRevenueDelta physicalPlusGovernmentDelta consumerVariation
+1                               0                           0                 0
+
+Merger simulation results under 'TariffLogit' demand:
+
+             pricePre pricePost priceDelta sharesPre sharesPost outputDelta tariffPre tariffPost
+  domestic_A      2.0       2.0          0        50         58          16         0          0
+* import_B        2.3       2.7         18        30         19         -38         0         20
+  domestic_C      2.6       2.6          0        20         23          16         0          0
+
+	Notes: '*' indicates foreign products.
+ 	Deltas are percent changes.
+	Output is based on units sold.
+
+
+
+Merger simulation results under 'TariffLogit' demand:
+
+ Domestic Firm Price Change (%)
+                              0
+ Foreign Firm Price Change (%)
+                            18
+ Industry Price Change (%)
+                       3.5
+ Consumer Harm ($)
+               9.2
+ Domestic Firm Benefit ($)
+                      0.06
+ Foreign Firm Harm ($)
+                    11
+ Gov't Revenue ($)
+               8.7
+ Net Domestic Harm ($)
+                  0.35
+ Net Total Harm ($)
+                 12
+
+
+[ FAIL 0 | WARN 112 | SKIP 0 | PASS 2078 ]
+
+[ FAIL 0 | WARN 112 | SKIP 0 | PASS 2078 ]
+> 
+> proc.time()
+   user  system elapsed 
+107.192   0.809 108.176 

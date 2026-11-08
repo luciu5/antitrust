@@ -1,0 +1,60 @@
+{
+  "antitrust": {
+    "previous_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+    "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+    "changed_paths": [],
+    "tree": "bf494bf20fb8306dc705706a401108e7cac7173e",
+    "raw_exported_blobs": 272,
+    "raw_blob_mismatches": 0
+  },
+  "coordination": {
+    "previous_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+    "sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+    "changed_paths": [],
+    "tree": "3b17c2f1a967e87899c482dd8bb20f2fbfc8f1c3",
+    "raw_exported_blobs": 47,
+    "raw_blob_mismatches": 0
+  },
+  "trade": {
+    "previous_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+    "sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+    "changed_paths": [],
+    "tree": "f92a1264b772d4b397daba8d1a627d4c4fb19b7a",
+    "raw_exported_blobs": 102,
+    "raw_blob_mismatches": 0
+  },
+  "vertical": {
+    "previous_sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+    "sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+    "changed_paths": [],
+    "tree": "56d5076916935952128dbb2622ffe7dd828993e0",
+    "raw_exported_blobs": 60,
+    "raw_blob_mismatches": 0
+  },
+  "competitiontoolbox": {
+    "previous_sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+    "sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+    "changed_paths": [],
+    "tree": "f2ed4da1e3ba14fbab3a4ecf7f6ac97e149e4de3",
+    "raw_exported_blobs": 71,
+    "raw_blob_mismatches": 0
+  },
+  "financial": {
+    "previous_sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+    "sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+    "changed_paths": [],
+    "tree": "31b82ee83c00b25f341c71e353a5e3ff0cafc076",
+    "raw_exported_blobs": 76,
+    "raw_blob_mismatches": 0
+  },
+  "antitrustBayes": {
+    "previous_sha": "b252fa1b37d4a834d2fdb4660cfa2937695975ed",
+    "sha": "dab192abc18044ae439da49b42395e025549c4c7",
+    "changed_paths": [
+      "tests/testthat/test-cmdstan-cache-race.R"
+    ],
+    "tree": "7d4d02eb77c80a69ee1ef8ebbfe0e60ebf174b92",
+    "raw_exported_blobs": 940,
+    "raw_blob_mismatches": 0
+  }
+}

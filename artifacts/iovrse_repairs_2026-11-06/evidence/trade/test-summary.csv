@@ -1,0 +1,155 @@
+"file","test","nb","failed","error","warning","skipped","passed"
+"test-blp-hand-benchmark.R","trade BLP supplied integration matches hand-computed demand and FOCs",4,0,FALSE,0,FALSE,4
+"test-blp-integration-2d.R","trade forwards supplied two-dimensional BLP integration state",6,0,FALSE,0,FALSE,6
+"test-blp-integration-2d.R","trade BLP calibration rejects multidimensional integration",1,0,FALSE,0,FALSE,1
+"test-blp-integration-2d.R","trade BLP counterfactuals retain exact supplied integration state",3,0,FALSE,0,FALSE,3
+"test-blp-integration.R","trade BLP preserves provided integration points and weights",8,0,FALSE,3,FALSE,5
+"test-blp-integration.R","trade BLP accepts the consDraws alias without partial matching",6,0,FALSE,3,FALSE,3
+"test-blp-integration.R","trade BLP no-demographics calibration works under GH and Monte Carlo",1,0,FALSE,0,TRUE,0
+"test-blp-integration.R","trade Monte Carlo BLP defaults to 5000 draws",5,0,FALSE,3,FALSE,2
+"test-counterfactual.R","trade Counterfactual preserves legacy tariff simulations",3,0,FALSE,0,FALSE,3
+"test-counterfactual.R","an empty trade Counterfactual preserves the baseline prices",1,0,FALSE,0,FALSE,1
+"test-counterfactual.R","trade Counterfactual supports exit and validates capabilities",4,0,FALSE,0,FALSE,4
+"test-cournot-tariff-economics.R","linear Cournot tariffs use retention and solve the analytic equilibrium",7,0,FALSE,0,FALSE,7
+"test-cournot-tariff-economics.R","log-linear Cournot tariffs satisfy the plant-level FOCs",3,0,FALSE,0,FALSE,3
+"test-cournot-tariff-economics.R","finite Cournot plant capacities enter the KKT conditions",5,0,FALSE,0,FALSE,5
+"test-cournot-tariff-economics.R","a high tariff permits a zero-output Cournot corner",6,0,FALSE,0,FALSE,6
+"test-cournot-tariff-economics.R","multiproduct Cournot respects demand vectors and physical cost shocks",3,0,FALSE,0,FALSE,3
+"test-cross-package-parity.R","zero-tariff flat demand agrees with antitrust",11,0,FALSE,3,FALSE,8
+"test-cross-package-parity.R","respecification keeps nonzero tariff policy state",9,0,FALSE,5,FALSE,4
+"test-fitted-tariff-equivalence.R","all fourteen output games agree under physical costs and tariff wedges",512,0,FALSE,36,FALSE,476
+"test-fitted-tariff-equivalence.R","multiproduct followers obey the same tariff cost transformation",16,0,FALSE,0,FALSE,16
+"test-fitted-tariff-equivalence.R","untaxed products respond across all fourteen fitted output games",56,0,FALSE,0,FALSE,56
+"test-fitted-tariff-equivalence.R","promotion-only ALM variants retain untaxed domestic responses",9,0,FALSE,0,FALSE,9
+"test-fitted-tariff-equivalence.R","repeated policies and scenario changes never compound tariff-adjusted costs",6,0,FALSE,0,FALSE,6
+"test-fitted-tariff-equivalence.R","tariff declarations cannot override contradictory source cost provenance",7,0,FALSE,0,FALSE,7
+"test-fitted-tariff-equivalence.R","heterogeneous merged-firm tariffs are solved and draw attributes persist",5,0,FALSE,0,FALSE,5
+"test-fitted-tariff-equivalence.R","promotion and unchanged policy invoke no construction or equilibrium API",6,0,FALSE,0,FALSE,6
+"test-fitted-tariff-equivalence.R","net margin and physical unit-markup reports use explicit cost bases",8,0,FALSE,0,FALSE,8
+"test-fitted-tariff-equivalence.R","inactive CES products have zero monetary accounts and native missing prices",7,0,FALSE,0,FALSE,7
+"test-fitted-tariff-equivalence.R","ordinary games reject irrelevant roles and fractional ownership",3,0,FALSE,0,FALSE,3
+"test-fitted-tariff-equivalence.R","policy contracts reject unnamed or duplicate declarations",2,0,FALSE,0,FALSE,2
+"test-fitted-tariff-equivalence.R","named one-product cost shocks and named tariffs preserve product alignment",2,0,FALSE,0,FALSE,2
+"test-fitted-tariff-equivalence.R","uniformity is judged on retention even near a full tariff",1,0,FALSE,0,FALSE,1
+"test-local-demand-translations.R","trade flat Logit and CES translation preserves quantities",31,0,FALSE,12,FALSE,19
+"test-local-demand-translations.R","trade translation works for monopolistic competition",14,0,FALSE,5,FALSE,9
+"test-local-demand-translations.R","trade demand translation retains the calibrated tariff state",11,0,FALSE,5,FALSE,6
+"test-local-demand-translations.R","trade translations require target curvature",10,0,FALSE,5,FALSE,5
+"test-local-demand-translations.R","trade bargaining transitions require bargaining power",4,0,FALSE,1,FALSE,3
+"test-local-demand-translations.R","trade keeps unregistered demand transitions unavailable",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","sequential tariff -> tariff resolves to the same level as a direct one-shot tariff",4,0,FALSE,0,FALSE,4
+"test-sequential-counterfactuals.R","an unspecified tariff persists at its current active level across steps",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","simulate() preserves the ordinary legacy result for one-step Counterfactuals",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","simulate() can resume tariff sequencing from a CounterfactualPath",4,0,FALSE,0,FALSE,4
+"test-sequential-counterfactuals.R","quality uses demand-specific mean-value conventions",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","quality persists into a later tariff change and vice versa",3,0,FALSE,0,FALSE,3
+"test-sequential-counterfactuals.R","quality is verified for tariff Bertrand (LogitALM-descended) and persists across a tariff change",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","quality is verified for tariff Cournot (LogitCournot-descended)",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","quality is verified for second-score auction tariff models",2,0,FALSE,1,FALSE,1
+"test-sequential-counterfactuals.R","quality is verified for bargaining tariff Logit and CES",3,0,FALSE,1,FALSE,2
+"test-sequential-counterfactuals.R","quality is verified for quota Logit and persists across a quota change",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","quality is rejected for AIDS tariff models (no meanval)",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","exit -> tariff and tariff -> exit both resolve consistently",4,0,FALSE,0,FALSE,4
+"test-sequential-counterfactuals.R","ownership is rejected for trade counterfactuals (not a registered capability)",1,0,FALSE,0,FALSE,1
+"test-sequential-counterfactuals.R","entry is rejected at the trade simulation boundary",2,0,FALSE,0,FALSE,2
+"test-sequential-counterfactuals.R","sequential quota -> quota resolves to the same level as a direct one-shot quota",3,0,FALSE,0,FALSE,3
+"test-sequential-counterfactuals.R","an unspecified quota persists at its current active level across steps",1,0,FALSE,0,FALSE,1
+"test-structural-fit-contract.R","TradeFit inherits the shared structural fit contract",4,0,FALSE,0,FALSE,4
+"test-structural-fit-contract.R","a saved fitted trade model retains its tariff economics",3,0,FALSE,0,FALSE,3
+"test-structural-fit-contract.R","antitrust::simulate() reaches trade's own TradeFit method via shared dispatch",2,0,FALSE,0,FALSE,2
+"test-structural-fit-contract.R","TradeFit exposes trade-specific counterfactual validation",3,0,FALSE,0,FALSE,3
+"test-synthetic-market.R","tariff Logit preserves physical costs and solves its independent FOC",6,0,FALSE,0,FALSE,6
+"test-synthetic-market.R","nonbinding quota Logit retains costs and prices",4,0,FALSE,0,FALSE,4
+"test-synthetic-market.R","trade conduct alternatives obey native equations with tariffs",13,0,FALSE,0,FALSE,13
+"test-synthetic-market.R","tariff CES uses revenue shares and its own policy-weighted FOC",12,0,FALSE,0,FALSE,12
+"test-synthetic-market.R","Stackelberg Logit inverts a leader game with multiproduct costs and tariffs",7,0,FALSE,0,FALSE,7
+"test-synthetic-market.R","Stackelberg leader default selects three largest firms above three",28,0,FALSE,0,FALSE,28
+"test-synthetic-market.R","Stackelberg CES follower anchor identifies leader and follower prices",3,0,FALSE,0,FALSE,3
+"test-synthetic-market.R","Stackelberg CES identifies curvature beside a search grid point",2,0,FALSE,0,FALSE,2
+"test-synthetic-market.R","Stackelberg reference margin changes demand scale at fixed observables",4,0,FALSE,0,FALSE,4
+"test-synthetic-market.R","Stackelberg observed mode rejects unclosed or invalid games",4,0,FALSE,0,FALSE,4
+"test-synthetic-market.R","trade rejects inadmissible policy and unidentified combinations",4,0,FALSE,0,FALSE,4
+"test-synthetic-market.R","trade primitives mode still uses supplied prices and parameters",2,0,FALSE,0,FALSE,2
+"test-tariff-economic-contract.R","mixed-tariff Bertrand and Cournot satisfy independent physical-profit FOCs",20,0,FALSE,0,FALSE,20
+"test-tariff-economic-contract.R","heterogeneous baseline promotion preserves only a compatible fitted game",4,0,FALSE,0,FALSE,4
+"test-tariff-economic-contract.R","foreign tariffs approach the domestic-only Bertrand equilibrium",4,0,FALSE,0,FALSE,4
+"test-tariff-economic-contract.R","tariff validation rejects undefined retentions and permits subsidies",9,0,FALSE,0,FALSE,9
+"test-tariff-economic-contract.R","auction promotion rejects mixed portfolios even with matching retention metadata",3,0,FALSE,0,FALSE,3
+"test-tariff-economic-contract.R","native auction wrappers reject mixed near-prohibitive tariffs",6,0,FALSE,0,FALSE,6
+"test-tariff-game-auction.R","standard output Logit auction promotion preserves a positive outside share",7,0,FALSE,0,FALSE,7
+"test-tariff-game-auction.R","only standard output Logit auction enters the explicit route",3,0,FALSE,2,FALSE,1
+"test-tariff-game-auction.R","auction zero tariff is a no-op and retains immutable baseline state",7,0,FALSE,0,FALSE,7
+"test-tariff-game-auction.R","auction 25 and 50 percent statutory tariffs use consumer fractions and additive kappa shocks",16,0,FALSE,0,FALSE,16
+"test-tariff-game-auction.R","legacy TradeFit auction recalc stores the converted level cost before pricing",6,0,FALSE,0,FALSE,6
+"test-tariff-game-auction.R","auction merger, cost, and combined counterfactuals use original physical costs",18,0,FALSE,2,FALSE,16
+"test-tariff-game-auction.R","auction tariff uniformity is enforced after merger ownership changes",4,0,FALSE,0,FALSE,4
+"test-tariff-game-auction.R","auction CV equals the established native oracle",2,0,FALSE,0,FALSE,2
+"test-tariff-game-auction.R","explicit auction adapter rejects ALM and input specifications",2,0,FALSE,0,FALSE,2
+"test-tariff-game-fit.R","native promotion copies baseline state without a solve",8,0,FALSE,0,FALSE,8
+"test-tariff-game-fit.R","the scalar tariff contract also covers a single product",2,0,FALSE,0,FALSE,2
+"test-tariff-game-fit.R","uniform tariffs can differ across firms and recover physical costs",2,0,FALSE,0,FALSE,2
+"test-tariff-game-fit.R","tariff, physical cost, merger, and combined scenarios use original baseline",7,0,FALSE,0,FALSE,7
+"test-tariff-game-fit.R","zero and unchanged scenarios are stable and basis rules are explicit",7,0,FALSE,0,FALSE,7
+"test-tariff-game-fit.R","accounts expose net revenue, physical profit, and government revenue",5,0,FALSE,0,FALSE,5
+"test-tariff-game-fit.R","tariff wrappers reject legacy lifecycle paths and summarize physical transfers",5,0,FALSE,0,FALSE,5
+"test-tariff-game-fit.R","recorded gross margins are compatible only at a zero baseline tariff",3,0,FALSE,1,FALSE,2
+"test-tariff-game-paths.R","A: entry, two mergers, heterogeneous tariff and exit retain multiproduct physical-profit FOCs",45,0,FALSE,0,FALSE,45
+"test-tariff-game-paths.R","A: CES price and Cournot quantity games retain their distinct inverse-demand incentives",88,0,FALSE,0,FALSE,88
+"test-tariff-game-paths.R","A: resume across entry and exit preserves current cost stocks and policy assignments",11,0,FALSE,0,FALSE,11
+"test-tariff-game-paths.R","A: entry policy precedence and pre-entry accounts cannot invent prior entrant output",46,0,FALSE,0,FALSE,46
+"test-tariff-game-paths.R","A: direct alternatives remain baseline-relative while sequential masks never resurrect exits",11,0,FALSE,0,FALSE,11
+"test-tariff-game-paths.R","A: native core roles can change through the public path API and resume",5,0,FALSE,0,FALSE,5
+"test-tariff-game-paths.R","A: literal exit to two mergers to tariff to exit retains the prior market in welfare reports",15,0,FALSE,0,FALSE,15
+"test-tariff-game-paths.R","A: active-only CES monopoly without an outside good fails instead of reporting a negative-price root",1,0,FALSE,0,FALSE,1
+"test-tariff-game-paths.R","A: auction paths carry cumulative cost-relative win probabilities and conditional bids",5,0,FALSE,0,FALSE,5
+"test-tariff-game-paths.R","A: extended native and ordinary game paths preserve role and policy state across promotion",28,0,FALSE,0,FALSE,28
+"test-tariff-regressions.R","Bertrand tariff and quota examples construct valid objects",4,0,FALSE,0,FALSE,4
+"test-tariff-regressions.R","other documented tariff constructors construct valid objects",5,0,FALSE,0,FALSE,5
+"test-tariff-regressions.R","CES bargaining tariff preserves revenue accounting and tariff wedges",9,0,FALSE,0,FALSE,9
+"test-tariff-regressions.R","constructors require explicit ownership when ownership affects conduct",4,0,FALSE,0,FALSE,4
+"test-tariff-regressions.R","no-change defaults are valid no-op simulations",2,0,FALSE,0,FALSE,2
+"test-tariff-regressions.R","sim supports documented auction2nd supply and deprecated auction alias",3,0,FALSE,0,FALSE,3
+"test-tariff-regressions.R","Cournot tariff example constructs with plant-level ownership",3,0,FALSE,0,FALSE,3
+"test-tariff-regressions.R","Logit Cournot tariff constructs with diversion calibration",7,0,FALSE,0,FALSE,7
+"test-tariff-regressions.R","Logit Cournot tariff supports ALM calibration",5,0,FALSE,0,FALSE,5
+"test-tariff-regressions.R","Logit Cournot tariff requires ownership and validates dimensions",3,0,FALSE,0,FALSE,3
+"test-tariff-regressions.R","Logit Cournot tariff no-change case matches antitrust",4,0,FALSE,0,FALSE,4
+"test-tariff-regressions.R","Logit Cournot tariff normalizes NA tariffs to zero",2,0,FALSE,0,FALSE,2
+"test-tariff-regressions.R","trade re-exports antitrust diagnostics used by tariff workflows",18,0,FALSE,0,FALSE,18
+"test-tariff-regressions.R","ownership and tariff normalization are distinct",5,0,FALSE,0,FALSE,5
+"test-tariff-summary-import-reporting.R","tariff summaries classify imports by policy and weight the groups",4,0,FALSE,0,FALSE,4
+"test-trade-architecture.R","calibrate and simulate separate a Bertrand Logit tariff",14,0,FALSE,0,FALSE,14
+"test-trade-architecture.R","TariffAIDS lifecycle simulation matches the legacy economic oracle",15,0,FALSE,0,FALSE,15
+"test-trade-architecture.R","TariffAIDS repeated and sequential simulations re-solve each target",4,0,FALSE,0,FALSE,4
+"test-trade-architecture.R","one calibrated fit supports repeated tariff simulations",3,0,FALSE,0,FALSE,3
+"test-trade-architecture.R","specify and simulate preserve the supplied-parameter sim path",10,0,FALSE,0,FALSE,10
+"test-trade-architecture.R","migrated sim paths remain numerically compatible",1,0,FALSE,0,TRUE,0
+"test-trade-architecture.R","CES uses its complete legacy calibration and simulation path",9,0,FALSE,0,FALSE,9
+"test-trade-architecture.R","trade MonCom CES matches core direct primitives and responds to tariffs",13,0,FALSE,1,FALSE,12
+"test-trade-architecture.R","trade and core retain distinct noisy MonCom CES calibration objectives",3,0,FALSE,0,FALSE,3
+"test-trade-architecture.R","quota policy is a separate complete model path",10,0,FALSE,0,FALSE,10
+"test-trade-architecture.R","post-policy inputs are kept at the simulation boundary",2,0,FALSE,0,FALSE,2
+"test-trade-architecture.R","update genuinely recalibrates a stored trade baseline",5,0,FALSE,0,FALSE,5
+"test-trade-architecture.R","trade update preserves model identity and respecify changes conduct",9,0,FALSE,1,FALSE,8
+"test-trade-architecture.R","trade respecification rejects nonportable demand and Cournot transitions",9,0,FALSE,5,FALSE,4
+"test-trade-model-registry.R","trade model specifications normalize historical aliases",8,0,FALSE,0,FALSE,8
+"test-trade-model-registry.R","registry contains only complete implemented trade models",12,0,FALSE,0,FALSE,12
+"test-trade-model-registry.R","registered trade counterfactual capabilities have behavioral anchors",11,0,FALSE,0,FALSE,11
+"test-trade-model-registry.R","unsupported combinations fail clearly",4,0,FALSE,0,FALSE,4
+"test-trade-model-registry.R","trade transition registry records only supported supplied paths",6,0,FALSE,0,FALSE,6
+"test-trade-oracle.R","master tariff Bertrand Logit oracle is stable",6,0,FALSE,0,FALSE,6
+"test-trade-oracle.R","master quota Logit oracle is stable",4,0,FALSE,0,FALSE,4
+"test-trade-oracle.R","master supplied-parameter Logit oracle is stable",3,0,FALSE,0,FALSE,3
+"test-trade-promotion.R","selective tariffs leave domestic firms responsive in every direct promotion family",62,0,FALSE,0,FALSE,62
+"test-trade-promotion.R","promotion eligibility is the exact live registry overlap",6,0,FALSE,0,FALSE,6
+"test-trade-promotion.R","as_trade_fit is an S4 generic with explicit fallback behavior",6,0,FALSE,0,FALSE,6
+"test-trade-promotion.R","every exact tariff overlap has a direct promotion route",499,0,FALSE,0,FALSE,499
+"test-trade-promotion.R","quota promotion uses its exact corresponding implementation",11,0,FALSE,0,FALSE,11
+"test-trade-promotion.R","promotion copies baseline state without recalibration or a price solve",97,0,FALSE,1,FALSE,96
+"test-trade-promotion.R","tariff baseline state is retained and policy shocks are relative",10,0,FALSE,0,FALSE,10
+"test-trade-promotion.R","promotion resets stale source post-state without mutating the source",4,0,FALSE,0,FALSE,4
+"test-trade-promotion.R","nonzero policy states work for each specialized tariff wrapper",40,0,FALSE,0,FALSE,40
+"test-trade-promotion.R","plant-by-product tariff states are relative for Cournot promotion",12,0,FALSE,0,FALSE,12
+"test-trade-promotion.R","quota promotion derives capacities from fitted quantities",7,0,FALSE,0,FALSE,7
+"test-trade-promotion.R","quota promotion handles zero fitted output and infinite capacity",16,0,FALSE,8,FALSE,8
+"test-trade-promotion.R","promotion validates policy-specific arguments",19,0,FALSE,4,FALSE,15

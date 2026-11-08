@@ -1,0 +1,76 @@
+"file","test","nb","failed","error","warning","skipped","passed"
+"test-antitrust-boundary.R","coordination namespace contains no private antitrust (:::) access",1,0,FALSE,0,FALSE,1
+"test-antitrust-boundary.R","coordination only calls exported antitrust generics/classes",10,0,FALSE,0,FALSE,10
+"test-antitrust-boundary.R","antitrust package itself does not depend on coordination",1,0,FALSE,0,FALSE,1
+"test-core-fringe-nesting.R","core-fringe hard endpoints use the audited firm-level equations",6,0,FALSE,0,FALSE,6
+"test-core-fringe-nesting.R","core-fringe endpoints reproduce antitrust simultaneous and MonCom games",16,0,FALSE,0,FALSE,16
+"test-core-fringe.R","exact core-fringe Logit covers hard roles and boundary k",54,0,FALSE,0,FALSE,54
+"test-core-fringe.R","exact core-fringe CES covers hard roles and missing margins",42,0,FALSE,0,FALSE,42
+"test-core-fringe.R","core-fringe calibrates partial margins and keeps structural costs",3,0,FALSE,0,FALSE,3
+"test-core-fringe.R","ownership, cost, combined shocks and exits preserve exact roles",6,0,FALSE,0,FALSE,6
+"test-core-fringe.R","role-specific diagnostics detect perturbed core and fringe prices",6,0,FALSE,0,FALSE,6
+"test-core-fringe.R","unsupported local-maximum checks fail explicitly",2,0,FALSE,0,FALSE,2
+"test-core-fringe.R","input Logit and CES counterfactuals retain hard roles",9,0,FALSE,0,FALSE,9
+"test-grim-trigger.R","firm-level Grim Trigger IC matches the deviation threshold in both ownership states",28,0,FALSE,0,FALSE,28
+"test-grim-trigger.R","Coord/Defect/Punish satisfy pi_Coord >= pi_Punish (coordination weakly dominates static Bertrand)",2,0,FALSE,1,FALSE,1
+"test-grim-trigger.R","Defect profits are at least as large as Coord profits in the deviation period",2,0,FALSE,1,FALSE,1
+"test-grim-trigger.R","isCollusion = TRUE recalibrates demand under the collusive ownership assumption",3,0,FALSE,1,FALSE,2
+"test-grim-trigger.R","calcProducerSurplusGrimTrigger validates coalition and discount inputs",3,0,FALSE,1,FALSE,2
+"test-price-leadership-blp.R","PriceLeadershipBLP uses the shared integration rules",8,0,FALSE,0,FALSE,8
+"test-price-leadership-blp.R","PriceLeadershipBLP uses shared Gauss-Hermite nodes for one demographic",4,0,FALSE,0,FALSE,4
+"test-price-leadership-blp.R","PriceLeadershipBLP preserves canonical two-dimensional integration state",29,0,FALSE,0,FALSE,29
+"test-price-leadership-blp.R","PriceLeadershipBLP accepts two-dimensional supplied points and seeded Monte Carlo",14,0,FALSE,0,FALSE,14
+"test-price-leadership-invariants.R","fringe products satisfy their Bertrand best-response FOC at equilibrium",2,0,FALSE,1,FALSE,1
+"test-price-leadership-invariants.R","coalition price equals coordinated Bertrand price plus supermarkup",2,0,FALSE,1,FALSE,1
+"test-price-leadership-invariants.R","calcSlack sign matches identified timing parameter regime",4,0,FALSE,1,FALSE,3
+"test-price-leadership-invariants.R","calcSupermarkup unconstrained post-merger supermarkup is finite",2,0,FALSE,1,FALSE,1
+"test-price-leadership-parity.R","ple() constructs a PriceLeadership object with finite equilibria",6,0,FALSE,1,FALSE,5
+"test-price-leadership-parity.R","ple() matches known parity fixture values",3,0,FALSE,1,FALSE,2
+"test-price-leadership-parity.R","calcSlack, calcSupermarkup, calcPriceLeadershipParams are exported and usable",9,0,FALSE,1,FALSE,8
+"test-price-leadership-parity.R","PriceLeadershipBLP / ple.blp are present and exported",4,0,FALSE,0,FALSE,4
+"test-price-leadership-parity.R","ple.blp() constructs a PriceLeadershipBLP with finite equilibria",8,0,FALSE,3,FALSE,5
+"test-real-rate-bertrand.R","input Logit Bertrand real rates satisfy fringe and leader FOCs",12,0,FALSE,0,FALSE,12
+"test-real-rate-bertrand.R","positive input Logit Bertrand reports a signed-root obstruction",6,0,FALSE,0,FALSE,6
+"test-real-rate-domain.R","the shared log-domain scalar is finite over ordinary and extreme logs",2,0,FALSE,0,FALSE,2
+"test-real-rate-domain.R","real CoreFringe input Cournot preserves roles, shares, and dollar markdowns",8,0,FALSE,0,FALSE,8
+"test-real-rate-domain.R","real Stackelberg input Cournot agrees across analytic and implicit routes",9,0,FALSE,0,FALSE,9
+"test-real-rate-domain.R","zero rates keep dollar markdowns and flag undefined normalized output",7,0,FALSE,0,FALSE,7
+"test-real-rate-domain.R","zero Stack rates retain finite FOCs and flag undefined normalization",9,0,FALSE,0,FALSE,9
+"test-real-rate-domain.R","real domain rejects output and CES combinations",2,0,FALSE,0,FALSE,2
+"test-real-rate-domain.R","positive domain remains numerically unchanged and typed obstruction is available",7,0,FALSE,0,FALSE,7
+"test-revenue-retention.R","mixed retention satisfies independent portfolio profit conditions",48,0,FALSE,0,FALSE,48
+"test-revenue-retention.R","mixed retention baseline calibrates and preserves observed equilibrium",24,0,FALSE,0,FALSE,24
+"test-revenue-retention.R","firm-uniform retention cancels from strategic choices",4,0,FALSE,0,FALSE,4
+"test-revenue-retention.R","retention-aware calibration recovers demand parameters",4,0,FALSE,0,FALSE,4
+"test-revenue-retention.R","mixed-retention simulation handles ownership changes and product exit",8,0,FALSE,0,FALSE,8
+"test-revenue-retention.R","high tariffs approach the domestic-only Logit equilibrium",12,0,FALSE,0,FALSE,12
+"test-revenue-retention.R","mixed-retention routing depends on ratios rather than scale",22,0,FALSE,0,FALSE,22
+"test-s4-dispatch.R","PriceLeadership extends antitrust::Logit, not a local duplicate",2,0,FALSE,0,FALSE,2
+"test-s4-dispatch.R","calcProducerSurplusGrimTrigger has exactly one Bertrand method, owned by coordination",1,0,FALSE,0,FALSE,1
+"test-s4-dispatch.R","coordination does not redefine unrelated antitrust classes or dispatch",2,0,FALSE,0,FALSE,2
+"test-s4-dispatch.R","loading coordination does not alter ordinary Logit calcPrices/calcMargins behavior",4,0,FALSE,1,FALSE,3
+"test-stackelberg-ces.R","CES extends antitrust CES with unconditional revenue shares",12,0,FALSE,0,FALSE,12
+"test-stackelberg-ces.R","CES calibration uses all usable log inverse-margin moments",6,0,FALSE,0,FALSE,6
+"test-stackelberg-ces.R","CES Bertrand and Cournot nest endpoint timing cases",28,0,FALSE,0,FALSE,28
+"test-stackelberg-ces.R","CES Cournot allows a negative analytic response coefficient",3,0,FALSE,0,FALSE,3
+"test-stackelberg-ces.R","CES multiproduct leaders and followers have product-specific responses",4,0,FALSE,0,FALSE,4
+"test-stackelberg-ces.R","public CES multipliers preserve multiproduct margin identities",8,0,FALSE,0,FALSE,8
+"test-stackelberg-ces.R","CES direct leader gradient and actual follower optimization agree",3,0,FALSE,0,FALSE,3
+"test-stackelberg-ces.R","CES ownership, cost, combined shocks and inactive products preserve roles",10,0,FALSE,0,FALSE,10
+"test-stackelberg-ces.R","CES inverse demand recovers finite prices from quantities",6,0,FALSE,0,FALSE,6
+"test-stackelberg-ces.R","CES rejects input markets and invalid outside normalization",3,0,FALSE,0,FALSE,3
+"test-stackelberg-logit.R","Stackelberg Logit calibrates audited Bertrand equations",10,0,FALSE,0,FALSE,10
+"test-stackelberg-logit.R","negative Logit costs do not invalidate intermediate price FOCs",4,0,FALSE,0,FALSE,4
+"test-stackelberg-logit.R","market orientation cannot be silently changed by numeric output",2,0,FALSE,0,FALSE,2
+"test-stackelberg-logit.R","tiny Bertrand product shares cannot mask a follower FOC",3,0,FALSE,0,FALSE,3
+"test-stackelberg-logit.R","Cournot and input sign cases retain positive actions",8,0,FALSE,0,FALSE,8
+"test-stackelberg-logit.R","public Logit multipliers preserve audited WLS and partial-margin equations",10,0,FALSE,0,FALSE,10
+"test-stackelberg-logit.R","follower reactions agree with finite differences and generic route",4,0,FALSE,0,FALSE,4
+"test-stackelberg-logit.R","off-equilibrium leader reduced gradient has the payoff sign",1,0,FALSE,0,FALSE,1
+"test-stackelberg-logit.R","empty leader and follower sectors have stable dimensions",4,0,FALSE,0,FALSE,4
+"test-stackelberg-logit.R","subset NA and Cournot no-follower domain are rejected",2,0,FALSE,0,FALSE,2
+"test-stackelberg-logit.R","firm-level role partitions cover multiproduct and empty sectors",96,0,FALSE,0,FALSE,96
+"test-stackelberg-logit.R","one-leader reduced profit agrees with bounded direct optimization",8,0,FALSE,0,FALSE,8
+"test-stackelberg-logit.R","ownership-only, cost-only, and combined shocks solve both conducts",20,0,FALSE,0,FALSE,20
+"test-stackelberg-logit.R","merger and cost shocks require explicit post roles",7,0,FALSE,0,FALSE,7
+"test-stackelberg-logit.R","unsupported normalizations and control matrices are explicit",4,0,FALSE,0,FALSE,4

@@ -1,0 +1,15 @@
+{
+  "scope": "Initial compatible-stack bounded Bayes and toolbox validation; final repaired core replay remains root-owned",
+  "bayes_ordinary": {"passed": 7435, "failed": 0, "errors": 0, "warnings": 22, "skips": 16, "sampling_enabled": false, "results": "bayes-ordinary-initial.rds", "log": "bayes-ordinary-initial.log"},
+  "bayes_focused": {"passed": 1182, "failed": 0, "errors": 0, "warnings": 11, "skips": 0, "results": "bayes-focused-initial.rds"},
+  "bayes_replay_provenance_regressions": {"passed": 12, "failed": 0, "sampling_enabled": false},
+  "bayes_saved_fit_replay": {"policy_focs_passed": 32, "policy_focs_planned": 32, "maximum_residual": 9.11085e-9, "threshold": 1e-6, "saved_artifacts_unchanged": true, "new_hmc": false, "output": "bayes-replay-initial"},
+  "bayes_full_vignette_archive": {"built": true, "package_check_run": false, "path": "bayes-package-check-initial/antitrustBayes_0.3.0.tar.gz", "private_installed_library": "bayes-package-lib"},
+  "toolbox_interactions": {"passed": 27, "failed": 0, "errors": 0, "warnings": 3, "skips": 0, "results": "toolbox-app-interactions-initial.rds", "scope": "Actual server, all four pages, invalid price recovery, four edited standalone R scripts in fresh processes; not a browser"},
+  "toolbox_warnings": ["Two pre-existing normalized vertical-market size warnings", "One pre-existing vertical calcPrices convergence warning; separate numerical/economic checks remain necessary"],
+  "browser": {"run": false, "block": "socket.socket() fails EPERM both in sandbox and with require_escalated; no Linux browser or browser connector; chromote/shinytest2/websocket missing", "windows_edge_present": true, "download_feature_present": false, "export_feature": "Copied R code"},
+  "hosted_ci_waiver": "Existing private-vertical waiver retained; no hosted run claimed",
+  "local_document_links": {"checked": 88, "missing": 0},
+  "remote_mutations": false,
+  "scientific_kernels_priors_or_sampler_defaults_changed": false
+}

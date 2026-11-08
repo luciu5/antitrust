@@ -1,0 +1,31 @@
+"file","test","nb","failed","error","warning","skipped","passed"
+"test-bank-accounting.R","portfolio liquidity matches independent funding-gap and shortfall formulas",8,0,FALSE,0,FALSE,8
+"test-bank-assets.R","asset_weighted psiRule uses data$assets, not liquidAssets+equity, when supplied",5,0,FALSE,0,FALSE,5
+"test-bank-assets.R","asset_weighted psiRule falls back to liquidAssets+equity WITH an explicit warning when data$assets is absent",3,0,FALSE,0,FALSE,3
+"test-bank-blocksolve.R","block-solve equals full ownership-system solve (mixed 2+1 merger)",1,0,FALSE,0,FALSE,1
+"test-bank-blocksolve.R","block-solve equals full solve (3-way merger, single dense block)",1,0,FALSE,0,FALSE,1
+"test-bank-blocksolve.R","block-solve reduces to legacy per-bank scalar division when all standalone",1,0,FALSE,0,FALSE,1
+"test-bank-blocksolve.R","block-solve is correct for a chain-connected 3-bank ownership group (regression)",4,0,FALSE,0,FALSE,4
+"test-bank-parity.R","calc_portfolio_liquidity() reproduces the closed-form oracle EXACTLY",7,0,FALSE,0,FALSE,7
+"test-bank-parity.R","closed-form expected_liq_penalty agrees with the stored Monte-Carlo value within documented MC noise",2,0,FALSE,0,FALSE,2
+"test-bank-parity.R","simulate_beta_portfolio_liquidity() Monte-Carlo comparator is migrated and runs",2,0,FALSE,0,FALSE,2
+"test-bank-parity.R","phi -> large gives expected_liq_penalty == 0 (matches bank_limiting_phi_large.rds)",6,0,FALSE,0,FALSE,6
+"test-bank-parity.R","psi = 0 gives expected_liq_penalty == 0 exactly (matches bank_limiting_psi_zero.rds)",4,0,FALSE,0,FALSE,4
+"test-bank-parity.R","single-vs-multi-market values match bank_limiting_single_vs_multi_market.rds",7,0,FALSE,0,FALSE,7
+"test-bank-parity.R","bank_fit() single-draw vector reproduces the point-estimate path",9,0,FALSE,0,FALSE,9
+"test-bank-parity.R","bank_fit()/simulate() runs the merger counterfactual and produces uncertainty-delta outputs",12,0,FALSE,0,FALSE,12
+"test-bank-parity.R","bank_fit()/simulate() maps over a multi-draw posterior and aggregates per the recipe",5,0,FALSE,0,FALSE,5
+"test-bank-release-economic-gate.R","bank_fit/simulate satisfies independent Nash FOCs for competition-only and pooled-liquidity merger rates",18,0,FALSE,0,FALSE,18
+"test-beta-moments.R","shared beta-moment helpers reproduce the pre-migration oracle exactly",6,0,FALSE,0,FALSE,6
+"test-beta-moments.R","debt h_focal integral is the share-derivative-weighted lower partial moment",2,0,FALSE,0,FALSE,2
+"test-debt-lifecycle.R","debt_fit() builds a valid DebtFit that extends FinancialFit",5,0,FALSE,0,FALSE,5
+"test-debt-lifecycle.R","simulate(DebtFit) recomputes post-merger prices and emits uncertainty deltas",17,0,FALSE,0,FALSE,17
+"test-debt-lifecycle.R","simulate_steps() and respecify() fail loudly on DebtFit (default-reject)",2,0,FALSE,0,FALSE,2
+"test-debt-numerics.R","A: zero debt and extreme Beta shapes retain analytic partial moments",9,0,FALSE,0,FALSE,9
+"test-debt-numerics.R","A: solvent moments match independent clipped double integrals and focal permutations",9,0,FALSE,0,FALSE,9
+"test-debt-numerics.R","A: three-market uniform cubature matches an independent simplex identity",3,0,FALSE,0,FALSE,3
+"test-debt-numerics.R","A: undefined conditioning and invalid economics cannot become zero share roots",5,0,FALSE,0,FALSE,5
+"test-debt-numerics.R","A: missing debt margins fail explicitly instead of deleting firm-profit information",2,0,FALSE,0,FALSE,2
+"test-debt-parity.R","A: repaired uniform grid obeys finite ownership FOCs rather than trap roots",28,0,FALSE,0,FALSE,28
+"test-debt-parity.R","C: impossible high-debt conditioning is rejected instead of matching legacy NaNs",2,0,FALSE,0,FALSE,2
+"test-debt-parity.R","A: multimarket Beta calibration minimizes the correctly normalized moment criterion",2,0,FALSE,0,FALSE,2

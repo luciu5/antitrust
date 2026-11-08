@@ -1,0 +1,46 @@
+
+R version 4.6.1 (2026-06-24) -- "Happy Hop"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(testthat)
+> library(antitrust)
+
+Attaching package: 'antitrust'
+
+The following object is masked from 'package:stats':
+
+    simulate
+
+> 
+> test_check("antitrust")
+Using provided meanval (delta) for LogitBLP - skipping contraction mapping
+Using provided meanval (delta) for BLP - skipping contraction mapping
+Using provided meanval (delta) for BLP - skipping contraction mapping
+Using provided meanval (delta) for BLP - skipping contraction mapping
+Using provided meanval (delta) for BLP - skipping contraction mapping
+Note: 'meanval' (delta) not provided for BLP. It will be recovered via BLP contraction from observed shares/prices.
+Running BLP contraction (tol=1e-10, maxIter=1200)...
+BLP contraction converged in 199 iterations
+Note: 'meanval' (delta) not provided for BLP. It will be recovered via BLP contraction from observed shares/prices.
+Running BLP contraction (tol=1e-10, maxIter=1200)...
+BLP contraction converged in 199 iterations
+[ FAIL 0 | WARN 161 | SKIP 0 | PASS 2017 ]
+
+[ FAIL 0 | WARN 161 | SKIP 0 | PASS 2017 ]
+> 
+> proc.time()
+   user  system elapsed 
+229.805   0.953 231.031 

@@ -1,0 +1,66 @@
+[
+  {
+    "path": "man/cubature-package.Rd",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "3d36646c4a49a6539742baaf97fc6d07fc4538e5",
+    "size": 949,
+    "url": "https://api.github.com/repos/cran/cubature/git/blobs/3d36646c4a49a6539742baaf97fc6d07fc4538e5"
+  },
+  {
+    "path": "man/cubintegrate.Rd",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "93e75aeacae0cc4a6380e3643262b1a7154d1766",
+    "size": 3748,
+    "url": "https://api.github.com/repos/cran/cubature/git/blobs/93e75aeacae0cc4a6380e3643262b1a7154d1766"
+  },
+  {
+    "path": "man/cuhre.Rd",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "2019cde4b79bd3ea74c2a8759928f755029803bf",
+    "size": 6967,
+    "url": "https://api.github.com/repos/cran/cubature/git/blobs/2019cde4b79bd3ea74c2a8759928f755029803bf"
+  },
+  {
+    "path": "man/default_args.Rd",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "db214a635c4677210715185670b16d47b7f24452",
+    "size": 480,
+    "url": "https://api.github.com/repos/cran/cubature/git/blobs/db214a635c4677210715185670b16d47b7f24452"
+  },
+  {
+    "path": "man/divonne.Rd",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "2afbe634b5b1741734df4172e88f3532972bdb25",
+    "size": 12836,
+    "url": "https://api.github.com/repos/cran/cubature/git/blobs/2afbe634b5b1741734df4172e88f3532972bdb25"
+  },
+  {
+    "path": "man/hcubature.Rd",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "c7108a4ba403f9e19fba9ebed53c3b6417c03c03",
+    "size": 11933,
+    "url": "https://api.github.com/repos/cran/cubature/git/blobs/c7108a4ba403f9e19fba9ebed53c3b6417c03c03"
+  },
+  {
+    "path": "man/suave.Rd",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "ac72cc88321947203cbdcda6692a1f98226ea441",
+    "size": 7811,
+    "url": "https://api.github.com/repos/cran/cubature/git/blobs/ac72cc88321947203cbdcda6692a1f98226ea441"
+  },
+  {
+    "path": "man/vegas.Rd",
+    "mode": "100644",
+    "type": "blob",
+    "sha": "24b49916f40ef75dbb655aa71148961cff371043",
+    "size": 8664,
+    "url": "https://api.github.com/repos/cran/cubature/git/blobs/24b49916f40ef75dbb655aa71148961cff371043"
+  }
+]

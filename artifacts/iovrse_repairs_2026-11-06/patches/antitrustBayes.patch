@@ -1,0 +1,353 @@
+diff --git a/doc/README.md b/doc/README.md
+index f1a6aae..dac1bef 100755
+--- a/doc/README.md
++++ b/doc/README.md
+@@ -1,7 +1,8 @@
+ # Development and evidence index
+ 
+-Implementation validated 2026-10-23: relative-share Option B for Logit/CES,
+-package version `0.2.0.9009`, model specification 14. See the bounded
++Current package version is `0.3.0`, model specification 14. Relative-share
++Option B for Logit/CES was validated 2026-10-23 at version `0.2.0.9009`.
++See the bounded
+ [implementation results](validation/relative_share_implementation/README.md),
+ including the preserved incomplete noiseless CES panel stress attempt.
+ The 2026-11-01 [coordinated release gate](validation/coordinated_release_gate_results.md)
+@@ -35,11 +36,13 @@ do not retroactively change saved fits or establish universal HMC improvement.
+ 
+ `antitrust` owns common structural/counterfactual machinery; `coordination` owns
+ fringe/Stackelberg models. Read [DESCRIPTION](../DESCRIPTION) for dependency
+-minima and [CI](../.github/workflows/qa.yml) for the current development pin and
+-canonical R version. CI now pins a verified compatible `antitrust` `0.99.42`,
+-`coordination` `0.0.0.9006` and `trade` `0.8.9.9002` stack, with the validated
+-CmdStanR revision. The former `antitrust` `0.99.39` pin was incompatible with
+-current coordination. The ordinary tier explicitly excludes Nutpie/BridgeStan;
++minima and [CI](../.github/workflows/qa.yml) for dependency selection and the
++canonical R version. Current minima are `antitrust >= 0.99.43`,
++`coordination >= 0.1.0`, and `cmdstanr >= 0.9.0`; optional policy integration
++uses `trade >= 0.9.0`. Ordinary development CI resolves antitrust/trade `master`
++and coordination `main`, records their SHAs, and pins CmdStanR. Release runs
++use the full dependency SHAs described below. Historical executed reports
++retain their earlier compatible stacks. The ordinary tier explicitly excludes Nutpie/BridgeStan;
+ the opt-in CmdStan tier installs its frozen toolchain before testing. Hosted
+ ordinary CI passed at baseline `55c6fdc` after its parser prerequisite guard
+ fix ([executed run](https://github.com/luciu5/antitrustBayes/actions/runs/39570316189)).
+@@ -76,7 +79,7 @@ ANTITRUSTBAYES_RUN_STAN_TESTS=false Rscript --vanilla -e 'testthat::test_local(r
+ ```
+ 
+ Record integration skips and the resolved dependency versions; the current
+-minimum is `coordination >= 0.0.0.9006`. Routine checks can parse Stan
++minimum is `coordination >= 0.1.0`. Routine checks can parse Stan
+ when CmdStan exists. Sampling is separately opt-in; short chains are smoke tests.
+ See the [test audit](test_suite_audit.md) for tier definitions and dated evidence.
+ Extended deterministic enterprise-fixture checks must also use current source:
+@@ -97,6 +100,13 @@ reviewed backend port; its passing fixture checks do not validate current HMC.
+ For documentation-only work, resolve changed local links and run
+ `git diff --check`; do not rerun sampling or package installation.
+ 
++For sampling-free release follow-up, use the
++[sealed-fit/current-policy replay](validation/saved_gate_policy_replay.md).
++It audits the historical inference seals and checks current structural-policy
++FOCs in a new output directory; it does not relax the original runner's strict
++source guard or relabel old fits as fresh inference. Its provenance regressions
++run with `Rscript --vanilla doc/validation/saved_gate_replay_checks.R`.
++
+ ## Consolidated agenda and topic evidence
+ 
+ Select follow-up work from the user's task. These statuses are evidence bounds,
+diff --git a/doc/validation/README.md b/doc/validation/README.md
+index d8ac259..2a39cda 100755
+--- a/doc/validation/README.md
++++ b/doc/validation/README.md
+@@ -46,6 +46,13 @@ Source, kernel, data, fitted specification, sampler settings and runtime library
+ provenance are sealed. [Dated results](coordinated_release_gate_results.md)
+ record execution and any failed criterion without changing these thresholds.
+ 
++## Sampling-free follow-up
++
++Use the [saved-fit/current-policy replay](saved_gate_policy_replay.md) when
++packaging/dependency metadata changes while the sealed R/Stan inference source
++is unchanged. Historical seals remain intact; current runtime and policy FOCs
++are recorded separately. This does not certify new statistical recovery.
++
+ # Historical absolute-share CmdStanR validation
+ 
+ The following runner and reported numeric results predate specification 14.
+diff --git a/doc/validation/saved_gate_policy_replay.R b/doc/validation/saved_gate_policy_replay.R
+new file mode 100644
+index 0000000..4d9c933
+--- /dev/null
++++ b/doc/validation/saved_gate_policy_replay.R
+@@ -0,0 +1,177 @@
++#!/usr/bin/env Rscript
++# Extended, sampling-free replay of sealed specification-14 fits. The historical
++# runner and manifests remain unchanged; outputs belong to a fresh directory.
++saved_gate_hash <- function(path) digest::digest(file = path, algo = "sha256")
++
++saved_gate_check_sources <- function(hashes, allow_description_change = FALSE) {
++  required <- names(hashes)
++  if (is.null(required) || anyDuplicated(required) || !all(file.exists(required)))
++    stop("Missing or ambiguous sealed source files.")
++  production <- c(sort(list.files("R", "[.]R$", full.names = TRUE)),
++                  sort(list.files("inst/stan", "[.]stan$", full.names = TRUE)))
++  if (!setequal(production, required[grepl("^(R/|inst/stan/)", required)]))
++    stop("Production source file set differs from the sealed inference source.")
++  current <- vapply(required, saved_gate_hash, character(1))
++  changed <- required[current != hashes]
++  if (length(setdiff(changed, "DESCRIPTION")))
++    stop("Sealed inference source changed: ", paste(setdiff(changed, "DESCRIPTION"), collapse = ", "))
++  if ("DESCRIPTION" %in% changed && !isTRUE(allow_description_change))
++    stop("DESCRIPTION changed; review packaging/dependency changes and explicitly acknowledge them.")
++  data.frame(path = required, inference_sha256 = unname(hashes),
++             current_sha256 = unname(current), identical = current == hashes)
++}
++
++saved_gate_check_calls <- function(manifest) {
++  if (!identical(manifest$calls_hash, digest::digest(manifest$calls, algo = "sha256")))
++    stop("Saved fixture/prior/sampler call identity changed.")
++  if (!identical(manifest$status, "sampling_complete") ||
++      !identical(manifest$model_specification, 14L) ||
++      !identical(names(manifest$calls), c("logit_C_M4T4", "ces_C_M4T4_finite_noise")))
++    stop("Expected the complete two-fit specification-14 gate; incomplete fits cannot be omitted.")
++  invisible(TRUE)
++}
++
++saved_gate_check_artifact <- function(path, expected) {
++  if (!file.exists(path) || !identical(saved_gate_hash(path), unname(expected)))
++    stop("Saved artifact seal differs: ", path)
++  invisible(TRUE)
++}
++
++saved_gate_output <- function(saved_root, output) {
++  saved_root <- normalizePath(saved_root, mustWork = TRUE)
++  output <- normalizePath(output, mustWork = FALSE)
++  if (identical(output, saved_root) || startsWith(output, paste0(saved_root, "/")) ||
++      startsWith(saved_root, paste0(output, "/")))
++    stop("Replay output must be separate from the read-only saved gate.")
++  if (dir.exists(output) && length(list.files(output, all.files = TRUE, no.. = TRUE)))
++    stop("Preserve existing replay output; select a fresh directory.")
++  dir.create(output, recursive = TRUE, showWarnings = FALSE)
++  normalizePath(output, mustWork = TRUE)
++}
++
++saved_gate_fit <- function(root, manifest, id) {
++  path <- file.path(root, id, "fit.rds")
++  saved_gate_check_artifact(path, manifest$attempts[[id]]$artifact_sha256)
++  if (!identical(manifest$attempts[[id]]$status, "fit_complete"))
++    stop("Saved fit is incomplete: ", id)
++  fit <- readRDS(path)
++  getFromNamespace("validate_fit_spec", "antitrustBayes")(fit)
++  md <- fit@metadata
++  args <- manifest$calls[[id]]
++  kernel <- paste0(args$demand_model, "_supply")
++  stopifnot(identical(as.integer(md$model_spec_version), 14L),
++            identical(md$share_basis, "relative"), identical(md$backend, "cmdstanr"),
++            identical(md$stan_kernel, kernel),
++            identical(md$stan_source_hash, unname(manifest$source_hashes[paste0("inst/stan/", kernel, ".stan")])),
++            identical(md$stan_data_hash, digest::digest(fit@stan_data[md$stan_data_fields], algo = "sha256")),
++            identical(dim(fit@stanfit$draws())[1:2], c(500L, 4L)))
++  controls <- md$sampler_controls
++  stopifnot(controls$seed == args$stan_options$seed, controls$chains == 4L,
++            controls$warmup == 500L, controls$retained_draws == 500L,
++            controls$target_accept == .99, controls$max_depth == 13L,
++            identical(controls$adaptation, "diag_e"))
++  for (field in c("prices", "quantities", "margins", "market", "year", "group"))
++    stopifnot(identical(as.character(fit@data[[field]]), as.character(args[[field]])))
++  fit
++}
++
++saved_gate_policy_replay <- function(saved_root, output, allow_description_change = FALSE) {
++  saved_root <- normalizePath(saved_root, mustWork = TRUE)
++  seals <- read.csv("doc/validation/coordinated_release_gate/artifact_hashes.csv", stringsAsFactors = FALSE)
++  before <- vapply(file.path(saved_root, seals$artifact), saved_gate_hash, character(1))
++  for (i in seq_len(nrow(seals)))
++    saved_gate_check_artifact(file.path(saved_root, seals$artifact[i]), seals$sha256[i])
++  m <- readRDS(file.path(saved_root, "manifest.rds"))
++  saved_gate_check_calls(m)
++  sources <- saved_gate_check_sources(m$source_hashes, allow_description_change)
++  sealed_sources <- read.csv("doc/validation/coordinated_release_gate/source_hashes.csv", stringsAsFactors = FALSE)
++  stopifnot(identical(sealed_sources$path, names(m$source_hashes)),
++            identical(sealed_sources$sha256, unname(m$source_hashes)))
++  historical <- readRDS(file.path(saved_root, "analysis.rds"))
++  stopifnot(nrow(historical$gates) == 20L, all(historical$gates$passed))
++  # These helpers remain byte-identical to the reviewed sealed oracle. We do
++  # not replace its strict source guard or call its output-writing entrypoints.
++  oracle <- new.env(parent = environment())
++  sys.source("doc/validation/coordinated_release_gate.R", envir = oracle)
++  fits <- lapply(names(m$calls), function(id) saved_gate_fit(saved_root, m, id))
++  names(fits) <- names(m$calls)
++  output <- saved_gate_output(saved_root, output)
++  rows <- list(); diagnostics <- list(); warnings <- character()
++  quiet <- function(expr) withCallingHandlers(expr, warning = function(w) {
++    warnings <<- c(warnings, conditionMessage(w)); invokeRestart("muffleWarning")
++  })
++  for (id in names(fits)) {
++    fit <- fits[[id]]; args <- m$calls[[id]]; truth <- m$truth[[id]]
++    diag <- as.data.frame(posterior::summarise_draws(fit@stanfit$draws(oracle$release_gate_active(fit))))
++    diagnostics[[id]] <- data.frame(case = id, max_rhat = max(diag$rhat),
++      min_bulk_ess = min(diag$ess_bulk), divergences = sum(fit@stanfit$sampler_diagnostics()[,,"divergent__"]))
++    plan <- posterior_policy_draws(fit, n_draws = 1L, seed = m$thresholds$policy_plan_seed)
++    stopifnot(identical(plan$draw_indices, m$thresholds$fixed_policy_draw))
++    prepared <- quiet(posterior_policy_models(fit, draw_plan = plan, year = "t1",
++      insideSize = 1000, demand_anchoring = "latent_quality"))
++    for (market in paste0("m", 1:4)) for (state in c("truth", "posterior_fixed_draw")) {
++      rows[[length(rows) + 1L]] <- tryCatch({
++        if (state == "truth") {
++          ix <- which(as.character(truth$market) == market & as.character(truth$year) == "t1")
++          if (args$demand_model == "logit") {
++            p <- truth$price[ix]; q <- truth$share[ix]; margin <- truth$margin[ix]
++            owner <- as.character(truth$product[ix])
++            params <- bayes_params(alpha = unique(truth$alpha[ix]), s0 = unique(truth$s0[ix]), supply_model = 3L)
++          } else {
++            p <- truth$prices[ix]; q <- truth$quantities[ix]; margin <- truth$margins[ix]
++            owner <- as.character(truth$group[ix]); params <- bayes_params(gamma = 6, s0 = .2, supply_model = 3L)
++          }
++          market_data <- bayes_market(p, q, margin, group = owner, insideSize = 1000,
++            outside_price = if (is.null(args$outside_price)) 1 else args$outside_price, market_side = "output")
++          source_object <- quiet(posterior_policy_models(bayes_specify(params, market_data), n_draws = 1L))$models[[1L]][[1L]]
++        } else {
++          uid <- as.character(prepared$units$unit_id[prepared$units$market == market])
++          stopifnot(length(uid) == 1L)
++          source_object <- prepared$models[[uid]][[1L]]
++          owner <- as.character(args$group[as.character(args$market) == market & as.character(args$year) == "t1"])
++        }
++        object <- if (methods::is(source_object, "AntitrustFit")) source_object@model else source_object
++        stopifnot(!is.null(object))
++        original <- serialize(source_object, NULL)
++        baseline <- max(abs(oracle$release_gate_raw_foc(object, TRUE)))
++        owner_post <- owner; firms <- unique(owner); owner_post[owner_post == firms[2L]] <- firms[1L]
++        solved <- quiet(antitrust::simulate(source_object, antitrust::counterfactual(ownership = owner_post)))
++        stopifnot(identical(original, serialize(source_object, NULL)))
++        if (methods::is(solved, "AntitrustFit")) solved <- solved@model
++        stopifnot(any(rowSums(solved@ownerPost) > 1L))
++        merger <- max(abs(oracle$release_gate_raw_foc(solved, FALSE)))
++        data.frame(case = id, market, state, regime = c("baseline", "merger"), residual = c(baseline, merger), reason = "")
++      }, error = function(e) data.frame(case = id, market, state, regime = c("baseline", "merger"), residual = Inf, reason = conditionMessage(e)))
++    }
++  }
++  table <- do.call(rbind, rows); table$threshold <- m$thresholds$maximum_foc_residual
++  table$passed <- is.finite(table$residual) & table$residual <= table$threshold
++  diagnostic <- do.call(rbind, diagnostics)
++  diagnostic$passed <- with(diagnostic, is.finite(max_rhat) & max_rhat <= m$thresholds$maximum_rhat &
++    min_bulk_ess >= m$thresholds$minimum_bulk_ess & divergences == m$thresholds$divergences)
++  after <- vapply(file.path(saved_root, seals$artifact), saved_gate_hash, character(1))
++  stopifnot(identical(before, after))
++  for (id in names(m$calls)) saved_gate_check_artifact(file.path(saved_root, id, "fit.rds"), m$attempts[[id]]$artifact_sha256)
++  write.csv(table, file.path(output, "policy_focs.csv"), row.names = FALSE)
++  write.csv(diagnostic, file.path(output, "saved_fit_diagnostics.csv"), row.names = FALSE)
++  write.csv(sources, file.path(output, "inference_source_identity.csv"), row.names = FALSE)
++  writeLines(warnings, file.path(output, "warnings.txt"))
++  runtime <- oracle$release_gate_packages()
++  saveRDS(list(created = Sys.time(), scope = "Saved-fit identity and current-policy replay only; no new inference",
++    saved_root = saved_root, original_manifest_sha256 = saved_gate_hash(file.path(saved_root, "manifest.rds")),
++    historical_inference_gates = historical$gates, current_policy = table, diagnostics = diagnostic,
++    sources = sources, runtime = runtime, warnings = warnings,
++    saved_artifacts_unchanged = identical(before, after), sampled = FALSE), file.path(output, "replay.rds"))
++  print(table, row.names = FALSE); print(diagnostic, row.names = FALSE)
++  if (!all(table$passed) || !all(diagnostic$passed)) stop("Saved-fit/current-policy replay failed; inspect retained output.")
++  invisible(table)
++}
++
++if (sys.nframe() == 0L) {
++  args <- commandArgs(TRUE)
++  if (length(args) < 2L || length(args) > 3L ||
++      (length(args) == 3L && args[3L] != "--allow-description-change"))
++    stop("Usage: Rscript doc/validation/saved_gate_policy_replay.R SAVED_GATE FRESH_OUTPUT [--allow-description-change]")
++  pkgload::load_all(".", quiet = TRUE)
++  saved_gate_policy_replay(args[1L], args[2L], length(args) == 3L)
++}
+diff --git a/doc/validation/saved_gate_policy_replay.md b/doc/validation/saved_gate_policy_replay.md
+new file mode 100644
+index 0000000..1b6f0cd
+--- /dev/null
++++ b/doc/validation/saved_gate_policy_replay.md
+@@ -0,0 +1,42 @@
++# Sealed-fit and current-policy replay
++
++The November 1 specification-14 gate has two completed fits and frozen
++inference thresholds. Later package metadata may differ: the current package
++is `0.3.0`, while those fits retain `0.2.0.9009` provenance. The original
++`coordinated_release_gate.R` correctly rejects any full-source seal mismatch.
++Leave that runner, its manifest and its dated report unchanged.
++
++The sampling-free `saved_gate_policy_replay.R` verifies the committed artifact
++seals, manifest call hash, complete two-fit support, saved fit digests,
++specification, kernels, data and frozen sampler controls. Every sealed R/Stan
++and original research-runner file must match byte for byte. It refuses changed
++or added production files. A reviewed DESCRIPTION-only change requires the
++explicit acknowledgment flag and appears in the source comparison table;
++it is not hidden by updating a historical hash.
++
++Run from this repository with an explicitly compatible structural library:
++
++```sh
++R_LIBS=/path/to/compatible/library \
++  Rscript --vanilla doc/validation/saved_gate_replay_checks.R
++R_LIBS=/path/to/compatible/library \
++  Rscript --vanilla doc/validation/saved_gate_policy_replay.R \
++  /path/to/read-only/saved-gate /path/to/fresh/replay-output \
++  --allow-description-change
++```
++
++The output must be separate from the saved gate and empty. Existing output
++cannot be overwritten. The script reads large fits in place and writes compact
++policy residuals, saved-fit diagnostics, source comparison, warnings and a
++provenance RDS. It checks all 32 baseline/merger FOCs at the original truth
++states and fixed draw 83, with the original `1e-6` residual limit. Demand,
++cost and ownership equations supply the oracle; package margin/share helpers
++are not an oracle. It also checks source-object immutability and recomputes
++the retained fits' original diagnostic bounds. Runtime package hashes are
++recorded separately from the historical inference environment.
++
++This is a policy replay using verified saved inference, not new HMC, broad
++recovery, conduct-identification certification, or a replacement for the
++incomplete noiseless CES panel attempt. Historical unavailable results remain
++unavailable. A change to scientific source requires a separate reviewed
++validation design rather than this replay route.
+diff --git a/doc/validation/saved_gate_replay_checks.R b/doc/validation/saved_gate_replay_checks.R
+new file mode 100644
+index 0000000..8adb278
+--- /dev/null
++++ b/doc/validation/saved_gate_replay_checks.R
+@@ -0,0 +1,41 @@
++#!/usr/bin/env Rscript
++# Permanent A: these checks guard scientific/provenance failures that ordinary
++# policy-equilibrium tests cannot detect. They require no fits or native sampler.
++source("doc/validation/saved_gate_policy_replay.R")
++
++testthat::test_that("A: replay rejects changed likelihood or reconstruction code despite matching package version", {
++  paths <- c("DESCRIPTION", sort(list.files("R", "[.]R$", full.names = TRUE)),
++             sort(list.files("inst/stan", "[.]stan$", full.names = TRUE)))
++  hashes <- stats::setNames(vapply(paths, saved_gate_hash, character(1)), paths)
++  for (file in c("R/posterior_policy_models.R", "R/priors.R", "inst/stan/ces_supply.stan")) {
++    changed <- hashes; changed[file] <- paste(rep("0", 64), collapse = "")
++    testthat::expect_error(saved_gate_check_sources(changed, TRUE), "Sealed inference source changed")
++  }
++  changed <- hashes; changed["DESCRIPTION"] <- paste(rep("0", 64), collapse = "")
++  testthat::expect_error(saved_gate_check_sources(changed), "DESCRIPTION changed")
++  testthat::expect_false(saved_gate_check_sources(changed, TRUE)$identical[1L])
++})
++
++testthat::test_that("A: replay cannot silently reuse a refit or drop a failed positive-support case", {
++  path <- tempfile(); on.exit(unlink(path))
++  saveRDS(list(draws = 1:3), path); seal <- saved_gate_hash(path)
++  saveRDS(list(draws = 4:6), path)
++  testthat::expect_error(saved_gate_check_artifact(path, seal), "artifact seal differs")
++  calls <- list(logit_C_M4T4 = list(priors = list(alpha = 1)), ces_C_M4T4_finite_noise = list())
++  m <- list(status = "sampling_complete", model_specification = 14L,
++            calls = calls, calls_hash = digest::digest(calls, algo = "sha256"))
++  m$calls$logit_C_M4T4$priors$alpha <- 2
++  testthat::expect_error(saved_gate_check_calls(m), "fixture/prior/sampler call identity changed")
++  m$calls <- calls[1L]; m$calls_hash <- digest::digest(m$calls, algo = "sha256")
++  testthat::expect_error(saved_gate_check_calls(m), "incomplete fits cannot be omitted")
++})
++
++testthat::test_that("A: replay refuses paths that could overwrite inference evidence or a prior replay", {
++  root <- tempfile(); dir.create(root); on.exit(unlink(root, recursive = TRUE))
++  saved <- file.path(root, "saved"); dir.create(saved)
++  testthat::expect_error(saved_gate_output(saved, saved), "separate from the read-only")
++  testthat::expect_error(saved_gate_output(saved, file.path(saved, "replay")), "separate from the read-only")
++  output <- file.path(root, "replay"); dir.create(output); writeLines("retained", file.path(output, "failed.log"))
++  testthat::expect_error(saved_gate_output(saved, output), "Preserve existing replay output")
++  testthat::expect_identical(readLines(file.path(output, "failed.log")), "retained")
++})

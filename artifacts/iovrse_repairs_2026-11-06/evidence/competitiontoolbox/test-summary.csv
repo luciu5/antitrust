@@ -1,0 +1,18 @@
+"file","test","nb","failed","error","warning","skipped","passed"
+"test-app-interactions.R","A: copied R code reproduces edited UI economics in a clean R process",12,0,FALSE,0,FALSE,12
+"test-app-interactions.R","A: actual Shiny session routes pages and recovers from invalid edited inputs",18,0,FALSE,3,FALSE,15
+"test-nondefault-integration.R","horizontal routes preserve custom ownership and marginal-cost transitions",8,0,FALSE,0,FALSE,8
+"test-nondefault-integration.R","asymmetric tariff and quota policy changes use public trade outcomes",16,0,FALSE,0,FALSE,16
+"test-nondefault-integration.R","partially populated UI grids drop empty rows without changing outputs",18,0,FALSE,0,FALSE,18
+"test-nondefault-integration.R","vertical routes preserve custom upstream and downstream ownership transitions",9,0,FALSE,0,FALSE,9
+"test-shiny-model-registry.R","the UI registry has 34 rows and complete public mappings",395,0,FALSE,0,FALSE,395
+"test-shiny-model-registry.R","input normalization exposes the canonical route fields",7,0,FALSE,0,FALSE,7
+"test-shiny-model-registry.R","every UI row runs with defaults and tab computations remain callable",718,0,FALSE,20,FALSE,698
+"test-shiny-model-registry.R","EXTENDED/NIGHTLY UI rows match independent public legacy constructors",156,0,FALSE,20,FALSE,136
+"test-shiny-model-registry.R","route metadata records the public lifecycle fit and observed inputs",50,0,FALSE,1,FALSE,49
+"test-shiny-model-registry.R","antitrust route preserves an independently anchored price/share outcome",4,0,FALSE,0,FALSE,4
+"test-shiny-model-registry.R","trade tariff and quota routes preserve public legacy outcomes",8,0,FALSE,0,FALSE,8
+"test-shiny-model-registry.R","AIDS benchmark and Logit-Cournot tariff route satisfy economics",13,0,FALSE,4,FALSE,9
+"test-shiny-model-registry.R","vertical route preserves the public legacy bargaining outcome",7,0,FALSE,3,FALSE,4
+"test-shiny-model-registry.R","standalone generated code parses and representative snippets execute",8,0,FALSE,0,FALSE,8
+"test-shiny-model-registry.R","price-free AIDS reporting and generated code remain usable",6,0,FALSE,0,FALSE,6

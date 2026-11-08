@@ -121,6 +121,53 @@ class WorkflowTests(unittest.TestCase):
         self.assertTrue(self.certify())
         self.assertEqual(len(self.posts), 1)
 
+    def toolbox_waiver(self):
+        item = next(p for p in self.plan if p["package"] == "competitiontoolbox")
+        return {"certification_waivers": {"competitiontoolbox": {
+            "candidate_sha": item["sha"], "workflow": ".github/workflows/" + item["workflow"],
+            "authorized_by": "user", "reason": "Skip the private vertical dependency certification."}}}
+
+    def test_waived_private_workflow_is_not_queried_retried_or_counted_passed(self):
+        """Prevent a waived private-dependency job from requiring secrets or claiming success."""
+        workflows.apply_waivers(self.plan, self.toolbox_waiver())
+        self.runs["competitiontoolbox"][0]["conclusion"] = "failure"
+        def without_private_actions(path, payload=None):
+            if "/competitiontoolbox/actions/" in path:
+                raise AssertionError("Waived workflow must not be read or retried")
+            return self.api(path, payload)
+        with patch.object(workflows, "gh_api", side_effect=without_private_actions), contextlib.redirect_stdout(io.StringIO()):
+            self.assertTrue(workflows.certify(self.plan, retry_failed=True, poll_seconds=0, timeout_seconds=2))
+        item = next(p for p in self.plan if p["package"] == "competitiontoolbox")
+        self.assertEqual(item["status"], "waived")
+        self.assertIsNone(item["conclusion"])
+        self.assertEqual(self.posts, [])
+
+    def test_waiver_cannot_hide_other_failures_or_cover_another_commit(self):
+        """Prevent a one-workflow exception from hiding a Bayes failure or future source change."""
+        data = self.toolbox_waiver()
+        workflows.apply_waivers(self.plan, data)
+        self.runs["antitrustBayes"][0]["conclusion"] = "failure"
+        self.assertFalse(self.certify())
+        data["certification_waivers"]["competitiontoolbox"]["candidate_sha"] = "f" * 40
+        with self.assertRaises(push.PushError):
+            workflows.apply_waivers(self.plan, data)
+        with self.assertRaises(push.PushError):
+            workflows.apply_waivers(self.plan, {"certification_waivers": {"antitrustBayes": {}}})
+
+    def test_completed_report_distinguishes_waived_from_successful_certification(self):
+        """Prevent a zero exit status from being reported as seven successful hosted checks."""
+        self.f.handoff.update(self.toolbox_waiver())
+        self.f.paths["handoff"].write_text(json.dumps(self.f.handoff))
+        report = self.f.root / "waived-report.json"
+        with patch.object(workflows, "gh_api", side_effect=self.api), contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(workflows.main(self.argv + ["--certify", "--report", str(report)]), 0)
+        data = json.loads(report.read_text())
+        self.assertEqual(data["status"], "complete_with_waivers")
+        self.assertEqual(data["waived_packages"], ["competitiontoolbox"])
+        item = next(p for p in data["packages"] if p["package"] == "competitiontoolbox")
+        self.assertEqual(item["status"], "waived")
+        self.assertIsNone(item["conclusion"])
+
 
 if __name__ == "__main__":
     unittest.main()

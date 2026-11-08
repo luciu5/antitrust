@@ -1,0 +1,70 @@
+{
+  "candidate_revision": 2,
+  "passed": 5,
+  "failed": 2,
+  "results": [
+    {
+      "package": "antitrust",
+      "candidate_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530940717,
+      "url": "https://github.com/luciu5/antitrust/actions/runs/41530940717"
+    },
+    {
+      "package": "coordination",
+      "candidate_sha": "6e5d94be4fbeb5d5544865eed2dbb2b897c31628",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530939533,
+      "url": "https://github.com/luciu5/coordination/actions/runs/41530939533"
+    },
+    {
+      "package": "trade",
+      "candidate_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530948797,
+      "url": "https://github.com/luciu5/trade/actions/runs/41530948797"
+    },
+    {
+      "package": "vertical",
+      "candidate_sha": "36bf089b8c9a9825b28d9295f9d246e4707039f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530957476,
+      "url": "https://github.com/luciu5/vertical/actions/runs/41530957476"
+    },
+    {
+      "package": "competitiontoolbox",
+      "candidate_sha": "2135927ab5406c421870eadb5b7d7eddbedd7457",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_id": 41530961867,
+      "url": "https://github.com/luciu5/competitiontoolbox/actions/runs/41530961867",
+      "failed_step": "Resolve dependency source refs",
+      "cause": "CI cannot authenticate to the private luciu5/vertical repository; clone fails reading HTTPS username."
+    },
+    {
+      "package": "financial",
+      "candidate_sha": "979ceabe89ccec4407c20ff103ab6a8f68d5c354",
+      "status": "completed",
+      "conclusion": "success",
+      "run_id": 41530978188,
+      "url": "https://github.com/luciu5/financial/actions/runs/41530978188"
+    },
+    {
+      "package": "antitrustBayes",
+      "candidate_sha": "4c965e877cfcc10bb3571c49d6c177693d9d8113",
+      "status": "completed",
+      "conclusion": "failure",
+      "run_id": 41530977936,
+      "url": "https://github.com/luciu5/antitrustBayes/actions/runs/41530977936",
+      "failed_step": "Install and record verified structural dependencies",
+      "cause": "Workflow indexes source_dcf[[\"Remotes\"]] on antitrust DESCRIPTION, where Remotes is absent; R throws subscript out of bounds."
+    }
+  ],
+  "certification_report": "artifacts/coordinated_release_evidence/certify-20261102T214313.490479Z.json",
+  "private_dependency": "luciu5/vertical confirmed private via connected GitHub repository metadata",
+  "remote_mutations_performed_in_status_review": false
+}

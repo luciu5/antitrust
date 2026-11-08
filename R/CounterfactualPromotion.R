@@ -24,6 +24,9 @@ setGeneric(".promote_post_to_pre", function(model, step) {
 ## exited or entered.
 setMethod(".promote_post_to_pre", "ANY", function(model, step) {
     slots <- methods::slotNames(model)
+    if ("subset" %in% slots) {
+        attr(model, "antitrust_subset_pre") <- model@subset
+    }
     post_slots <- grep("Post$", slots, value = TRUE)
     for (post_slot in post_slots) {
         pre_slot <- sub("Post$", "Pre", post_slot)
@@ -151,6 +154,9 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     }
     model@mcDelta <- c(model@mcDelta, 0)
     model@subset <- c(model@subset, TRUE)
+    pre_subset <- attr(model, "antitrust_subset_pre", exact = TRUE)
+    if (is.null(pre_subset)) pre_subset <- rep(TRUE, n)
+    attr(model, "antitrust_subset_pre") <- c(pre_subset, FALSE)
     model@priceStart <- c(model@priceStart, entrant@priceStart)
     model@prices <- c(model@prices, entrant@priceStart)
     model@margins <- c(model@margins, NA_real_)
@@ -209,6 +215,9 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
     }
 
     entrant_shares <- calcShares(model, preMerger = TRUE)
+    ## A prior exit leaves an NA price in the promoted pre-state. Keep its
+    ## zero output out of the expanded market's inside-share normalization.
+    entrant_shares[!model@subset] <- 0
     model@shares <- entrant_shares
     model@shareInside <- ifelse(
         isTRUE(all.equal(sum(entrant_shares), 1, check.names = FALSE, tolerance = 1e-3)),

@@ -1,0 +1,13 @@
+{
+  "packages": [
+    "antitrust",
+    "trade",
+    "vertical",
+    "financial",
+    "competitiontoolbox",
+    "antitrustBayes"
+  ],
+  "source_hashes_verified": true,
+  "master_or_main_refs_changed": false,
+  "original_indexes_staged_by_tool": false
+}

@@ -1,0 +1,10 @@
+{
+  "id": 41673546497,
+  "status": "completed",
+  "conclusion": "failure",
+  "sha": "176308a680c4514aa32463f4c82b45da4ad7d5da",
+  "url": "https://github.com/luciu5/competitiontoolbox/actions/runs/41673546497",
+  "failed_step": "Require private vertical read token",
+  "waiver": "User explicitly waived this private-dependency check; not counted as passed.",
+  "test_phase_reached": false
+}

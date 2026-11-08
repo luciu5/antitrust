@@ -1,0 +1,23 @@
+{
+  "antitrust": {
+    "head_preserved": true,
+    "active_branch_preserved": true,
+    "index_preserved": true,
+    "local_master_preserved": true,
+    "local_refactor_preserved": true
+  },
+  "trade": {
+    "head_preserved": true,
+    "active_branch_preserved": true,
+    "index_preserved": true,
+    "local_master_preserved": true,
+    "local_refactor_preserved": true
+  },
+  "competitiontoolbox": {
+    "head_preserved": true,
+    "active_branch_preserved": true,
+    "index_preserved": true,
+    "local_master_preserved": true,
+    "local_refactor_preserved": true
+  }
+}

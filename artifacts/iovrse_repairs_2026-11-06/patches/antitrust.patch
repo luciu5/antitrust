@@ -1,0 +1,607 @@
+diff --git a/DESCRIPTION b/DESCRIPTION
+index fecfb31..246b90a 100755
+--- a/DESCRIPTION
++++ b/DESCRIPTION
+@@ -65,6 +65,7 @@ Collate:
+     'Counterfactual.R'
+     'CounterfactualPath.R'
+     'CounterfactualPromotion.R'
++    'MarketAdvance.R'
+     'CournotFunctions.R'
+     'HHIFunctions.R'
+     'LinearFunctions.R'
+diff --git a/NAMESPACE b/NAMESPACE
+index b377409..083edcf 100755
+--- a/NAMESPACE
++++ b/NAMESPACE
+@@ -11,6 +11,7 @@ export(CV)
+ export(HHI)
+ export(SyntheticMarket)
+ export(add_step)
++export(advance_market)
+ export(aids)
+ export(antitrust_shiny)
+ export(auction2nd.cap)
+@@ -130,6 +131,7 @@ exportClasses(PCAIDS)
+ exportClasses(PCAIDSNests)
+ exportClasses(Stackelberg)
+ exportClasses(StructuralFit)
++exportMethods(advance_market)
+ exportMethods(CV)
+ exportMethods(HypoMonTest)
+ exportMethods(add_step)
+diff --git a/R/CVMethods.R b/R/CVMethods.R
+index 10fafbf..0ef9229 100755
+--- a/R/CVMethods.R
++++ b/R/CVMethods.R
+@@ -22,6 +22,10 @@
+ #'
+ #' @param object An instance of one of the classes listed above.
+ #' @param ... Additional arguments to pass to the method.
++#' @param subsetPre Optional logical pre-market product mask for Logit, CES,
++#'   and standard Logit second-score models. Defaults to the retained pre-market
++#'   mask after a transition, otherwise all products; use it
++#'   when advancing a market with prior exits or newly entering products.
+ #' @param lim \dQuote{LogitBLP} class only. A length 2 numeric vector equal to the lower and upper quantiles of the price coefficient distribution over which to compute CV. Default c(0,1).
+ #'
+ #' @include CMCRMethods.R
+@@ -37,6 +41,18 @@ setGeneric(
+   }
+ )
+ 
++.cv_pre_subset <- function(object, subsetPre) {
++  if (is.null(subsetPre)) {
++    subsetPre <- attr(object, "antitrust_subset_pre", exact = TRUE)
++    if (is.null(subsetPre)) return(rep(TRUE, length(object@shares)))
++  }
++  if (!is.logical(subsetPre) || length(subsetPre) != length(object@shares) ||
++      anyNA(subsetPre) || !any(subsetPre)) {
++    stop("'subsetPre' must retain at least one pre-market product")
++  }
++  subsetPre
++}
++
+ #' @rdname CV-Methods
+ #' @export
+ setMethod(
+@@ -90,7 +106,8 @@ setMethod(
+ setMethod(
+   f = "CV",
+   signature = "Logit",
+-  definition = function(object) {
++  definition = function(object, subsetPre = NULL) {
++    subsetPre <- .cv_pre_subset(object, subsetPre)
+     alpha <- object@slopes$alpha
+     meanval <- object@slopes$meanval
+     subset <- object@subset
+@@ -100,7 +117,7 @@ setMethod(
+     outVal <- ifelse(is.na(object@normIndex), 1, 0)
+     output <- ifelse(object@output, 1, -1)
+ 
+-    VPre <- sum(exp(meanval + (object@pricePre - object@priceOutside) * alpha)) + outVal
++    VPre <- sum(exp(meanval + (object@pricePre - object@priceOutside) * alpha)[subsetPre]) + outVal
+     uPost <- meanval + (object@pricePost - object@priceOutside) * alpha
+     uPost[is.na(uPost)] <- -Inf
+     VPost <- sum(exp(uPost)[subset]) + outVal
+@@ -284,7 +301,8 @@ setMethod(
+ setMethod(
+   f = "CV",
+   signature = "Auction2ndLogit",
+-  definition = function(object) {
++  definition = function(object, subsetPre = NULL) {
++    subsetPre <- .cv_pre_subset(object, subsetPre)
+     mktSize <- object@mktSize
+     alpha <- object@slopes$alpha
+     meanvalPre <- object@slopes$meanval
+@@ -306,11 +324,18 @@ setMethod(
+     meanvalPost <- meanvalPre + alpha * (mcDelta - mcDeltaOut)
+ 
+ 
+-    marginPre <- calcMargins(object, preMerger = TRUE, exAnte = TRUE)
++    pre_model <- object
++    if (any(!subsetPre)) {
++      pre_model@slopes$meanval[!subsetPre] <- -Inf
++      pre_model@ownerPre[!subsetPre, ] <- 0
++      pre_model@ownerPre[, !subsetPre] <- 0
++      diag(pre_model@ownerPre)[!subsetPre] <- 1
++    }
++    marginPre <- calcMargins(pre_model, preMerger = TRUE, exAnte = TRUE)
+     marginPost <- calcMargins(object, preMerger = FALSE, exAnte = TRUE)
+ 
+     ## Add the elimination of first best option
+-    VPre <- sum(exp(meanvalPre), na.rm = TRUE) + outVal
++    VPre <- sum(exp(meanvalPre[subsetPre]), na.rm = TRUE) + outVal
+     VPost <- sum(exp(meanvalPost[subset]), na.rm = TRUE) + outVal
+ 
+ 
+@@ -331,7 +356,8 @@ setMethod(
+ setMethod(
+   f = "CV",
+   signature = "CES",
+-  definition = function(object) {
++  definition = function(object, subsetPre = NULL) {
++    subsetPre <- .cv_pre_subset(object, subsetPre)
+     alpha <- object@slopes$alpha
+     mktSize <- object@mktSize
+ 
+@@ -344,7 +370,7 @@ setMethod(
+ 
+     outVal <- ifelse(is.na(object@normIndex), 1, 0)
+ 
+-    VPre <- sum(meanval * (object@pricePre / object@priceOutside)^(1 - gamma), na.rm = TRUE) + outVal
++    VPre <- sum((meanval * (object@pricePre / object@priceOutside)^(1 - gamma))[subsetPre], na.rm = TRUE) + outVal
+     VPost <- sum(meanval * (object@pricePost / object@priceOutside)^(1 - gamma), na.rm = TRUE) + outVal
+ 
+     result <- output * log(VPost / VPre) / ((1 + alpha) * (1 - gamma))
+diff --git a/R/Counterfactual.R b/R/Counterfactual.R
+index d9eba7b..deff40d 100755
+--- a/R/Counterfactual.R
++++ b/R/Counterfactual.R
+@@ -137,7 +137,7 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
+ .build_step <- function(ownership = NULL, costs = NULL, exit = NULL,
+                         capacity = NULL, tariff = NULL, quota = NULL,
+                         bargaining = NULL, leader = NULL, products = NULL,
+-                        quality = NULL, entry = NULL) {
++                        quality = NULL, entry = NULL, core = NULL) {
+     entry <- .normalize_entry_field(entry)
+     .validate_entry_labels(entry)
+     .validate_quality_field(quality)
+@@ -145,7 +145,7 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
+         ownership = ownership, costs = costs, exit = exit,
+         capacity = capacity, tariff = tariff, quota = quota,
+         bargaining = bargaining, leader = leader, products = products,
+-        quality = quality, entry = entry
++        quality = quality, entry = entry, core = core
+     ))
+     new("CounterfactualStep", changes = changes)
+ }
+@@ -177,6 +177,8 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
+ #'   multiplicative mean-value convention.
+ #' @param entry An `Entrant` object, or a list of `Entrant` objects, each
+ #'   describing a new single-product firm to add to the market.
++#' @param core Core-firm IDs for downstream native coordination games;
++#'   unsupported by ordinary antitrust fits.
+ #' @param ... Reserved; model specification fields are rejected.
+ #' @return A `Counterfactual` object with exactly one `CounterfactualStep`.
+ #' @examples
+@@ -189,7 +191,7 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
+ counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
+                            capacity = NULL, tariff = NULL, quota = NULL,
+                            bargaining = NULL, leader = NULL, products = NULL,
+-                           quality = NULL, entry = NULL, ...) {
++                           quality = NULL, entry = NULL, core = NULL, ...) {
+     extras <- list(...)
+     if (length(extras)) {
+         stop("counterfactual() accepts economic-environment fields only; use update() or respecify() for model specification changes")
+@@ -198,7 +200,7 @@ counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
+         ownership = ownership, costs = costs, exit = exit,
+         capacity = capacity, tariff = tariff, quota = quota,
+         bargaining = bargaining, leader = leader, products = products,
+-        quality = quality, entry = entry
++        quality = quality, entry = entry, core = core
+     )
+     new("Counterfactual", steps = list(step))
+ }
+@@ -228,6 +230,8 @@ counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
+ #'   attractiveness, keyed by product label. Logit applies an additive
+ #'   `log1p(quality)` utility shift; CES applies a multiplicative change.
+ #' @param entry An `Entrant` object, or a list of `Entrant` objects.
++#' @param core Core-firm IDs for downstream native coordination games;
++#'   unsupported by ordinary antitrust fits.
+ #' @param ... Reserved; model specification fields are rejected.
+ #' @return A `Counterfactual` object with the new step appended.
+ #' @export
+@@ -240,7 +244,7 @@ setMethod("add_step", "Counterfactual", function(object, ownership = NULL,
+                                                   capacity = NULL, tariff = NULL,
+                                                   quota = NULL, bargaining = NULL,
+                                                   leader = NULL, products = NULL,
+-                                                  quality = NULL, entry = NULL, ...) {
++                                                  quality = NULL, entry = NULL, core = NULL, ...) {
+     extras <- list(...)
+     if (length(extras)) {
+         stop("add_step() accepts economic-environment fields only; use update() or respecify() for model specification changes")
+@@ -249,7 +253,7 @@ setMethod("add_step", "Counterfactual", function(object, ownership = NULL,
+         ownership = ownership, costs = costs, exit = exit,
+         capacity = capacity, tariff = tariff, quota = quota,
+         bargaining = bargaining, leader = leader, products = products,
+-        quality = quality, entry = entry
++        quality = quality, entry = entry, core = core
+     )
+     object@steps <- c(object@steps, list(step))
+     object
+diff --git a/R/CounterfactualPromotion.R b/R/CounterfactualPromotion.R
+index 25abbad..d2560b5 100755
+--- a/R/CounterfactualPromotion.R
++++ b/R/CounterfactualPromotion.R
+@@ -24,6 +24,9 @@ setGeneric(".promote_post_to_pre", function(model, step) {
+ ## exited or entered.
+ setMethod(".promote_post_to_pre", "ANY", function(model, step) {
+     slots <- methods::slotNames(model)
++    if ("subset" %in% slots) {
++        attr(model, "antitrust_subset_pre") <- model@subset
++    }
+     post_slots <- grep("Post$", slots, value = TRUE)
+     for (post_slot in post_slots) {
+         pre_slot <- sub("Post$", "Pre", post_slot)
+@@ -151,6 +154,9 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
+     }
+     model@mcDelta <- c(model@mcDelta, 0)
+     model@subset <- c(model@subset, TRUE)
++    pre_subset <- attr(model, "antitrust_subset_pre", exact = TRUE)
++    if (is.null(pre_subset)) pre_subset <- rep(TRUE, n)
++    attr(model, "antitrust_subset_pre") <- c(pre_subset, FALSE)
+     model@priceStart <- c(model@priceStart, entrant@priceStart)
+     model@prices <- c(model@prices, entrant@priceStart)
+     model@margins <- c(model@margins, NA_real_)
+@@ -209,6 +215,9 @@ setMethod(".expand_entrant", "Logit", function(model, entrant) {
+     }
+ 
+     entrant_shares <- calcShares(model, preMerger = TRUE)
++    ## A prior exit leaves an NA price in the promoted pre-state. Keep its
++    ## zero output out of the expanded market's inside-share normalization.
++    entrant_shares[!model@subset] <- 0
+     model@shares <- entrant_shares
+     model@shareInside <- ifelse(
+         isTRUE(all.equal(sum(entrant_shares), 1, check.names = FALSE, tolerance = 1e-3)),
+diff --git a/R/ModelRegistry.R b/R/ModelRegistry.R
+index 1e20bf5..da68359 100755
+--- a/R/ModelRegistry.R
++++ b/R/ModelRegistry.R
+@@ -560,6 +560,7 @@ print.antitrust_model_spec <- function(x, ...) {
+         capacity = cls %in% c("LogitCap", "LogitCapALM", "Stackelberg"),
+         bargaining = spec$conduct %in% c("bargaining", "bargaining2nd"),
+         leader = cls == "Stackelberg",
++        core = FALSE,
+         products = cls == "Stackelberg",
+         tariff = FALSE,
+         quota = FALSE,
+diff --git a/R/PricesMethods.R b/R/PricesMethods.R
+index 5ec2da8..840a34e 100755
+--- a/R/PricesMethods.R
++++ b/R/PricesMethods.R
+@@ -112,7 +112,7 @@ setMethod(
+     owner_check <- if (preMerger) object@ownerPre else object@ownerPost
+     plain_ces <- class(object)[1] %in% c("CES", "CESNests")
+     if (plain_ces && object@output && !is.na(object@normIndex) &&
+-      nrow(owner_check) > 1 && all(owner_check == 1)) {
++      all(owner_check[subset, subset, drop = FALSE] == 1)) {
+       stop("CES demand without an outside good has no finite Bertrand equilibrium when one firm owns every product.")
+     }
+ 
+@@ -146,11 +146,29 @@ setMethod(
+     }
+ 
+ 
++    ## CES powers can admit spurious negative-price algebraic roots (in
++    ## particular for integer gamma). With positive output costs, a valid
++    ## interior price is positive. Solve its level FOCs in log coordinates
++    ## rather than accepting a negative root after a portfolio merger.
++    positive_ces <- methods::is(object, "CES") && output &&
++      all(is.finite(mc[subset]) & mc[subset] > 0)
++    solve_foc <- FOC
++    solve_start <- priceStart
++    if (positive_ces) {
++      solve_start <- log(pmax(priceStart, mc[subset], .Machine$double.eps^0.25))
++      solve_foc <- function(log_prices) {
++        if (any(!is.finite(log_prices)) || any(abs(log_prices) > 100)) {
++          return(rep(1e6, length(log_prices)))
++        }
++        p <- exp(log_prices)
++        FOC(p) / pmax(p, 1)
++      }
++    }
+     ## Find price changes that set FOCs equal to 0
+     ## Try nleqslv first (faster, more reliable for smooth FOCs)
+     nleqslv_maxit <- as.integer(object@control.equ$maxit)
+     if (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
+-    minResult <- nleqslv::nleqslv(priceStart, FOC,
++    minResult <- nleqslv::nleqslv(solve_start, solve_foc,
+       method = "Broyden",
+       control = list(
+         ftol = object@control.equ$tol,
+@@ -160,7 +178,7 @@ setMethod(
+ 
+     ## Fallback to BBsolve if nleqslv fails
+     if (minResult$termcd > 2) {
+-      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = object@control.equ, ...)
++      minResult <- BBsolve(solve_start, solve_foc, quiet = TRUE, control = object@control.equ, ...)
+       priceEst_solution <- minResult$par
+       if (minResult$convergence != 0) {
+         warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '", minResult$message, "'")
+@@ -171,6 +189,14 @@ setMethod(
+         warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ", minResult$termcd)
+       }
+     }
++    if (positive_ces) {
++      priceEst_solution <- exp(priceEst_solution)
++      residual <- FOC(priceEst_solution) / pmax(priceEst_solution, 1)
++      if (any(!is.finite(priceEst_solution)) || any(priceEst_solution <= 0) ||
++          any(!is.finite(residual)) || max(abs(residual)) > 1e-7) {
++        stop("CES pricing failed to find a positive equilibrium with a small level-FOC residual")
++      }
++    }
+     if (isMax) {
+       hess <- genD(FOC, priceEst_solution) # compute the numerical approximation of the FOC hessian at optimium
+       hess <- hess$D[, 1:hess$p]
+diff --git a/man/CV-Methods.Rd b/man/CV-Methods.Rd
+index 607a345..8efb068 100755
+--- a/man/CV-Methods.Rd
++++ b/man/CV-Methods.Rd
+@@ -24,7 +24,7 @@ CV(object, ...)
+ 
+ \S4method{CV}{Linear}(object)
+ 
+-\S4method{CV}{Logit}(object)
++\S4method{CV}{Logit}(object, subsetPre = NULL)
+ 
+ \S4method{CV}{LogitBLP}(object, lim = c(0, 1))
+ 
+@@ -34,9 +34,9 @@ CV(object, ...)
+ 
+ \S4method{CV}{LogitNests}(object)
+ 
+-\S4method{CV}{Auction2ndLogit}(object)
++\S4method{CV}{Auction2ndLogit}(object, subsetPre = NULL)
+ 
+-\S4method{CV}{CES}(object)
++\S4method{CV}{CES}(object, subsetPre = NULL)
+ 
+ \S4method{CV}{CESNests}(object)
+ }
+@@ -45,6 +45,11 @@ CV(object, ...)
+ 
+ \item{...}{Additional arguments to pass to the method.}
+ 
++\item{subsetPre}{Optional logical pre-market product mask for Logit, CES,
++and standard Logit second-score models. Defaults to the retained pre-market
++mask after a transition, otherwise all products; use it
++when advancing a market with prior exits or newly entering products.}
++
+ \item{lim}{\dQuote{LogitBLP} class only. A length 2 numeric vector equal to the lower and upper quantiles of the price coefficient distribution over which to compute CV. Default c(0,1).}
+ }
+ \description{
+diff --git a/man/add_step.Rd b/man/add_step.Rd
+index 00d4ba8..a1e95a7 100755
+--- a/man/add_step.Rd
++++ b/man/add_step.Rd
+@@ -20,6 +20,7 @@ add_step(object, ...)
+   products = NULL,
+   quality = NULL,
+   entry = NULL,
++  core = NULL,
+   ...
+ )
+ }
+@@ -54,6 +55,9 @@ attractiveness, keyed by product label. Logit applies an additive
+ `log1p(quality)` utility shift; CES applies a multiplicative change.}
+ 
+ \item{entry}{An `Entrant` object, or a list of `Entrant` objects.}
++
++\item{core}{Core-firm IDs for downstream native coordination games;
++unsupported by ordinary antitrust fits.}
+ }
+ \value{
+ A `Counterfactual` object with the new step appended.
+diff --git a/man/counterfactual.Rd b/man/counterfactual.Rd
+index 78fa3f1..f4ddb50 100755
+--- a/man/counterfactual.Rd
++++ b/man/counterfactual.Rd
+@@ -16,6 +16,7 @@ counterfactual(
+   products = NULL,
+   quality = NULL,
+   entry = NULL,
++  core = NULL,
+   ...
+ )
+ }
+@@ -50,6 +51,9 @@ multiplicative mean-value convention.}
+ \item{entry}{An `Entrant` object, or a list of `Entrant` objects, each
+ describing a new single-product firm to add to the market.}
+ 
++\item{core}{Core-firm IDs for downstream native coordination games;
++unsupported by ordinary antitrust fits.}
++
+ \item{...}{Reserved; model specification fields are rejected.}
+ }
+ \value{
+diff --git a/R/MarketAdvance.R b/R/MarketAdvance.R
+new file mode 100644
+index 0000000..bf9a500
+--- /dev/null
++++ b/R/MarketAdvance.R
+@@ -0,0 +1,59 @@
++#' Advance a solved market without estimating or solving it
++#'
++#' Copies the solved post-state into the pre-state, preserving physical
++#' costs, demand parameters, retention, and the active-product map. Optional
++#' entry and quality primitives are then applied using the same transitions
++#' as antitrust counterfactuals. Ownership, cost shocks, exit, and policy
++#' changes belong to the subsequent simulation and are rejected here.
++#'
++#' This is an extension point for packages that own additional policy state.
++#' It never recalibrates or solves an equilibrium. Constant costs are rebased
++#' at the solved effective cost and retention, with zero pending cost shock.
++#' The standard Logit second-score auction also advances its cost-relative
++#' score index, preserving win probabilities. Quantity-dependent cost-function
++#' models and other second-score descendants require their own method.
++#'
++#' @param model A solved legacy antitrust model.
++#' @param step An optional `CounterfactualStep` containing only `entry` and
++#'   `quality` changes. Entry support follows the concrete model registry.
++#' @return The advanced model, with any supplied environment changes applied.
++#' @export
++setGeneric("advance_market", function(model, step = NULL) {
++    standardGeneric("advance_market")
++})
++
++#' @rdname advance_market
++#' @export
++setMethod("advance_market", "Antitrust", function(model, step = NULL) {
++    if (!is.null(step)) {
++        if (!methods::is(step, "CounterfactualStep")) {
++            stop("'step' must be a CounterfactualStep or NULL")
++        }
++        unsupported <- setdiff(names(step@changes), c("entry", "quality"))
++        if (length(unsupported)) {
++            stop("advance_market() accepts only entry and quality changes; simulate ",
++                 paste(unsupported, collapse = ", "), " separately")
++        }
++    }
++    if (methods::is(model, "Cournot")) {
++        stop("advance_market() requires a model-specific method for quantity-dependent costs")
++    }
++    if (methods::is(model, "Auction2ndLogit")) {
++        if (!identical(class(model)[[1L]], "Auction2ndLogit")) {
++            stop("advance_market() requires a model-specific method for this second-score descendant")
++        }
++        ## These are cost-relative score indices, not price-demand utilities.
++        ## Carry the solved index when changing its cost reference, using the
++        ## same effective-cost shift as calcShares(Auction2ndLogit).
++        delta <- .auction_effective_cost_delta(model)
++        outside_delta <- if (is.na(model@normIndex)) model@priceOutside else
++            delta[model@normIndex]
++        model@slopes$meanval <- model@slopes$meanval +
++            model@slopes$alpha * (delta - outside_delta)
++    }
++    model <- .promote_post_to_pre(model, step)
++    model@mcDelta <- rep(0, length(model@mcPre))
++    model <- initialize_cost_state(model)
++    if (!is.null(step)) model <- .apply_step_environment(model, step)
++    model
++})
+diff --git a/man/advance_market.Rd b/man/advance_market.Rd
+new file mode 100644
+index 0000000..55462de
+--- /dev/null
++++ b/man/advance_market.Rd
+@@ -0,0 +1,35 @@
++% Generated by roxygen2: do not edit by hand
++% Please edit documentation in R/MarketAdvance.R
++\name{advance_market}
++\alias{advance_market}
++\alias{advance_market,Antitrust-method}
++\title{Advance a solved market without estimating or solving it}
++\usage{
++advance_market(model, step = NULL)
++
++\S4method{advance_market}{Antitrust}(model, step = NULL)
++}
++\arguments{
++\item{model}{A solved legacy antitrust model.}
++
++\item{step}{An optional `CounterfactualStep` containing only `entry` and
++`quality` changes. Entry support follows the concrete model registry.}
++}
++\value{
++The advanced model, with any supplied environment changes applied.
++}
++\description{
++Copies the solved post-state into the pre-state, preserving physical
++costs, demand parameters, retention, and the active-product map. Optional
++entry and quality primitives are then applied using the same transitions
++as antitrust counterfactuals. Ownership, cost shocks, exit, and policy
++changes belong to the subsequent simulation and are rejected here.
++}
++\details{
++This is an extension point for packages that own additional policy state.
++It never recalibrates or solves an equilibrium. Constant costs are rebased
++at the solved effective cost and retention, with zero pending cost shock.
++The standard Logit second-score auction also advances its cost-relative
++score index, preserving win probabilities. Quantity-dependent cost-function
++models and other second-score descendants require their own method.
++}
+diff --git a/tests/testthat/test-advance-market.R b/tests/testthat/test-advance-market.R
+new file mode 100644
+index 0000000..1340b5b
+--- /dev/null
++++ b/tests/testthat/test-advance-market.R
+@@ -0,0 +1,89 @@
++# A permanent bridge tests: a downstream policy package must advance a solved
++# physical-cost market without calling calibration or an equilibrium solver.
++test_that("A: advancing a tariff equilibrium retains physical costs and entry primitives without a solve", {
++  source <- specify("logit", "bertrand", prices = c(2, 2.2, 2.4),
++    ownerPre = c("A", "A", "B"), insideSize = 100,
++    parameters = list(alpha = -1.5, meanval = c(2, 1.5, 1)),
++    labels = c("a", "b", "c"))
++  solved <- suppressWarnings(simulate(source, c("A", "A", "B"),
++    mcDelta = c(.1, 0, 0), revenueRetentionPost = c(.9, .7, .8)))
++  before <- serialize(solved, NULL)
++  physical <- calcMC(solved, FALSE) * getRetention(solved, FALSE)
++  step <- counterfactual(entry = entrant("e", 1, .8, 2))@steps[[1L]]
++  testthat::local_mocked_bindings(
++    calibrate = function(...) stop("unexpected recalibration"),
++    specify = function(...) stop("unexpected specification"),
++    calcPrices = function(...) stop("unexpected equilibrium solve"),
++    calcSlopes = function(...) stop("unexpected demand estimation"),
++    .package = "antitrust")
++  advanced <- advance_market(solved, step)
++  expect_equal(as.numeric(calcMC(advanced, TRUE) * getRetention(advanced, TRUE)),
++               c(as.numeric(physical), .8), tolerance = 1e-10)
++  expect_equal(advanced@pricePre[1:3], solved@pricePost, tolerance = 1e-12)
++  expect_equal(advanced@slopes$meanval[1:3], solved@slopes$meanval,
++               ignore_attr = TRUE)
++  expect_equal(advanced@mcDelta, rep(0, 4))
++  expect_identical(serialize(solved, NULL), before)
++  expect_error(advance_market(solved, counterfactual(costs = rep(0, 3))@steps[[1L]]),
++               "only entry and quality")
++})
++
++# A permanent exit->entry regression: NA prices for an exited product must
++# not make the new inside-market mass undefined during an expansion.
++test_that("A: advancing after exit leaves a valid inside mass for later entry", {
++  source <- specify("logit", "bertrand", prices = c(2, 2.2, 2.4),
++    ownerPre = c("A", "B", "C"), insideSize = 100,
++    parameters = list(alpha = -1.5, meanval = c(2, 1.5, 1)),
++    labels = c("a", "b", "c"))
++  solved <- simulate(source, counterfactual(exit = "b"))
++  next_model <- advance_market(solved,
++    counterfactual(entry = entrant("e", 1, .8, 2))@steps[[1L]])
++  expect_true(is.finite(next_model@shareInside))
++  expect_equal(as.numeric(next_model@shares[2]), 0)
++  expect_false(next_model@subset[2])
++})
++
++# A permanent: post-exit promotion must not make an ordinary sequential
++# market's consumer variation undefined by summing an exited NA pre-price.
++test_that("A: ordinary exit then merger has the independent logsum welfare change", {
++  source <- specify("logit", "bertrand", prices = c(2, 2.2, 2.4),
++    ownerPre = c("A", "B", "C"), insideSize = 100,
++    parameters = list(alpha = -1.5, meanval = c(2, 1.5, 1)),
++    labels = c("a", "b", "c"))
++  path <- simulate(source, add_step(counterfactual(exit = "c"),
++    ownership = c("A", "A", "C")))
++  result <- final_result(path)
++  active <- c(TRUE, TRUE, FALSE)
++  mass <- function(p) 1 + sum(exp(result@slopes$meanval[active] +
++    result@slopes$alpha * (p[active] - result@priceOutside)))
++  expected <- result@mktSize / result@slopes$alpha *
++    log(mass(result@pricePost) / mass(result@pricePre))
++  expect_equal(CV(result), as.numeric(expected), tolerance = 1e-10)
++  expect_true(is.finite(CV(result)))
++})
++
++# A permanent: expansion must append FALSE for a not-yet-entered product,
++# then promote it to TRUE after entry; otherwise CV invents prior choices or
++# recycles a stale shorter mask after a subsequent merger and exit.
++test_that("A: ordinary entry then merger and exit retains aligned pre-choice sets", {
++  source <- specify("logit", "bertrand", prices = c(2, 2.2, 2.4),
++    ownerPre = c("A", "B", "C"), insideSize = 100,
++    parameters = list(alpha = -1.5, meanval = c(2, 1.5, 1)),
++    labels = c("a", "b", "c"))
++  cf <- add_step(counterfactual(entry = entrant("e", 1, .8, 2)),
++    ownership = c("A", "A", "C", "A"), exit = "c")
++  path <- simulate(source, cf)
++  for (i in 1:2) {
++    result <- result_at(path, i)
++    pre <- if (i == 1) c(TRUE, TRUE, TRUE, FALSE) else rep(TRUE, 4)
++    post <- if (i == 1) rep(TRUE, 4) else c(TRUE, TRUE, FALSE, TRUE)
++    mass <- function(p, mask) 1 + sum(exp(result@slopes$meanval[mask] +
++      result@slopes$alpha * (p[mask] - result@priceOutside)))
++    expected <- result@mktSize / result@slopes$alpha *
++      log(mass(result@pricePost, post) / mass(result@pricePre, pre))
++    expect_equal(CV(result), as.numeric(expected), tolerance = 1e-10)
++  }
++  expect_error(CV(final_result(path), subsetPre = c(TRUE, FALSE)), "subsetPre")
++  expect_error(CV(final_result(path), subsetPre = rep(FALSE, 4)), "subsetPre")
++  expect_error(CV(final_result(path), subsetPre = c(TRUE, TRUE, TRUE, NA)), "subsetPre")
++})

@@ -1,0 +1,50 @@
+[
+  {
+    "status": "fulfilled",
+    "value": {
+      "package": "antitrust",
+      "runs": [
+        {
+          "id": 41671281029,
+          "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/luciu5/antitrust/actions/runs/41671281029"
+        }
+      ]
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "package": "trade",
+      "runs": [
+        {
+          "id": 41672778857,
+          "sha": "a0edb920c21ab398c57dbd7dd8a6b0701d7239f6",
+          "status": "completed",
+          "conclusion": "success",
+          "url": "https://github.com/luciu5/trade/actions/runs/41672778857"
+        }
+      ]
+    }
+  },
+  {
+    "status": "fulfilled",
+    "value": {
+      "package": "competitiontoolbox",
+      "runs": [
+        {
+          "id": 41673546497,
+          "status": "completed",
+          "conclusion": "failure",
+          "sha": "176308a680c4514aa32463f4c82b45da4ad7d5da",
+          "url": "https://github.com/luciu5/competitiontoolbox/actions/runs/41673546497",
+          "failed_step": "Require private vertical read token",
+          "waiver": "User explicitly waived this private-dependency check; not counted as passed.",
+          "test_phase_reached": false
+        }
+      ]
+    }
+  }
+]

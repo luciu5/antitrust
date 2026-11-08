@@ -22,6 +22,10 @@
 #'
 #' @param object An instance of one of the classes listed above.
 #' @param ... Additional arguments to pass to the method.
+#' @param subsetPre Optional logical pre-market product mask for Logit, CES,
+#'   and standard Logit second-score models. Defaults to the retained pre-market
+#'   mask after a transition, otherwise all products; use it
+#'   when advancing a market with prior exits or newly entering products.
 #' @param lim \dQuote{LogitBLP} class only. A length 2 numeric vector equal to the lower and upper quantiles of the price coefficient distribution over which to compute CV. Default c(0,1).
 #'
 #' @include CMCRMethods.R
@@ -36,6 +40,18 @@ setGeneric(
     standardGeneric("CV")
   }
 )
+
+.cv_pre_subset <- function(object, subsetPre) {
+  if (is.null(subsetPre)) {
+    subsetPre <- attr(object, "antitrust_subset_pre", exact = TRUE)
+    if (is.null(subsetPre)) return(rep(TRUE, length(object@shares)))
+  }
+  if (!is.logical(subsetPre) || length(subsetPre) != length(object@shares) ||
+      anyNA(subsetPre) || !any(subsetPre)) {
+    stop("'subsetPre' must retain at least one pre-market product")
+  }
+  subsetPre
+}
 
 #' @rdname CV-Methods
 #' @export
@@ -90,7 +106,8 @@ setMethod(
 setMethod(
   f = "CV",
   signature = "Logit",
-  definition = function(object) {
+  definition = function(object, subsetPre = NULL) {
+    subsetPre <- .cv_pre_subset(object, subsetPre)
     alpha <- object@slopes$alpha
     meanval <- object@slopes$meanval
     subset <- object@subset
@@ -100,7 +117,7 @@ setMethod(
     outVal <- ifelse(is.na(object@normIndex), 1, 0)
     output <- ifelse(object@output, 1, -1)
 
-    VPre <- sum(exp(meanval + (object@pricePre - object@priceOutside) * alpha)) + outVal
+    VPre <- sum(exp(meanval + (object@pricePre - object@priceOutside) * alpha)[subsetPre]) + outVal
     uPost <- meanval + (object@pricePost - object@priceOutside) * alpha
     uPost[is.na(uPost)] <- -Inf
     VPost <- sum(exp(uPost)[subset]) + outVal
@@ -284,7 +301,8 @@ setMethod(
 setMethod(
   f = "CV",
   signature = "Auction2ndLogit",
-  definition = function(object) {
+  definition = function(object, subsetPre = NULL) {
+    subsetPre <- .cv_pre_subset(object, subsetPre)
     mktSize <- object@mktSize
     alpha <- object@slopes$alpha
     meanvalPre <- object@slopes$meanval
@@ -306,11 +324,18 @@ setMethod(
     meanvalPost <- meanvalPre + alpha * (mcDelta - mcDeltaOut)
 
 
-    marginPre <- calcMargins(object, preMerger = TRUE, exAnte = TRUE)
+    pre_model <- object
+    if (any(!subsetPre)) {
+      pre_model@slopes$meanval[!subsetPre] <- -Inf
+      pre_model@ownerPre[!subsetPre, ] <- 0
+      pre_model@ownerPre[, !subsetPre] <- 0
+      diag(pre_model@ownerPre)[!subsetPre] <- 1
+    }
+    marginPre <- calcMargins(pre_model, preMerger = TRUE, exAnte = TRUE)
     marginPost <- calcMargins(object, preMerger = FALSE, exAnte = TRUE)
 
     ## Add the elimination of first best option
-    VPre <- sum(exp(meanvalPre), na.rm = TRUE) + outVal
+    VPre <- sum(exp(meanvalPre[subsetPre]), na.rm = TRUE) + outVal
     VPost <- sum(exp(meanvalPost[subset]), na.rm = TRUE) + outVal
 
 
@@ -331,7 +356,8 @@ setMethod(
 setMethod(
   f = "CV",
   signature = "CES",
-  definition = function(object) {
+  definition = function(object, subsetPre = NULL) {
+    subsetPre <- .cv_pre_subset(object, subsetPre)
     alpha <- object@slopes$alpha
     mktSize <- object@mktSize
 
@@ -344,7 +370,7 @@ setMethod(
 
     outVal <- ifelse(is.na(object@normIndex), 1, 0)
 
-    VPre <- sum(meanval * (object@pricePre / object@priceOutside)^(1 - gamma), na.rm = TRUE) + outVal
+    VPre <- sum((meanval * (object@pricePre / object@priceOutside)^(1 - gamma))[subsetPre], na.rm = TRUE) + outVal
     VPost <- sum(meanval * (object@pricePost / object@priceOutside)^(1 - gamma), na.rm = TRUE) + outVal
 
     result <- output * log(VPost / VPre) / ((1 + alpha) * (1 - gamma))

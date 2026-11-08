@@ -1,0 +1,34 @@
+"file","test","nb","failed","error","warning","skipped","passed"
+"test-hybrid-mergers.R","hybrid classification uses ownership relationships",24,0,FALSE,9,FALSE,15
+"test-hybrid-mergers.R","classification handles restructurings and non-aligned integration",7,0,FALSE,2,FALSE,5
+"test-hybrid-mergers.R","hybrid Bertrand economics match the pre-extraction implementation",28,0,FALSE,3,FALSE,25
+"test-hybrid-mergers.R","hybrid concentration is reported separately by tier",10,0,FALSE,1,FALSE,9
+"test-hybrid-mergers.R","hybrid simulation and sequential promotion retain transition types",8,0,FALSE,4,FALSE,4
+"test-hybrid-mergers.R","all registered vertical variants solve hybrid ownership",18,0,FALSE,4,FALSE,14
+"test-independent-bargaining.R","two-tier bargaining prices satisfy independent Logit best responses",9,0,FALSE,0,FALSE,9
+"test-independent-welfare.R","vertical Logit welfare obeys demand and transfer accounting",9,0,FALSE,0,FALSE,9
+"test-lifecycle-dispatch.R","vertical lifecycle dispatch is explicit",19,0,FALSE,4,FALSE,15
+"test-lifecycle-dispatch.R","vertical sequential simulation and resume preserve baseline fixtures",14,0,FALSE,2,FALSE,12
+"test-linked-exit.R","A: linked exits preserve survivor FOCs without demand recalibration",26,0,FALSE,0,FALSE,26
+"test-linked-exit.R","A: policy exits retain capacity anchors and resume without reentry",47,0,FALSE,0,FALSE,47
+"test-linked-exit.R","A: ordinary resumed exits preserve old masks and reject malformed requests",14,0,FALSE,0,FALSE,14
+"test-linked-exit.R","A: second-score linked exits preserve survivor auction equations",4,0,FALSE,0,FALSE,4
+"test-parity-fixtures.R","flat and vertical merger fixtures retain reviewed economics",93,0,FALSE,6,FALSE,87
+"test-parity-fixtures.R","second-score, nested, and chain-level fixtures retain reviewed economics",126,0,FALSE,10,FALSE,116
+"test-parity-fixtures.R","reviewed vertical corner-case errors remain deliberate",6,0,FALSE,1,FALSE,5
+"test-registry-and-ownership.R","vertical owns its three vertical model registrations",6,0,FALSE,0,FALSE,6
+"test-subset-support.R","partial Bertrand masks work in direct and fitted lifecycles",207,0,FALSE,0,FALSE,207
+"test-subset-support.R","nested Bertrand masks work at each chain level",198,0,FALSE,0,FALSE,198
+"test-subset-support.R","nested Bertrand masks handle a completely inactive nest",34,0,FALSE,0,FALSE,34
+"test-subset-support.R","second-score masks preserve active FOCs and NA inactive outputs",199,0,FALSE,0,FALSE,199
+"test-subset-support.R","subset masks are strict and survive serialization",8,0,FALSE,0,FALSE,8
+"test-vertical-trade-policy.R","A: neutral promotion cannot relabel unmodelled baseline tax receipts or rationing",21,0,FALSE,0,FALSE,21
+"test-vertical-trade-policy.R","A: zero policy preserves ordinary simulation equilibria across all registered demand variants",21,0,FALSE,0,FALSE,21
+"test-vertical-trade-policy.R","A: upstream, downstream and both-tier tariffs satisfy physical net profits and portfolio Nash FOCs",57,0,FALSE,0,FALSE,57
+"test-vertical-trade-policy.R","A: tariffs retain cross-tier portfolio gains and the nested removal outside option",52,0,FALSE,0,FALSE,52
+"test-vertical-trade-policy.R","A: quota scarcity rents meet independent stationarity, feasibility and complementarity by tier",78,0,FALSE,0,FALSE,78
+"test-vertical-trade-policy.R","A: nested and integrated multiproduct quotas retain opposite-tier tariff opportunity costs",92,0,FALSE,0,FALSE,92
+"test-vertical-trade-policy.R","A: policy sequences and direct/path resume preserve original capacities and compounded costs",57,0,FALSE,0,FALSE,57
+"test-vertical-trade-policy.R","A: second-score upstream tariffs retain winner probabilities and auction payment identities",13,0,FALSE,0,FALSE,13
+"test-vertical-trade-policy.R","A: unsupported rationing and exit fail before solving an economically different model",7,0,FALSE,0,FALSE,7
+"test-vertical-trade-policy.R","A: policy auction concentration uses physical winner shares",4,0,FALSE,0,FALSE,4

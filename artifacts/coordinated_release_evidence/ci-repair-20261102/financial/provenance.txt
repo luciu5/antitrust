@@ -1,0 +1,7 @@
+release_certification=true
+antitrust_requested_ref=7634b8c58caa98396f9183fe0fd5a30763cf6f53
+antitrust_resolved_sha=7634b8c58caa98396f9183fe0fd5a30763cf6f53
+financial_source=/tmp/coordinated-ci-repair-20261102/exports/financial
+financial_extended=1
+R version 4.6.1 (2026-06-24) 
+093ac02415a8e7872fa4b455b482c50725005d1dc480a79ecfb90a3c570887e1  financial_0.1.0.tar.gz

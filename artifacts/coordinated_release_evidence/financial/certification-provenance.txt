@@ -1,0 +1,7 @@
+release_certification=true
+antitrust_requested_ref=abc8f9457cc9cbb2e3f252c6b82fe5b87da3dd79
+antitrust_resolved_sha=abc8f9457cc9cbb2e3f252c6b82fe5b87da3dd79
+financial_source=/tmp/coordinated-release-next/candidates/sources/financial
+financial_extended=1
+R version 4.6.1 (2026-06-24) 
+2c6c68d7f657da57da7548f7b23bd0ba227ef45a9a4d1b16270d4c3ca2053b1c  financial_0.1.0.tar.gz

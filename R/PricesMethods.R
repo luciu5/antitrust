@@ -112,7 +112,7 @@ setMethod(
     owner_check <- if (preMerger) object@ownerPre else object@ownerPost
     plain_ces <- class(object)[1] %in% c("CES", "CESNests")
     if (plain_ces && object@output && !is.na(object@normIndex) &&
-      nrow(owner_check) > 1 && all(owner_check == 1)) {
+      all(owner_check[subset, subset, drop = FALSE] == 1)) {
       stop("CES demand without an outside good has no finite Bertrand equilibrium when one firm owns every product.")
     }
 
@@ -146,11 +146,29 @@ setMethod(
     }
 
 
+    ## CES powers can admit spurious negative-price algebraic roots (in
+    ## particular for integer gamma). With positive output costs, a valid
+    ## interior price is positive. Solve its level FOCs in log coordinates
+    ## rather than accepting a negative root after a portfolio merger.
+    positive_ces <- methods::is(object, "CES") && output &&
+      all(is.finite(mc[subset]) & mc[subset] > 0)
+    solve_foc <- FOC
+    solve_start <- priceStart
+    if (positive_ces) {
+      solve_start <- log(pmax(priceStart, mc[subset], .Machine$double.eps^0.25))
+      solve_foc <- function(log_prices) {
+        if (any(!is.finite(log_prices)) || any(abs(log_prices) > 100)) {
+          return(rep(1e6, length(log_prices)))
+        }
+        p <- exp(log_prices)
+        FOC(p) / pmax(p, 1)
+      }
+    }
     ## Find price changes that set FOCs equal to 0
     ## Try nleqslv first (faster, more reliable for smooth FOCs)
     nleqslv_maxit <- as.integer(object@control.equ$maxit)
     if (length(nleqslv_maxit) == 0 || is.na(nleqslv_maxit[1]) || nleqslv_maxit[1] < 1) nleqslv_maxit <- 150L
-    minResult <- nleqslv::nleqslv(priceStart, FOC,
+    minResult <- nleqslv::nleqslv(solve_start, solve_foc,
       method = "Broyden",
       control = list(
         ftol = object@control.equ$tol,
@@ -160,7 +178,7 @@ setMethod(
 
     ## Fallback to BBsolve if nleqslv fails
     if (minResult$termcd > 2) {
-      minResult <- BBsolve(priceStart, FOC, quiet = TRUE, control = object@control.equ, ...)
+      minResult <- BBsolve(solve_start, solve_foc, quiet = TRUE, control = object@control.equ, ...)
       priceEst_solution <- minResult$par
       if (minResult$convergence != 0) {
         warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '", minResult$message, "'")
@@ -169,6 +187,14 @@ setMethod(
       priceEst_solution <- minResult$x
       if (minResult$termcd > 1) {
         warning("'calcPrices' may not have fully converged. 'nleqslv' termcd: ", minResult$termcd)
+      }
+    }
+    if (positive_ces) {
+      priceEst_solution <- exp(priceEst_solution)
+      residual <- FOC(priceEst_solution) / pmax(priceEst_solution, 1)
+      if (any(!is.finite(priceEst_solution)) || any(priceEst_solution <= 0) ||
+          any(!is.finite(residual)) || max(abs(residual)) > 1e-7) {
+        stop("CES pricing failed to find a positive equilibrium with a small level-FOC residual")
       }
     }
     if (isMax) {

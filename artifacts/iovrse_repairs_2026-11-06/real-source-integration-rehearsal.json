@@ -1,0 +1,90 @@
+{
+  "scope": "Publish refactor and integrate master/main; no package publication",
+  "packages": [
+    {
+      "name": "antitrust",
+      "repo": "/tmp/iovrse-real-rehearsal-1kaj_1kq/sources/antitrust",
+      "origin": "/tmp/iovrse-real-rehearsal-1kaj_1kq/antitrust.git",
+      "target": "master",
+      "source_sha": "b16e51f1a065c140ccd26edf6cafdebed63f9acf",
+      "integrated_sha": "fbdeb63a785b09b55188025f17fb57a3f4df93eb",
+      "old_target": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "old_refactor": "20f0923fc560295e04310aed5615c19dadf672cb",
+      "worktree": "/tmp/iovrse-real-rehearsal-1kaj_1kq/integration/antitrust",
+      "pushed": true
+    },
+    {
+      "name": "coordination",
+      "repo": "/tmp/iovrse-real-rehearsal-1kaj_1kq/sources/coordination",
+      "origin": "/tmp/iovrse-real-rehearsal-1kaj_1kq/coordination.git",
+      "target": "main",
+      "source_sha": "8d5b05d4119ba0c8b59faf2812b3639a589845f4",
+      "integrated_sha": "8d5b05d4119ba0c8b59faf2812b3639a589845f4",
+      "old_target": "6955c4845df0c1de98eb540423118b53732211e5",
+      "old_refactor": null,
+      "worktree": "/tmp/iovrse-real-rehearsal-1kaj_1kq/integration/coordination",
+      "pushed": true
+    },
+    {
+      "name": "trade",
+      "repo": "/tmp/iovrse-real-rehearsal-1kaj_1kq/sources/trade",
+      "origin": "/tmp/iovrse-real-rehearsal-1kaj_1kq/trade.git",
+      "target": "master",
+      "source_sha": "85fdd397a55396a548c2abfb2faca51c45b7cc15",
+      "integrated_sha": "9a62e3190413da5aa9cadcb2cc62983b99dd545b",
+      "old_target": "a0edb920c21ab398c57dbd7dd8a6b0701d7239f6",
+      "old_refactor": "2826df0fc3530c01066000725f643b060e71d136",
+      "worktree": "/tmp/iovrse-real-rehearsal-1kaj_1kq/integration/trade",
+      "pushed": true
+    },
+    {
+      "name": "vertical",
+      "repo": "/tmp/iovrse-real-rehearsal-1kaj_1kq/sources/vertical",
+      "origin": "/tmp/iovrse-real-rehearsal-1kaj_1kq/vertical.git",
+      "target": "main",
+      "source_sha": "03341b288c356369c8e9bbf622a5bc4879b7b564",
+      "integrated_sha": "03341b288c356369c8e9bbf622a5bc4879b7b564",
+      "old_target": "dbb99804bfe76746c13374d341beb1bd20af79c2",
+      "old_refactor": null,
+      "worktree": "/tmp/iovrse-real-rehearsal-1kaj_1kq/integration/vertical",
+      "pushed": true
+    },
+    {
+      "name": "financial",
+      "repo": "/tmp/iovrse-real-rehearsal-1kaj_1kq/sources/financial",
+      "origin": "/tmp/iovrse-real-rehearsal-1kaj_1kq/financial.git",
+      "target": "main",
+      "source_sha": "a83cf609178f1a1e96b2cb2761c0f1943bd46898",
+      "integrated_sha": "a83cf609178f1a1e96b2cb2761c0f1943bd46898",
+      "old_target": "80e2720b0e40b30e819c028110d2085abca26da0",
+      "old_refactor": null,
+      "worktree": "/tmp/iovrse-real-rehearsal-1kaj_1kq/integration/financial",
+      "pushed": true
+    },
+    {
+      "name": "competitiontoolbox",
+      "repo": "/tmp/iovrse-real-rehearsal-1kaj_1kq/sources/competitiontoolbox",
+      "origin": "/tmp/iovrse-real-rehearsal-1kaj_1kq/competitiontoolbox.git",
+      "target": "master",
+      "source_sha": "100699d44e5062044921fdf59dd65e8f36ff17e3",
+      "integrated_sha": "bfbf63cae4cadb27b2e0ab5b8c2cbbb10adedf95",
+      "old_target": "176308a680c4514aa32463f4c82b45da4ad7d5da",
+      "old_refactor": "a5030868e5831b4c7951a8cb7eee469af0675c7a",
+      "worktree": "/tmp/iovrse-real-rehearsal-1kaj_1kq/integration/competitiontoolbox",
+      "pushed": true
+    },
+    {
+      "name": "antitrustBayes",
+      "repo": "/tmp/iovrse-real-rehearsal-1kaj_1kq/sources/antitrustBayes",
+      "origin": "/tmp/iovrse-real-rehearsal-1kaj_1kq/antitrustBayes.git",
+      "target": "main",
+      "source_sha": "539577764a7f4a85ceb06720249d6aa0201c2919",
+      "integrated_sha": "539577764a7f4a85ceb06720249d6aa0201c2919",
+      "old_target": "fb1f026c0e301f17343ebd611afe657cbaafc5f2",
+      "old_refactor": null,
+      "worktree": "/tmp/iovrse-real-rehearsal-1kaj_1kq/integration/antitrustBayes",
+      "pushed": true
+    }
+  ],
+  "prepared_complete": true
+}

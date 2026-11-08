@@ -1,0 +1,145 @@
+{
+  "date": "2026-11-06",
+  "status": "implemented, independently reviewed, applied to original refactor branches, and locally validated",
+  "source_suites": {
+    "trade": {
+      "failed": 0,
+      "error": 0,
+      "warning": 108,
+      "skipped": 2,
+      "passed": 2260
+    },
+    "competitiontoolbox": {
+      "failed": 0,
+      "error": 0,
+      "warning": 51,
+      "skipped": 0,
+      "passed": 1402
+    },
+    "vertical": {
+      "failed": 0,
+      "error": 0,
+      "warning": 46,
+      "skipped": 0,
+      "passed": 1470
+    },
+    "financial": {
+      "failed": 0,
+      "error": 0,
+      "warning": 0,
+      "skipped": 0,
+      "passed": 187
+    },
+    "antitrust": {
+      "failed": 0,
+      "error": 0,
+      "warning": 143,
+      "skipped": 45,
+      "passed": 1408
+    },
+    "antitrustBayes": {
+      "failed": 0,
+      "error": 0,
+      "warning": 22,
+      "skipped": 16,
+      "passed": 7435
+    },
+    "coordination": {
+      "failed": 0,
+      "error": 0,
+      "warning": 15,
+      "skipped": 0,
+      "passed": 733
+    }
+  },
+  "passing_source_assertions": 14895,
+  "package_checks": {
+    "trade": {
+      "status": "OK",
+      "build": "passed",
+      "check": "R CMD check --no-manual"
+    },
+    "competitiontoolbox": {
+      "status": "OK",
+      "build": "passed",
+      "check": "R CMD check --no-manual"
+    },
+    "vertical": {
+      "status": "OK",
+      "build": "passed",
+      "check": "R CMD check --no-manual"
+    },
+    "financial": {
+      "status": "OK",
+      "build": "passed",
+      "check": "R CMD check --no-manual"
+    },
+    "antitrust": {
+      "status": "OK",
+      "build": "passed",
+      "check": "R CMD check --no-manual"
+    },
+    "antitrustBayes": {
+      "status": "OK",
+      "build": "passed",
+      "check": "R CMD check --no-manual"
+    },
+    "coordination": {
+      "status": "OK",
+      "build": "passed",
+      "check": "R CMD check --no-manual"
+    }
+  },
+  "additional_checks": {
+    "nightly_antitrust_paths": {
+      "passed": 155,
+      "failed": 0,
+      "warnings": 5,
+      "skips": 0
+    },
+    "bayes_provenance_checks": 12,
+    "saved_fit_policy_focs": {
+      "passed": 32,
+      "maximum_residual": 9.11085e-09,
+      "threshold": 1e-06,
+      "new_sampling": false,
+      "original_seals_preserved": true
+    },
+    "working_five_step_example": "evidence/example/mixed-path.csv"
+  },
+  "independent_review": {
+    "model": "gpt-6.1-sol",
+    "accepted": true,
+    "independent_math": "Nine two-market cases vs separate quadrature, error <=3.51e-10; three-market simplex identity; promoted-state report checks"
+  },
+  "sol_implementation_workstreams": 3,
+  "changed_source_files": 62,
+  "library": "/mnt/d/Projects/antitrust/.Rlib/iovrse-fixes-20261106",
+  "scope_limits": [
+    "No new HMC or broad Bayesian recovery study.",
+    "No new downstream second-score tariff/quota mechanism, native coordination entry, or quota entry.",
+    "Live browser verification blocked by EPERM socket restrictions even after escalation; real server and generated-code tests passed.",
+    "Historical private-dependency hosted CI waiver preserved; no new hosted certification or remote mutation.",
+    "Inherited nested market-elasticity normalization discrepancy remains documented unchanged."
+  ],
+  "compatibility_changes": [
+    "Debt calibration requires complete finite margins and now names missing positions in a structured error.",
+    "Undefined debt conditioning and unverified roots raise structured errors instead of returning invalid equilibria.",
+    "CES output pricing rejects impossible no-outside active monopolies and nonpositive roots."
+  ],
+  "initial_environment_repair": "Downloaded verified CRAN cubature mirror source via connected GitHub after command network failures; native integral smoke passed; restored eight verified help files to eliminate cross-reference warning without replacing tested native/R code.",
+  "original_application": {
+    "packages": [
+      "antitrust",
+      "trade",
+      "vertical",
+      "financial",
+      "competitiontoolbox",
+      "antitrustBayes"
+    ],
+    "source_hashes_verified": true,
+    "master_or_main_refs_changed": false,
+    "original_indexes_staged_by_tool": false
+  },
+  "publication_authorized": false
+}

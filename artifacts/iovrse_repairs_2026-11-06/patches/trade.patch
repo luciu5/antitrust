@@ -1,0 +1,981 @@
+diff --git a/DESCRIPTION b/DESCRIPTION
+index 0f85a6f..f1f567b 100755
+--- a/DESCRIPTION
++++ b/DESCRIPTION
+@@ -35,6 +35,7 @@ Collate:
+     'TradeModelRegistry.R'
+     'TradePromotion.R'
+     'TariffGameFit.R'
++    'TariffGamePath.R'
+     'TradeModelTranslations.R'
+     'summary-methods.R'
+     'auction2nd_tariff.R'
+diff --git a/R/Counterfactual.R b/R/Counterfactual.R
+index 28b2e89..beaff9a 100755
+--- a/R/Counterfactual.R
++++ b/R/Counterfactual.R
+@@ -2,9 +2,9 @@
+ ## infrastructure reuses antitrust's exported S4 classes and generics
+ ## (`add_step()`, `final_result()`, `result_at()`) directly via
+ ## `import(antitrust)`; only the trade-specific capability validation and
+-## exit-subset handling live here. The neutral object may carry `entry`, but
+-## trade rejects it at the TradeFit simulation boundary because an entrant's
+-## tariff/quota treatment is not specified by the existing policy state.
++## exit-subset handling live here. Historical TradeFit models reject entry;
++## the explicit TariffGameFit route assigns entrant tariffs using its policy
++## default, entrant extras, or a simultaneous tariff field.
+ 
+ #' Define a post-calibration trade-policy counterfactual
+ #'
+@@ -31,15 +31,19 @@
+ #'   antitrust demand system (moncom, tariff Bertrand/Cournot, second-score
+ #'   auction, bargaining, and LogitCap-descended quota); unsupported for
+ #'   AIDS and linear/loglin Cournot tariff models, which have no `meanval`.
+-#' @param entry An entrant specification. Trade validates entry support when
+-#'   the counterfactual is simulated for a fitted TradeFit.
++#' @param entry An entrant specification. Entry is available through the
++#'   explicit `TariffGameFit` route for its implemented ordinary output models;
++#'   historical `TradeFit`, quota, and native coordination entry remain
++#'   unsupported. Entrant extra `tariff` overrides the fit's `entrant_tariff`
++#'   default, and a simultaneous `tariff` field overrides both.
++#' @param core Core-firm IDs for native CoreFringe tariff games.
+ #' @param ... Reserved; model specification fields are rejected.
+ #' @return A `Counterfactual` object with exactly one `CounterfactualStep`.
+ #' @export
+ counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
+                            capacity = NULL, tariff = NULL, quota = NULL,
+                            bargaining = NULL, leader = NULL, products = NULL,
+-                           quality = NULL, entry = NULL, ...) {
++                           quality = NULL, entry = NULL, core = NULL, ...) {
+     ## Counterfactual objects and add_step() are shared neutral infrastructure
+     ## owned by antitrust.  Trade policy restrictions are checked only when a
+     ## TradeFit reaches simulate(), where the active policy/model is known.
+@@ -47,7 +51,7 @@ counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
+         ownership = ownership, costs = costs, exit = exit,
+         capacity = capacity, tariff = tariff, quota = quota,
+         bargaining = bargaining, leader = leader, products = products,
+-        quality = quality, entry = entry, ...
++        quality = quality, entry = entry, core = core, ...
+     )
+ }
+ 
+diff --git a/R/TariffGameFit.R b/R/TariffGameFit.R
+index 26ff199..743b9d2 100755
+--- a/R/TariffGameFit.R
++++ b/R/TariffGameFit.R
+@@ -11,7 +11,24 @@
+ #' A `TariffGameFit` is a `TradeFit` wrapper for a fitted output-market game
+ #' whose saved marginal costs are effective costs.  The wrapper records the
+ #' consumer-price tariff fraction, recovered physical costs, and the immutable
+-#' source fit used for subsequent scenarios.
++#' source fit used for subsequent scenarios. Direct scenario arguments retain
++#' their baseline-relative cost-shock convention. `Counterfactual` objects
++#' built with `add_step()` instead advance the solved market between steps;
++#' physical proportional shocks compound, tariffs are absolute levels, and
++#' exits persist. Multi-step results are `CounterfactualPath` objects and can
++#' be resumed with `simulate(path, counterfactual(...))`.
++#'
++#' Entry reuses antitrust's implemented concrete-model transitions. Entrant
++#' costs are physical production costs. Tariff precedence is a simultaneous
++#' `tariff` field, then `entrant(..., tariff = value)`, then the fit's
++#' `entrant_tariff` default (zero unless explicitly supplied). Existing product
++#' labels and positions remain stable. Ownership changes supply one firm ID
++#' for every current stored product, including entrants and inactive products;
++#' named vectors are matched to labels. Each entrant starts as a new firm.
++#' Pre-step entrant output is zero. Native Stackelberg and CoreFringe games
++#' support paths but require explicit `leader` or `core` IDs when ownership
++#' changes and do not support entry. Standard Logit auctions retain the
++#' restriction of uniform active retention within each bidding firm.
+ #'
+ #' @export
+ #' @importClassesFrom antitrust StructuralFit
+@@ -228,12 +245,21 @@ setClass(
+   stats::setNames(as.numeric(value), labels)
+ }
+ 
+-.trade_game_normalize_owner <- function(value, default, n, name = "ownerPost") {
++.trade_game_normalize_owner <- function(value, default, n, name = "ownerPost", labels = NULL) {
+   if (is.null(value)) return(as.character(default))
+   if (is.matrix(value) || is.array(value) || is.list(value) || length(value) != n) {
+     .trade_game_error("trade_tariff_invalid_ownership",
+                       paste0("'", name, "' must be a length-k firm-ID vector"))
+   }
++  value_names <- names(value)
++  if (!is.null(value_names)) {
++    if (is.null(labels) || anyNA(value_names) || anyDuplicated(value_names) ||
++        !setequal(value_names, labels)) {
++      .trade_game_error("trade_tariff_invalid_ownership",
++                        "named ownership must name every current product exactly once")
++    }
++    value <- value[match(labels, value_names)]
++  }
+   value <- as.character(value)
+   if (anyNA(value) || any(!nzchar(value))) {
+     .trade_game_error("trade_tariff_invalid_ownership",
+@@ -320,7 +346,7 @@ setClass(
+     .trade_game_error("trade_tariff_invalid_contract",
+                       "tariff reuse arguments must be named")
+   }
+-  allowed <- c("tariffPre", "cost_basis", "margin_basis")
++  allowed <- c("tariffPre", "cost_basis", "margin_basis", "entrant_tariff")
+   bad <- setdiff(supplied, allowed)
+   if (length(bad)) {
+     .trade_game_error("trade_tariff_invalid_contract",
+@@ -348,7 +374,7 @@ setClass(
+ }
+ 
+ .trade_game_contract_requested <- function(arguments) {
+-  any(c("cost_basis", "margin_basis") %in% names(arguments))
++  any(c("cost_basis", "margin_basis", "entrant_tariff") %in% names(arguments))
+ }
+ 
+ .trade_game_spec_native <- function(model) {
+@@ -501,6 +527,7 @@ setClass(
+     .trade_game_error("trade_tariff_unsupported_policy",
+                       "TariffGameFit supports policy = 'tariff' only")
+   }
++  entrant_tariff <- .trade_game_entrant_tariff(arguments$entrant_tariff %||% 0)
+   model <- if (native) object else object@model
+   .trade_game_validate_output(model)
+   n <- .trade_game_n(model)
+@@ -549,6 +576,7 @@ setClass(
+   source_fit <- if (native) NULL else object
+   if (!is.null(source_fit)) source_fit@model <- source_model
+   state <- .trade_game_state(model, tau, kappa, source_model, source_fit, spec)
++  state$entrant_tariff <- entrant_tariff
+   wrapped_model <- source_model
+   wrapped_model <- antitrust::setRetention(wrapped_model,
+     retentionPre = 1 - tau, retentionPost = 1 - tau)
+@@ -566,7 +594,7 @@ setClass(
+   if (!methods::is(value, "Counterfactual")) return(NULL)
+   if (length(value@steps) != 1L) {
+     .trade_game_error("trade_tariff_multiple_steps",
+-                      "TariffGameFit initially supports exactly one counterfactual step")
++                      "internal one-step adapter requires one counterfactual step")
+   }
+   changes <- value@steps[[1L]]@changes
+   supported <- c("ownership", "costs", "exit", "tariff", "leader", "core")
+@@ -650,6 +678,23 @@ setClass(
+     .trade_game_error("trade_tariff_invalid_simulation",
+                       paste("unsupported simulation argument(s):", paste(names(extra), collapse = ", ")))
+   }
++  if (methods::is(tariffPost, "Counterfactual")) {
++    validate_counterfactual(object, tariffPost)
++    has_entry <- any(vapply(tariffPost@steps, function(x) !is.null(x@changes$entry), logical(1)))
++    if (length(tariffPost@steps) > 1L || has_entry) {
++      supplied <- c(if (!is.null(ownerPost)) "ownerPost",
++                    if (!is.null(leadersPost)) "leadersPost",
++                    if (!is.null(corePost)) "corePost",
++                    if (!is.null(mcDelta)) "mcDelta",
++                    if (!is.null(subset)) "subset",
++                    if (!is.null(priceStart)) "priceStart")
++      if (length(supplied)) {
++        .trade_game_error("trade_tariff_invalid_simulation",
++          paste("cannot combine a Counterfactual with:", paste(supplied, collapse = ", ")))
++      }
++      return(.trade_game_path(object, tariffPost))
++    }
++  }
+   cf <- .trade_game_unpack_counterfactual(tariffPost)
+   if (!is.null(cf)) {
+     conflicts <- c(if (!is.null(ownerPost)) "ownerPost",
+@@ -672,7 +717,7 @@ setClass(
+     if (is.null(tariffPost)) state$tariffPost else tariffPost,
+     n, state$labels, "tariffPost"
+   )
+-  owner <- .trade_game_normalize_owner(ownerPost, state$ownerPost, n)
++  owner <- .trade_game_normalize_owner(ownerPost, state$ownerPost, n, labels = state$labels)
+   owner_changed <- !identical(owner, state$ownerPost)
+   subset <- if (is.null(subset)) state$subsetPost else subset
+   if (!is.logical(subset) || length(subset) != n || anyNA(subset) || !any(subset)) {
+@@ -754,7 +799,7 @@ setClass(
+   }
+   delta_effective <- kpost / state$kappaPre - 1
+ 
+-  unchanged <- identical(tau, state$tariffPost) &&
++  unchanged <- !isTRUE(state$environment_changed) && identical(tau, state$tariffPost) &&
+     identical(owner, state$ownerPost) && identical(subset, state$subsetPost) &&
+     identical(leaders, state$leadersPost) &&
+     identical(core, state$corePost) &&
+@@ -791,6 +836,7 @@ setClass(
+   result_state$mcDeltaPhysical <- delta_physical
+   result_state$mcDeltaEffective <- delta_effective
+   result_state$promotion_solves <- 0L
++  result_state$environment_changed <- FALSE
+   .trade_game_new_fit(object, result_model, result_state, object@spec,
+                       route = if (unchanged) "tariff_reuse_unchanged" else "tariff_reuse_simulate",
+                       source_fit = object@source_fit)
+@@ -837,7 +883,7 @@ setMethod("simulate", "TariffGameFit", function(object, tariffPost = NULL,
+ #' @export
+ setMethod("validate_counterfactual", "TariffGameFit",
+           function(object, counterfactual) {
+-            .trade_game_unpack_counterfactual(counterfactual)
++            .trade_game_validate_path(object, counterfactual)
+             invisible(counterfactual)
+           })
+ 
+@@ -845,10 +891,7 @@ setMethod("validate_counterfactual", "TariffGameFit",
+ #' @export
+ setMethod("simulate_steps", "TariffGameFit",
+           function(object, last_result, steps, ...) {
+-            .trade_game_error(
+-              "trade_tariff_multiple_steps",
+-              "TariffGameFit initially supports one policy step; multi-step paths are unsupported"
+-            )
++            list(results = .trade_game_steps(last_result, steps))
+           })
+ 
+ #' @rdname trade-architecture
+@@ -865,12 +908,21 @@ setMethod("respecify", "TariffGameFit", function(object, demand = NULL,
+ #' @rdname antitrust-reexports
+ #' @export
+ setMethod("calcPrices", "TariffGameFit", function(object, preMerger = TRUE, ...) {
+-  antitrust::calcPrices(object@model, preMerger = preMerger, ...)
++  if (preMerger && !is.null(object@tariff_state$baseline_prices)) {
++    return(object@tariff_state$baseline_prices)
++  }
++  .trade_game_prices(object@model, preMerger)
+ })
+ 
+ #' @rdname antitrust-reexports
+ #' @export
+ setMethod("calcShares", "TariffGameFit", function(object, preMerger = TRUE, ...) {
++  previous <- object@tariff_state$previous_model
++  if (preMerger && !is.null(previous)) {
++    values <- antitrust::calcShares(previous, preMerger = FALSE, ...)
++    return(stats::setNames(c(as.numeric(values), rep(0,
++      length(object@tariff_state$labels) - length(values))), object@tariff_state$labels))
++  }
+   antitrust::calcShares(object@model, preMerger = preMerger, ...)
+ })
+ 
+@@ -894,6 +946,9 @@ setMethod("calcMC", "TariffGameFit", function(object, preMerger = TRUE, ...) {
+ })
+ 
+ .trade_game_account_quantities <- function(object, preMerger = TRUE) {
++  if (preMerger && !is.null(object@tariff_state$baseline_quantities)) {
++    return(object@tariff_state$baseline_quantities)
++  }
+   quantities <- try(antitrust::calcQuantities(object@model,
+                                                preMerger = preMerger),
+                     silent = TRUE)
+@@ -924,7 +979,7 @@ setMethod("calcMC", "TariffGameFit", function(object, preMerger = TRUE, ...) {
+ #' @rdname antitrust-reexports
+ #' @export
+ setMethod("calcProducerSurplus", "TariffGameFit", function(object, preMerger = TRUE, ...) {
+-  prices <- .trade_game_prices(object@model, preMerger)
++  prices <- calcPrices(object, preMerger = preMerger)
+   quantities <- .trade_game_account_quantities(object, preMerger)
+   costs <- if (preMerger) object@tariff_state$cPre else object@tariff_state$cPost
+   tau <- if (preMerger) object@tariff_state$tariffPre else object@tariff_state$tariffPost
+@@ -937,6 +992,9 @@ setMethod("calcProducerSurplus", "TariffGameFit", function(object, preMerger = T
+ #' @rdname antitrust-reexports
+ #' @export
+ setMethod("CV", "TariffGameFit", function(object, ...) {
++  if (!is.null(object@tariff_state$previous_model)) {
++    return(antitrust::CV(object@model, subsetPre = object@tariff_state$subsetPre, ...))
++  }
+   antitrust::CV(object@model, ...)
+ })
+ 
+@@ -1050,7 +1108,7 @@ tariff_accounts <- function(object, preMerger = FALSE) {
+     .trade_game_error("trade_tariff_invalid_object", "object must be a TariffGameFit")
+   }
+   state <- object@tariff_state
+-  prices <- .trade_game_prices(object@model, preMerger)
++  prices <- calcPrices(object, preMerger = preMerger)
+   quantities <- .trade_game_account_quantities(object, preMerger)
+   tau <- if (preMerger) state$tariffPre else state$tariffPost
+   kappa <- if (preMerger) state$kappaPre else state$kappaPost
+diff --git a/R/TradeModelRegistry.R b/R/TradeModelRegistry.R
+index 4e63b83..b84c5b2 100755
+--- a/R/TradeModelRegistry.R
++++ b/R/TradeModelRegistry.R
+@@ -306,6 +306,7 @@ supportedModels <- function() {
+     capacity = FALSE,
+     bargaining = FALSE,
+     leader = FALSE,
++    core = FALSE,
+     products = spec$conduct == "cournot" && spec$demand != "blp",
+     tariff = isTRUE(entry$tariff),
+     quota = isTRUE(entry$quota),
+diff --git a/R/TradePromotion.R b/R/TradePromotion.R
+index c5e0041..650e000 100755
+--- a/R/TradePromotion.R
++++ b/R/TradePromotion.R
+@@ -18,7 +18,9 @@
+ #' @param ... The baseline policy state. Tariff models accept \code{tariffPre},
+ #'   defaulting to zero; the Logit quota model accepts \code{quotaPre},
+ #'   defaulting to \code{Inf} (unconstrained). The post-policy state is
+-#'   initialized to the same value.
++#'   initialized to the same value. The explicit tariff-reuse route also accepts
++#'   \code{entrant_tariff}, a finite scalar below one (default zero), for new
++#'   products that do not declare their own tariff.
+ #' @return A \code{TradeFit} containing the copied source model and policy state.
+ #' @details
+ #' Eligibility requires the exact normalized demand, conduct, and variant in
+@@ -42,7 +44,7 @@
+ #'
+ #' For an ordinary output Logit/CES or standard output Logit second-score auction
+ #' \code{AntitrustFit}, explicitly supplying
+-#' either \code{cost_basis} or \code{margin_basis} opts into the initial
++#' \code{cost_basis}, \code{margin_basis}, or \code{entrant_tariff} opts into the
+ #' no-reestimation tariff route and returns a \code{TariffGameFit}.  A nonzero
+ #' \code{tariffPre} requires \code{cost_basis = "effective"} and
+ #' \code{margin_basis = "net_revenue"}; an all-zero baseline can infer those
+@@ -508,7 +510,7 @@ setMethod(
+   "as_trade_fit", "AntitrustFit",
+   function(object, policy = "tariff", ...) {
+     arguments <- list(...)
+-    ## Supplying either basis flag is an explicit opt-in to the posterior
++    ## Supplying a basis flag or entrant_tariff is an explicit opt-in to the posterior
+     ## reuse contract.  Calls that predate that contract retain the legacy
+     ## Tariff* adapter and its historical cost interpretation.
+     if (exists(".trade_game_contract_requested", mode = "function") &&
+diff --git a/docs/promotion.md b/docs/promotion.md
+index 13d53a7..1dcc162 100755
+--- a/docs/promotion.md
++++ b/docs/promotion.md
+@@ -225,3 +225,48 @@ observed prices, shares, quantities, and margins and estimates or recovers a
+ trade model. Promotion takes the already fitted structural state and adds
+ policy-state bookkeeping, so calling `calibrate()` on the source observations
+ would defeat the purpose of this interface.
++
++
++## Sequential tariff reuse
++
++An explicit `entrant_tariff` argument also selects `TariffGameFit` for its
++implemented output Logit/CES Bertrand, Cournot and MonCom models, including
++registered ALM variants, and standard output Logit second-score auctions.
++It defaults to zero. The historical adapter selected without a tariff-reuse
++argument retains its existing capabilities.
++
++```r
++fit <- as_trade_fit(source_fit, entrant_tariff = 0.1)
++cf <- counterfactual(entry = antitrust::entrant(
++  "new", meanval = 1, cost = 0.9, priceStart = 2, tariff = 0.2))
++cf <- add_step(cf, ownership = owners_after_first_merger)
++cf <- add_step(cf, ownership = owners_after_second_merger)
++cf <- add_step(cf, tariff = final_product_tariffs)
++cf <- add_step(cf, exit = "new")
++path <- simulate(fit, cf)
++continued <- simulate(path, counterfactual(costs = c(existing_product = -0.05)))
++```
++
++Each path step starts from the preceding solved market without recalibration.
++Physical costs follow `c_next = c_current * (1 + costs)`; the consumer-price
++fraction `tau` determines retention `r = 1 - tau` and effective cost `kappa = c/r`.
++Tariff-only steps preserve physical production costs. The wrapper converts
++proportional physical shocks to the standard Logit auction's additive legacy
++cost input internally. Direct `simulate(fit, mcDelta=...)` scenarios retain
++their baseline-relative interpretation, including repeated scenarios.
++
++An entrant's cost is physical. A simultaneous tariff field takes precedence
++over the entrant's `tariff` extra, which takes precedence over the fit default.
++The default and assigned product tariffs persist through later steps and path
++resume. Full tariff/ownership vectors include inactive products to maintain
++stable indices; named ownership vectors are matched by label. Named cost
++shocks may target active products only. Path exits are cumulative and cannot
++resurrect an earlier exit. Pre-step accounts retain actual previous quantities
++and assign zero output to products that have not entered yet.
++
++Native Stackelberg and CoreFringe games also support sequential policy,
++ownership and exit paths. Specify `leader` or `core` firm IDs explicitly when
++ownership changes. Native entry, quota entry and new auction mechanisms are
++outside this route. Active products in a standard Logit auction bidder's
++portfolio must share the same tariff. Other output games permit heterogeneous
++product tariffs within a firm and solve retained physical-profit incentives.
+diff --git a/man/TariffGameFit.Rd b/man/TariffGameFit.Rd
+index f2ee038..9863407 100755
+--- a/man/TariffGameFit.Rd
++++ b/man/TariffGameFit.Rd
+@@ -40,7 +40,7 @@ the four native coordination classes
+ \arguments{
+ \item{object}{A \code{TariffGameFit}.}
+ \item{tariffPost}{A scalar or product vector of finite consumer-price tariff
+-fractions less than one.}
++fractions less than one, or a \code{Counterfactual}.}
+ \item{quotaPost}{Unsupported for this initial tariff wrapper.}
+ \item{ownerPost}{A post-policy product-to-firm vector.}
+ \item{leadersPost}{Post-policy Stackelberg leader firm IDs. Required for a
+@@ -53,9 +53,9 @@ explicit zero restores original baseline physical costs.}
+ \item{subset}{A logical, product-index, or product-label active-product
+ selection.}
+ \item{priceStart}{Optional positive post-policy price starting values.}
+-\item{last_result,steps}{Arguments for the unsupported multi-step extension
+-point.}
+-\item{counterfactual}{A one-step supported \code{Counterfactual}.}
++\item{last_result,steps}{The last solved wrapper and the next ordered steps
++for the sequential extension point.}
++\item{counterfactual}{A supported one-step or multi-step \code{Counterfactual}.}
+ \item{...}{Additional arguments; unsupported lifecycle and policy arguments
+ are rejected.}
+ }
+@@ -69,13 +69,22 @@ the original fitted baseline, so repeated simulations do not compound tariff
+ adjustments. Actual ownership and revenue retention are kept separate.
+ Mixed post tariffs are supported except within native second-score bidding
+ portfolios. Baseline retention must be compatible with the fitted source.
+-Multi-step paths, quota policies, and re-estimation are unsupported in this
+-initial route. \code{calcMC()} reports physical costs, while
++Sequential \code{Counterfactual} paths instead advance each solved market
++before applying the next step. Physical cost shocks compound, omitted tariffs
++persist at their current absolute levels, and exits are cumulative. Paths can
++be resumed using \code{simulate(path, counterfactual(...))}. An entrant's
++physical cost is converted to effective cost exactly once. Tariff precedence
++is a simultaneous tariff field, the entrant's tariff extra, then the fit's
++\code{entrant_tariff} default. Entry is implemented only for supported ordinary
++output models, and pre-entry output is zero. Native coordination paths require
++explicit leader/core roles when ownership changes; native entry, quota policies
++and re-estimation remain unsupported. \code{calcMC()} reports physical costs, while
+ \code{calcMargins(level = TRUE)} reports physical net unit profit and
+ \code{calcMargins(level = FALSE)} reports a net-revenue Lerner margin.
+ }
+ \value{
+-\code{simulate()} returns a new \code{TariffGameFit} containing the updated
++\code{simulate()} returns a \code{CounterfactualPath} for multiple steps. A
++single step returns a new \code{TariffGameFit} containing the updated
+ underlying model and explicit tariff/physical-cost state. Accessor methods
+ return values for that stored game.
+ }
+diff --git a/man/as_trade_fit.Rd b/man/as_trade_fit.Rd
+index d084f78..5fed57c 100755
+--- a/man/as_trade_fit.Rd
++++ b/man/as_trade_fit.Rd
+@@ -34,7 +34,9 @@ or \code{"quota"}.}
+ \item{...}{The baseline policy state. Tariff models accept \code{tariffPre},
+ defaulting to zero; the Logit quota model accepts \code{quotaPre},
+ defaulting to \code{Inf} (unconstrained). The post-policy state is
+-initialized to the same value.}
++initialized to the same value. The explicit tariff-reuse route also accepts
++\code{entrant_tariff}, a finite scalar below one (default zero), for new
++products that do not declare their own tariff.}
+ }
+ \value{
+ A \code{TradeFit} containing the copied source model and policy state.
+@@ -67,7 +69,7 @@ Unsupported or irrelevant policy arguments are rejected.
+ 
+ For an ordinary output Logit/CES or standard output Logit second-score auction
+ \code{AntitrustFit}, explicitly supplying
+-either \code{cost_basis} or \code{margin_basis} opts into the initial
++\code{cost_basis}, \code{margin_basis}, or \code{entrant_tariff} opts into the
+ no-reestimation tariff route and returns a \code{TariffGameFit}.  A nonzero
+ \code{tariffPre} requires \code{cost_basis = "effective"} and
+ \code{margin_basis = "net_revenue"}; an all-zero baseline can infer those
+diff --git a/man/counterfactual.Rd b/man/counterfactual.Rd
+index c1f54a1..dad3ace 100755
+--- a/man/counterfactual.Rd
++++ b/man/counterfactual.Rd
+@@ -16,6 +16,7 @@ counterfactual(
+   products = NULL,
+   quality = NULL,
+   entry = NULL,
++  core = NULL,
+   ...
+ )
+ }
+@@ -47,8 +48,13 @@ Logit/CES-family
+   auction, bargaining, and LogitCap-descended quota); unsupported for
+   AIDS and linear/loglin Cournot tariff models, which have no `meanval`.}
+ 
+-\item{entry}{An entrant specification. Trade validates entry support when
+-the counterfactual is simulated for a fitted TradeFit.}
++\item{entry}{An entrant specification. Entry is available through the
++explicit `TariffGameFit` route for its implemented ordinary output models;
++historical `TradeFit`, quota, and native coordination entry remain
++unsupported. Entrant extra `tariff` overrides the fit's `entrant_tariff`
++default, and a simultaneous `tariff` field overrides both.}
++
++\item{core}{Core-firm IDs for native CoreFringe tariff games.}
+ 
+ \item{...}{Reserved; model specification fields are rejected.}
+ }
+diff --git a/tests/testthat/test-tariff-game-fit.R b/tests/testthat/test-tariff-game-fit.R
+index df7e185..09931dc 100755
+--- a/tests/testthat/test-tariff-game-fit.R
++++ b/tests/testthat/test-tariff-game-fit.R
+@@ -121,7 +121,9 @@ test_that("tariff wrappers reject legacy lifecycle paths and summarize physical
+   expect_error(respecify(fit, demand = "ces"),
+                class = "trade_tariff_unsupported_lifecycle")
+   path <- add_step(counterfactual(tariff = .2), tariff = .3)
+-  expect_error(simulate(fit, path), class = "trade_tariff_multiple_steps")
++  result <- final_result(simulate(fit, path))
++  expect_equal(as.numeric(result@tariff_state$tariffPost), rep(.3, 3))
++  expect_equal(result@tariff_state$cPost, fit@tariff_state$cPre)
+   market <- summary(fit, market = TRUE)
+   expect_true(all(c("physicalProducerSurplusDelta",
+                     "importingGovernmentRevenueDelta",
+diff --git a/R/TariffGamePath.R b/R/TariffGamePath.R
+new file mode 100644
+index 0000000..7ebb68a
+--- /dev/null
++++ b/R/TariffGamePath.R
+@@ -0,0 +1,165 @@
++# Sequential tariff reuse. Antitrust owns market advancement and entry;
++# trade owns the tariff assignment and physical-cost policy state.
++
++.trade_game_entrant_tariff <- function(value) {
++  if (!is.numeric(value) || length(value) != 1L || !is.null(dim(value)) ||
++      !is.finite(value) || value >= 1) {
++    .trade_game_error("trade_tariff_invalid_policy",
++      "'entrant_tariff' and entrant extra 'tariff' must be finite numeric scalars less than one")
++  }
++  as.numeric(value)
++}
++
++.trade_game_validate_path <- function(object, cf) {
++  if (!methods::is(cf, "Counterfactual")) {
++    .trade_game_error("trade_tariff_invalid_simulation", "expected a Counterfactual")
++  }
++  supported <- c("ownership", "costs", "exit", "tariff", "leader", "core", "entry")
++  for (step in cf@steps) {
++    bad <- setdiff(names(step@changes), supported)
++    if (length(bad)) {
++      .trade_game_error("trade_tariff_unsupported_counterfactual",
++        paste("unsupported counterfactual field(s):", paste(bad, collapse = ", ")))
++    }
++    if (!is.null(step@changes$entry)) {
++      if (.trade_game_native_fit(object)) {
++        .trade_game_error("trade_tariff_unsupported_counterfactual",
++          "entry is unsupported for native coordination tariff games")
++      }
++      # The source package remains authoritative about concrete entry classes.
++      antitrust::validate_counterfactual(object@source_fit,
++        antitrust::counterfactual(entry = step@changes$entry))
++      for (e in step@changes$entry) {
++        if (e@cost <= 0) {
++          .trade_game_error("trade_tariff_invalid_cost_state",
++            "tariff game entry requires a strictly positive physical cost")
++        }
++        if (!is.null(e@extras$tariff)) .trade_game_entrant_tariff(e@extras$tariff)
++      }
++    }
++  }
++  invisible(cf)
++}
++
++.trade_game_entry_owners <- function(existing, entrants) {
++  owners <- existing
++  for (e in entrants) {
++    candidate <- e@label
++    while (candidate %in% owners) candidate <- paste0("entrant:", candidate)
++    owners <- c(owners, candidate)
++  }
++  owners
++}
++
++.trade_game_step <- function(object, step) {
++  previous <- object@tariff_state
++  changes <- step@changes
++  entrants <- changes$entry
++  added <- length(entrants)
++  # A policy default has no economic role in antitrust's market expansion.
++  # Entry supplies physical costs under retention one. The post-step tariff
++  # then transforms these to effective costs exactly once.
++  environment <- new("CounterfactualStep", changes =
++    if (added) list(entry = entrants) else list())
++  model <- antitrust::advance_market(object@model, environment)
++  state <- previous
++  for (post in c("tariffPost", "retentionPost", "kappaPost", "cPost",
++                 "ownerPost", "leadersPost", "corePost", "subsetPost")) {
++    pre <- sub("Post$", "Pre", post)
++    state[[pre]] <- previous[[post]]
++  }
++  # A prior step's solved quantities, including its outside alternative,
++  # constitute the actual pre-step market. Entry's synthetic starting prices
++  # must not rewrite those accounts or add pre-entry output.
++  state$previous_model <- object@model
++  state$baseline_prices <- c(.trade_game_prices(object@model, FALSE), rep(NA_real_, added))
++  state$baseline_quantities <- c(.trade_game_account_quantities(object, FALSE), rep(0, added))
++  if (added) {
++    labels <- vapply(entrants, function(e) e@label, character(1))
++    costs <- vapply(entrants, function(e) e@cost, numeric(1))
++    assigned <- vapply(entrants, function(e) {
++      .trade_game_entrant_tariff(e@extras$tariff %||% previous$entrant_tariff %||% 0)
++    }, numeric(1))
++    state$labels <- c(previous$labels, labels)
++    state$tariffPre <- c(state$tariffPre, rep(0, added))
++    state$tariffPost <- c(previous$tariffPost, assigned)
++    state$retentionPre <- c(state$retentionPre, rep(1, added))
++    state$retentionPost <- 1 - state$tariffPost
++    state$kappaPre <- c(state$kappaPre, costs)
++    state$kappaPost <- c(previous$kappaPost, costs)
++    state$cPre <- c(state$cPre, costs)
++    state$cPost <- c(previous$cPost, costs)
++    state$ownerPre <- .trade_game_entry_owners(previous$ownerPost, entrants)
++    state$ownerPost <- state$ownerPre
++    state$subsetPre <- c(previous$subsetPost, rep(FALSE, added))
++    state$subsetPost <- c(previous$subsetPost, rep(TRUE, added))
++  }
++  for (name in c("tariffPre", "tariffPost", "retentionPre", "retentionPost",
++                 "kappaPre", "kappaPost", "cPre", "cPost")) {
++    names(state[[name]]) <- state$labels
++  }
++  state$effective_cost_pre <- state$kappaPre
++  state$effective_cost_post <- state$kappaPost
++  state$physical_cost_pre <- state$cPre
++  state$physical_cost_post <- state$cPost
++  state$mcDeltaPhysical <- NULL
++  state$mcDeltaEffective <- NULL
++  state$environment_changed <- added > 0L
++  model <- antitrust::setRetention(model, retentionPre = state$retentionPre,
++                                   retentionPost = state$retentionPre)
++  # Start at the preceding equilibrium where possible; retain a finite old
++  # starting value for inactive products, which remain in indexed storage.
++  starts <- .trade_game_prices(model, TRUE)
++  finite <- is.finite(starts) & starts > 0
++  if (.trade_game_has(model, "priceStart")) model@priceStart[finite] <- starts[finite]
++  state$source_model <- model
++  if (!is.null(object@source_fit)) {
++    working_fit <- object@source_fit
++    working_fit@model <- model
++    working_fit@parameters <- .trade_parameters(model)
++    state$source_fit <- working_fit
++  }
++  working <- object
++  working@model <- model
++  working@tariff_state <- state
++  if (!is.null(names(changes$costs))) {
++    inactive <- intersect(names(changes$costs), state$labels[!state$subsetPost])
++    if (length(inactive)) {
++      .trade_game_error("trade_tariff_invalid_cost_shock",
++        paste("costs reference inactive product(s):", paste(inactive, collapse = ", ")))
++    }
++  }
++  active <- state$subsetPost
++  if (!is.null(changes$exit)) {
++    active <- active & .counterfactual_subset(changes$exit,
++      length(state$labels), state$labels)
++  }
++  if (!any(active)) {
++    .trade_game_error("trade_tariff_invalid_subset", "a path step must retain at least one active product")
++  }
++  result <- .trade_game_simulate(working, tariffPost = changes$tariff,
++    ownerPost = changes$ownership, mcDelta = changes$costs %||% 0,
++    subset = active, leadersPost = changes$leader, corePost = changes$core)
++  result@parameters <- .trade_parameters(result@model)
++  result
++}
++
++.trade_game_steps <- function(last_result, steps) {
++  if (!methods::is(last_result, "TariffGameFit")) {
++    .trade_game_error("trade_tariff_invalid_simulation", "tariff path is missing its last fitted state")
++  }
++  state <- last_result
++  results <- vector("list", length(steps))
++  for (i in seq_along(steps)) {
++    state <- .trade_game_step(state, steps[[i]])
++    results[[i]] <- state
++  }
++  results
++}
++
++.trade_game_path <- function(object, cf) {
++  results <- .trade_game_steps(object, cf@steps)
++  if (length(cf@steps) == 1L) return(results[[1L]])
++  new("CounterfactualPath", initial = object@model,
++      steps = cf@steps, results = results, diagnostics = list(fit = object))
++}
+diff --git a/tests/testthat/test-tariff-game-paths.R b/tests/testthat/test-tariff-game-paths.R
+new file mode 100644
+index 0000000..abd2dee
+--- /dev/null
++++ b/tests/testthat/test-tariff-game-paths.R
+@@ -0,0 +1,298 @@
++# A permanent: each test names an economic/API failure missed by one-step
++# comparisons. The broader model/variant grid is explicitly extended tier.
++
++.path_source <- function(demand = "logit", conduct = "bertrand", variant = "standard") {
++  args <- list(demand = demand, conduct = conduct, variant = variant,
++    prices = c(2, 2.2, 2.4, 2.6), ownerPre = c("A", "A", "B", "C"),
++    insideSize = 100, labels = c("a", "b", "c", "d"))
++  args$parameters <- if (demand == "logit")
++    list(alpha = -1.5, meanval = c(3, 2.5, 2, 1.5)) else
++    list(gamma = 5, meanval = c(.9, .8, .6, .4), shareInside = .7)
++  suppressWarnings(do.call(antitrust::specify, args))
++}
++
++.path_fit <- function(demand = "logit", conduct = "bertrand", entrant_tariff = .17) {
++  trade::as_trade_fit(.path_source(demand, conduct), entrant_tariff = entrant_tariff)
++}
++
++.path_definition <- function() {
++  cf <- counterfactual(entry = antitrust::entrant("e", 1, .9, 2, tariff = .23),
++    exit = "d", costs = c(a = .1, e = .05))
++  cf <- add_step(cf, ownership = c("A", "A", "A", "C", "e"))
++  cf <- add_step(cf, ownership = c("A", "A", "A", "C", "A"),
++    costs = c(a = -.05, e = .2))
++  cf <- add_step(cf, tariff = c(a = 0, b = .12, c = .25, d = .1, e = .18))
++  add_step(cf, exit = "b")
++}
++
++# Demand is calculated directly from primitives, independently of package
++# shares/margin/elasticity functions and the solver's own FOC residuals.
++.path_demand <- function(model, price, active) {
++  if (methods::is(model, "CES")) {
++    g <- model@slopes$gamma
++    a <- model@slopes$meanval[active]
++    outside <- if (is.na(model@normIndex)) model@priceOutside^(1 - g) else 0
++    model@mktSize * a * price^(-g) / (outside + sum(a * price^(1 - g)))
++  } else {
++    w <- exp(model@slopes$meanval[active] +
++      model@slopes$alpha * (price - model@priceOutside))
++    model@mktSize * w / ((if (is.na(model@normIndex)) 1 else 0) + sum(w))
++  }
++}
++
++.path_expect_foc <- function(result, conduct = "bertrand", tolerance = 2e-6) {
++  state <- result@tariff_state
++  active <- which(state$subsetPost)
++  p <- as.numeric(result@model@pricePost[active])
++  expect_true(all(is.finite(p) & p > 0))
++  c <- as.numeric(state$cPost[active])
++  r <- as.numeric(state$retentionPost[active])
++  owner <- state$ownerPost[active]
++  demand <- function(price) .path_demand(result@model, price, active)
++  q <- demand(p)
++  expect_true(all(is.finite(q) & q > 0))
++  if (conduct == "cournot") {
++    if (methods::is(result@model, "CES")) {
++      # Legacy CES Cournot holds its calibrated outside-revenue alpha fixed.
++      # Its inverse demand derivative therefore differs from inverting the
++      # contemporaneous fixed-outside-price Bertrand demand Jacobian.
++      g <- result@model@slopes$gamma
++      a <- result@model@slopes$alpha
++      if (is.null(a)) a <- 0
++      b <- (g - 1) * (1 + a) / (g * (1 + g * a))
++      inverse <- -diag(p / (g * q)) - b * outer(p, p) / result@model@mktSize
++    } else {
++      inverse <- solve(numDeriv::jacobian(demand, p))
++    }
++    residual <- vapply(seq_along(p), function(j) {
++      r[j] * p[j] - c[j] + sum((owner == owner[j]) * r * q * inverse[, j])
++    }, numeric(1))
++  } else {
++    residual <- vapply(seq_along(p), function(j) {
++      numDeriv::grad(function(x) {
++        changed <- p; changed[j] <- x
++        sum((owner == owner[j]) * (r * changed - c) * demand(changed))
++      }, p[j])
++    }, numeric(1))
++  }
++  expect_lt(max(abs(residual)), tolerance)
++  accounts <- trade::tariff_accounts(result)
++  expect_equal(accounts$q[active], as.numeric(q), tolerance = 1e-8)
++  expect_equal(as.numeric(antitrust::calcMC(result@model, FALSE))[active] * r,
++               c, tolerance = 1e-10)
++  expect_equal(accounts$producer_profit + accounts$government_revenue,
++               accounts$gross_revenue - accounts$physical_cost * accounts$q,
++               tolerance = 1e-10)
++  expect_true(all(accounts$q[-active] == 0))
++  expect_true(all(accounts$government_revenue[-active] == 0))
++}
++
++test_that("A: entry, two mergers, heterogeneous tariff and exit retain multiproduct physical-profit FOCs", {
++  fit <- .path_fit()
++  original <- serialize(fit, NULL)
++  path <- suppressWarnings(simulate(fit, .path_definition()))
++  for (result in path@results) .path_expect_foc(result)
++  expect_identical(final_result(path)@tariff_state$labels, c("a", "b", "c", "d", "e"))
++  expect_identical(final_result(path)@tariff_state$subsetPost,
++                   c(TRUE, FALSE, TRUE, FALSE, TRUE))
++  expect_equal(as.numeric(final_result(path)@tariff_state$cPost[c("a", "e")]),
++    c(as.numeric(fit@tariff_state$cPre[1]) * 1.1 * .95, .9 * 1.05 * 1.2), tolerance = 1e-10)
++  expect_identical(serialize(fit, NULL), original)
++  expect_identical(final_result(path)@source_fit, fit@source_fit)
++})
++
++test_that("A: CES price and Cournot quantity games retain their distinct inverse-demand incentives", {
++  for (conduct in c("bertrand", "cournot")) {
++    path <- suppressWarnings(simulate(.path_fit("ces", conduct), .path_definition()))
++    for (result in path@results) .path_expect_foc(result, conduct)
++  }
++  path <- suppressWarnings(simulate(.path_fit("logit", "cournot"), .path_definition()))
++  .path_expect_foc(final_result(path), "cournot")
++})
++
++test_that("A: resume across entry and exit preserves current cost stocks and policy assignments", {
++  fit <- .path_fit(entrant_tariff = .19)
++  cf <- add_step(counterfactual(exit = "d"), costs = c(a = .1))
++  prefix <- suppressWarnings(simulate(fit, cf))
++  tail <- counterfactual(entry = antitrust::entrant("e", 1, .9, 2))
++  tail <- add_step(tail, costs = c(a = -.05, e = .1), exit = "b")
++  resumed <- suppressWarnings(simulate(prefix, tail))
++  full_cf <- cf
++  full_cf@steps <- c(cf@steps, tail@steps)
++  full <- suppressWarnings(simulate(fit, full_cf))
++  expect_equal(trade::tariff_accounts(final_result(resumed)),
++               trade::tariff_accounts(final_result(full)), tolerance = 1e-8)
++  expect_equal(final_result(resumed)@tariff_state$cPost[1],
++               fit@tariff_state$cPre[1] * 1.1 * .95, tolerance = 1e-10)
++  expect_equal(as.numeric(final_result(resumed)@tariff_state$tariffPost["e"]), .19)
++  .path_expect_foc(final_result(resumed))
++})
++
++test_that("A: entry policy precedence and pre-entry accounts cannot invent prior entrant output", {
++  fit <- .path_fit(entrant_tariff = .31)
++  default <- simulate(fit, counterfactual(entry = antitrust::entrant("e", 1, .9, 2)))
++  explicit <- simulate(fit, counterfactual(entry = antitrust::entrant("e", 1, .9, 2, tariff = .2)))
++  simultaneous <- simulate(fit, counterfactual(
++    entry = antitrust::entrant("e", 1, .9, 2, tariff = .2), tariff = .12))
++  expect_true(methods::is(default, "TariffGameFit"))
++  for (i in seq_along(list(default, explicit, simultaneous))) {
++    result <- list(default, explicit, simultaneous)[[i]]
++    expect_equal(as.numeric(result@tariff_state$tariffPost["e"]), c(.31, .2, .12)[i])
++    expect_equal(trade::tariff_accounts(result, TRUE)$q[5], 0)
++    expect_equal(as.numeric(antitrust::calcShares(result, TRUE))[5], 0)
++    expect_equal(trade::tariff_accounts(result, TRUE)$q[1:4],
++                 trade::tariff_accounts(fit, FALSE)$q, tolerance = 1e-12)
++    expect_equal(as.numeric(antitrust::calcMC(result@model, FALSE))[5],
++                 .9 / (1 - c(.31, .2, .12)[i]), tolerance = 1e-10)
++    .path_expect_foc(result)
++  }
++  expect_equal(.path_fit(entrant_tariff = 0)@tariff_state$entrant_tariff, 0)
++  for (bad in list(1, Inf, NA_real_, c(.1, .2), "0")) {
++    expect_error(trade::as_trade_fit(.path_source(), entrant_tariff = bad),
++                 class = "trade_tariff_invalid_policy")
++  }
++})
++
++test_that("A: direct alternatives remain baseline-relative while sequential masks never resurrect exits", {
++  fit <- .path_fit()
++  first <- suppressWarnings(simulate(fit, subset = c(FALSE, TRUE, TRUE, TRUE), mcDelta = .1))
++  alternative <- suppressWarnings(simulate(first, subset = c(TRUE, FALSE, TRUE, TRUE), mcDelta = .1))
++  reference <- suppressWarnings(simulate(fit, subset = c(TRUE, FALSE, TRUE, TRUE), mcDelta = .1))
++  expect_equal(alternative@model@pricePost, reference@model@pricePost, tolerance = 1e-8)
++  expect_equal(alternative@tariff_state$cPost, first@tariff_state$cPost)
++  cf <- add_step(counterfactual(exit = "a"), exit = c(TRUE, FALSE, TRUE, TRUE))
++  path <- simulate(fit, cf)
++  expect_identical(final_result(path)@tariff_state$subsetPost, c(FALSE, FALSE, TRUE, TRUE))
++  .path_expect_foc(final_result(path))
++})
++
++test_that("A: native core roles can change through the public path API and resume", {
++  source <- coordination::core_fringe(demand = "logit", conduct = "bertrand",
++    prices = c(2, 2.2, 2.4, 2.6), shares = c(.15, .12, .1, .08),
++    margins = rep(NA_real_, 4), ownerPre = c("A", "A", "B", "C"),
++    corePre = c("A", "B"), alpha = 1.5, insideSize = 100)
++  fit <- trade::as_trade_fit(source, entrant_tariff = .2)
++  cf <- add_step(counterfactual(ownership = c("A", "A", "A", "C"), core = "A"),
++                 tariff = .12)
++  prefix <- suppressWarnings(simulate(fit, cf))
++  resumed <- suppressWarnings(simulate(prefix, counterfactual(tariff = .2)))
++  full <- suppressWarnings(simulate(fit, add_step(cf, tariff = .2)))
++  expect_equal(trade::tariff_accounts(final_result(resumed)),
++               trade::tariff_accounts(final_result(full)), tolerance = 1e-8)
++  expect_identical(final_result(resumed)@tariff_state$corePost, "A")
++  expect_equal(final_result(resumed)@tariff_state$cPost, fit@tariff_state$cPre)
++  expect_error(simulate(fit, counterfactual(entry = antitrust::entrant("e", 1, .9, 2))),
++               class = "trade_tariff_unsupported_counterfactual")
++  expect_error(antitrust::simulate(.path_source(), antitrust::counterfactual(core = "A")),
++               "does not support.*core")
++})
++
++test_that("A: literal exit to two mergers to tariff to exit retains the prior market in welfare reports", {
++  source <- antitrust::specify("logit", "bertrand", prices = c(2, 2.2, 2.4, 2.6, 2.8),
++    ownerPre = c("A", "A", "B", "C", "D"), insideSize = 100,
++    parameters = list(alpha = -1.5, meanval = c(3, 2.5, 2, 1.5, 1)),
++    labels = c("a", "b", "c", "d", "e"))
++  fit <- trade::as_trade_fit(source, entrant_tariff = 0)
++  cf <- counterfactual(exit = "e")
++  cf <- add_step(cf, ownership = c("A", "A", "A", "C", "D"))
++  cf <- add_step(cf, ownership = c("A", "A", "A", "A", "D"))
++  cf <- add_step(cf, tariff = c(0, .12, .25, .1, 0))
++  prefix <- simulate(fit, cf)
++  path <- simulate(prefix, counterfactual(exit = "b"))
++  result <- final_result(path)
++  .path_expect_foc(result)
++  for (pre in c(TRUE, FALSE)) {
++    accounts <- trade::tariff_accounts(result, pre)
++    active <- if (pre) result@tariff_state$subsetPre else result@tariff_state$subsetPost
++    expect_true(all(is.finite(antitrust::calcMargins(result, pre)[active])))
++    expect_equal(as.numeric(antitrust::calcProducerSurplus(result, pre)),
++                 accounts$producer_profit, tolerance = 1e-10)
++  }
++  # Independent logsum money metric must exclude the first exit from both
++  # markets and the second exit only from post, rather than summing NA prices.
++  model <- result@model
++  mass <- function(p, active) 1 + sum(exp(model@slopes$meanval[active] +
++    model@slopes$alpha * (p[active] - model@priceOutside)))
++  state <- result@tariff_state
++  expected_cv <- model@mktSize / model@slopes$alpha * log(
++    mass(model@pricePost, state$subsetPost) / mass(model@pricePre, state$subsetPre))
++  expect_equal(antitrust::CV(result), as.numeric(expected_cv), tolerance = 1e-10)
++  capture.output(report <- summary(result, market = TRUE))
++  expect_true(all(is.finite(as.matrix(report))))
++  expect_error(simulate(path, counterfactual(costs = c(b = -.1))), "inactive")
++})
++
++test_that("A: active-only CES monopoly without an outside good fails instead of reporting a negative-price root", {
++  source <- suppressWarnings(antitrust::specify("ces", "bertrand",
++    prices = c(2, 2.2, 2.4), ownerPre = c("A", "B", "C"), insideSize = 100,
++    parameters = list(gamma = 5, meanval = c(1, .8, .6)), labels = c("a", "b", "c")))
++  fit <- trade::as_trade_fit(source, entrant_tariff = 0)
++  cf <- add_step(counterfactual(exit = "c"), ownership = c("A", "A", "C"))
++  expect_error(simulate(fit, cf), "without an outside good.*no finite")
++})
++
++test_that("A: auction paths carry cumulative cost-relative win probabilities and conditional bids", {
++  shares <- c(.12, .1, .08, .07, .06)
++  outside <- 1 - sum(shares)
++  alpha <- -1.4
++  source <- antitrust::specify("logit", "auction2nd", prices = c(2, 2.2, 2.4, 2.6, 2.8),
++    margins = -log1p(-shares) / (-alpha * shares),
++    parameters = list(alpha = alpha, meanval = log(shares / outside)),
++    ownerPre = paste0("F", 1:5), insideSize = 100,
++    priceOutside = 0, labels = paste0("P", 1:5))
++  fit <- trade::as_trade_fit(source, entrant_tariff = .1)
++  cf <- counterfactual(entry = antitrust::entrant("E", log(.05 / outside), .9, 2),
++    tariff = .1, costs = c(P1 = .1))
++  cf <- add_step(cf, ownership = c("A", "A", "B", "C", "D", "E"), costs = c(P1 = .05))
++  cf <- add_step(cf, tariff = .2)
++  cf <- add_step(cf, exit = "P5")
++  result <- final_result(suppressWarnings(simulate(fit, cf)))
++  baseline_cost <- c(as.numeric(fit@tariff_state$cPre), .9)
++  physical <- baseline_cost * c(1.1 * 1.05, rep(1, 5))
++  effective <- physical / .8
++  score <- c(shares / outside, .05 / outside) * exp(alpha * (effective - baseline_cost))
++  score[5] <- 0
++  win <- score / (1 + sum(score))
++  actual_win <- as.numeric(antitrust::calcShares(result, FALSE))
++  actual_win[5] <- 0
++  expect_equal(actual_win, win, tolerance = 1e-10)
++  owners <- result@tariff_state$ownerPost
++  firm_win <- vapply(owners, function(f) sum(win[owners == f]), numeric(1))
++  predicted_bid <- effective + log1p(-firm_win) / (alpha * firm_win)
++  active <- which(result@tariff_state$subsetPost)
++  expect_equal(as.numeric(result@model@pricePost[active]), as.numeric(predicted_bid[active]), tolerance = 1e-8)
++  expect_equal(as.numeric(result@tariff_state$cPost), physical, tolerance = 1e-10)
++  expect_true(is.finite(antitrust::CV(result)))
++  mixed <- add_step(cf, tariff = c(.1, .2, .2, .2, .2, .2))
++  expect_error(suppressWarnings(simulate(fit, mixed)), class = "trade_tariff_heterogeneous")
++})
++
++test_that("A: extended native and ordinary game paths preserve role and policy state across promotion", {
++  trade_skip_unless_tier("extended")
++  for (demand in c("logit", "ces")) {
++    fits <- list(B = .path_fit(demand, "bertrand"),
++                 C = .path_fit(demand, "cournot"),
++                 MC = .path_fit(demand, "moncom"))
++    for (game in c("stackelberg", "core_fringe")) for (conduct in c("bertrand", "cournot")) {
++      args <- list(prices = c(2, 2.2, 2.4, 2.6), shares = c(.15, .12, .1, .08),
++        margins = rep(NA_real_, 4), ownerPre = c("A", "A", "B", "C"),
++        demand = demand, conduct = conduct, insideSize = 100)
++      if (demand == "logit") args$alpha <- 1.5 else args$gamma <- 5
++      if (game == "stackelberg") args$leadersPre <- "B" else args$corePre <- "B"
++      native <- do.call(getExportedValue("coordination", game), args)
++      fits[[paste(game, conduct)]] <- trade::as_trade_fit(native, entrant_tariff = .1)
++    }
++    for (name in names(fits)) {
++      fit <- fits[[name]]
++      cf <- add_step(counterfactual(tariff = .1), costs = c(-.05, 0, 0, 0))
++      cf <- add_step(cf, tariff = .2, exit = 4)
++      path <- suppressWarnings(simulate(fit, cf))
++      direct <- suppressWarnings(simulate(fit, tariffPost = .2,
++        mcDelta = c(-.05, 0, 0, 0), subset = c(TRUE, TRUE, TRUE, FALSE)))
++      expect_equal(trade::tariff_accounts(final_result(path)),
++        trade::tariff_accounts(direct), tolerance = 1e-6, info = paste(demand, name))
++      expect_equal(as.numeric(final_result(path)@tariff_state$cPost),
++        as.numeric(fit@tariff_state$cPre) * c(.95, 1, 1, 1), tolerance = 1e-10)
++    }
++  }
++})

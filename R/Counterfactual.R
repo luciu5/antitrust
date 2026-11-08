@@ -137,7 +137,7 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
 .build_step <- function(ownership = NULL, costs = NULL, exit = NULL,
                         capacity = NULL, tariff = NULL, quota = NULL,
                         bargaining = NULL, leader = NULL, products = NULL,
-                        quality = NULL, entry = NULL) {
+                        quality = NULL, entry = NULL, core = NULL) {
     entry <- .normalize_entry_field(entry)
     .validate_entry_labels(entry)
     .validate_quality_field(quality)
@@ -145,7 +145,7 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
         ownership = ownership, costs = costs, exit = exit,
         capacity = capacity, tariff = tariff, quota = quota,
         bargaining = bargaining, leader = leader, products = products,
-        quality = quality, entry = entry
+        quality = quality, entry = entry, core = core
     ))
     new("CounterfactualStep", changes = changes)
 }
@@ -177,6 +177,8 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
 #'   multiplicative mean-value convention.
 #' @param entry An `Entrant` object, or a list of `Entrant` objects, each
 #'   describing a new single-product firm to add to the market.
+#' @param core Core-firm IDs for downstream native coordination games;
+#'   unsupported by ordinary antitrust fits.
 #' @param ... Reserved; model specification fields are rejected.
 #' @return A `Counterfactual` object with exactly one `CounterfactualStep`.
 #' @examples
@@ -189,7 +191,7 @@ entrant <- function(label, meanval, cost, priceStart, ...) {
 counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
                            capacity = NULL, tariff = NULL, quota = NULL,
                            bargaining = NULL, leader = NULL, products = NULL,
-                           quality = NULL, entry = NULL, ...) {
+                           quality = NULL, entry = NULL, core = NULL, ...) {
     extras <- list(...)
     if (length(extras)) {
         stop("counterfactual() accepts economic-environment fields only; use update() or respecify() for model specification changes")
@@ -198,7 +200,7 @@ counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
         ownership = ownership, costs = costs, exit = exit,
         capacity = capacity, tariff = tariff, quota = quota,
         bargaining = bargaining, leader = leader, products = products,
-        quality = quality, entry = entry
+        quality = quality, entry = entry, core = core
     )
     new("Counterfactual", steps = list(step))
 }
@@ -228,6 +230,8 @@ counterfactual <- function(ownership = NULL, costs = NULL, exit = NULL,
 #'   attractiveness, keyed by product label. Logit applies an additive
 #'   `log1p(quality)` utility shift; CES applies a multiplicative change.
 #' @param entry An `Entrant` object, or a list of `Entrant` objects.
+#' @param core Core-firm IDs for downstream native coordination games;
+#'   unsupported by ordinary antitrust fits.
 #' @param ... Reserved; model specification fields are rejected.
 #' @return A `Counterfactual` object with the new step appended.
 #' @export
@@ -240,7 +244,7 @@ setMethod("add_step", "Counterfactual", function(object, ownership = NULL,
                                                   capacity = NULL, tariff = NULL,
                                                   quota = NULL, bargaining = NULL,
                                                   leader = NULL, products = NULL,
-                                                  quality = NULL, entry = NULL, ...) {
+                                                  quality = NULL, entry = NULL, core = NULL, ...) {
     extras <- list(...)
     if (length(extras)) {
         stop("add_step() accepts economic-environment fields only; use update() or respecify() for model specification changes")
@@ -249,7 +253,7 @@ setMethod("add_step", "Counterfactual", function(object, ownership = NULL,
         ownership = ownership, costs = costs, exit = exit,
         capacity = capacity, tariff = tariff, quota = quota,
         bargaining = bargaining, leader = leader, products = products,
-        quality = quality, entry = entry
+        quality = quality, entry = entry, core = core
     )
     object@steps <- c(object@steps, list(step))
     object

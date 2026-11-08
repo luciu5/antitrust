@@ -1,0 +1,363 @@
+{
+  "packages": [
+    {
+      "name": "antitrust",
+      "original": "/mnt/d/Projects/antitrust",
+      "snapshot": "/tmp/iovrse-fixes-20261106/sources/antitrust",
+      "original_head": "20f0923fc560295e04310aed5615c19dadf672cb",
+      "files": [
+        {
+          "path": "DESCRIPTION",
+          "before_sha256": "f0e104a3c5f4776bfae91bd2b6b5196814e1fecd958bb82007bf26920d119fa0",
+          "after_sha256": "df5a3292cbc9b0d31d838c2b8b1ae4c2831760c8fa4d82f1a639aed3061bafa5"
+        },
+        {
+          "path": "NAMESPACE",
+          "before_sha256": "0152182f844736eb3efb2c128afb246f20fa630a32ef22b1d107c7a19e46d91e",
+          "after_sha256": "4b7bba1ddc41abc707be6d14c8fc774affa01fd3133c816af4dd8d8da4e93412"
+        },
+        {
+          "path": "R/CVMethods.R",
+          "before_sha256": "6b1fb34a7b31892e1158a5ac75825104c064c4b0b55415874099d7b742c81243",
+          "after_sha256": "c198206fe9e54c26d9f5006fd067cddf09c50ba095a45396df47a234237cd341"
+        },
+        {
+          "path": "R/Counterfactual.R",
+          "before_sha256": "66ee8482d409efdc96ec930c005cfbe61c1fe1072f7d32b9823f9e5f9a23b495",
+          "after_sha256": "363647469a464e3bf8b8df8f5a7e6e72422fbc5890e468fd96ffd0efb5875697"
+        },
+        {
+          "path": "R/CounterfactualPromotion.R",
+          "before_sha256": "257576ab0ec4c9099f43b50f6cdb13174381e47ac34946b30c8a401625f9fc47",
+          "after_sha256": "00661af1c598a4f0872c9e0aae770b08ba1ec0db6b74b485bd08260cee25455f"
+        },
+        {
+          "path": "R/MarketAdvance.R",
+          "before_sha256": null,
+          "after_sha256": "b703264106fffee56ef5e35397aac4cd28ddccdb7b1a81102999960f1086be55"
+        },
+        {
+          "path": "R/ModelRegistry.R",
+          "before_sha256": "3a5f01536f544f29cf76f22212a3a139fdb7ad9da5ac11553bec283539814792",
+          "after_sha256": "12eb420df7ec0f51527013262a52e994753f88e785d225fb1bc7e0adfdbac585"
+        },
+        {
+          "path": "R/PricesMethods.R",
+          "before_sha256": "f6055384c164f7133715feb665fd2ab6cf3adccbc43dc90ff8c1de980bcfb595",
+          "after_sha256": "d3c85231d5e0b1150c4d4603bdf0dfabdab11f7843499d404135db20003dbc84"
+        },
+        {
+          "path": "man/CV-Methods.Rd",
+          "before_sha256": "0a354fe053225a994bb8cbc5731d1e6c4b90d344839d4f47e32c40671e8d130b",
+          "after_sha256": "5a628ce7d9efa27ca6c1b7aa58653e4bf263c0d78825b52f86daf0aa4cb905ea"
+        },
+        {
+          "path": "man/add_step.Rd",
+          "before_sha256": "855ce2ee8edc735ca54f53246c3d1579f0149a95ac113629337eccd835a6cc7b",
+          "after_sha256": "7825dcec3a82f08f62a526f167c9f171ceb2f2c44ee179a85e208861102a3f03"
+        },
+        {
+          "path": "man/advance_market.Rd",
+          "before_sha256": null,
+          "after_sha256": "ae36c5fca58955d8d2a117330509c283f6b24490bfe2b61573e9cf5cfbbf9996"
+        },
+        {
+          "path": "man/counterfactual.Rd",
+          "before_sha256": "efab0b1cc24475a2e4c3e17035ff8d11ed1ac125b82d79f3406002705a8293a9",
+          "after_sha256": "318e69cfad07a0d0f0869f3c22ef6f516b6e21c464a531fcf343798585c676ba"
+        },
+        {
+          "path": "tests/testthat/test-advance-market.R",
+          "before_sha256": null,
+          "after_sha256": "03d6a2a24bd67856f6a380b70dfe69bb7dd5c406fc61a78d1a7016f1d9f91b01"
+        }
+      ]
+    },
+    {
+      "name": "trade",
+      "original": "/mnt/d/Projects/trade",
+      "snapshot": "/tmp/iovrse-fixes-20261106/sources/trade",
+      "original_head": "2826df0fc3530c01066000725f643b060e71d136",
+      "files": [
+        {
+          "path": "DESCRIPTION",
+          "before_sha256": "e06244ac8aa39a5db19110e3ed71accd98bf7b5d4d552a7162e3216e63c76ab8",
+          "after_sha256": "4174ed53196eef30b36fd67438248ffc2f8d0441a6575eabce5acb0c0418d421"
+        },
+        {
+          "path": "R/Counterfactual.R",
+          "before_sha256": "9efa9272123d2a4c0e9eb5b5e50379fc78ddb2b8dbd660eb7cf5db687a3d5421",
+          "after_sha256": "7b5c0809996b99f0674656e6253873357dc5a2375ab02f37518af2e766140392"
+        },
+        {
+          "path": "R/TariffGameFit.R",
+          "before_sha256": "0057835a809de0773dfb5475fb26ddb5ce81ae513f7933e92e78ade453da1aec",
+          "after_sha256": "07c0ae62652f4e919fac6bb85a7facd7399db72c0144782f5cd143edc5517652"
+        },
+        {
+          "path": "R/TariffGamePath.R",
+          "before_sha256": null,
+          "after_sha256": "efa309f649cf7b046a6fe856fcb57799d86050fd537fc7743d82ea899825f747"
+        },
+        {
+          "path": "R/TradeModelRegistry.R",
+          "before_sha256": "6663dbb105a69ca087bcadbcb373577983724c34be28e80b3bf38a82e2ec0a8b",
+          "after_sha256": "f18a1650c75a1027181b0a22593841e85c7df172bda148d8fcfe703fa2a1a569"
+        },
+        {
+          "path": "R/TradePromotion.R",
+          "before_sha256": "4d16e271c0ff2e7c843af5525bafeaa1f5c0937a5e19106a67415e0fc279c310",
+          "after_sha256": "b5a9d54a8b002ddfb27a81235261c0eb84738bde9d6a27ae99c717969c1c1271"
+        },
+        {
+          "path": "docs/promotion.md",
+          "before_sha256": "a5b55563f32ec4d377ba050ff9ca90dcc1303693c30271edaaa58971637438f5",
+          "after_sha256": "2e6e6bf56e2e6f8169241edfaecd2fc3c541d18fa9c64eaed55351ac27168df0"
+        },
+        {
+          "path": "man/TariffGameFit.Rd",
+          "before_sha256": "d0c4829726e7978b5b214858c42c6536dcb3c37dc859dc00aceeee7d1722a0ef",
+          "after_sha256": "b094a95068d25c51d4038e3e177d8de1b64cb2b473bfe2c1d6b570fc264d66f4"
+        },
+        {
+          "path": "man/as_trade_fit.Rd",
+          "before_sha256": "213f779456142e78f16d0b7be0ccbd38152773a80313b122cd375d36d37dac1f",
+          "after_sha256": "b74d19c4f3da496f2e84325ee4d9694826b35eb7a28e9310869552aec4138374"
+        },
+        {
+          "path": "man/counterfactual.Rd",
+          "before_sha256": "07f1d4ddd9fa139ca0996b232f1029d3e76aeeca154da26102e4945c6f02368a",
+          "after_sha256": "cbe336a680227fd15b5983543975bee6127f555f22250b0673cb305f687051dc"
+        },
+        {
+          "path": "tests/testthat/test-tariff-game-fit.R",
+          "before_sha256": "92ed3b71a4fdb6dd8384e265b316224f9472db4167480cabb1a37de16061a512",
+          "after_sha256": "785d8cddff9c908d1ce0552c4a4b7d0b342110a727e00defbaaac065e17e73e8"
+        },
+        {
+          "path": "tests/testthat/test-tariff-game-paths.R",
+          "before_sha256": null,
+          "after_sha256": "b46fbd4503bde4dc989e2dc7128adaf2a895dd7368901ccb0bea9435c832c039"
+        }
+      ]
+    },
+    {
+      "name": "vertical",
+      "original": "/mnt/d/Projects/vertical",
+      "snapshot": "/tmp/iovrse-fixes-20261106/sources/vertical",
+      "original_head": "dbb99804bfe76746c13374d341beb1bd20af79c2",
+      "files": [
+        {
+          "path": "NEWS.md",
+          "before_sha256": "27ab6d5392dd2cedd16cdd5d26b360a224999ecab1816c68a9bec5d0122e0e9d",
+          "after_sha256": "2cdf3f85ce492b5174af2a0c88582c32a6fd8af5f06a58886b9904603d51848d"
+        },
+        {
+          "path": "R/VerticalArchitecture.R",
+          "before_sha256": "8945ebca38d802a6d94c82d0108be6bea0b22a4cd731f2cd8e0210773d4fed80",
+          "after_sha256": "f826e721cd40937d1951a60575c9ba7831d868ff49fc66c87ff974ed268cf013"
+        },
+        {
+          "path": "R/VerticalCounterfactualMethods.R",
+          "before_sha256": "61ea03b481b670a7b05983706a1dfeee5eddd77238cd08699af2533ebb853474",
+          "after_sha256": "f46a20a027babb10d3f44d90a1f77f3690185ba2c1d7ec65e285126f1529b98b"
+        },
+        {
+          "path": "R/VerticalMarginsMethods.R",
+          "before_sha256": "60e1f949fe252a14868c09c3c63a5eca2e0017d97c3adb8d26dcc911946a02ce",
+          "after_sha256": "58b8c79638e41311e2c8ba46a3135bf8c97350f63042fe2f44eefd293dfb89f5"
+        },
+        {
+          "path": "R/VerticalOutputMethods.R",
+          "before_sha256": "dd73e3a1d538f308e87335b3b66b3c315665f640dbf03cb0c110efcea3504b71",
+          "after_sha256": "b0a3635f953b8a862d57851f9335ef6b0696d4f029a1fccb1493bc23ba520e54"
+        },
+        {
+          "path": "R/VerticalTradePolicy.R",
+          "before_sha256": "fe00c2d5fcbc94547c3d1e791c608827a834e1fde1a7a76c99daca7b407ed6a3",
+          "after_sha256": "47c1f0901f5f4b19fa016c4ff6a8ae8bbc0e4e013ccfd591095177378acec17b"
+        },
+        {
+          "path": "R/VerticalWelfareMethods.R",
+          "before_sha256": "2afbae260f7c033da3a72226ff18b7b0cc683b5ac61089ad874c6fdc22fa48b6",
+          "after_sha256": "ef800f57792617bcaa7ca732e1405786b2b32056b4351047c235ede06fe93dec"
+        },
+        {
+          "path": "docs/vertical-trade-policy.md",
+          "before_sha256": "881b8617edaa442adbba4f79d27108b1c8e49b08efc1454b7c1eb85cd7f6aa55",
+          "after_sha256": "10388b155cf292cf05e132a80c76fd7ad6d7aa24868ab63ac71788c7be8581ca"
+        },
+        {
+          "path": "man/as_vertical_trade_fit.Rd",
+          "before_sha256": "66cef2937f394690e22bf8b3f4202a8462025980541973c2ed4ecfdce0fbb60a",
+          "after_sha256": "7825f9535c8a62dc074a27dad1efe7560a4332c79404e3aa1eb805114c41380f"
+        },
+        {
+          "path": "man/validate_counterfactual-VerticalFit-method.Rd",
+          "before_sha256": "33272cd50b76b02f754a889114e1b28934da949d47bf2eaf33ffca4a850052b7",
+          "after_sha256": "d99dc7cae8ad3a7344972e1e12f780ba80a35fb62f41f96c254e81b246c15b47"
+        },
+        {
+          "path": "tests/testthat/helper-vertical-policy.R",
+          "before_sha256": "1c307d993bda478833df83505e19e44f5a4f86e8aa57d1aae784810d59edb84a",
+          "after_sha256": "24f56511ced3e0438870bc2250d22cfabbad04c66d60d3a00115a5db5542d81e"
+        },
+        {
+          "path": "tests/testthat/test-lifecycle-dispatch.R",
+          "before_sha256": "e71969e1ed78702843f8483e2c6776fdadb3298d7b11627a8722f73069772508",
+          "after_sha256": "539ea4a0a70685459d4fe7a5b7df443c64b7af8207fa38349e16fcca4845991e"
+        },
+        {
+          "path": "tests/testthat/test-linked-exit.R",
+          "before_sha256": null,
+          "after_sha256": "50a5d47c64f6e655f40615e7bd08e800dee97aff3e1cb1119b636a6c1e2a3076"
+        },
+        {
+          "path": "tests/testthat/test-vertical-trade-policy.R",
+          "before_sha256": "6eba48fb2aa834eac8b824135f373aef4920736671cb398952e6cf1ee6cffb2d",
+          "after_sha256": "426c95121738acccc4ecc6fbf38e293b6689258624227bab094d60a22675837d"
+        }
+      ]
+    },
+    {
+      "name": "financial",
+      "original": "/mnt/d/Projects/financial",
+      "snapshot": "/tmp/iovrse-fixes-20261106/sources/financial",
+      "original_head": "80e2720b0e40b30e819c028110d2085abca26da0",
+      "files": [
+        {
+          "path": "NEWS.md",
+          "before_sha256": "ef2c66d88ec0355ffb48ac676f79813356220eb0a3fad4285a3c6ffdf65afd97",
+          "after_sha256": "0717273790519f0a38b4b03552c4adde6655c025de1ea9c12f8074ad4f49a88e"
+        },
+        {
+          "path": "R/DebtClasses.R",
+          "before_sha256": "2add327151e6dc424e7b6827b9d0c17fcaafa8a782a78312b044f7e24999366d",
+          "after_sha256": "6f9409a74fc0dd80ec6a0caf018f33e72b03540460416c4cd735e19c8999075f"
+        },
+        {
+          "path": "R/DebtCounterfactual.R",
+          "before_sha256": "f0e483590656479b34f1b09bfaf6bb9f0f60f6ac4ca8cee3fa8f4cb78cfbaac0",
+          "after_sha256": "f08b19a7f408af1ced5f65e32dea6f7cd82e9d31d80f51a63ac1ba5257a98b2c"
+        },
+        {
+          "path": "R/DebtEquilibrium.R",
+          "before_sha256": "a89625c39398df93eaa335db66f7ded8c06ce2f07334c40198cb6e02a60f8ddd",
+          "after_sha256": "38fb8ff3ec8c78d924a34c234f049c6e586fe94949220cd6ded47b827603e971"
+        },
+        {
+          "path": "R/shared-beta-moments.R",
+          "before_sha256": "5f283ace8dcc34cccacb0a1a5c4edf12db4d89c97ac9877e606953971054cc2f",
+          "after_sha256": "55548155a16174269f061070c7740976d2c3869a37f34381cd1f9b359db18f1f"
+        },
+        {
+          "path": "README.md",
+          "before_sha256": "edb202da829d704a1bf17b61ebef8c58566e661cafa822247b795e9014f69faf",
+          "after_sha256": "fd5f91adafbc7d2a47e7c23cdb565bd1bb49ab5ec1afeadde0a3dfe798fcf356"
+        },
+        {
+          "path": "design/debt-parity-diagnostic-addendum-2026-11-01.md",
+          "before_sha256": "f65813f8e4d9ef8116cc83430d12d4421ff38fc83b2f6658d7586f99d454d6f7",
+          "after_sha256": "d1b94c2c2301fa5fb2a3434541199a362930d58a3ca73ff79d4edde176c8b692"
+        },
+        {
+          "path": "man/LogitDebt-class.Rd",
+          "before_sha256": "0bc713da49066a8ba1f1e0d46396c7634734b4948ffeec0f3b01ea2cd377b0e3",
+          "after_sha256": "40924de8e074fe1b512b351c6df16258c14930f668eab5224d65c97ddebde4ac"
+        },
+        {
+          "path": "man/LogitDebt-methods.Rd",
+          "before_sha256": "ba7a620ef83501545cbf4767df95dd31a099724ce5178bd293221ec3cf49ac4b",
+          "after_sha256": "c7fcb62d27b45907accebff89ed0a66361dd6adf7110d73361df7b2bf68c5d62"
+        },
+        {
+          "path": "man/logit.debt.Rd",
+          "before_sha256": "6359a99254b0e99431b7c9afd27d049587ea116fb420cb3e2dd413553a529010",
+          "after_sha256": "5a7a64e2dd759616e972b2e20bd15974cd9956b02951aa049d05d2e67e49fdb9"
+        },
+        {
+          "path": "tests/testthat/test-debt-numerics.R",
+          "before_sha256": null,
+          "after_sha256": "64eb54e0dfe74a870af542b7b031884e0c0fd3e5b01412ae415bb4b741cf60b9"
+        },
+        {
+          "path": "tests/testthat/test-debt-parity.R",
+          "before_sha256": "09f52f1f58354f92fdd2f8c302d3119b97fad366b5ad961fcb7a69d8417e441b",
+          "after_sha256": "1aac5eb31ae8c4c5e5f5d1a5f2fc869ff54ba7bbf121121898187d1c18fb8b05"
+        }
+      ]
+    },
+    {
+      "name": "competitiontoolbox",
+      "original": "/mnt/d/Projects/competitiontoolbox",
+      "snapshot": "/tmp/iovrse-fixes-20261106/sources/competitiontoolbox",
+      "original_head": "a5030868e5831b4c7951a8cb7eee469af0675c7a",
+      "files": [
+        {
+          "path": ".ci/READINESS.md",
+          "before_sha256": null,
+          "after_sha256": "2459bf1dbec0566101b7e5343add87dec66aa2d9ad213acfca46df2540caf7db"
+        },
+        {
+          "path": ".ci/README.md",
+          "before_sha256": "35a0b6d1631e4456473d7e9cd2dfc5a26bfc283d27ccaaba3fb814e3a7e57b12",
+          "after_sha256": "bf5468ffaab7030042275afdf3a8656f13d310b035abb8f070dccdfc8c9e7365"
+        },
+        {
+          "path": "README.md",
+          "before_sha256": "cb9a39c27754a42aaa1ca0c51b7933a22194873621824123ee1bdb4c236de2c1",
+          "after_sha256": "ff6e904fb57fb523d1bf33b5b2adb1c57627a4155548167561a52eb23696c500"
+        },
+        {
+          "path": "inst/ct_shiny/server.R",
+          "before_sha256": "f5ccc0cf67687906aed0f1499a80dbbd601344308433e168b8d14044ce8b5f12",
+          "after_sha256": "66218562fcf76cea48f5e73e3be69665def65d5ccfd0c787eb4f92cd3af903f3"
+        },
+        {
+          "path": "tests/testthat/helper-competitiontoolbox.R",
+          "before_sha256": "9ddc8a05e7fd326f51f93f6994291367b76b1fa2af02f24d5fd0376754ab2b8e",
+          "after_sha256": "b8af2a3315e875bc5c248a8d2a5d5b13e3f6181643435311fa23f9bda1b225c7"
+        },
+        {
+          "path": "tests/testthat/test-app-interactions.R",
+          "before_sha256": null,
+          "after_sha256": "a9161d73e5d735ad7f6eec0b39a68e0e733e34f5fcd313116c5562f68bc8a927"
+        }
+      ]
+    },
+    {
+      "name": "antitrustBayes",
+      "original": "/mnt/d/Projects/antitrustBayes",
+      "snapshot": "/tmp/iovrse-fixes-20261106/sources/antitrustBayes",
+      "original_head": "fb1f026c0e301f17343ebd611afe657cbaafc5f2",
+      "files": [
+        {
+          "path": "doc/README.md",
+          "before_sha256": "47c02a3c38fcbef8ea4f65dee1de36b96a305d4ab5968fdac90a70a88ad4137c",
+          "after_sha256": "2280d54173c12854255412fee46959f139509bf523b67b56dd079c000d8e006e"
+        },
+        {
+          "path": "doc/validation/README.md",
+          "before_sha256": "c0118792836c9d30921514539b46b55c953f898a44d07de9fdccc8b57aebe7c3",
+          "after_sha256": "a01d6c0d6bbe40ab5f5f559375c9510d691c3ebdc630f1c0bae075bd425091d4"
+        },
+        {
+          "path": "doc/validation/saved_gate_policy_replay.R",
+          "before_sha256": null,
+          "after_sha256": "7d155e722897cff52ec6c8fae9345c22c5d0710d856f8b79536ddf515e1d2a54"
+        },
+        {
+          "path": "doc/validation/saved_gate_policy_replay.md",
+          "before_sha256": null,
+          "after_sha256": "d095801db8e93254a2fd0f154f50f4153bbed43747a129f4675f06778f2d3866"
+        },
+        {
+          "path": "doc/validation/saved_gate_replay_checks.R",
+          "before_sha256": null,
+          "after_sha256": "761ad590c658713f51b2646cd485af92f78599caaa2dbbdffcfc4dc72b49ccc2"
+        }
+      ]
+    }
+  ],
+  "independent_review": "Final frozen source reviewed and accepted by independent gpt-6.1-sol; all seven source suites and package checks passed."
+}

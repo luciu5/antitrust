@@ -1,0 +1,3 @@
+"case","max_rhat","min_bulk_ess","divergences","passed"
+"logit_C_M4T4",1.01011022313317,603.076175884349,0,TRUE
+"ces_C_M4T4_finite_noise",1.01079628615882,584.156468919464,0,TRUE

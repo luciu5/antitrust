@@ -1,0 +1,143 @@
+{
+  "created_utc": "2026-11-03T16:08:20.026Z",
+  "scope": "Preserve old remote master as legacy; fast-forward master to reviewed release content, adding only master CI dependency pin fixes for trade/toolbox.",
+  "publication_authorized": false,
+  "cran_submission": false,
+  "packages": [
+    {
+      "package": "antitrust",
+      "repository": "luciu5/antitrust",
+      "legacy_sha": "e6ca9d595668f37f0a1e518db30ce53de61361d1",
+      "release_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "legacy_created": true,
+      "master_updated": true,
+      "master_sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+      "verified": true,
+      "master_url": "https://github.com/luciu5/antitrust/tree/master",
+      "legacy_url": "https://github.com/luciu5/antitrust/tree/legacy"
+    },
+    {
+      "package": "trade",
+      "repository": "luciu5/trade",
+      "legacy_sha": "e621956242d7b9c0376acc2c76ec76bcf7d91d1c",
+      "release_sha": "181e71dae426aa59ba565c065bddf0714636f02f",
+      "legacy_created": true,
+      "master_updated": true,
+      "master_sha": "a0edb920c21ab398c57dbd7dd8a6b0701d7239f6",
+      "verified": true,
+      "master_url": "https://github.com/luciu5/trade/tree/master",
+      "legacy_url": "https://github.com/luciu5/trade/tree/legacy"
+    },
+    {
+      "package": "competitiontoolbox",
+      "repository": "luciu5/competitiontoolbox",
+      "legacy_sha": "e81fc704bec56cd56c92097b282177573b57fd83",
+      "release_sha": "d369fc71a95df9ce0f39b180d62f688435d8af0f",
+      "legacy_created": true,
+      "master_updated": true,
+      "master_sha": "176308a680c4514aa32463f4c82b45da4ad7d5da",
+      "verified": true,
+      "master_url": "https://github.com/luciu5/competitiontoolbox/tree/master",
+      "legacy_url": "https://github.com/luciu5/competitiontoolbox/tree/legacy"
+    }
+  ],
+  "updated_utc": "2026-11-03T16:23:19.856885+00:00",
+  "local_worktree_policy": "Remote refs only; original local branches, index, HEAD and uncommitted files preserved.",
+  "development_integration_only": true,
+  "visibility_changes_authorized": false,
+  "remaining_limitations": [
+    "competitiontoolbox hosted private-vertical dependency check is explicitly waived by user; workflow guard is unchanged.",
+    "Live Shiny interaction/download smoke has not been run; socket creation is denied in this execution environment.",
+    "GitHub development installs require access to the unpublished exact dependency commits; no CRAN release or visibility changes are authorized."
+  ],
+  "independent_review": {
+    "reviewer": "gpt-6-luna xhigh",
+    "initial_findings": [
+      "Trade master CI would choose coordination main lacking new exported helpers and required version.",
+      "Toolbox master CI would choose older coordination/vertical main.",
+      "Scheduled and ordinary master pull-request runs need the same exact dependency pins."
+    ],
+    "resolution": "Accepted: workflow-only commits pin DESCRIPTION dependencies for master pushes, master-target pull requests and schedules; release refs preserved."
+  },
+  "status": "All three mature packages integrated into remote master; old masters preserved as legacy; no publication.",
+  "verification": {
+    "prior_package_checks": "All three frozen release candidates had local R CMD check OK. Prior antitrust/trade hosted release certification passed; toolbox hosted certification explicitly waived.",
+    "workflow_changes": "YAML parsing, Bash syntax, parsed event matrix, exact dependency extraction and candidate coordination exports verified; independent Luna xhigh review accepted.",
+    "remote_refs": "All three master, legacy and original release refs independently read back and matched expected SHAs.",
+    "evidence_directory": "artifacts/coordinated_release_evidence/mature-promotion-20261103",
+    "master_ci_status": [
+      {
+        "status": "fulfilled",
+        "value": {
+          "package": "antitrust",
+          "runs": [
+            {
+              "id": 41671281029,
+              "sha": "7634b8c58caa98396f9183fe0fd5a30763cf6f53",
+              "status": "completed",
+              "conclusion": "success",
+              "url": "https://github.com/luciu5/antitrust/actions/runs/41671281029"
+            }
+          ]
+        }
+      },
+      {
+        "status": "fulfilled",
+        "value": {
+          "package": "trade",
+          "runs": [
+            {
+              "id": 41672778857,
+              "sha": "a0edb920c21ab398c57dbd7dd8a6b0701d7239f6",
+              "status": "completed",
+              "conclusion": "success",
+              "url": "https://github.com/luciu5/trade/actions/runs/41672778857"
+            }
+          ]
+        }
+      },
+      {
+        "status": "fulfilled",
+        "value": {
+          "package": "competitiontoolbox",
+          "runs": [
+            {
+              "id": 41673546497,
+              "status": "completed",
+              "conclusion": "failure",
+              "sha": "176308a680c4514aa32463f4c82b45da4ad7d5da",
+              "url": "https://github.com/luciu5/competitiontoolbox/actions/runs/41673546497",
+              "failed_step": "Require private vertical read token",
+              "waiver": "User explicitly waived this private-dependency check; not counted as passed.",
+              "test_phase_reached": false
+            }
+          ]
+        }
+      }
+    ],
+    "master_ci_summary": "Antitrust and trade new master CI passed; toolbox new master CI failed at the private vertical token guard covered by the user waiver. No toolbox hosted package tests ran."
+  },
+  "local_state_preservation": {
+    "antitrust": {
+      "head_preserved": true,
+      "active_branch_preserved": true,
+      "index_preserved": true,
+      "local_master_preserved": true,
+      "local_refactor_preserved": true
+    },
+    "trade": {
+      "head_preserved": true,
+      "active_branch_preserved": true,
+      "index_preserved": true,
+      "local_master_preserved": true,
+      "local_refactor_preserved": true
+    },
+    "competitiontoolbox": {
+      "head_preserved": true,
+      "active_branch_preserved": true,
+      "index_preserved": true,
+      "local_master_preserved": true,
+      "local_refactor_preserved": true
+    }
+  }
+}

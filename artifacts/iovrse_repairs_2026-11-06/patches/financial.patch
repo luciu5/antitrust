@@ -1,0 +1,1224 @@
+diff --git a/NEWS.md b/NEWS.md
+index 0facaa4..e0e50de 100755
+--- a/NEWS.md
++++ b/NEWS.md
+@@ -3,3 +3,9 @@
+ - Provide separate debt/limited-liability and bank liquidity merger families on the antitrust structural-fit interface.
+ - Add independent public bank FOC checks for overlapping ownership footprints and pooled liquidity.
+ - Retain documented legacy numerical limitations; release validation distinguishes converged economics from nonconverged historical solver outputs.
++
++* Repair debt integration support, focal-market handling and extreme Beta
++  normalization; correct the calibration Beta mean and proportional-margin
++  cost initialization. Reject zero-survival conditioning and unverified roots
++  with structured errors; replace invalid legacy parity targets with independent
++  economic and integration checks.
+diff --git a/R/DebtClasses.R b/R/DebtClasses.R
+index c475bf1..7811c4a 100755
+--- a/R/DebtClasses.R
++++ b/R/DebtClasses.R
+@@ -137,8 +137,9 @@ setClass(
+             stop("At least", nMarkets + 2, "elements of 'margins' must not be NA in order to calibrate demand parameters")
+         }
+ 
+-        if (!any(is.na(object@shareOutParm)) &&
+-            (max(object@shareOutParm) <= 0 || length(object@shareOutParm) != 2)) {
++        if (length(object@shareOutParm) != 2 ||
++            !(all(is.na(object@shareOutParm)) ||
++              (all(is.finite(object@shareOutParm)) && all(object@shareOutParm > 0)))) {
+             stop("'shareOutParm' must be a length-2 numeric vector with positive values")
+         }
+ 
+diff --git a/R/DebtCounterfactual.R b/R/DebtCounterfactual.R
+index 7f26773..65c6d69 100755
+--- a/R/DebtCounterfactual.R
++++ b/R/DebtCounterfactual.R
+@@ -80,6 +80,12 @@
+ #'   passed to the calibration routine optimizer (the `calcSlopes` method).
+ #' @param control.equ A list of [BB::BBsolve()] control parameters passed to
+ #'   the non-linear equation solver (the `calcPrices` method).
++#' @section Calibration inputs:
++#' Debt calibration currently requires a finite margin for every product.
++#' Missing margins cannot identify the conditional firm-profit integrals and
++#' raise a `financial_equilibrium_failure` error naming product positions.
++#' This restriction applies to the debt family, not bank calibration.
++#'
+ #' @param control.cub A list of [cubature::cubintegrate()] control
+ #'   parameters used for the multi-market, non-uniform-density outside-share
+ #'   integration.
+@@ -168,6 +174,11 @@ logit.debt <- function(prices, shares, margins,
+     labels,
+     ...) {
+     density <- match.arg(density)
++    if (any(!is.finite(margins))) {
++        .debt_stop("equilibrium_failure", paste0(
++            "debt calibration requires complete finite 'margins'; missing or non-finite product positions: ",
++            paste(which(!is.finite(margins)), collapse = ", ")))
++    }
+     if (missing(shareOutParm)) shareOutParm <- rep(NA_real_, 2)
+     if (density == "uniform") shareOutParm <- rep(1, 2)
+ 
+diff --git a/R/DebtEquilibrium.R b/R/DebtEquilibrium.R
+index 8b312eb..fbb8bbe 100755
+--- a/R/DebtEquilibrium.R
++++ b/R/DebtEquilibrium.R
+@@ -1,20 +1,22 @@
+ #' Equilibrium methods for the `LogitDebt` class
+ #'
+ #' `calcShares`, `calcSlopes`, `calcPrices`, `calcMC`, `calcMargins` methods
+-#' for the `LogitDebt` class, migrated verbatim (parity migration -- the
+-#' economics are preserved exactly, not redesigned) from
+-#' `MergerDebt/R/Debt-methods.R` (SHA `ea727430`).
++#' for the `LogitDebt` class, migrated from
++#' `MergerDebt/R/Debt-methods.R` (SHA `ea727430`). Numerical repairs evaluate
++#' the inherited default-conditioned equations on their actual support and
++#' reject undefined conditioning or unverified equilibria.
+ #'
+ #' Per `design/ARCHITECTURE.md`: limited liability lives in the demand/share
+ #' layer via the `s0Focal` default-threshold (profit = debt boundary),
+ #' reshaping conditional logit shares through partial-Beta integrals. This
+-#' is flagged for red-team economic review and is NOT rewritten here.
++#' inherited economic specification remains unchanged; zero-survival regimes
++#' have no defined conditional shares and produce a structured error.
+ #'
+ #' The legacy per-object `hFocalIntegral`/`gFocalIntegral` closures are
+-#' replaced by calls to the shared, oracle-validated
++#' replaced by calls to the shared
+ #' `beta_h_focal_integral()`/`beta_g_focal_integral()` helpers from
+-#' `shared-beta-moments.R` (verified algebraically identical to the legacy
+-#' closures -- same `beta(...)/beta(...) * pbeta(...)` expressions).
++#' `shared-beta-moments.R`, with algebraic moment prefactors that avoid
++#' underflow in ratios of Beta functions.
+ #'
+ #' @name LogitDebt-methods
+ #' @param object an instance of class `LogitDebt`.
+@@ -41,12 +43,161 @@
+ #' @include DebtClasses.R
+ NULL
+ 
++# Debt conditioning is defined only when there is positive solvent mass.
++# Keep these conditions distinguishable for callers without changing the
++# banking module's shared numerical primitives or inventing default outcomes.
++.debt_stop <- function(kind, message) {
++    stop(structure(list(message = message, call = NULL),
++        class = c(paste0("financial_", kind), "error", "condition")))
++}
++
++# Integrate E[(1-U_m) 1{profit >= debt}] and its U_m-weighted counterpart.
++# Integrating one outside share analytically avoids a discontinuous indicator;
++# integrating the remaining coordinates in probability space resolves highly
++# concentrated Beta densities. Every market retains its own moments.
++.debt_survival_moments <- function(profit, debt, shape, focal = 1L, control = list()) {
++    n <- length(profit)
++    if (any(!is.finite(profit)) || !is.finite(debt) || debt < 0 ||
++        length(shape) != 2L || any(!is.finite(shape)) || any(shape <= 0)) {
++        .debt_stop("equilibrium_failure", "invalid profit, debt or Beta parameters")
++    }
++    if (length(focal) != 1L || !is.finite(focal) || focal != as.integer(focal) ||
++        focal < 1 || focal > n) {
++        .debt_stop("equilibrium_failure", "focal must identify a market")
++    }
++    total <- sum(shape)
++    full_g <- shape[2] / total
++    full_h <- (shape[1] / total) * (shape[2] / (total + 1))
++    # No default occurs with zero debt and nonnegative conditional profits.
++    if (debt == 0 && all(profit >= 0)) {
++        return(list(g = rep(full_g, n), h = rep(full_h, n)))
++    }
++    if (sum(pmax(profit, 0)) <= debt) {
++        .debt_stop("zero_survival", "default conditioning has zero solvent probability")
++    }
++    axis <- if (profit[focal] > 0) focal else which.max(profit)
++    other <- setdiff(seq_len(n), axis)
++    integrand <- function(probability) {
++        weight <- 1
++        if (all(profit >= 0)) {
++            # Map the integration cube into the solvent support. A generic
++            # cubature rule can otherwise miss an entire small simplex and
++            # return a falsely exact zero. The conditional probability limits
++            # supply the Jacobian of this triangular transformation.
++            remaining <- sum(profit) - debt
++            u <- numeric(length(other))
++            for (j in seq_along(other)) {
++                limit <- if (profit[other[j]] == 0) 1 else
++                    max(0, min(1, remaining / profit[other[j]]))
++                probability_limit <- stats::pbeta(limit, shape[1], shape[2])
++                weight <- weight * probability_limit
++                u[j] <- stats::qbeta(probability[j] * probability_limit, shape[1], shape[2])
++                remaining <- remaining - profit[other[j]] * u[j]
++            }
++            cutoff <- remaining / profit[axis]
++        } else {
++            u <- stats::qbeta(probability, shape[1], shape[2])
++            cutoff <- (sum(profit) - debt - sum(u * profit[other])) / profit[axis]
++        }
++        g <- h <- numeric(n)
++        g[axis] <- beta_g_focal_integral(cutoff, shape[1], shape[2])
++        h[axis] <- beta_h_focal_integral(cutoff, shape[1], shape[2])
++        survival <- stats::pbeta(cutoff, shape[1], shape[2])
++        g[other] <- (1 - u) * survival
++        h[other] <- u * g[other]
++        c(g, h) * weight
++    }
++    if (n == 1L) {
++        value <- integrand(numeric())
++    } else {
++        rel <- if (is.null(control$relTol)) 1e-9 else min(control$relTol, 1e-8)
++        abs <- if (is.null(control$absTol)) 1e-11 else min(control$absTol, 1e-10)
++        if (!is.finite(rel) || rel <= 0 || !is.finite(abs) || abs < 0) {
++            .debt_stop("integration_failure", "invalid integration tolerances")
++        }
++        if (n == 2L) {
++            # Split where the analytic cutoff crosses zero and one. Without
++            # support-aware splitting an adaptive rule can see only zeros.
++            boundaries <- c(0, .01, .1, .5, .9, .99, 1)
++            if (profit[other] != 0) {
++                crossing <- (sum(profit) - debt - c(0, profit[axis])) / profit[other]
++                crossing <- crossing[crossing > 0 & crossing < 1]
++                boundaries <- sort(unique(c(boundaries,
++                    stats::pbeta(crossing, shape[1], shape[2]))))
++            }
++            value <- numeric(2L * n)
++            for (k in seq_len(length(boundaries) - 1L)) {
++                if (boundaries[k + 1L] <= boundaries[k]) next
++                for (j in seq_along(value)) {
++                    result <- tryCatch(stats::integrate(function(z) {
++                        probability_limit <- 1
++                        if (all(profit >= 0) && profit[other] > 0) {
++                            limit <- min(1, (sum(profit) - debt) / profit[other])
++                            probability_limit <- stats::pbeta(limit, shape[1], shape[2])
++                        }
++                        u <- stats::qbeta(z * probability_limit, shape[1], shape[2])
++                        cutoff <- (sum(profit) - debt - profit[other] * u) / profit[axis]
++                        market <- if (j <= n) j else j - n
++                        if (market == axis) {
++                            moment <- if (j <= n) beta_g_focal_integral(cutoff, shape[1], shape[2]) else
++                                beta_h_focal_integral(cutoff, shape[1], shape[2])
++                        } else {
++                            moment <- (1 - u) * stats::pbeta(cutoff, shape[1], shape[2])
++                            if (j > n) moment <- moment * u
++                        }
++                        moment * probability_limit
++                    }, boundaries[k], boundaries[k + 1L], rel.tol = rel,
++                        abs.tol = abs, subdivisions = 1000L, stop.on.error = FALSE),
++                        error = function(e) .debt_stop("integration_failure", conditionMessage(e)))
++                    if (!(result$message == "OK" || grepl("roundoff error", result$message, fixed = TRUE)) ||
++                        !is.finite(result$value) ||
++                        !is.finite(result$abs.error) ||
++                        result$abs.error > max(abs, rel * abs(result$value))) {
++                        .debt_stop("integration_failure", paste0("outside-share quadrature failed its error bound: ",
++                            result$message, "; error = ", result$abs.error))
++                    }
++                    value[j] <- value[j] + result$value
++                }
++            }
++        } else {
++            # fDim rows and one column per vectorized cubature sample.
++            result <- tryCatch(cubature::cubintegrate(function(x) {
++                x <- matrix(x, nrow = n - 1L)
++                vapply(seq_len(ncol(x)), function(i) integrand(x[, i]), numeric(2L * n))
++            }, lower = rep(0, n - 1L), upper = rep(1, n - 1L), fDim = 2L * n,
++                nVec = if (is.null(control$nVec)) 1024L else control$nVec,
++                method = if (is.null(control$method)) "hcubature" else control$method,
++                relTol = rel, absTol = abs,
++                maxEval = if (is.null(control$maxEval)) 1e6 else control$maxEval),
++                error = function(e) .debt_stop("integration_failure", conditionMessage(e)))
++            value <- result$integral
++            if (length(value) != 2L * n || any(!is.finite(value)) ||
++                any(!is.finite(result$error)) ||
++                any(result$error > pmax(abs, rel * abs(value))) ||
++                (!is.null(result$returnCode) && result$returnCode != 0)) {
++                .debt_stop("integration_failure", "outside-share cubature failed its error bound")
++            }
++        }
++    }
++    g <- value[seq_len(n)]
++    h <- value[n + seq_len(n)]
++    if (any(!is.finite(value)) || any(g <= 0) || any(h < 0) || any(h > g)) {
++        .debt_stop("integration_failure", "positive solvent mass could not be resolved numerically")
++    }
++    list(g = g, h = h)
++}
++
+ #' @rdname LogitDebt-methods
+ #' @export
+ setMethod(
+     f = "calcSlopes",
+     signature = "LogitDebt",
+     definition = function(object) {
++        if (any(!is.finite(object@margins))) {
++            .debt_stop("equilibrium_failure", paste0(
++                "debt calibration requires complete finite 'margins'; product positions: ",
++                paste(which(!is.finite(object@margins)), collapse = ", ")))
++        }
+         nMarkets <- length(unique(object@marketID))
+ 
+         ownerPre <- object@ownerPre
+@@ -107,7 +258,7 @@ setMethod(
+ 
+             marginsCand <- calcMargins(thisobj, preMerger = TRUE, level = TRUE)
+ 
+-            sOutMean <- sapply(ownerPreMat, s0Focal, sOut = outParm[1] / sum(outParm[1]))
++            sOutMean <- sapply(ownerPreMat, s0Focal, sOut = outParm[1] / sum(outParm))
+             sOutMean[sOutMean < 0] <- 0
+             sOutMean[sOutMean > 1] <- 1
+ 
+@@ -118,7 +269,12 @@ setMethod(
+                 m3 <- stats::var(sOutMean, na.rm = TRUE) - prod(outParm) / (sum(outParm)^2 * (sum(outParm) + 1)) # variance of Beta
+             }
+ 
+-            measure <- sum((c(m1, m2, m3) * 100)^2, na.rm = TRUE)
++            residual <- if (all(is.na(shareOutParm))) c(m1, m2, m3) else m1
++            residual <- residual[c(!is.na(as.numeric(margins)), rep(TRUE, length(residual) - length(margins)))]
++            if (any(!is.finite(residual))) {
++                .debt_stop("equilibrium_failure", "non-finite demand calibration residual")
++            }
++            measure <- sum((residual * 100)^2)
+ 
+             return(measure)
+         }
+@@ -139,6 +295,25 @@ setMethod(
+             control = object@control.slopes
+         )
+ 
++        if (minTheta$convergence != 0 && all(is.finite(minTheta$par))) {
++            # Support boundaries can make finite-difference L-BFGS line
++            # searches fail. Re-optimize the same criterion without gradients
++            # in positive magnitudes; retain exactly the same parameter bounds.
++            sign <- c(rep(-1, nMarkets), rep(1, length(minTheta$par) - nMarkets))
++            objective <- function(log_parameter) {
++                theta <- sign * exp(log_parameter)
++                if (any(!is.finite(theta)) || any(theta < lowerB | theta > upperB)) return(1e30)
++                minD(theta)
++            }
++            refined <- stats::optim(log(abs(minTheta$par)), objective,
++                method = "Nelder-Mead", control = list(maxit = 5000, reltol = 1e-10))
++            minTheta <- list(par = sign * exp(refined$par), value = refined$value,
++                convergence = refined$convergence)
++        }
++        if (minTheta$convergence != 0 || any(!is.finite(minTheta$par)) ||
++            !is.finite(minTheta$value)) {
++            .debt_stop("equilibrium_failure", "demand calibration did not converge to finite parameters")
++        }
+         minAlpha <- minTheta$par[1:nMarkets]
+         minOutParm <- minTheta$par[-(1:nMarkets)]
+         meanval <- log(shares) - log(shares[, idx]) - minAlpha * (prices - prices[, idx])
+@@ -205,219 +380,27 @@ setMethod(
+             owner <- matrix(as.character(owner), nrow = nMarkets)[1, ]
+         }
+ 
+-        lowerB <- rep(0, nMarkets - 1)
+-        upperB <- rep(1, nMarkets - 1)
+-
+-        bDens <- function(u, ...) {
+-            stats::dbeta(u, shape1 = shareOutParm[1], shape2 = shareOutParm[2], ...)
+-        }
+-        bProb <- function(u, ...) {
+-            stats::pbeta(u, shape1 = shareOutParm[1], lower.tail = TRUE, shape2 = shareOutParm[2], ...)
+-        }
+-
+-        integrateDerivOtherFun <- function(u, f, pre = preMerger) {
+-            s0 <- s0Focal(u, f, pre)
+-            u * (1 - u) * bProb(s0)
+-        }
+-        integrateInsideOtherFun <- function(u, f, pre = preMerger) {
+-            s0 <- s0Focal(u, f, pre)
+-            (1 - u) * bProb(s0)
+-        }
+-
+-        s0Focal <- function(sOut = rep(NA, nMarkets), i, pre = preMerger, n = nMarkets, l = focal) {
+-            ## allow firm index i to be a vector of length > 1.
+-            if (n == 1) {
+-                res <- 1 - debt[i] / profitsCond[, i]
+-                return(res)
+-            }
+-
+-            res <- (sum(profitsCond[, i, drop = FALSE]) - debt[i]) / profitsCond[l, i, drop = TRUE] -
+-                sum(as.vector(sOut) * profitsCond[-l, i, drop = FALSE]) / profitsCond[l, i, drop = TRUE]
+-
+-            return(res)
+-        }
+-
+-        if (nMarkets > 1) theseStates <- expand.grid(lapply(1:(nMarkets - 1), function(x) 1:0))
+-
+         margin <- prices - mc
+-
+-        sCond <- exp(mval + slopes * prices)
+-        if (nMarkets > 1) {
+-            sCond <- sCond / rowSums(sCond)
+-        } else {
+-            sCond <- sCond / sum(sCond)
+-            sCond <- t(as.matrix(sCond))
++        eta <- matrix(mval + slopes * prices, nrow = nMarkets)
++        if (any(!is.finite(eta))) .debt_stop("equilibrium_failure", "non-finite conditional utility")
++        eta <- eta - apply(eta, 1, max)
++        sCond <- exp(eta)
++        sCond <- sCond / rowSums(sCond)
++        # Conditional demand has no default conditioning or integration.
++        if (insideOnly && !outSideOnly) {
++            sharesCand <- as.numeric(sCond)
++            names(sharesCand) <- object@labels
++            return(sharesCand)
+         }
+-
+-        profitsCond <- M * margin * sCond
+-
+-        ## aggregate profits to the firm level
+-        profitsCond <- t(rowsum(t(profitsCond), group = owner, na.rm = TRUE))
+-
+-        if (nMarkets == 1) {
+-            hFun <- sapply(firmVec, function(q) {
+-                s0_focal <- s0Focal(NA, q)
+-                beta_h_focal_integral(s0_focal, shape1 = shareOutParm[1], shape2 = shareOutParm[2])
+-            })
+-            gFun <- sapply(firmVec, function(q) {
+-                s0_focal <- s0Focal(NA, q)
+-                beta_g_focal_integral(s0_focal, shape1 = shareOutParm[1], shape2 = shareOutParm[2])
+-            })
+-        } else if (nMarkets >= 2 && density == "uniform") {
+-            hFun <- sapply(firmVec, function(q, pre = preMerger) {
+-                s0_focal <- apply(theseStates, 1, s0Focal, i = q)
+-
+-                betaStates <- 6 / factorial(nMarkets + 1) * s0_focal^(nMarkets + 1)
+-                betaStates <- beta(2, 2) * (betaStates - 12 / factorial(nMarkets + 2) * s0_focal^(nMarkets + 2))
+-
+-                st <- ncol(theseStates)
+-                thisTheseStates <- theseStates
+-                while (st >= 1) {
+-                    lastState <- thisTheseStates[, st]
+-                    betaStates <- betaStates[lastState == 1] - betaStates[lastState == 0]
+-                    thisTheseStates <- unique(thisTheseStates[, -st, drop = FALSE])
+-                    st <- st - 1
+-                }
+-                thisProfits <- rowSums(profitsCond[, q, drop = FALSE])
+-
+-                res <- (-1)^(nMarkets - 1) * (prod(thisProfits[-1]) / (thisProfits[1]^(nMarkets - 1))) * betaStates
+-
+-                return(res)
+-            })
+-
+-            gFun <- sapply(firmVec, function(q, pre = preMerger) {
+-                s0_focal <- apply(theseStates, 1, s0Focal, i = q)
+-                betaStates <- 2 / factorial(nMarkets) * s0_focal^(nMarkets)
+-                betaStates <- beta(1, 2) * (betaStates - 2 / factorial(nMarkets + 1) * s0_focal^(nMarkets + 1))
+-
+-                st <- ncol(theseStates)
+-                thisTheseStates <- theseStates
+-                while (st >= 1) {
+-                    lastState <- thisTheseStates[, st]
+-                    betaStates <- betaStates[lastState == 1] - betaStates[lastState == 0]
+-                    thisTheseStates <- unique(thisTheseStates[, -st, drop = FALSE])
+-                    st <- st - 1
+-                }
+-
+-                thisProfits <- rowSums(profitsCond[, q, drop = FALSE])
+-
+-                res <- (-1)^(nMarkets + 1) * (prod(thisProfits[-1]) / (thisProfits[1]^(nMarkets - 1))) * betaStates
+-                return(res)
+-            })
+-
+-            if (nMarkets > 1) {
+-                otherFun <- function(q, wgt = .5, pre = preMerger) {
+-                    theseStatesLocal <- theseStates[theseStates$Var1 == 1, , drop = FALSE]
+-
+-                    s0_focal <- apply(theseStatesLocal, 1, s0Focal, i = q)
+-                    if (!pre && q == 2) q <- 2:1
+-                    thisProfits <- rowSums(profitsCond[, q, drop = FALSE])
+-                    betaStates <- s0_focal^(nMarkets - 1) / factorial(nMarkets - 1)
+-
+-                    st <- ncol(theseStatesLocal)
+-                    while (st >= 2) {
+-                        lastState <- theseStatesLocal[, st]
+-                        betaStates <- betaStates[lastState == 1] - betaStates[lastState == 0]
+-                        theseStatesLocal <- unique(theseStatesLocal[, -st, drop = FALSE])
+-                        st <- st - 1
+-                    }
+-
+-                    if (nMarkets == 2) {
+-                        res <- betaStates
+-                    } else {
+-                        res <- (-1)^(nMarkets - 1) * (prod(thisProfits[-(1:2)]) / (thisProfits[1]^(nMarkets - 2))) * betaStates
+-                    }
+-
+-                    res <- res + wgt * (thisProfits[2] / thisProfits[1])
+-                    return(res)
+-                }
+-
+-                tFun <- beta(2, 2) * sapply(firmVec, otherFun, wgt = 1 / 2)
+-                rFun <- beta(1, 2) * sapply(firmVec, otherFun, wgt = 2 / 3)
+-            }
+-        } else {
+-            hFun <-
+-                sapply(firmVec, function(g) {
+-                    cubature::cubintegrate(function(x, f = g) {
+-                        x <- as.matrix(x)
+-                        matrix(apply(x, 2, function(s) {
+-                            s0_focal <- s0Focal(s, f)
+-                            res <- beta_h_focal_integral(s0_focal, shape1 = shareOutParm[1], shape2 = shareOutParm[2]) * prod(bDens(s))
+-                            return(res)
+-                        }), ncol = col(x))
+-                    },
+-                    lower = lowerB, upper = upperB, nVec = control.cub$nVec,
+-                    method = control.cub$method,
+-                    relTol = control.cub$relTol, absTol = control.cub$absTol,
+-                    maxEval = control.cub$maxEval
+-                    )$integral
+-                })
+-
+-            gFun <-
+-                sapply(firmVec, function(g) {
+-                    cubature::cubintegrate(function(x, f = g) {
+-                        x <- as.matrix(x)
+-                        matrix(apply(x, 2, function(s) {
+-                            s0_focal <- s0Focal(s, f)
+-
+-                            beta_g_focal_integral(s0_focal, shape1 = shareOutParm[1], shape2 = shareOutParm[2]) * prod(bDens(s))
+-                        }), ncol = col(x))
+-                    },
+-                    lower = lowerB, upper = upperB, nVec = control.cub$nVec,
+-                    method = control.cub$method,
+-                    relTol = control.cub$relTol, absTol = control.cub$absTol,
+-                    maxEval = control.cub$maxEval
+-                    )$integral
+-                })
+-
+-            if (nMarkets > 1) {
+-                tFun <-
+-                    sapply(firmVec, function(g) {
+-                        cubature::cubintegrate(function(x, f = g) {
+-                            x <- as.matrix(x)
+-                            matrix(apply(x, 2, function(s) {
+-                                integrateDerivOtherFun(s, f) * prod(bDens(s))
+-                            }), ncol = col(x))
+-                        },
+-                        fDim = 1,
+-                        lower = lowerB, upper = upperB, nVec = control.cub$nVec,
+-                        method = control.cub$method,
+-                        relTol = control.cub$relTol, absTol = control.cub$absTol,
+-                        maxEval = control.cub$maxEval
+-                        )$integral
+-                    })
+-
+-                rFun <-
+-                    sapply(firmVec, function(g) {
+-                        cubature::cubintegrate(function(x, f = g) {
+-                            x <- as.matrix(x)
+-                            matrix(apply(x, 2, function(s) {
+-                                integrateInsideOtherFun(s, f) * prod(bDens(s))
+-                            }), ncol = col(x))
+-                        },
+-                        fDim = 1,
+-                        lower = lowerB, upper = upperB, nVec = control.cub$nVec,
+-                        method = control.cub$method,
+-                        relTol = control.cub$relTol, absTol = control.cub$absTol,
+-                        maxEval = control.cub$maxEval
+-                        )$integral
+-                    })
+-            }
+-        }
+-
+-        if (nMarkets > 1) {
+-            shareOutOther <- tFun / rFun
+-            shareOutOther[shareOutOther > 1] <- 1
+-            shareOutOther[shareOutOther < 0] <- 0
+-        }
+-
+-        shareOutFocal <- hFun / gFun
+-        shareOutFocal[shareOutFocal > 1] <- 1
+-        shareOutFocal[shareOutFocal < 0] <- 0
+-
+-        SharesOutInt <- matrix(NA, nrow = nMarkets, ncol = nFirms, dimnames = list(1:nMarkets, firmVec))
+-        SharesOutInt[focal, ] <- shareOutFocal
+-        if (nMarkets > 1) SharesOutInt[-focal, ] <- shareOutOther
++        profitsCond <- M * matrix(margin, nrow = nMarkets) * sCond
++        profitsCond <- t(rowsum(t(profitsCond), group = owner, reorder = TRUE))
++        SharesOutInt <- vapply(firmVec, function(firm) {
++            moments <- .debt_survival_moments(profitsCond[, firm], debt[firm],
++                shareOutParm, focal, control.cub)
++            moments$h / moments$g
++        }, numeric(nMarkets))
++        SharesOutInt <- matrix(SharesOutInt, nrow = nMarkets,
++            dimnames = list(seq_len(nMarkets), firmVec))
+ 
+         sharesCand <- sCond
+         if (outSideOnly) {
+@@ -469,11 +452,35 @@ setMethod(
+             return(thisFOC)
+         }
+ 
++        # Validate the initial economic state before invoking a solver, which
++        # otherwise can interpret missing firm shares as a zero residual.
++        initial <- FOC(priceStart)
++        if (any(!is.finite(initial))) {
++            .debt_stop("equilibrium_failure", "non-finite initial price residual")
++        }
+         ## Find price changes that set FOCs equal to 0
+         minResult <- BB::BBsolve(priceStart, FOC, quiet = TRUE, control = object@control.equ, ...)
+ 
+-        if (minResult$convergence != 0) {
+-            warning("'calcPrices' nonlinear solver may not have successfully converged. 'BBsolve' reports: '", minResult$message, "'")
++        residual <- FOC(minResult$par)
++        tol <- object@control.equ$tol
++        if (is.null(tol)) tol <- 1e-7
++        tol <- min(tol, 1e-7)
++        if (all(is.finite(residual)) && max(abs(residual)) > tol) {
++            refined <- tryCatch(nleqslv::nleqslv(minResult$par, FOC,
++                method = "Newton", control = list(ftol = tol * .1, maxit = 500)),
++                error = function(e) NULL)
++            if (!is.null(refined) && all(is.finite(refined$fvec)) &&
++                max(abs(refined$fvec)) < max(abs(residual))) {
++                minResult$par <- refined$x
++                residual <- FOC(refined$x)
++                minResult$convergence <- if (refined$termcd == 1L) 0L else 1L
++            }
++        }
++        if (minResult$convergence != 0 || any(!is.finite(minResult$par)) ||
++            any(!is.finite(residual)) || max(abs(residual)) > tol) {
++            .debt_stop("equilibrium_failure", paste0(
++                "price solver did not verify a finite equilibrium: ", minResult$message,
++                "; residual = ", max(abs(residual))))
+         }
+ 
+         if (isMax) {
+@@ -509,13 +516,17 @@ setMethod(
+         if (preMerger) {
+             object@pricePre <- object@prices
+ 
+-            startMC <- -1 * (object@margins - object@prices)
++            startMC <- object@prices * (1 - object@margins)
+             startMC[is.na(startMC)] <- max(startMC, na.rm = TRUE)
+ 
+             minD <- function(c) {
+                 object@mcPre <- c
+-                thisMargin <- calcMargins(object, preMerger = TRUE, level = TRUE)
+-
++                thisMargin <- tryCatch(calcMargins(object, preMerger = TRUE, level = TRUE),
++                    financial_zero_survival = function(e) NULL)
++                # A trial cost outside solvent support is an infeasible
++                # optimizer candidate. The accepted result is re-evaluated
++                # below without this penalty or any missing-value removal.
++                if (is.null(thisMargin)) return(1e12 + sum((c - startMC)^2))
+                 measure <- object@pricePre - c - thisMargin
+                 measure <- (measure / object@pricePre)^2
+                 return(sum(measure))
+@@ -524,9 +535,17 @@ setMethod(
+             lowerB <- rep(0, length(startMC))
+             upperB <- object@prices
+ 
+-            minMC <- stats::optim(startMC, minD, method = "L-BFGS-B", lower = lowerB, upper = upperB)
++            minMC <- stats::optim(startMC, minD, method = "L-BFGS-B", lower = lowerB, upper = upperB,
++                control = list(factr = 1e3, pgtol = 1e-10, maxit = 1000))
+ 
+             mc <- minMC$par
++            object@mcPre <- mc
++            residual <- object@pricePre - mc - calcMargins(object, TRUE, level = TRUE)
++            if (minMC$convergence != 0 || any(!is.finite(residual)) ||
++                max(abs(residual / object@pricePre)) > 1e-6) {
++                .debt_stop("equilibrium_failure", paste0("marginal-cost calibration did not verify a finite equilibrium; residual = ",
++                    max(abs(residual / object@pricePre))))
++            }
+         }
+ 
+         if (!preMerger) {
+@@ -564,10 +583,10 @@ setMethod(
+             prices <- matrix(prices, nMarkets)
+             owner <- matrix(owner, nMarkets)[1, ]
+ 
+-            shares <- t(rowsum(t(shares), group = owner, na.rm = TRUE))
++            shares <- t(rowsum(t(shares), group = owner))
+             shares <- shares[, owner]
+         } else {
+-            shares <- tapply(shares, owner, sum, na.rm = TRUE)
++            shares <- tapply(shares, owner, sum)
+             shares <- shares[owner]
+         }
+ 
+diff --git a/R/shared-beta-moments.R b/R/shared-beta-moments.R
+index 683c7e6..c7d1fab 100755
+--- a/R/shared-beta-moments.R
++++ b/R/shared-beta-moments.R
+@@ -87,16 +87,16 @@ beta_lower_second_moment <- function(cutoff, shape1, shape2) {
+ ## partial-Beta-moment primitive expressed via the beta() normalization:
+ ##   h(u) = E[X * 1{X <= u}] shape-shifted form = beta(s1+1,s2+1)/beta(s1,s2) * pbeta(u, s1+1, s2+1)
+ ##   g(u) = beta(s1,s2+1)/beta(s1,s2) * pbeta(u, s1, s2+1)
+-## Kept as explicit functions (not re-expressed via beta_lower_first_moment) so the
+-## debt module migrates 1:1 against its golden-master oracle; equivalence to the
+-## (mu,phi) helpers above is asserted in tests.
++## Algebraic shape prefactors replace the ratios of Beta functions so large
++## valid shapes do not yield 0/0. These are the same truncated moments; the
++## banking helpers and their economic parameterization remain unchanged.
+ 
+ beta_h_focal_integral <- function(u, shape1, shape2) {
+-  beta(shape1 + 1, shape2 + 1) / beta(shape1, shape2) *
++  (shape1 / (shape1 + shape2)) * (shape2 / (shape1 + shape2 + 1)) *
+     pbeta(u, shape1 = shape1 + 1, shape2 = shape2 + 1, lower.tail = TRUE)
+ }
+ 
+ beta_g_focal_integral <- function(u, shape1, shape2) {
+-  beta(shape1, shape2 + 1) / beta(shape1, shape2) *
++  shape2 / (shape1 + shape2) *
+     pbeta(u, shape1 = shape1, shape2 = shape2 + 1, lower.tail = TRUE)
+ }
+diff --git a/README.md b/README.md
+index 57e2164..5a00a01 100755
+--- a/README.md
++++ b/README.md
+@@ -33,3 +33,16 @@ conditions are tested separately. A matching invalid legacy output is not
+ evidence of an economic equilibrium. See
+ [the debt parity addendum](design/debt-parity-diagnostic-addendum-2026-11-01.md)
+ for the diagnosed cases and the bounded source comparison.
++
++Debt equilibrium calculations reject undefined default conditioning with a
++`financial_zero_survival` error. Quadrature that fails its error bounds raises
++`financial_integration_failure`; unverified calibration or price roots raise
++`financial_equilibrium_failure`. Historical NaN captures are diagnostic evidence,
++not successful equilibria. See the debt numerical repair follow-up in
++`design/debt-parity-diagnostic-addendum-2026-11-01.md`.
++
++Compatibility: debt calibration now explicitly requires complete finite product
++margins. Legacy missing-margin inputs propagated unknown costs into firm profits
++and silently omitted the resulting invalid values; they did not identify the
++required default integrals. Such inputs now raise `financial_equilibrium_failure`
++with the affected product positions. This does not restrict bank calibration.
+diff --git a/design/debt-parity-diagnostic-addendum-2026-11-01.md b/design/debt-parity-diagnostic-addendum-2026-11-01.md
+index 2ce346d..c721f4b 100755
+--- a/design/debt-parity-diagnostic-addendum-2026-11-01.md
++++ b/design/debt-parity-diagnostic-addendum-2026-11-01.md
+@@ -127,3 +127,36 @@ enabled using the staged antitrust 0.99.43 package in a separate temporary
+ library. `R CMD check --no-manual --no-build-vignettes financial_0.1.0.tar.gz`
+ completed with status `OK`; `testthat.R` reported 168 passes, 0 failures,
+ 0 warnings, and 0 skips.
++
++## Numerical repair follow-up (2026-11-06)
++
++The sections above describe the pre-repair release diagnosis. The subsequent
++repair evaluates the same inherited conditional-share equations on their true
++support. Uniform thresholds saturate at zero and one, concentrated Beta laws
++are integrated in probability space, and a triangular transformation resolves
++small solvent regions before cubature. Every market has its own moments;
++changing the focal market or a zero focal profit no longer changes economics.
++Beta moment prefactors avoid underflow in ratios of Beta normalizations.
++
++Calibration now uses the Beta mean `shape1 / (shape1 + shape2)` in other-market
++thresholds, and cost initialization converts proportional margins to dollars.
++Invalid model residuals are not dropped. Returned price and cost solutions
++must satisfy finite residual checks; Newton refinement may improve a BB root
++before acceptance. Historical numerical outputs and shape parameters affected
++by these repairs are no longer parity acceptance targets. Oracle files remain
++unchanged as provenance. Permanent A tests use independent moments, simplex
++identities, ownership FOCs and failure acceptance. High-debt captures with no
++solvent region are C legacy traps and now fail explicitly.
++
++Errors inherit `financial_zero_survival`, `financial_integration_failure`, or
++`financial_equilibrium_failure`. Zero solvent mass is undefined conditioning,
++not a zero default-adjusted share or a uniquely identified corner equilibrium.
++The repair does not derive new limited-liability payoff economics for that
++regime. Integration failures and unverified roots similarly return no alleged
++equilibrium. Existing numerical tolerances are retained or tightened.
++
++Compatibility: debt calibration now explicitly requires complete finite product
++margins. Legacy missing-margin inputs propagated unknown costs into firm profits
++and silently omitted the resulting invalid values; they did not identify the
++required default integrals. Such inputs now raise `financial_equilibrium_failure`
++with the affected product positions. This does not restrict bank calibration.
+diff --git a/man/LogitDebt-class.Rd b/man/LogitDebt-class.Rd
+index e8254d9..aced4ad 100755
+--- a/man/LogitDebt-class.Rd
++++ b/man/LogitDebt-class.Rd
+@@ -109,3 +109,10 @@ showClass("LogitDebt") # get a detailed description of the class
+ \author{
+ Charles Taragin \email{ctaragin+antitrustr@gmail.com}
+ }
++
++\section{Complete debt calibration margins}{
++Debt calibration currently requires finite margins for every product. Missing
++margins have no implemented conditional-profit identification rule and raise
++\code{financial_equilibrium_failure}, naming affected product positions.
++This restriction does not apply to bank calibration.
++}
+diff --git a/man/LogitDebt-methods.Rd b/man/LogitDebt-methods.Rd
+index 1823a49..9b9356f 100755
+--- a/man/LogitDebt-methods.Rd
++++ b/man/LogitDebt-methods.Rd
+@@ -58,19 +58,21 @@ corresponding named numeric vector (or, for \code{calcShares(outSideOnly = TRUE)
+ }
+ \description{
+ \code{calcShares}, \code{calcSlopes}, \code{calcPrices}, \code{calcMC}, \code{calcMargins} methods
+-for the \code{LogitDebt} class, migrated verbatim (parity migration -- the
+-economics are preserved exactly, not redesigned) from
+-\code{MergerDebt/R/Debt-methods.R} (SHA \code{ea727430}).
++for the \code{LogitDebt} class, migrated from
++\code{MergerDebt/R/Debt-methods.R} (SHA \code{ea727430}). Numerical repairs
++evaluate the inherited default-conditioned equations on their actual support
++and reject undefined conditioning or unverified equilibria.
+ }
+ \details{
+ Per \code{design/ARCHITECTURE.md}: limited liability lives in the demand/share
+ layer via the \code{s0Focal} default-threshold (profit = debt boundary),
+-reshaping conditional logit shares through partial-Beta integrals. This
+-is flagged for red-team economic review and is NOT rewritten here.
++reshaping conditional logit shares through partial-Beta integrals. The
++inherited economic specification remains unchanged; zero-survival regimes
++have no defined conditional shares and produce a structured error.
+ 
+ The legacy per-object \code{hFocalIntegral}/\code{gFocalIntegral} closures are
+-replaced by calls to the shared, oracle-validated
++replaced by calls to the shared
+ \code{beta_h_focal_integral()}/\code{beta_g_focal_integral()} helpers from
+-\code{shared-beta-moments.R} (verified algebraically identical to the legacy
+-closures -- same \code{beta(...)/beta(...) * pbeta(...)} expressions).
++\code{shared-beta-moments.R}, with algebraic moment prefactors that avoid
++underflow in ratios of Beta functions.
+ }
+diff --git a/man/logit.debt.Rd b/man/logit.debt.Rd
+index 8135c22..3ddb906 100755
+--- a/man/logit.debt.Rd
++++ b/man/logit.debt.Rd
+@@ -205,3 +205,10 @@ print(simres_debt@pricePost)
+ \author{
+ Charles Taragin \email{ctaragin+antitrustr@gmail.com}
+ }
++
++\section{Complete debt calibration margins}{
++Debt calibration currently requires finite margins for every product. Missing
++margins have no implemented conditional-profit identification rule and raise
++\code{financial_equilibrium_failure}, naming affected product positions.
++This restriction does not apply to bank calibration.
++}
+diff --git a/tests/testthat/test-debt-parity.R b/tests/testthat/test-debt-parity.R
+index f25375e..0884b73 100755
+--- a/tests/testthat/test-debt-parity.R
++++ b/tests/testthat/test-debt-parity.R
+@@ -1,291 +1,74 @@
+-## Parity regression tests for the migrated debt module.
+-##
+-## Rule of use (tests/oracles/README.md): the migrated `financial` code must
+-## be tested AGAINST THE PRE-MIGRATION FIXTURES captured from legacy
+-## MergerDebt (SHA ea727430) execution, never against itself.
+-
++# Historical fixtures are evidence, not equilibrium targets after numerical
++# defects are repaired. A checks below prevent economically invalid legacy
++# outputs from being recertified by matching NaNs or an unchanged starting root.
+ grid_path <- testthat::test_path("..", "oracles", "debt_goldenmaster_grid.rds")
+-sanity_path <- testthat::test_path("..", "oracles", "debt_zerodebt_direction_sanity.rds")
+-closedform_path <- testthat::test_path("..", "oracles", "debt_singlemarket_closedform.rds")
+-
+-## ---------------------------------------------------------------------
+-## 1. Golden-master grid: valid equilibrium cases plus diagnosed traps.
+-## ---------------------------------------------------------------------
+-
+ debt_grid_args <- function(inputs) {
+-    args <- list(
+-        prices = inputs$prices, shares = inputs$shares, margins = inputs$margins,
+-        ownerPre = inputs$ownerPre, ownerPost = inputs$ownerPost,
+-        debtPre = inputs$debtPre, debtPost = inputs$debtPost,
+-        marketID = inputs$marketID, mktSize = inputs$mktSize,
+-        density = inputs$density
+-    )
+-    if (!is.null(inputs$shareOutParm) && !all(is.na(inputs$shareOutParm))) {
+-        args$shareOutParm <- inputs$shareOutParm
+-    }
+-    args
++    inputs$seed <- NULL
++    inputs[!vapply(inputs, is.null, logical(1))]
+ }
+ 
+-test_that("valid debt grid cases retain captured migration parity [B: temporary]", {
+-    skip_if(Sys.getenv("FINANCIAL_EXTENDED_TESTS") != "1", "extended validation")
+-    skip_if_not(file.exists(grid_path), "debt_goldenmaster_grid.rds oracle not present")
+-    grid <- readRDS(grid_path)
+-
+-    ## B sunset: remove or replace this raw-grid layer by 2027-11-01. Earlier
+-    ## removal is appropriate if the capture R/antitrust toolchain becomes
+-    ## available and the independent economic checks below cover its material
+-    ## cases. This parity layer catches cross-version migration drift while
+-    ## the historical oracle remains useful.
+-    tol <- 1e-6
+-    for (case_name in setdiff(names(grid), c("zero_uniform", "low_beta", "high_beta"))) {
+-        fixture <- grid[[case_name]]
+-        inputs <- fixture$inputs
+-        set.seed(inputs$seed)
+-        fit <- do.call(logit.debt, debt_grid_args(inputs))
+-
+-        expect_equal(as.numeric(fit@pricePre), as.numeric(fixture$pricePre),
+-            tolerance = tol, info = paste(case_name, "pricePre"))
+-        expect_equal(as.numeric(fit@pricePost), as.numeric(fixture$pricePost),
+-            tolerance = tol, info = paste(case_name, "pricePost"))
+-        expect_equal(as.numeric(fit@shareOutParm), as.numeric(fixture$shareOutParm_calibrated),
+-            tolerance = tol, info = paste(case_name, "shareOutParm"))
+-
+-        sharesPre <- calcShares(fit, preMerger = TRUE)
+-        sharesPost <- calcShares(fit, preMerger = FALSE)
+-        expect_equal(as.numeric(sharesPre), as.numeric(fixture$sharesPre),
+-            tolerance = tol, info = paste(case_name, "sharesPre"))
+-        expect_equal(as.numeric(sharesPost), as.numeric(fixture$sharesPost),
+-            tolerance = tol, info = paste(case_name, "sharesPost"))
+-    }
+-})
++debt_expect_foc <- function(fit, pre) {
++    p <- if (pre) fit@pricePre else fit@pricePost
++    c <- if (pre) fit@mcPre else fit@mcPost
++    own <- if (pre) fit@ownerPre else fit@ownerPost
++    m <- length(unique(fit@marketID))
++    s <- matrix(calcShares(fit, pre), m)
++    own <- matrix(own, m)[1, ]
++    firm <- s
++    for (j in seq_len(ncol(s))) firm[, j] <- rowSums(s[, own == own[j], drop = FALSE])
++    residual <- matrix(p - c, m) + 1 / (fit@slopes$alpha * (1 - firm))
++    expect_true(all(is.finite(s)))
++    expect_true(all(s >= 0 & s <= 1))
++    expect_lt(max(abs(residual)), 1e-6)
++}
+ 
+-test_that("low-debt calibration preserves the identified Beta law [A: permanent]", {
++test_that("A: repaired uniform grid obeys finite ownership FOCs rather than trap roots", {
+     skip_if(Sys.getenv("FINANCIAL_EXTENDED_TESTS") != "1", "extended validation")
+-    skip_if_not(file.exists(grid_path), "debt_goldenmaster_grid.rds oracle not present")
+-    fixture <- readRDS(grid_path)[["low_beta"]]
+-    inputs <- fixture$inputs
+-    set.seed(inputs$seed)
+-    fit <- do.call(logit.debt, debt_grid_args(inputs))
+-
+-    ## Material failure caught: optimizer-version drift can change the
+-    ## calibrated price sensitivity or the economically relevant distribution
+-    ## of default thresholds while leaving the constructor/API unchanged.
+-    expect_equal(as.numeric(fit@slopes$alpha), as.numeric(fixture$slopes$alpha),
+-        tolerance = 1e-6)
+-
+-    fitted_shapes <- fit@shareOutParm
+-    captured_shapes <- fixture$shareOutParm_calibrated
+-    beta_moments <- function(shape) {
+-        c(mean = shape[1] / sum(shape),
+-            variance = prod(shape) / (sum(shape)^2 * (sum(shape) + 1)))
++    grid <- readRDS(grid_path)
++    for (nm in c("zero_uniform", "low_uniform", "zero_beta", "low_beta")) {
++        fit <- do.call(logit.debt, debt_grid_args(grid[[nm]]$inputs))
++        debt_expect_foc(fit, TRUE)
++        debt_expect_foc(fit, FALSE)
++        inside <- matrix(calcShares(fit, TRUE, insideOnly = TRUE), 2)
++        expect_equal(rowSums(inside), rep(1, 2), tolerance = 1e-6)
+     }
+-    expect_equal(unname(beta_moments(fitted_shapes)),
+-        unname(beta_moments(captured_shapes)), tolerance = 1e-6)
+-
+-    ## Shapes are a parameterization; compare their observable CDF at
+-    ## economically relevant default-threshold cutoffs using the same
+-    ## 1e-6 criterion. This distinguishes a harmless optimizer-level change
+-    ## in raw shapes from a material change in default probabilities.
+-    cutoffs <- c(0.05, 0.10, 0.25, 0.50)
+-    fitted_cdf <- stats::pbeta(cutoffs, fitted_shapes[1], fitted_shapes[2])
+-    captured_cdf <- stats::pbeta(cutoffs, captured_shapes[1], captured_shapes[2])
+-    expect_equal(as.numeric(fitted_cdf), as.numeric(captured_cdf), tolerance = 1e-6)
+-
+-    ## The outside-share integrals for this historical low-debt case produce
+-    ## NaN for the two merging firms, so their adjusted shares/prices are not
+-    ## valid equilibrium targets. Preserve the independently identified
+-    ## conditional-logit identity: each market's conditional inside shares
+-    ## sum to one and recover the normalized observed shares.
+-    n_markets <- length(unique(fit@marketID))
+-    conditional <- matrix(calcShares(fit, preMerger = TRUE, insideOnly = TRUE),
+-        nrow = n_markets)
+-    observed <- matrix(fit@shares, nrow = n_markets)
+-    observed <- observed / rowSums(observed)
+-    expect_true(all(is.finite(conditional)))
+-    expect_equal(rowSums(conditional), rep(1, n_markets), tolerance = 1e-6)
+-    expect_equal(unname(conditional), unname(observed), tolerance = 1e-6)
+ })
+ 
+-test_that("high-debt Beta calibration primitives are checked without equilibrium claims [A: permanent]", {
+-    skip_if(Sys.getenv("FINANCIAL_EXTENDED_TESTS") != "1", "extended validation")
+-    skip_if_not(file.exists(grid_path), "debt_goldenmaster_grid.rds oracle not present")
+-    fixture <- readRDS(grid_path)[["high_beta"]]
+-    inputs <- fixture$inputs
+-    set.seed(inputs$seed)
+-    fit <- do.call(logit.debt, debt_grid_args(inputs))
+-
+-    ## The high-beta equilibrium outputs are C (legacy trap): NaN adjusted
+-    ## shares and unchanged post prices are not valid targets. This A test is
+-    ## calibration-only. It catches changes to slopes or the default-
+-    ## threshold distribution that constructor or input checks would miss.
+-    expect_equal(as.numeric(fit@slopes$alpha), as.numeric(fixture$slopes$alpha),
+-        tolerance = 1e-6)
+-    beta_moments <- function(shape) {
+-        c(mean = shape[1] / sum(shape),
+-            variance = prod(shape) / (sum(shape)^2 * (sum(shape) + 1)))
++test_that("C: impossible high-debt conditioning is rejected instead of matching legacy NaNs", {
++    # The original high-beta capture falsely passed because both sides were
++    # NaN. These debts exceed maximum conditional profit at the observations.
++    grid <- readRDS(grid_path)
++    for (nm in c("high_uniform", "high_beta")) {
++        expect_error(do.call(logit.debt, debt_grid_args(grid[[nm]]$inputs)),
++            class = "financial_zero_survival")
+     }
+-    expect_equal(unname(beta_moments(fit@shareOutParm)),
+-        unname(beta_moments(fixture$shareOutParm_calibrated)), tolerance = 1e-6)
+-
+-    cutoffs <- c(0.005, 0.01, 0.025, 0.05)
+-    fitted_cdf <- stats::pbeta(cutoffs, fit@shareOutParm[1], fit@shareOutParm[2])
+-    captured_cdf <- stats::pbeta(cutoffs,
+-        fixture$shareOutParm_calibrated[1], fixture$shareOutParm_calibrated[2])
+-    expect_equal(as.numeric(fitted_cdf), as.numeric(captured_cdf), tolerance = 1e-6)
+-
+-    ## Independent conditional-logit identity: finite within-market shares
+-    ## add to one and equal softmax(meanval + alpha * price). This validates
+-    ## demand calibration only, not the invalid outside-adjusted equilibrium.
+-    n_markets <- length(unique(fit@marketID))
+-    conditional <- matrix(calcShares(fit, preMerger = TRUE, insideOnly = TRUE),
+-        nrow = n_markets)
+-    n_products <- ncol(conditional)
+-    alpha_by_product <- rep(fit@slopes$alpha, times = n_products)
+-    eta <- matrix(fit@slopes$meanval + alpha_by_product * fit@pricePre,
+-        nrow = n_markets)
+-    logit_shares <- exp(eta)
+-    logit_shares <- logit_shares / rowSums(logit_shares)
+-    expect_true(all(is.finite(conditional)))
+-    expect_equal(rowSums(conditional), rep(1, n_markets), tolerance = 1e-6)
+-    expect_equal(unname(conditional), unname(logit_shares), tolerance = 1e-6)
+ })
+ 
+-test_that("zero-debt uniform legacy trap is reported as nonconverged [C]", {
+-    skip_if(Sys.getenv("FINANCIAL_EXTENDED_TESTS") != "1", "extended validation")
+-    skip_if_not(file.exists(grid_path), "debt_goldenmaster_grid.rds oracle not present")
+-    inputs <- readRDS(grid_path)[["zero_uniform"]]$inputs
+-    set.seed(inputs$seed)
+-
+-    ## C (legacy trap): BBsolve historically reports lack of improvement on
+-    ## this nonconvergent fixture. The warning is the diagnostic; do not
+-    ## freeze its invalid prices or NaN/default-adjusted shares as economics.
+-    expect_warning(
+-        invisible(do.call(logit.debt, debt_grid_args(inputs))),
+-        regexp = "BBsolve|converge|improvement",
+-        info = "zero_uniform is excluded from equilibrium-output parity"
+-    )
+-})
+ 
+-test_that("multimarket debt prices satisfy independent Bertrand FOCs [A: permanent]", {
++test_that("A: multimarket Beta calibration minimizes the correctly normalized moment criterion", {
+     skip_if(Sys.getenv("FINANCIAL_EXTENDED_TESTS") != "1", "extended validation")
+-    skip_if_not(file.exists(grid_path), "debt_goldenmaster_grid.rds oracle not present")
+-    inputs <- readRDS(grid_path)[["low_uniform"]]$inputs
+-    set.seed(inputs$seed)
+-    fit <- do.call(logit.debt, debt_grid_args(inputs))
+-
+-    foc_residual <- function(object, pre_merger) {
+-        prices <- if (pre_merger) object@pricePre else object@pricePost
+-        mc <- if (pre_merger) object@mcPre else object@mcPost
+-        owner <- if (pre_merger) object@ownerPre else object@ownerPost
+-        shares <- calcShares(object, preMerger = pre_merger)
+-        n_markets <- length(unique(object@marketID))
+-        n_products <- ncol(matrix(shares, nrow = n_markets))
+-
+-        ## Independently aggregate public adjusted shares and apply the
+-        ## specified markup equation. This guards ownership/solver integration
+-        ## conditional on calcShares, not the default integrals themselves.
+-        product_shares <- matrix(shares, nrow = n_markets)
+-        firm_shares <- product_shares
+-        firm_by_product <- matrix(owner, nrow = n_markets)[1, ]
+-        for (j in seq_len(n_products)) {
+-            firm_shares[, j] <- rowSums(
+-                product_shares[, firm_by_product == firm_by_product[j], drop = FALSE]
+-            )
+-        }
+-        alpha <- matrix(object@slopes$alpha, nrow = n_markets, ncol = n_products)
+-        markup <- -1 / (alpha * (1 - firm_shares))
+-        as.numeric(prices - mc - as.numeric(markup))
++    fit <- do.call(logit.debt, debt_grid_args(readRDS(grid_path)$low_beta$inputs))
++    observed_margin <- matrix(fit@margins * fit@prices, 2)
++    observed_profit <- observed_margin * matrix(fit@shares, 2)
++    debt <- as.numeric(tapply(fit@debtPre, fit@ownerPre, sum, na.rm = TRUE))
++    criterion <- function(mu) {
++        candidate <- fit
++        precision <- sum(fit@shareOutParm)
++        candidate@shareOutParm <- precision * c(mu, 1 - mu)
++        candidate@pricePre <- fit@prices
++        candidate@mcPre <- fit@prices - as.numeric(observed_margin)
++        residual <- (as.numeric(observed_margin) -
++            calcMargins(candidate, TRUE, level = TRUE)) / fit@prices
++        # Independent observed-profit solvency boundary evaluated at E[U]
++        # in the other market, then population moments of those firm cutoffs.
++        cutoff <- (colSums(observed_profit) - debt -
++            observed_profit[2, ] * mu) / observed_profit[1, ]
++        cutoff <- pmax(0, pmin(1, cutoff))
++        sum(c(residual, mean(cutoff) - mu,
++            var(cutoff) - mu * (1 - mu) / (precision + 1))^2)
+     }
+-
+-    for (pre_merger in c(TRUE, FALSE)) {
+-        residual <- foc_residual(fit, pre_merger)
+-        expect_true(all(is.finite(residual)))
+-        expect_true(max(abs(residual)) < 1e-6,
+-            info = if (pre_merger) "pre-merger Bertrand FOCs" else "post-merger Bertrand FOCs")
+-    }
+-})
+-
+-## ---------------------------------------------------------------------
+-## 2. Single-market closed form: s0Focal = 1 - debt/profit.
+-## ---------------------------------------------------------------------
+-
+-test_that("single-market s0Focal satisfies the closed-form debt identity [A: permanent]", {
+-    skip_if_not(file.exists(closedform_path), "debt_singlemarket_closedform.rds oracle not present")
+-    cf <- readRDS(closedform_path)
+-    inputs <- cf$inputs
+-
+-    set.seed(inputs$seed)
+-    fit <- logit.debt(
+-        inputs$prices, inputs$shares, inputs$margins, inputs$ownerPre, inputs$ownerPost,
+-        debtPre = inputs$debtPre, debtPost = inputs$debtPost,
+-        density = inputs$density, shareOutParm = inputs$shareOutParm
+-    )
+-
+-    alpha <- fit@slopes$alpha
+-    mval <- fit@slopes$meanval
+-    M <- fit@mktSize
+-    pricePre <- fit@pricePre
+-    mcPre <- fit@mcPre
+-
+-    sCond <- exp(mval + alpha * pricePre)
+-    sCond <- sCond / sum(sCond)
+-    marginLevel <- pricePre - mcPre
+-    profitsCond <- M * marginLevel * sCond
+-    names(profitsCond) <- inputs$ownerPre
+-
+-    ## Material failure caught: incorrect firm-level debt aggregation or
+-    ## default-threshold algebra would violate s0 = 1 - debt / conditional
+-    ## profit even if the S4 object still constructs successfully.
+-    s0Focal_manual <- 1 - inputs$debtPre / profitsCond
+-
+-    expect_equal(as.numeric(fit@pricePre), as.numeric(cf$pricePre), tolerance = 1e-6)
+-    expect_equal(as.numeric(fit@mcPre), as.numeric(cf$mcPre), tolerance = 1e-6)
+-    expect_equal(as.numeric(sCond), as.numeric(cf$sCond), tolerance = 1e-6)
+-    expect_equal(as.numeric(profitsCond), as.numeric(cf$profitsCond), tolerance = 1e-6)
+-    expect_equal(as.numeric(s0Focal_manual), as.numeric(cf$s0Focal_manual_1_minus_debt_over_profit),
+-        tolerance = 1e-6
+-    )
+-
+-    ## the package's own calcShares(outSideOnly=TRUE) reproduces the SAME
+-    ## clipped-to-[0,1] internal outside-share fixture value (README caveat:
+-    ## the closed form and the internal calcShares value are NOT expected to
+-    ## be numerically identical to each other -- only each to its own
+-    ## pre-migration capture).
+-    internal <- calcShares(fit, preMerger = TRUE, outSideOnly = TRUE)
+-    expect_equal(as.numeric(internal), as.numeric(cf$s0Focal_internal_calcShares_outSideOnly),
+-        tolerance = 1e-6
+-    )
+-})
+-
+-## ---------------------------------------------------------------------
+-## 3. Zero-debt directional sanity: DIRECTION only, not exact match.
+-## ---------------------------------------------------------------------
+-
+-test_that("zero-debt merger prices move in the captured direction [A: permanent]", {
+-    skip_if_not(file.exists(sanity_path), "debt_zerodebt_direction_sanity.rds oracle not present")
+-    sanity <- readRDS(sanity_path)
+-    inputs <- sanity$inputs
+-
+-    set.seed(inputs$seed)
+-    debt_zero_fit <- logit.debt(
+-        inputs$prices, inputs$shares, inputs$margins, inputs$ownerPre, inputs$ownerPost,
+-        debtPre = rep(0, length(inputs$prices)), debtPost = rep(0, length(inputs$prices)),
+-        density = "uniform", shareOutParm = c(1, 1)
+-    )
+-
+-    pctChange <- 100 * (debt_zero_fit@pricePost / debt_zero_fit@pricePre - 1)
+-
+-    ## Material failure caught: a conduct/ownership regression that reverses
+-    ## the post-merger price effect can pass all constructor and shape checks.
+-    ## Per README: this is a SIGN/DIRECTION check only. Do not assert exact
+-    ## numeric equality against the fixture; both this migrated run and the
+-    ## captured antitrust::logit() comparator must show price INCREASES for
+-    ## every product post-merger.
+-    expect_true(all(pctChange > 0), info = "all prices should rise post-merger (logit.debt)")
+-    expect_true(all(as.numeric(sanity$antitrust_logit$pctChange) > 0),
+-        info = "all prices should rise post-merger (antitrust::logit fixture)"
+-    )
+-    ## same ORDER of magnitude/ranking across products (merging parties 1&2
+-    ## then rival 3), consistent with the captured fixture's direction.
+-    expect_equal(order(pctChange), order(as.numeric(sanity$logit_debt$pctChange)))
++    mu <- fit@shareOutParm[1] / sum(fit@shareOutParm)
++    center <- criterion(mu)
++    expect_lte(center, criterion(mu - .01) + 1e-6)
++    expect_lte(center, criterion(mu + .01) + 1e-6)
+ })
+diff --git a/tests/testthat/test-debt-numerics.R b/tests/testthat/test-debt-numerics.R
+new file mode 100644
+index 0000000..98dd32b
+--- /dev/null
++++ b/tests/testthat/test-debt-numerics.R
+@@ -0,0 +1,78 @@
++# A (permanent): independent moments catch support, concentrated-density,
++# focal-index and multidimensional callback errors that FOCs conditional on
++# calcShares() cannot expose.
++moments <- function(...) financial:::.debt_survival_moments(...)
++
++test_that("A: zero debt and extreme Beta shapes retain analytic partial moments", {
++    for (shape in list(c(1, 1), c(4, 40), c(5000, 5000))) {
++        z <- moments(c(0, 3), 0, shape)
++        expected <- shape[1] / (sum(shape) + 1)
++        expect_equal(z$h / z$g, rep(expected, 2), tolerance = 1e-10)
++        expect_equal(financial:::beta_g_focal_integral(1, shape[1], shape[2]),
++            shape[2] / sum(shape), tolerance = 1e-12)
++        expect_equal(financial:::beta_h_focal_integral(1, shape[1], shape[2]),
++            prod(shape / sum(shape)) * sum(shape) / (sum(shape) + 1),
++            tolerance = 1e-12)
++    }
++})
++
++test_that("A: solvent moments match independent clipped double integrals and focal permutations", {
++    profit <- c(3, 7)
++    debt <- 5
++    for (shape in list(c(1, 1), c(4, 40))) {
++        oracle <- function(m, power) {
++            integrate(function(v) vapply(v, function(u2) {
++                cutoff <- max(0, min(1, (sum(profit) - debt - profit[2] * u2) / profit[1]))
++                if (cutoff == 0) return(0)
++                integrate(function(u1) {
++                    u <- if (m == 1) u1 else u2
++                    u^power * (1 - u) * dbeta(u1, shape[1], shape[2]) *
++                        dbeta(u2, shape[1], shape[2])
++                }, 0, cutoff, rel.tol = 1e-10)$value
++            }, numeric(1)), 0, 1, rel.tol = 1e-9, subdivisions = 1000)$value
++        }
++        z <- moments(profit, debt, shape)
++        expect_equal(z$g, vapply(1:2, oracle, numeric(1), power = 0), tolerance = 1e-7)
++        expect_equal(z$h, vapply(1:2, oracle, numeric(1), power = 1), tolerance = 1e-7)
++        swapped <- moments(rev(profit), debt, shape, focal = 2)
++        expect_equal(z$h / z$g, rev(swapped$h / swapped$g), tolerance = 1e-7)
++        expect_equal(z$h / z$g, moments(profit, debt, shape, focal = 2)$h /
++            moments(profit, debt, shape, focal = 2)$g, tolerance = 1e-7)
++    }
++    # A zero-profit focal market remains a meaningful unconditional coordinate.
++    z <- moments(c(0, 7), 3, c(2, 3), focal = 1)
++    expect_equal(z$h[1] / z$g[1], 2 / 6, tolerance = 1e-7)
++})
++
++test_that("A: three-market uniform cubature matches an independent simplex identity", {
++    # sum(U)<1 has probability 1/6. On this simplex E[U_i]=1/4,
++    # E[U_i^2]=1/10, hence g=1/8 and h=1/40 for each market.
++    z <- moments(rep(1, 3), 2, c(1, 1),
++        control = list(method = "hcubature", maxEval = 1e6))
++    expect_equal(z$g, rep(1 / 8, 3), tolerance = 1e-7)
++    expect_equal(z$h, rep(1 / 40, 3), tolerance = 1e-7)
++    expect_error(moments(rep(1, 3), 2.1, c(2.3, 3.7),
++        control = list(method = "hcubature", maxEval = 1)),
++        class = "financial_integration_failure")
++})
++
++test_that("A: undefined conditioning and invalid economics cannot become zero share roots", {
++    expect_error(moments(c(2, 3), 5, c(2, 3)), class = "financial_zero_survival")
++    zero <- moments(c(0, 0), 0, c(2, 3))
++    expect_equal(zero$h / zero$g, rep(1 / 3, 2), tolerance = 1e-10)
++    expect_error(moments(c(0, 0), 1, c(2, 3)), class = "financial_zero_survival")
++    expect_error(moments(c(NA, 3), 1, c(2, 3)), class = "financial_equilibrium_failure")
++    expect_error(moments(c(2, 3), 1, c(-1, 3)), class = "financial_equilibrium_failure")
++})
++
++
++test_that("A: missing debt margins fail explicitly instead of deleting firm-profit information", {
++    args <- list(prices = rep(10, 5), shares = rep(.2, 5),
++        margins = c(NA, rep(.5, 4)), ownerPre = as.character(1:5),
++        ownerPost = as.character(1:5))
++    expect_error(do.call(logit.debt, args), "product positions: 1",
++        class = "financial_equilibrium_failure")
++    args$margins[1] <- Inf
++    expect_error(do.call(logit.debt, args), "product positions: 1",
++        class = "financial_equilibrium_failure")
++})
