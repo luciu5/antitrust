@@ -157,7 +157,28 @@ setMethod(
     }
 
 
-    bestParms <- optim(parmStart, minDemand, method = "L-BFGS-B", lower = lowerB, upper = upperB)$par
+    ## The calibration objective divides by costs and inverse-demand slopes.
+    ## Zero bounds therefore let a finite-difference step evaluate Inf. Keep
+    ## those bounds inside the feasible domain, relative to the start's units,
+    ## and scale the optimizer so changing quantity units does not destabilize
+    ## otherwise identical markets. The calibration residuals are unchanged.
+    if (noCosts) {
+      lowerB[seq_len(nplants)] <- sqrt(.Machine$double.eps) * abs(capStart)
+    }
+    slope_index <- length(parmStart) - nprods + seq_len(nprods)
+    slope_floor <- sqrt(.Machine$double.eps) * abs(bStart)
+    if (output) {
+      upperB[slope_index] <- -slope_floor
+    } else {
+      lowerB[slope_index] <- slope_floor
+    }
+    bestParms <- optim(
+      parmStart, minDemand, method = "L-BFGS-B", lower = lowerB, upper = upperB,
+      control = list(
+        parscale = ifelse(parmStart == 0, 1, abs(parmStart)),
+        ndeps = rep(1e-6, length(parmStart)), maxit = 1000
+      )
+    )$par
 
     if (isTRUE(all.equal(bestParms[1:nplants], rep(0, nplants), check.names = FALSE))) {
       warning("Some plant-level cost parameters are close to 0.")
