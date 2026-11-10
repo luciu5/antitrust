@@ -1,0 +1,18 @@
+destination: .scratch/pkgdown
+navbar:
+  structure:
+    left: [intro, reference, articles]
+    right: [search, github]
+  components:
+    intro:
+      text: Get started
+      href: articles/Workflow.html
+articles:
+- title: Get started
+  navbar: ~
+  contents:
+  - Workflow
+- title: Models and extensions
+  contents:
+  - Models
+  - Architecture

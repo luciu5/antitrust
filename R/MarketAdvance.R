@@ -42,14 +42,7 @@ setMethod("advance_market", "Antitrust", function(model, step = NULL) {
         if (!identical(class(model)[[1L]], "Auction2ndLogit")) {
             stop("advance_market() requires a model-specific method for this second-score descendant")
         }
-        ## These are cost-relative score indices, not price-demand utilities.
-        ## Carry the solved index when changing its cost reference, using the
-        ## same effective-cost shift as calcShares(Auction2ndLogit).
-        delta <- .auction_effective_cost_delta(model)
-        outside_delta <- if (is.na(model@normIndex)) model@priceOutside else
-            delta[model@normIndex]
-        model@slopes$meanval <- model@slopes$meanval +
-            model@slopes$alpha * (delta - outside_delta)
+        ## .promote_post_to_pre() carries the cost-relative winning index.
     }
     model <- .promote_post_to_pre(model, step)
     model@mcDelta <- rep(0, length(model@mcPre))

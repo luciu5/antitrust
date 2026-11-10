@@ -8,7 +8,8 @@
 ## applies a proportional attractiveness shock under each demand family's
 ## normalization convention.
 ## These never call calibrate() and never touch structural parameters
-## (alpha/gamma/nests/...), except for an explicitly requested quality shock.
+## (alpha/gamma/nests/...), except for an explicitly requested quality shock
+## or a cost-reference rebase of the plain second-score Logit score index.
 
 setGeneric(".promote_post_to_pre", function(model, step) {
     standardGeneric(".promote_post_to_pre")
@@ -23,6 +24,20 @@ setGeneric(".promote_post_to_pre", function(model, step) {
 ## by the simulate() loop so later steps can extend the mask when products are
 ## exited or entered.
 setMethod(".promote_post_to_pre", "ANY", function(model, step) {
+    if (identical(class(model)[[1L]], "Auction2ndLogit")) {
+        if (is.na(model@normIndex) &&
+            !isTRUE(all.equal(as.numeric(model@priceOutside), 0))) {
+            stop("Sequential plain Logit auctions require a zero outside cost shock; nonzero outside cost shocks have no implemented revenue-state promotion.")
+        }
+        ## eta = value + alpha * effective cost is relative to this step's
+        ## pre-cost state. Carry the solved winning index before promoting
+        ## costs; otherwise the next pre-state silently restores old shares.
+        delta <- .auction_effective_cost_delta(model)
+        outside_delta <- if (is.na(model@normIndex)) model@priceOutside else
+            delta[model@normIndex]
+        model@slopes$meanval <- model@slopes$meanval +
+            model@slopes$alpha * (delta - outside_delta)
+    }
     slots <- methods::slotNames(model)
     if ("subset" %in% slots) {
         attr(model, "antitrust_subset_pre") <- model@subset

@@ -13,7 +13,11 @@ Choose a complete model with \code{\link{supportedModels}}.
 Use \code{\link{calibrate}} for observed-market calibration or
 \code{\link{specify}} when structural parameters are supplied, then
 \code{\link{counterfactual}} and \code{\link{simulate}} for a scenario.
-The package vignettes cover workflow, economic models, and extension design.
+Start with \code{vignette("Workflow", package = "antitrust")} for a
+merger workflow, then \code{vignette("Models", package = "antitrust")}
+for economic assumptions. Package authors can use
+\code{vignette("Architecture", package = "antitrust")} for fitted objects,
+dispatch, and extension boundaries.
 Direct model constructors remain available as compatibility and convenience
 interfaces. \code{\link{cmcr.bertrand}} and \code{\link{cmcr.cournot}}
 provide screening measures when a complete market fit is unavailable.

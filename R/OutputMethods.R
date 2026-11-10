@@ -772,7 +772,8 @@ setMethod(
       .auction_effective_cost_delta(object)
 
     if (preMerger) {
-      subset <- rep(TRUE, nprods)
+      subset <- attr(object, "antitrust_subset_pre", exact = TRUE)
+      if (is.null(subset)) subset <- rep(TRUE, nprods)
     } else {
       subset <- object@subset
     }

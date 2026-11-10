@@ -23,8 +23,10 @@ The answer is conditional on those inputs and assumptions. A different
 margin, diversion estimate, or conduct model can change recovered demand and
 costs, and therefore the predicted effect. Calibration does not provide
 sampling standard errors; checking plausible inputs and model choices is
-part of an economic analysis. The [workflow vignette](Workflow.html) shows
-how to use a fitted market. Here we explain what its fit means.
+part of an economic analysis. The [workflow vignette](Workflow.html) ([source](https://github.com/luciu5/antitrust/blob/master/vignettes/Workflow.Rmd)) shows
+how to use a fitted market. Read it first for an executable example; here we
+explain what its fit means. The [architecture guide](Architecture.html) ([source](https://github.com/luciu5/antitrust/blob/master/vignettes/Architecture.Rmd)) is for
+extension authors.
 
 ## From observed market to structural state
 
@@ -53,7 +55,9 @@ Partial ownership is handled with ownership weights.
 
 Observed shares and margins restrict the demand derivatives in this
 condition. The chosen demand system fills in the remaining structure and
-allows marginal costs to be recovered. A counterfactual then changes
+allows marginal costs to be recovered. A common parameter can leave
+discrepancies between supplied and implied margins, as the workflow example
+shows. These moment discrepancies are distinct from equilibrium solver error. A counterfactual then changes
 ownership or another market condition while holding the calibrated demand
 primitives fixed. Two demand systems can agree at the observed prices but
 predict different outcomes if their derivatives change differently away from
@@ -103,28 +107,12 @@ same, and it may lack a `specify()` route.
 
 ### Identification in observed synthetic markets
 
-The observed synthetic experiment begins with shares, ownership, marginal
-costs, and one proportional reference margin. One margin identifies a common
-Logit price coefficient or CES curvature under the listed standard conduct
-equations, but it does not identify every model in this table. Nested Logit
-also requires the caller to supply `nests` and named `parameters$sigma`;
-Linear Bertrand requires a relative `parameters$slopes` matrix. Bargaining
-power defaults to 0.5 per product unless `bargpowerPre` is supplied.
-PCAIDS Bertrand uses diversion proportional to share and aggregate elasticity
-`-1`; the reference margin identifies its remaining demand scale. In ALM
-Logit and CES models, the active-product shares sum to one conditional on
-participation. A separate passive outside share is supplied or drawn
-uniformly from 0.1 to 0.5. This supports Bertrand, Cournot, second-score
-auction, and bargaining observed inversions for both demand families.
-Nested Logit ALM Bertrand additionally uses supplied `nests` and named
-`parameters$sigma` for the within-nest substitution pattern.
-
-The registry's `observed_synthetic` column names implemented inversion
-handlers; `"unsupported"` means the route requires more anchors or different
-design state. The model-by-model reasons are recorded in
-`artifacts/observed_synthetic_market_redesign.md`. Calibration from observed
-prices remains available through `calibrate()` for other models, which is a
-different experiment.
+Observed synthetic experiments start from known costs, shares, ownership and
+one reference margin, then solve prices. That anchor does not identify every
+model: nests, relative slopes, capacities or bargaining state can require
+additional inputs. See `?synthetic_market` for the supported inversions and
+`?supportedModels` for the `observed_synthetic` capability. This is a different
+experiment from calibration using observed prices.
 
 ## Conduct and cost recovery
 
@@ -148,24 +136,27 @@ below uses its own equilibrium argument.
 ## Implemented combinations
 
 The demand and conduct descriptions above are a guide to choosing assumptions,
-not a menu of components that can be paired at will. The table below is
-generated from `supportedModels()` when this vignette is built. Each row is a
+not a menu of components that can be paired at will. The table below shows four standard Logit/CES routes selected from
+`supportedModels()` when this vignette is built. It is an illustrative selection,
+not the complete registry. Each row is a
 **complete implemented model**. `TRUE` means the listed lifecycle operation
 is available; `simulate()` still checks whether a particular scenario field
 is supported by that model.
 
 ```{r support-table, echo=FALSE}
 models <- antitrust::supportedModels()
+selected <- subset(models, demand %in% c("logit", "ces") &
+  conduct %in% c("bertrand", "cournot") & variant == "standard")
 knitr::kable(
-  models[c("demand", "conduct", "variant", "class",
-           "calibrate", "specify", "simulate")],
+  selected[c("demand", "conduct", "class", "calibrate", "specify", "simulate")],
   row.names = FALSE
 )
 ```
 
+Run `antitrust::supportedModels()` for the complete implementation list.
 The model registry identifies what can be fitted or simulated. A separate,
 narrower transition registry determines which fitted models can be translated
 with `respecify()`; an implemented row does not imply a transition from every
-other row. The [workflow vignette](Workflow.html) shows such comparisons, and
-the [architecture vignette](Architecture.html) explains the registry's role in
+other row. The [workflow vignette](Workflow.html) ([source](https://github.com/luciu5/antitrust/blob/master/vignettes/Workflow.Rmd)) shows such comparisons, and
+the [architecture vignette](Architecture.html) ([source](https://github.com/luciu5/antitrust/blob/master/vignettes/Architecture.Rmd)) explains the registry's role in
 dispatch and extensions.

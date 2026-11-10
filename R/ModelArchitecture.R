@@ -1198,7 +1198,9 @@ setGeneric("simulate", function(object, ...) standardGeneric("simulate"))
         if (!methods::is(model, "Logit") || isTRUE(model@output)) next
         for (pre in c(TRUE, FALSE)) {
             rates <- as.numeric(if (pre) model@pricePre else model@pricePost)
-            active <- if (pre) rep(TRUE, length(rates)) else model@subset
+            active <- if (pre) attr(model, "antitrust_subset_pre", exact = TRUE) else
+                model@subset
+            if (is.null(active)) active <- rep(TRUE, length(rates))
             if (length(active) != length(rates) || anyNA(active) || !any(active)) {
                 stop("Input price-level simulation has an invalid active-product map.")
             }

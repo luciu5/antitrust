@@ -101,8 +101,15 @@ getRetention <- function(object, preMerger = TRUE) {
 .auction_effective_cost_delta <- function(object) {
   pre_r <- getRetention(object, TRUE)
   post_r <- getRetention(object, FALSE)
-  if (all(pre_r == 1) && all(post_r == 1)) return(object@mcDelta)
   state <- attr(object, "antitrust_cost_state", exact = TRUE)
+  if (identical(class(object)[[1L]], "Auction2ndLogit") &&
+      is.list(state) && !is.null(state$base)) {
+    ## Plain Logit auction promotion carries eta to the current pre-cost
+    ## reference. mcDelta remains cumulative for physical cost bookkeeping,
+    ## so only the increment from that reference belongs in winning scores.
+    return(.persistent_mc(object, FALSE) - .persistent_mc(object, TRUE))
+  }
+  if (all(pre_r == 1) && all(post_r == 1)) return(object@mcDelta)
   if (is.list(state) && !is.null(state$base)) {
     return(.persistent_mc(object, FALSE) - .persistent_mc(object, TRUE))
   }

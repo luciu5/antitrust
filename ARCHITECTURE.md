@@ -1,9 +1,9 @@
-antitrust/refactor
+antitrust (master)
 ├── structural model lifecycle
 ├── counterfactual infrastructure
 ├── synthetic-market design + realization
 └── economic models
           |
           v
-trade/refactor
+trade (master)
 └── tariff/quota-specific extensions

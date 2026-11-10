@@ -1,3 +1,7 @@
+# antitrust 0.99.43.9000
+
+- Preserve plain Logit auction value indices, incremental cost shocks, and active products when advancing sequential counterfactuals. This maintains the solved post-state as the next baseline without recalibration.
+
 # antitrust 0.99.43
 
 - Keep homogeneous Cournot calibration inside its finite objective domain and scale optimization across price and quantity units.

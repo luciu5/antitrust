@@ -1,19 +1,26 @@
 ---
-title: "Classes, inheritance, and extending antitrust"
+title: "Fitted objects, dispatch, and extension boundaries"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Classes, inheritance, and extending antitrust}
+  %\VignetteIndexEntry{Fitted objects, dispatch, and extension boundaries}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This guide is for package authors who know S4 classes and method dispatch.
+Start with the [workflow guide](Workflow.html) ([source](https://github.com/luciu5/antitrust/blob/master/vignettes/Workflow.Rmd)) for ordinary model use.
 
 There are two things an extension must keep straight: the **economic model**
 that determines demand and firm behavior, and the **lifecycle** that takes
 that model from observed data to a fitted market and then to a
 counterfactual result. `antitrust` uses its established S4 model classes for
 the economics and provides a common lifecycle for asking new questions of a
-fit. The [workflow vignette](Workflow.html) shows that lifecycle in use; the
-[models vignette](Models.html) explains the economics behind it.
+fit. The [workflow vignette](Workflow.html) ([source](https://github.com/luciu5/antitrust/blob/master/vignettes/Workflow.Rmd)) shows that lifecycle in use; the
+[models vignette](Models.html) ([source](https://github.com/luciu5/antitrust/blob/master/vignettes/Models.Rmd)) explains the economics behind it.
 
 ## Objects in the lifecycle
 
@@ -77,6 +84,20 @@ the complete, current hierarchy.
 
 ## Public methods and dispatch
 
+Inspect the public class contract and available dispatch without printing
+whole method bodies:
+
+```{r dispatch}
+library(antitrust)
+names(methods::getSlots("StructuralFit"))
+methods::extends("AntitrustFit", "StructuralFit")
+methods::extends("CES", "Logit")
+methods::showMethods("simulate", classes = "AntitrustFit")
+```
+
+The two `TRUE` values establish inheritance, not economic equivalence.
+
+
 For result objects, `calcPrices()` and `calcMargins()` are the public price
 and margin interfaces. Other important generics include `calcShares()`,
 `calcQuantities()`, `elast()`, `diversion()`, `upp()`, `cmcr()`, `CV()`,
@@ -103,7 +124,7 @@ The fields accepted by `counterfactual()` are also checked against the
 selected model before solving. Entry, quality, capacity, bargaining, and
 leadership each require an implementation for that model.
 
-## Building an extension
+## Obligations of an extension
 
 Suppose a sibling package studies a policy or game outside antitrust's model
 registry. It can reuse the fitted-state lifecycle while defining its own
@@ -113,6 +134,19 @@ for its fit class, validate its counterfactual fields, and implement
 `simulate_steps()` if users should be able to resume paths. The base
 `StructuralFit` methods require those implementations; they do not supply
 economic behavior for an extension.
+
+| Public contract | Responsibility of the extension |
+|:--|:--|
+| `StructuralFit` subclass | Store valid model identity, primitives, observations and diagnostics. |
+| `simulate()` | Validate the scenario, solve the extension's economics and return its documented result. |
+| `respecify()` | State which primitives are retained or reconstructed; never hide a recalibration. |
+| `validate_counterfactual()` and `simulate_steps()` | Reject unsupported fields and define how solved state persists when a path resumes. |
+
+See `?"StructuralFit-class"`, `?simulate_steps` and
+`?validate_counterfactual` for callable contracts. Existing implementations in
+[StructuralFitMethods.R](https://github.com/luciu5/antitrust/blob/master/R/StructuralFitMethods.R)
+show dispatch boundaries; an extension must supply its own equilibrium solver.
+
 
 The sibling packages illustrate the boundary. `vertical` owns vertical
 bargaining models; `coordination` owns specialized price-leadership economics;
@@ -140,4 +174,5 @@ helpers, promotion functions, solver state, and unnamed attributes can
 change without preserving downstream behavior. The help pages for
 `StructuralFit`, `AntitrustFit`, `simulate_steps`, and
 `validate_counterfactual` describe the callable hooks. Maintainer context
-is in `ARCHITECTURE.md` and `artifacts/refactor_architecture.md`.
+is in the hosted
+[architecture notes](https://github.com/luciu5/antitrust/blob/master/ARCHITECTURE.md).

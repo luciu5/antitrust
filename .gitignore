@@ -34,3 +34,6 @@ ai/package_audit/latest/
 !ai/package_audit/release_workflows.py
 !ai/package_audit/test_release_workflows.py
 !ai/package_audit/check_release_workflows.py
+
+# Local documentation previews.
+/.scratch/pkgdown/

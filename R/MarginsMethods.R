@@ -517,7 +517,8 @@ setMethod(
 
     if (preMerger) {
       owner <- object@ownerPre
-      subset <- rep(TRUE, nprods)
+      subset <- attr(object, "antitrust_subset_pre", exact = TRUE)
+      if (is.null(subset)) subset <- rep(TRUE, nprods)
       prices <- object@pricePre
     } else {
       subset <- object@subset
@@ -525,7 +526,7 @@ setMethod(
       prices <- object@pricePost
     }
 
-    owner <- owner[subset, subset]
+    owner <- owner[subset, subset, drop = FALSE]
     alpha <- object@slopes$alpha
     shares <- calcShares(object, preMerger = preMerger, revenue = FALSE)
     shares <- shares[subset]
