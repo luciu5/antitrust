@@ -865,7 +865,9 @@ setMethod(
 
     priceStart <- priceStart[subset]
 
-    if (!output && class(object)[[1L]] %in% c("LogitBLP", "CournotBLP")) {
+    ## Every LogitBLP class except MonComBLP (which has its own conduct), so
+    ## subclasses solve the same level FOCs as their parent.
+    if (!output && !methods::is(object, "MonComBLP")) {
       ## Input-market level FOCs remain defined when a candidate rate crosses
       ## zero. Cournot chooses quantities, so its FOC uses inverse demand;
       ## Bertrand chooses rates and uses the direct demand Jacobian.
@@ -904,9 +906,10 @@ setMethod(
           return((active_mc - active_prices) -
                    as.vector((active_owner * t(inverse)) %*% shares))
         }
-        shares <- share_at(active_prices)
-        derivative <- numDeriv::jacobian(share_at,
-                                          as.numeric(active_prices))
+        changed <- model_at(active_prices)
+        shares <- as.numeric(calcShares(changed, preMerger, revenue = FALSE)[subset])
+        derivative <- elast(changed, preMerger, partial = TRUE)[
+          subset, subset, drop = FALSE]
         # Normalize by own share so tiny-market tail candidates cannot
         # satisfy an absolute residual while violating the pricing condition.
         (shares * diag(active_owner) - as.vector((t(derivative) * active_owner) %*%

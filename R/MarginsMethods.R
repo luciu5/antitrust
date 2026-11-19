@@ -57,13 +57,17 @@ setMethod(
 
     ## Revenue elasticities are singular at a zero rate or zero aggregate
     ## revenue. Physical share FOCs remain regular throughout the input domain.
-    if (level && class(object)[[1L]] %in%
-        c("Logit", "LogitNests", "LogitBLP") &&
+    ## By inheritance, so subclasses take the same branch as their parent.
+    ## CES extends Logit but calls this method for its own (revenue) FOCs.
+    if (level && methods::is(object, "Logit") && !methods::is(object, "CES") &&
         !isTRUE(object@output)) {
       shares <- calcShares(object, preMerger, revenue = FALSE)[subset]
       if (identical(class(object)[[1L]], "Logit")) {
         derivative <- object@slopes$alpha *
           (diag(shares, length(shares)) - tcrossprod(shares))
+      } else if (methods::is(object, "LogitBLP")) {
+        derivative <- elast(object, preMerger, partial = TRUE)[
+          subset, subset, drop = FALSE]
       } else {
         derivative <- numDeriv::jacobian(function(active_prices) {
           changed <- object
