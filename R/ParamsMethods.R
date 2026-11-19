@@ -815,22 +815,8 @@ setMethod(
           utilities <- utilities + char_random
         }
 
-        # Apply nesting parameter and prevent numeric overflow
-        maxUtil <- 700
-        utilities <- pmin(pmax(utilities / sigmaNest, -maxUtil), maxUtil)
-        expUtil <- exp(utilities)
-
-        # Calculate shares using nested logit formula
-        sumExpUtil <- rowSums(expUtil)
-        insideIV <- sumExpUtil^sigmaNest
-
-        withinNest <- expUtil / sumExpUtil
-        if (is.na(idx)) {
-          acrossNest <- insideIV / (1 + insideIV)
-        } else {
-          acrossNest <- rep(1, nDraws)
-        }
-        shares_draw <- withinNest * acrossNest
+        # Nested shares, computed exactly as calcShares() does
+        shares_draw <- .blp_nested_draw_shares(utilities, sigmaNest, outside = is.na(idx))
 
         predShares <- as.vector(crossprod(drawWeights, shares_draw))
 

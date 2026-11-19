@@ -624,22 +624,11 @@ setMethod(
     if (!is.null(object@slopes$char_random)) {
       util <- util + t(object@slopes$char_random)
     }
-    expUtil <- exp(util / sigmaNest)
-    expUtil[!subset, ] <- 0
-
-    # 5 Inside (within-nest) shares
-    sumExpUtil <- colSums(expUtil) # length nDraws
-    withinNest <- expUtil / matrix(sumExpUtil, nrow = nprods, ncol = nDraws, byrow = TRUE)
-
-    # 6 Across-nest (inside vs outside)
-    insideIV <- sumExpUtil^sigmaNest
-    if (is.na(object@normIndex)) {
-      acrossNest <- insideIV / (1 + insideIV)
-    } else {
-      acrossNest <- rep(1, nDraws)
-    }
-
-    shares_draw <- withinNest * matrix(acrossNest, nrow = nprods, ncol = nDraws, byrow = TRUE)
+    # 5 Nested shares per draw (draws x products in the kernel)
+    util_draws <- t(util)
+    util_draws[, !subset] <- -Inf
+    shares_draw <- t(.blp_nested_draw_shares(util_draws, sigmaNest,
+                                             outside = is.na(object@normIndex)))
 
     # 7 Aggregate or return full draws
     if (aggregate) {

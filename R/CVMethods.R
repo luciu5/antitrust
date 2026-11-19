@@ -186,10 +186,7 @@ setMethod(
       utilPre <- utilPre + char_random
     }
 
-    expUtilPre <- exp(utilPre / sigmaNest)
-    sumExpUtilPre <- rowSums(expUtilPre)
-    insideIVPre <- sumExpUtilPre^sigmaNest
-    VPre <- log(1 + insideIVPre)
+    VPre <- .blp_log1pexp(.blp_nested_log_inclusive(utilPre, sigmaNest))
 
     ## -------- Post-merger utility --------
     utilPost <- outer(alphas, (object@pricePost - object@priceOutside))
@@ -201,10 +198,7 @@ setMethod(
       utilPost <- utilPost + char_random
     }
 
-    expUtilPost <- exp(utilPost / sigmaNest)
-    sumExpUtilPost <- rowSums(expUtilPost)
-    insideIVPost <- sumExpUtilPost^sigmaNest
-    VPost <- log(1 + insideIVPost)
+    VPost <- .blp_log1pexp(.blp_nested_log_inclusive(utilPost, sigmaNest))
 
     ## -------- Compensating Variation --------
     cvInd <- output * (VPost - VPre) / alphas

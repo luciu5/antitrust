@@ -611,3 +611,37 @@ calcBLPintegration <- function(slopes) {
         x[[which(cweights >= probability)[1L]]]
     }, numeric(1))
 }
+
+
+## Per-draw nested-logit (one nest) shares from a draws x products utility
+## matrix, -Inf marking unavailable products. Each draw is shifted by its
+## largest utility before exponentiating, so large utilities cannot overflow:
+##   s_j = (e_j / H) * H^sigma / (1 + H^sigma)   (outside good),
+##   s_j =  e_j / H                              (no outside good),
+## with e_j = exp(u_j / sigma) and H = sum_k e_k.
+.blp_nested_draw_shares <- function(util, sigmaNest, outside = TRUE) {
+    v <- util / sigmaNest
+    m <- .blp_row_max(v)
+    e <- exp(v - m)
+    h <- rowSums(e)
+    within <- e / h
+    if (!outside) return(within)
+    within * stats::plogis(sigmaNest * (log(h) + m))
+}
+
+## sigma * log H per draw (the log inclusive value of the inside nest).
+.blp_nested_log_inclusive <- function(util, sigmaNest) {
+    v <- util / sigmaNest
+    m <- .blp_row_max(v)
+    sigmaNest * (log(rowSums(exp(v - m))) + m)
+}
+
+## Row maxima, 0 for rows with no finite entry (all products unavailable).
+.blp_row_max <- function(v) {
+    m <- v[cbind(seq_len(nrow(v)), max.col(v, ties.method = "first"))]
+    m[!is.finite(m)] <- 0
+    m
+}
+
+## log(1 + exp(x)) without overflow.
+.blp_log1pexp <- function(x) ifelse(x > 0, x + log1p(exp(-x)), log1p(exp(x)))

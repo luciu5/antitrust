@@ -5,6 +5,7 @@
 - Solve input-market (signed-rate) BLP level FOCs and level margins with the analytic share Jacobian from `elast(partial = TRUE)` instead of a numerical Jacobian of `calcShares()`.
 - Select the input-market level-FOC solver and level margins by inheritance rather than exact class name, so subclasses of `LogitBLP` (and `Logit`) are solved like their parent classes.
 - Fix nested shares in the `calcMeanval()` BLP contraction, which omitted the within-nest factor `H^(sigmaNest - 1)`; nested models now recover mean utilities consistent with `calcShares()`.
+- Compute BLP nested shares and log inclusive values with one max-shifted kernel in `calcShares()`, `calcSlopes()`, `calcMeanval()` and `CV()`, so draws with utilities beyond the range of `exp()` stay finite and calibration no longer clips utilities at +/-700.
 
 # antitrust 0.99.43
 

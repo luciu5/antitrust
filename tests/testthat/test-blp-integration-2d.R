@@ -380,3 +380,36 @@ test_that("advanced BLP conduct routing is explicit and truthful", {
         )
     }
 })
+
+
+test_that("nested BLP shares, calibration and CV stay finite beyond exp()'s range", {
+    ## Guards the shared max-shifted nested share kernel: when some draws have
+    ## u / sigmaNest above ~709 (here a wide price coefficient in an input
+    ## market), unshifted exp() overflows calcShares and CV to NaN, while
+    ## calibration used to clip utilities at +/-700, i.e. a different model.
+    meanval <- c(.5, .2, -.1)
+    fit <- suppressMessages(suppressWarnings(specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1), shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"), insideSize = 100, output = FALSE,
+        parameters = list(
+            alpha = 1.5, sigma = 30, meanval = meanval, sigmaNest = .2,
+            integration = "gauss-hermite", nNodes = 5L
+        )
+    )))
+    model <- fit@model
+    expect_gt(max(outer(model@slopes$alphas, model@pricePre) / .2), 709)
+    shares <- as.vector(calcShares(model))
+    expect_true(all(is.finite(shares)) && all(shares > 0) && sum(shares) < 1)
+    expect_true(all(is.finite(elast(model, partial = TRUE))))
+    post <- model
+    post@pricePost <- model@pricePre - .2
+    expect_true(is.finite(CV(post)))
+    model@shares <- shares
+    model@shareInside <- sum(shares)
+    model@slopes$meanval <- NULL
+    model@slopes$contractionMaxIter <- 50000  # the damped map is slow at sigmaNest = .2
+    recalibrated <- suppressMessages(suppressWarnings(calcSlopes(model)))
+    expect_equal(as.vector(calcShares(recalibrated)), shares, tolerance = 1e-8)
+    expect_equal(unname(recalibrated@slopes$meanval), meanval, tolerance = 1e-6)
+})

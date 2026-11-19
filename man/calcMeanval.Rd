@@ -27,7 +27,7 @@ The object with updated \code{slopes$meanval} (the delta vector) and
 }
 \details{
 Implements the BLP contraction mapping
-delta^(t+1) = delta^(t) + log(s_observed) - log(s_predicted(delta^(t))),
+delta^(t+1) = delta^(t) + sigmaNest * (log(s_observed) - log(s_predicted(delta^(t)))),
 using \code{BB::dfsane} for robust convergence with a fallback to a dampened
 fixed point. Handles nesting (sigmaNest) and demographic interactions
 (piDemog).

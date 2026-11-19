@@ -27,7 +27,7 @@ setGeneric(
 
 #' @rdname calcMeanval
 #' @details Implements the BLP contraction mapping
-#' delta^(t+1) = delta^(t) + log(s_observed) - log(s_predicted(delta^(t))),
+#' delta^(t+1) = delta^(t) + sigmaNest * (log(s_observed) - log(s_predicted(delta^(t)))),
 #' using \code{BB::dfsane} for robust convergence with a fallback to a dampened
 #' fixed point. Handles nesting (sigmaNest) and demographic interactions
 #' (piDemog).
@@ -180,21 +180,9 @@ setMethod(
           utilities <- utilities + char_random
         }
 
-        # Prevent numeric overflow
-        maxUtil <- 700
-        utilities <- pmin(pmax(utilities/sigmaNest, -maxUtil), maxUtil)
-        expUtil <- exp(utilities)
-
-        ## Nested shares: within-nest share x inside share,
-        ## (e_j / H) * H^sigma / (1 + H^sigma) with an outside good.
-        sumExpUtil <- rowSums(expUtil)
-        insideIV <- sumExpUtil^sigmaNest
-        if (is.na(idx)) {
-          denom <- 1 + insideIV
-        } else {
-          denom <- insideIV
-        }
-        predShares <- as.vector(crossprod(drawWeights, expUtil * (insideIV / sumExpUtil) / denom))
+        # Nested shares, computed exactly as calcShares() does
+        predShares <- as.vector(crossprod(drawWeights,
+          .blp_nested_draw_shares(utilities, sigmaNest, outside = is.na(idx))))
 
         ## As in calcSlopes: the sigmaNest step keeps the nested map a contraction.
         return(delta + sigmaNest * (log(shares) - log(predShares)))
