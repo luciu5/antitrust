@@ -201,53 +201,28 @@ setMethod(
       partial_deriv <- diag(drop(S %*% a)) -
         sweep(S, 2L, a, "*") %*% t(S)
     } else {
-      # Nested BLP derivatives retain the draw loop because their
-      # within-nest terms do not reduce to the flat Logit Jacobian.
-      shares_draw[is.na(shares_draw)] <- 0
-
-      # Group shares for each draw (only include active products)
-      s_g <- colSums(shares_draw * matrix(subset, nrow = nprods, ncol = nDraws))
-
-      # Conditional shares within group for each draw
-      s_jg <- sweep(shares_draw, 2, s_g, "/")
-      s_jg[is.na(s_jg) | is.infinite(s_jg)] <- 0 # Handle division by zero
-
-      # Common terms for derivatives
+      ## Nested (one-nest) draw Jacobians, aggregated over draws by matrix
+      ## products. Per draw r, with inside share s_g and within-nest shares
+      ## s_j|g: d s_j / d p_k = alpha_r * s_j * s_k * term3 off the diagonal,
+      ## where term3 = 1/s_g - 1 - (1/sigma)/s_g, and
+      ## alpha_r * s_j * (1/sigma + s_j|g * term2) on it, term2 = 1 - 1/sigma - s_g.
+      ## Since s_j s_k term3 = s_j|g s_k|g s_g term2, the cross term needs no
+      ## division by s_g, so a draw whose inside shares underflow to zero
+      ## contributes zero rather than NaN.
+      S <- shares_draw
+      S[is.na(S)] <- 0
+      S[!subset, ] <- 0
+      s_g <- colSums(S)
+      S_jg <- sweep(S, 2L, s_g, "/")
+      S_jg[!is.finite(S_jg)] <- 0
       inv_sigma <- 1 / sigmaNest
-      term2 <- 1 - inv_sigma - s_g # Length nDraws
-      term3 <- 1 / s_g - 1 - inv_sigma / s_g # Length nDraws
-
-      # Replace infinities with zeros
-      term3[is.infinite(term3)] <- 0
-
-      partial_deriv <- matrix(0, nrow = nprods, ncol = nprods)
-
-      # Calculate average partial derivatives across draws
-      for (r in 1:nDraws) {
-        # Only calculate for active products
-        active_r <- subset & (!is.na(shares_draw[, r]))
-
-        if (sum(active_r) > 0) { # Skip if no active products in this draw
-          # Outer product of shares for cross-derivatives
-          share_outer <- outer(shares_draw[, r], shares_draw[, r])
-
-          # Cross-derivatives for this draw
-          cross_deriv <- alphas[r] * share_outer * term3[r]
-
-          # Own-derivatives for this draw
-          own_deriv <- alphas[r] * shares_draw[, r] * (inv_sigma + s_jg[, r] * term2[r])
-
-          # Combine into full matrix for this draw
-          deriv_r <- cross_deriv
-          diag(deriv_r) <- own_deriv
-
-          # Mask out inactive products
-          deriv_r <- deriv_r * outer(active_r, active_r)
-
-          # Add to average
-          partial_deriv <- partial_deriv + deriv_r * draw_weights[r]
-        }
-      }
+      term2 <- 1 - inv_sigma - s_g
+      a <- draw_weights * alphas
+      partial_deriv <- tcrossprod(sweep(S_jg, 2L, a * s_g * term2, "*"), S_jg)
+      diag(partial_deriv) <- drop(
+        (S * (inv_sigma + S_jg * matrix(term2, nrow = nprods, ncol = nDraws, byrow = TRUE))) %*% a
+      )
+      partial_deriv <- partial_deriv * outer(subset, subset)
     }
 
     # If market elasticity is requested
