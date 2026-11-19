@@ -413,3 +413,37 @@ test_that("nested BLP shares, calibration and CV stay finite beyond exp()'s rang
     expect_equal(as.vector(calcShares(recalibrated)), shares, tolerance = 1e-8)
     expect_equal(unname(recalibrated@slopes$meanval), meanval, tolerance = 1e-6)
 })
+
+
+test_that("the SQUAREM BLP contraction matches the damped one and settings persist", {
+    ## Guards the opt-in contractionMethod = "squarem" (same fixed point as the
+    ## default damped map) and that calcSlopes keeps the contraction settings it
+    ## used to drop when rebuilding slopes.
+    fit <- suppressMessages(suppressWarnings(specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1), shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"), insideSize = 100,
+        parameters = list(
+            alpha = -1.5, sigma = .2, meanval = c(.5, .2, -.1), sigmaNest = .5,
+            piDemog = .3, demogMean = .2, demogCov = matrix(.64, 1L, 1L),
+            integration = "gauss-hermite", nNodes = 5L
+        )
+    )))
+    model <- fit@model
+    model@shares <- as.vector(calcShares(model))
+    model@shareInside <- sum(model@shares)
+    model@slopes$meanval <- NULL
+    model@slopes$contractionTol <- 1e-13
+    model@slopes$contractionMaxIter <- 20000
+    damped <- suppressMessages(suppressWarnings(calcSlopes(model)))
+    model@slopes$contractionMethod <- "squarem"
+    accelerated <- suppressMessages(suppressWarnings(calcSlopes(model)))
+    expect_equal(unname(accelerated@slopes$meanval), unname(damped@slopes$meanval), tolerance = 1e-8)
+    expect_equal(as.vector(calcShares(accelerated)), model@shares, tolerance = 1e-10)
+    expect_identical(accelerated@slopes$contractionMethod, "squarem")
+    expect_identical(accelerated@slopes$contractionTol, 1e-13)
+    expect_identical(accelerated@slopes$contractionMaxIter, 20000)
+    expect_null(damped@slopes$contractionMethod)
+    model@slopes$contractionMethod <- "newton"
+    expect_error(suppressMessages(calcSlopes(model)), "should be one of")
+})

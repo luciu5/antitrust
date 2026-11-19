@@ -832,15 +832,29 @@ setMethod(
         object@slopes$contractionMaxIter, 1200
       )
 
+      ## "damped" (default): the damped fixed point below. "squarem": SQUAREM
+      ## acceleration of the same map, falling back to the damped iteration if
+      ## it does not converge.
+      method <- if (!is.null(object@slopes$contractionMethod)) object@slopes$contractionMethod else "damped"
+      method <- match.arg(method, c("damped", "squarem"))
+
       message(
-        "Running BLP contraction (tol=", sprintf("%.0e", tol),
+        "Running BLP contraction (", method, ", tol=", sprintf("%.0e", tol),
         ", maxIter=", maxIter, ")..."
       )
 
       dampFactor <- 0.5
       delta <- log(shares) + log(object@insideSize)
 
-      for (iter in 1:maxIter) {
+      accelerated <- if (identical(method, "squarem")) {
+        tryCatch(SQUAREM::squarem(delta, fixptfn = fpFunction,
+                                  control = list(tol = tol, maxiter = maxIter)),
+                 error = function(e) NULL)
+      }
+      if (!is.null(accelerated) && isTRUE(accelerated$convergence) && all(is.finite(accelerated$par))) {
+        delta <- accelerated$par
+        message("BLP contraction converged in ", accelerated$fpevals, " map evaluations (SQUAREM)")
+      } else for (iter in 1:maxIter) {
         deltaNew <- fpFunction(delta)
         absDiff <- max(abs(deltaNew - delta))
         relDiff <- max(abs((deltaNew - delta) / (abs(delta) + 1e-8)))
@@ -852,7 +866,7 @@ setMethod(
         }
         delta <- delta + dampFactor * (deltaNew - delta)
       }
-      if (iter == maxIter) {
+      if (exists("iter", inherits = FALSE) && iter == maxIter) {
         warning("BLP contraction mapping did not converge within ", maxIter, " iterations")
       }
 
@@ -905,6 +919,10 @@ setMethod(
         integration$nodesPerAxis
       } else NULL
     )
+    ## Contraction settings persist (only when set), so recalibrating uses the same rule.
+    for (setting in c("contractionTol", "contractionMaxIter", "contractionMethod")) {
+      slopes_list[[setting]] <- object@slopes[[setting]]
+    }
 
     # Add characteristic parameters if they exist
     # Only save char_random when we have characteristics to avoid dimension errors
