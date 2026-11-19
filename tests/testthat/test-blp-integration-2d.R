@@ -281,6 +281,33 @@ test_that("calcMeanval contracts over the stored two-dimensional rule", {
 })
 
 
+test_that("calcMeanval recovers nested BLP mean utilities from shares", {
+    ## Guards the nested share in calcMeanval's contraction, which omitted the
+    ## H^(sigma - 1) factor: only sigmaNest = 1 was correct, so a nested model's
+    ## recovered meanval missed the observed shares.
+    meanval <- c(.5, .2, -.1)
+    fit <- suppressMessages(suppressWarnings(specify(
+        demand = "blp", conduct = "bertrand",
+        prices = c(1.5, 1.8, 2.1), shares = c(.30, .25, .15),
+        ownerPre = c("A", "B", "C"), insideSize = 100,
+        parameters = list(
+            alpha = -1.5, sigma = .2, meanval = meanval, sigmaNest = .5,
+            piDemog = .3, demogMean = .2,
+            demogCov = matrix(.64, 1L, 1L),
+            integration = "gauss-hermite", nNodes = 5L
+        )
+    )))
+    model <- fit@model
+    target <- as.vector(calcShares(model))
+    model@shares <- target
+    model@shareInside <- sum(target)
+    model@slopes$meanval <- NULL
+    contracted <- suppressMessages(suppressWarnings(calcMeanval(model)))
+    expect_equal(as.vector(calcShares(contracted)), target, tolerance = 1e-8)
+    expect_equal(unname(contracted@slopes$meanval), meanval, tolerance = 1e-7)
+})
+
+
 test_that("legacy materialized vector states retain every heterogeneous component", {
     fit <- suppressMessages(suppressWarnings(specify(
         demand = "blp", conduct = "bertrand",

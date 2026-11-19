@@ -185,6 +185,8 @@ setMethod(
         utilities <- pmin(pmax(utilities/sigmaNest, -maxUtil), maxUtil)
         expUtil <- exp(utilities)
 
+        ## Nested shares: within-nest share x inside share,
+        ## (e_j / H) * H^sigma / (1 + H^sigma) with an outside good.
         sumExpUtil <- rowSums(expUtil)
         insideIV <- sumExpUtil^sigmaNest
         if (is.na(idx)) {
@@ -192,9 +194,10 @@ setMethod(
         } else {
           denom <- insideIV
         }
-        predShares <- as.vector(crossprod(drawWeights, expUtil / denom))
+        predShares <- as.vector(crossprod(drawWeights, expUtil * (insideIV / sumExpUtil) / denom))
 
-        return(delta + log(shares) - log(predShares))
+        ## As in calcSlopes: the sigmaNest step keeps the nested map a contraction.
+        return(delta + sigmaNest * (log(shares) - log(predShares)))
       }
 
       # Initial guess
