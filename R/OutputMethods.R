@@ -625,10 +625,9 @@ setMethod(
       util <- util + t(object@slopes$char_random)
     }
     # 5 Nested shares per draw (draws x products in the kernel)
-    util_draws <- t(util)
-    util_draws[, !subset] <- -Inf
-    shares_draw <- t(.blp_nested_draw_shares(util_draws, sigmaNest,
-                                             outside = is.na(object@normIndex)))
+    util[!subset, ] <- -Inf
+    shares_draw <- .blp_nested_draw_shares(util, sigmaNest,
+                                           outside = is.na(object@normIndex), draws_in = "cols")
 
     # 7 Aggregate or return full draws
     if (aggregate) {

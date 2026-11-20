@@ -613,27 +613,44 @@ calcBLPintegration <- function(slopes) {
 }
 
 
-## Per-draw nested-logit (one nest) shares from a draws x products utility
-## matrix, -Inf marking unavailable products. Each draw is shifted by its
-## largest utility before exponentiating, so large utilities cannot overflow:
+## Per-draw nested-logit (one nest) shares from a utility matrix with draws in
+## rows (draws_in = "rows") or columns ("cols"); -Inf marks unavailable
+## products:
 ##   s_j = (e_j / H) * H^sigma / (1 + H^sigma)   (outside good),
 ##   s_j =  e_j / H                              (no outside good),
-## with e_j = exp(u_j / sigma) and H = sum_k e_k.
-.blp_nested_draw_shares <- function(util, sigmaNest, outside = TRUE) {
-    v <- util / sigmaNest
-    m <- .blp_row_max(v)
-    e <- exp(v - m)
-    h <- rowSums(e)
-    within <- e / h
+## with e_j = exp(u_j / sigma) and H = sum_k e_k. The unshifted formula is used
+## unless some draw's nest sum overflows or underflows, in which case that
+## computation is redone with each draw shifted by its largest utility.
+.blp_nested_draw_shares <- function(util, sigmaNest, outside = TRUE, draws_in = c("rows", "cols")) {
+    by_col <- identical(match.arg(draws_in), "cols")
+    nest <- .blp_nest_sums(util, sigmaNest, by_col)
+    if (by_col) {
+        by_draw <- function(x) matrix(x, nrow = nrow(util), ncol = ncol(util), byrow = TRUE)
+        within <- nest$e / by_draw(nest$h)
+        if (!outside) return(within)
+        return(within * by_draw(stats::plogis(sigmaNest * nest$log_h)))
+    }
+    within <- nest$e / nest$h
     if (!outside) return(within)
-    within * stats::plogis(sigmaNest * (log(h) + m))
+    within * stats::plogis(sigmaNest * nest$log_h)
 }
 
-## sigma * log H per draw (the log inclusive value of the inside nest).
+## sigma * log H per draw (rows), the log inclusive value of the inside nest.
 .blp_nested_log_inclusive <- function(util, sigmaNest) {
+    sigmaNest * .blp_nest_sums(util, sigmaNest, FALSE)$log_h
+}
+
+## exp(u / sigma), per-draw sums H and log H; shifted by each draw's maximum
+## only if an unshifted sum is not finite and positive.
+.blp_nest_sums <- function(util, sigmaNest, by_col) {
+    e <- exp(util / sigmaNest)
+    h <- if (by_col) colSums(e) else rowSums(e)
+    if (all(is.finite(h) & h > 0)) return(list(e = e, h = h, log_h = log(h)))
     v <- util / sigmaNest
-    m <- .blp_row_max(v)
-    sigmaNest * (log(rowSums(exp(v - m))) + m)
+    m <- .blp_row_max(if (by_col) t(v) else v)
+    e <- exp(if (by_col) sweep(v, 2L, m) else v - m)
+    h <- if (by_col) colSums(e) else rowSums(e)
+    list(e = e, h = h, log_h = log(h) + m)
 }
 
 ## Row maxima, 0 for rows with no finite entry (all products unavailable).
