@@ -62,7 +62,11 @@ setMethod(
     if (level && methods::is(object, "Logit") && !methods::is(object, "CES") &&
         !isTRUE(object@output)) {
       shares <- calcShares(object, preMerger, revenue = FALSE)[subset]
-      if (identical(class(object)[[1L]], "Logit")) {
+      ## Closed form whenever the shares are plain Logit's (Logit and
+      ## subclasses that inherit calcShares,Logit, such as LogitALM).
+      logit_shares <- identical(
+        methods::selectMethod("calcShares", class(object))@defined[[1L]], "Logit")
+      if (logit_shares) {
         derivative <- object@slopes$alpha *
           (diag(shares, length(shares)) - tcrossprod(shares))
       } else if (methods::is(object, "LogitBLP")) {
