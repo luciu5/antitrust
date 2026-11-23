@@ -980,6 +980,27 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
     }
     model@mcPost <- calcMC(model, preMerger = FALSE)
 
+    if (identical(solver, "zeta")) {
+        # A downstream Logit bargaining subclass can supply its own markup.
+        # Use it only when its ordinary price method solves that level-margin FOC.
+        inherited_bargaining <- identical(fit@spec$conduct, "bargaining") &&
+            identical(fit@spec$demand, "logit") &&
+            identical(unname(as.character(methods::selectMethod("calcPrices",
+                class(model)[[1L]])@defined)), "Logit")
+        if (!inherited_bargaining && !class(model)[[1L]] %in% c("Logit", "CES", "LogitBLP", "LogitCournot",
+                                       "CESCournot", "MonComLogit", "MonComCES", "MonComBLP",
+                                       "BargainingLogit", "BargainingCES", "BargainingBLP"))
+            stop("solver = 'zeta' is unavailable for this demand and conduct combination.")
+        if (!isMax && !length(dots)) {
+            price <- tryCatch(.zeta_prices(model, inherited_bargaining), error = function(e) NULL,
+                              warning = function(w) NULL)
+            if (!is.null(price)) {
+                model@pricePost <- price
+                return(model)
+            }
+        }
+        solver <- NULL
+    }
     if (identical(fit@spec$conduct, "bertrand")) {
         if (is.null(solver)) solver <- fit@diagnostics$solver
         solver <- match.arg(solver, c("nleqslv", "ag"))
@@ -1054,6 +1075,8 @@ specify <- function(demand, conduct = NULL, prices, parameters, ownerPre,
 #' @param steps The ordered `CounterfactualStep` objects to solve next.
 #' @param cumulative_costs For `AntitrustFit`, the compounded cost shock
 #'   carried over from the path's previous steps.
+#' @param solver,isMax Solver selection and maximum check carried forward
+#'   when resuming an \code{AntitrustFit} path. See \code{\link{simulate}}.
 #' @param ... Additional family-specific resume state.
 #' @return A list whose `results` element is a list of legacy S4 results,
 #'   one per step, in order. Additional elements are family-specific.
@@ -1065,17 +1088,20 @@ setGeneric("simulate_steps", function(object, last_result, steps, ...) {
 #' @rdname simulate_steps
 #' @export
 setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
-                                                     cumulative_costs = NULL, ...) {
+                                                     cumulative_costs = NULL, solver = NULL,
+                                                     isMax = FALSE, ...) {
     last_step <- steps[[1L]]
     state <- .promote_post_to_pre(last_result, last_step)
-    .model_simulate_steps(object, state, steps, initial_costs = cumulative_costs)
+    .model_simulate_steps(object, state, steps, initial_costs = cumulative_costs,
+                          solver = solver, isMax = isMax)
 })
 
 ## Solve every step of a multi-step Counterfactual in order, promoting the
 ## solved state between steps so step t+1 begins from step t's equilibrium
 ## (never resetting to the originally calibrated baseline).  Returns a list
 ## of legacy S4 results, one per step.
-.model_simulate_steps <- function(fit, initial_model, steps, initial_costs = NULL) {
+.model_simulate_steps <- function(fit, initial_model, steps, initial_costs = NULL,
+                                  solver = NULL, isMax = FALSE) {
     state <- initial_model
     cumulative_costs <- initial_costs
     results <- vector("list", length(steps))
@@ -1106,12 +1132,15 @@ setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
             exit = changes$exit,
             capacitiesPost = changes$capacity,
             bargpowerPost = changes$bargaining,
-            dots = dots
+            solver = solver, isMax = isMax, dots = dots
         )
         results[[i]] <- result
         state <- .promote_post_to_pre(result, step)
     }
-    list(results = results, cumulative_costs = cumulative_costs)
+    out <- list(results = results, cumulative_costs = cumulative_costs)
+    if (!is.null(solver)) out$solver <- solver
+    if (isMax) out$isMax <- TRUE
+    out
 }
 
 #' Simulate a counterfactual from a calibrated structural model
@@ -1150,12 +1179,17 @@ setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
 #' @param revenueRetentionPost Optional positive seller revenue-retention
 #'   vector for a one-step counterfactual.
 #' @param solver Optional solver override.  The calibration solver is reused
-#'   by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.
+#'   by default for Logit-Bertrand.
+#'   For flat Logit and CES, \code{solver = "zeta"} uses a checked price update
+#'   for Bertrand, Cournot, or bargaining and a direct solution for monopolistic competition.
+#'   The update requires an outside good. CES Cournot uses output-market equations. Unnested BLP supports
+#'   input and output Bertrand, bargaining, and monopolistic competition.
+#'   The model's usual solver takes over if the update is inapplicable or fails
+#'   the level pricing conditions.
 #' @param isMax Whether to run the existing local profit-maximum check.
-#' @param price_domain Input price-level simulation domain. The default
-#'   `"positive"` rejects a nonpositive solved rate; `"real"` retains finite
-#'   negative or zero rates for flat/nested/capacity Logit and BLP demand.
-#'   Demand systems using log-prices or price powers remain positive-only.
+#' @param price_domain Counterfactual price domain. By default, input flat, nested, and capacity Logit
+#'   and input BLP allow finite zero or negative rates. Other demand systems use
+#'   positive prices. Set \code{price_domain = "positive"} to require positive rates.
 #' @param nsim For objects that are not an `AntitrustFit` or
 #'   `CounterfactualPath`, the number of simulated response vectors passed on
 #'   to \code{\link[stats]{simulate}}.
@@ -1181,11 +1215,13 @@ setMethod("simulate_steps", "AntitrustFit", function(object, last_result, steps,
 setGeneric("simulate", function(object, ...) standardGeneric("simulate"))
 
 .antitrust_simulation_price_domain <- function(fit, price_domain) {
-    price_domain <- match.arg(price_domain, c("positive", "real"))
     signed_demand <- fit@spec$demand %in%
         c("logit", "logit_nests", "logit_cap", "blp")
-    if (identical(price_domain, "real") &&
-        (!signed_demand || isTRUE(fit@model@output))) {
+    signed_input <- isTRUE(signed_demand) && methods::is(fit@model, "Logit") &&
+        identical(fit@model@output, FALSE)
+    if (is.null(price_domain)) return(if (signed_input) "real" else "positive")
+    price_domain <- match.arg(price_domain, c("positive", "real"))
+    if (identical(price_domain, "real") && !signed_input) {
         stop("price_domain = 'real' supports input flat/nested/capacity Logit and BLP simulation only.")
     }
     price_domain
@@ -1231,7 +1267,7 @@ setGeneric("simulate", function(object, ...) standardGeneric("simulate"))
                                  capacitiesPost = NULL, bargpowerPost = NULL,
                                  revenueRetentionPost = NULL,
                                  solver = NULL, isMax = FALSE,
-                                 price_domain = c("positive", "real"), ...) {
+                                 price_domain = NULL, ...) {
     args <- c(
         list(fit = object, ownerPost = ownerPost, mcDelta = mcDelta,
              subset = subset),
@@ -1252,7 +1288,7 @@ setMethod("simulate", "AntitrustFit", .simulate_fit_method)
 #' @rdname simulate
 #' @export
 setMethod("simulate", "CounterfactualPath", function(object, ownerPost = NULL,
-                                                     price_domain = c("positive", "real"), ...) {
+                                                     price_domain = NULL, ...) {
     cf <- if (methods::is(ownerPost, "Counterfactual")) ownerPost else NULL
     if (is.null(cf)) {
         stop("simulate() on a CounterfactualPath requires a Counterfactual as its second argument.")
@@ -1269,8 +1305,8 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
 ## Resume a CounterfactualPath by dispatching the new steps to whichever
 ## fit family originally produced it (via simulate_steps()), then splicing
 ## the results onto the path.  Family-specific resume state lives entirely
-## in `diagnostics` -- every field but `fit` is forwarded into simulate_steps()
-## by name, and whatever simulate_steps() returns beyond `results` becomes
+## in `diagnostics`. Forward family-specific fields into simulate_steps()
+## by name. Whatever simulate_steps() returns beyond `results` becomes
 ## the new path's diagnostics, so this function never needs to know what
 ## that state means for any particular family.
 .resume_counterfactual_path <- function(resume_path, cf, price_domain) {
@@ -1278,14 +1314,22 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
     if (is.null(base_fit)) {
         stop("'fit' CounterfactualPath does not retain enough diagnostics to resume simulation.")
     }
+    own_domain <- methods::is(base_fit, "AntitrustFit")
+    capacity_logit <- own_domain && identical(base_fit@spec$demand, "logit_cap")
+    if (own_domain && is.null(price_domain)) {
+        price_domain <- resume_path@diagnostics$price_domain
+        if (capacity_logit && is.null(price_domain))
+            price_domain <- base_fit@model@control.equ$price_domain
+    }
     price_domain <- .antitrust_simulation_price_domain(base_fit, price_domain)
     last_result <- final_result(resume_path)
-    if (identical(base_fit@spec$demand, "logit_cap")) {
+    if (capacity_logit) {
         base_fit@model@control.equ$price_domain <- price_domain
         last_result@control.equ$price_domain <- price_domain
     }
     validate_counterfactual(base_fit, cf)
-    extra_state <- resume_path@diagnostics[setdiff(names(resume_path@diagnostics), "fit")]
+    reserved <- if (own_domain) c("fit", "price_domain") else "fit"
+    extra_state <- resume_path@diagnostics[setdiff(names(resume_path@diagnostics), reserved)]
     solved <- do.call(simulate_steps, c(
         list(base_fit, last_result, cf@steps), extra_state
     ))
@@ -1295,6 +1339,7 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
         steps = c(resume_path@steps, cf@steps),
         results = c(resume_path@results, solved$results),
         diagnostics = c(list(fit = base_fit),
+                        if (own_domain) list(price_domain = price_domain),
                         solved[setdiff(names(solved), "results")])
     )
     .antitrust_check_simulated_rates(result, price_domain)
@@ -1308,7 +1353,7 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
                      bargpowerPost = NULL,
                      revenueRetentionPost = NULL,
                      solver = NULL, isMax = FALSE,
-                     price_domain = c("positive", "real"), ...) {
+                     price_domain = NULL, ...) {
     dots <- list(...)
     price_domain <- .antitrust_simulation_price_domain(fit, price_domain)
     if (identical(fit@spec$demand, "logit_cap")) {
@@ -1342,13 +1387,13 @@ setMethod("simulate", "ANY", function(object, nsim = 1, seed = NULL, ...) {
             if (!is.null(revenueRetentionPost)) {
                 stop("'revenueRetentionPost' is supported for one-step simulations; use sequential one-step fits for retention changes.")
             }
-            solved <- .model_simulate_steps(fit, model, cf@steps)
+            solved <- .model_simulate_steps(fit, model, cf@steps, solver = solver, isMax = isMax)
             result <- new(
                 "CounterfactualPath",
                 initial = model,
                 steps = cf@steps,
                 results = solved$results,
-                diagnostics = list(fit = fit, cumulative_costs = solved$cumulative_costs)
+                diagnostics = c(list(fit = fit, price_domain = price_domain), solved[setdiff(names(solved), "results")])
             )
             .antitrust_check_simulated_rates(result, price_domain)
             return(result)

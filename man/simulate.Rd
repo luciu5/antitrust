@@ -21,11 +21,11 @@ simulate(object, ...)
   revenueRetentionPost = NULL,
   solver = NULL,
   isMax = FALSE,
-  price_domain = c("positive", "real"),
+  price_domain = NULL,
   ...
 )
 
-\S4method{simulate}{CounterfactualPath}(object, ownerPost = NULL, price_domain = c("positive", "real"), ...)
+\S4method{simulate}{CounterfactualPath}(object, ownerPost = NULL, price_domain = NULL, ...)
 
 \S4method{simulate}{ANY}(object, nsim = 1, seed = NULL, ...)
 
@@ -63,14 +63,19 @@ bargaining models.}
 vector for a one-step counterfactual.}
 
 \item{solver}{Optional solver override.  The calibration solver is reused
-by default for Logit-Bertrand; Logit-Cournot retains its legacy solver.}
+by default for Logit-Bertrand.
+For flat Logit and CES, \code{solver = "zeta"} uses a checked price update
+for Bertrand, Cournot, or bargaining and a direct solution for monopolistic competition.
+The update requires an outside good. CES Cournot uses output-market equations. Unnested BLP supports
+input and output Bertrand, bargaining, and monopolistic competition.
+The model's usual solver takes over if the update is inapplicable or fails
+the level pricing conditions.}
 
 \item{isMax}{Whether to run the existing local profit-maximum check.}
 
-\item{price_domain}{Input price-level simulation domain. The default
-`"positive"` rejects a nonpositive solved rate; `"real"` retains finite
-negative or zero rates for flat/nested/capacity Logit and BLP demand.
-Demand systems using log-prices or price powers remain positive-only.}
+\item{price_domain}{Counterfactual price domain. By default, input flat, nested, and capacity Logit
+and input BLP allow finite zero or negative rates. Other demand systems use
+positive prices. Set \code{price_domain = "positive"} to require positive rates.}
 
 \item{nsim}{For objects that are not an `AntitrustFit` or
 `CounterfactualPath`, the number of simulated response vectors passed on

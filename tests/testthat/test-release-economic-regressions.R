@@ -26,7 +26,7 @@ test_that("input BLP solves its level FOCs instead of accepting a tail root", {
     ownerPre = c("A", "B", "C"), ownerPost = c("A", "A", "C"),
     insideSize = 100, mcDelta = rep(-.2, 3)
   )
-  expect_s3_class(tryCatch(suppressMessages(do.call(sim, args)),
+  expect_s3_class(tryCatch(suppressMessages(do.call(sim, c(args, list(price_domain = "positive")))),
                            error = identity), "antitrust_price_domain_error")
   market <- suppressMessages(do.call(sim,
     c(args, list(price_domain = "real"))))

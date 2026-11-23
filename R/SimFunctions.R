@@ -48,9 +48,9 @@
 #' @param priceStart A length k vector of starting values used to solve for
 #'   equilibrium price. Default is the \sQuote{prices} vector for all values of
 #'   demand except for \sQuote{AIDS}, which is set equal to a vector of 0s.
-#' @param price_domain Input price-level simulation domain. The default
-#'   requires positive rates; \code{"real"} permits negative or zero rates for
-#'   flat/nested/capacity Logit and BLP demand.
+#' @param price_domain Counterfactual price domain. By default, input flat, nested, and capacity Logit
+#'   and input BLP allow finite zero or negative rates. Other demand systems use
+#'   positive prices. Set \code{price_domain = "positive"} to require positive rates.
 #' @param bargpowerPre A length k vector of pre-merger bargaining power parameters. Values
 #' must be between 0 (sellers have the power) and 1 (buyers the power). Ignored if \sQuote{supply} not equal
 #' to "bargaining" or "bargaining2nd".
@@ -984,9 +984,9 @@ sim <- function(prices,
                 bargpowerPre = rep(0.5, length(prices)),
                 bargpowerPost = bargpowerPre,
                 labels = paste("Prod", 1:length(prices), sep = ""),
-                price_domain = c("positive", "real"),
+                price_domain = NULL,
                 ...) {
-    price_domain <- match.arg(price_domain)
+    if (!is.null(price_domain)) price_domain <- match.arg(price_domain, c("positive", "real"))
     demand_name <- match.arg(demand)
     supply_missing <- missing(supply)
     supply_name <- match.arg(supply)

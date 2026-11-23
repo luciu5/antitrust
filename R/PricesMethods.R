@@ -44,6 +44,158 @@ setGeneric(
     standardGeneric("calcPrices")
   }
 )
+# The Bertrand update uses the diagonal and cross-product split of
+# Morrow and Skerlos (2011). Other conduct uses its own margin equation.
+# Solve the post-policy level FOCs on the active products. NULL requests a
+# retry by the model's ordinary solver at the caller's original starting price.
+.zeta_prices <- function(model, inherited_bargaining = FALSE) {
+    active <- model@subset
+    cost <- model@mcPost[active]
+    start <- model@priceStart[active]
+    tol <- model@control.equ$tol
+    if (!is.na(model@normIndex) || any(!is.finite(c(cost, start))) ||
+        length(tol) != 1L || !is.finite(tol) || tol <= 0) return(NULL)
+
+    family <- class(model)[[1L]]
+    ces <- family %in% c("CES", "MonComCES", "CESCournot", "BargainingCES")
+    if (ces && (any(cost <= 0) || any(start <= 0))) return(NULL)
+    owner <- model@ownerPost[active, active, drop = FALSE]
+    retention <- getRetention(model, FALSE)[active]
+    owner <- if (family == "BargainingLogit") {
+        t(.retention_owner_bargaining_logit(owner, retention))
+    } else .retention_owner_bertrand(owner, retention)
+    if (family %in% c("BargainingLogit", "BargainingCES", "BargainingBLP")) {
+        power <- model@bargpowerPost[active]
+        if (any(!is.finite(power) | power < 0 | power >= 1)) return(NULL)
+    }
+    if (any(!is.finite(owner)) || any(diag(owner) != 1)) return(NULL)
+    alpha <- model@slopes$alpha
+    gamma <- model@slopes$gamma
+    intercept <- model@slopes$meanval[active]
+    outside <- model@priceOutside
+    limit <- model@control.equ$maxit
+    if (!length(limit) || is.na(limit) || limit < 1L) limit <- 100L
+    limit <- min(limit, 100L)
+
+    certify <- function(price) {
+        if (any(!is.finite(price)) || (ces && any(price <= 0))) return(NULL)
+        result <- rep(NA_real_, length(active))
+        names(result) <- model@labels
+        result[active] <- price
+        model@pricePost <- result
+        # Independently evaluate the existing model-specific level margin, also
+        # catching roots near singular derivatives and inaccurate iteration limits.
+        implied <- calcMargins(model, FALSE, level = TRUE)[active]
+        margin <- if (model@output) price - cost else cost - price
+        if (any(!is.finite(implied)) || max(abs(margin - implied)) > min(tol, 1e-7))
+            return(NULL)
+        result
+    }
+
+    # Flat MonCom holds the demand index fixed, giving a direct price solution.
+    if (family == "MonComLogit") {
+        price <- cost - 1 / alpha
+    } else if (family == "MonComCES") {
+        price <- cost / (1 - 1 / gamma)
+    } else {
+        if (inherited_bargaining) {
+            update <- function(p) {
+                model@pricePost[active] <- p
+                margin <- calcMargins(model, FALSE, level = TRUE)[active]
+                cost + (if (model@output) margin else -margin)
+            }
+        } else if (family %in% c("LogitBLP", "MonComBLP", "BargainingBLP")) {
+            slopes <- model@slopes$alphas
+            if ((model@output && any(slopes >= 0)) ||
+                (!is.null(model@slopes$sigmaNest) && model@slopes$sigmaNest != 1))
+                return(NULL)
+            weights <- .blp_draw_weights(model, length(slopes))
+            update <- function(p) {
+                model@pricePost[active] <- p
+                prob <- calcShares(model, FALSE, aggregate = FALSE)[active, , drop = FALSE]
+                weighted <- sweep(prob, 2L, weights * slopes, "*")
+                direct <- rowSums(weighted)
+                # Mixed-sign quadrature nodes can still give an upward-sloping
+                # integrated input supply. The level markdown uses this derivative.
+                if (!model@output && any(!is.finite(direct) | direct <= 0))
+                    return(rep(NA_real_, length(p)))
+                share <- as.vector(prob %*% weights)
+                if (family == "MonComBLP") return(cost - share / direct)
+                cross <- tcrossprod(weighted, prob)
+                if (family == "BargainingBLP") {
+                    # Removing i reallocates product j's share by s_j*s_i/(1-s_i)
+                    # for each draw. Integrate before applying the bargaining weight.
+                    odds <- prob / (1 - prob)
+                    weighted_odds <- sweep(odds, 2L, weights, "*")
+                    surplus <- as.vector(log1p(-prob) %*% (weights / slopes))
+                    buyer <- (power / (1 - power)) * share / surplus
+                    direct <- direct - buyer * rowSums(weighted_odds)
+                    cross <- cross - buyer * tcrossprod(weighted_odds, prob)
+                }
+                cost + (as.vector((owner * cross) %*% (p - cost)) - share) / direct
+            }
+        } else if (ces) {
+            if (family == "CESCournot" && !model@output) return(NULL)
+            if (family == "CESCournot") {
+                outside_ratio <- model@slopes$alpha
+                if (is.null(outside_ratio)) outside_ratio <- 0
+                coefficient <- (gamma - 1) * (1 + outside_ratio) /
+                    (gamma * (1 + gamma * outside_ratio))
+            }
+            update <- function(p) {
+                weight <- intercept * (p / outside) ^ (1 - gamma)
+                revenue_share <- weight / (1 + sum(weight))
+                # The CES Bertrand FOC is linear in own Lerner index
+                # conditional on the portfolio's revenue-weighted markups.
+                lerner <- if (family == "CESCournot") {
+                    1 / gamma + coefficient * as.vector(owner %*% revenue_share)
+                } else {
+                    # CES bargaining scales each product's Bertrand margin.
+                    # Undo its own scale inside the portfolio sum, then
+                    # apply the receiving product's scale to the update.
+                    scale <- if (family == "BargainingCES") 1 - power else 1
+                    scale * (1 + (gamma - 1) * as.vector(owner %*%
+                        (revenue_share * (1 - cost / p) / scale))) / gamma
+                }
+                cost / (1 - lerner)
+            }
+        } else {
+            update <- function(p) {
+                odds <- exp(intercept + alpha * (p - outside))
+                if (family == "LogitCournot") {
+                    # Inverse demand gives markup proportional to one plus
+                    # firm share divided by outside share. Dampen this update.
+                    candidate <- cost - (1 + as.vector(owner %*% odds)) / alpha
+                    return((p + candidate) / 2)
+                }
+                share <- odds / (1 + sum(odds))
+                direct <- -1 / alpha
+                if (family == "BargainingLogit") {
+                    # The disagreement surplus and diversion enter the Nash
+                    # condition before adding the other owned products.
+                    disagreement <- log1p(-share)
+                    direct <- disagreement / (alpha * (power / (1 - power) *
+                        share / (1 - share) - disagreement))
+                }
+                cost + direct + as.vector(owner %*% (share * (p - cost)))
+            }
+        }
+        price <- start
+        for (iteration in seq_len(limit)) {
+            candidate <- update(price)
+            if (any(!is.finite(candidate)) || (ces && any(candidate <= 0))) return(NULL)
+            change <- max(abs(candidate - price))
+            price <- candidate
+            if (change <= tol || iteration == limit) {
+                accepted <- certify(price)
+                if (!is.null(accepted)) return(accepted)
+            }
+        }
+        return(NULL)
+    }
+    certify(price)
+}
+
 #' @rdname Prices-Methods
 #' @export
 setMethod(

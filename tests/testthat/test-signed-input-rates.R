@@ -1,4 +1,4 @@
-test_that("input Logit simulation requires an explicit real domain for signed rates", {
+test_that("input Logit simulation allows signed rates by default", {
   p <- c(.2, .1, .3)
   q <- c(.405, .315, .18)
   s0 <- .1
@@ -14,13 +14,12 @@ test_that("input Logit simulation requires an explicit real domain for signed ra
       args$bargpowerPre <- rep(.5, 3)
     fit <- do.call(specify, args)
     domain_error <- tryCatch(
-      simulate(fit, c("a", "a", "c"), mcDelta = rep(-.2, 3)),
+      simulate(fit, c("a", "a", "c"), mcDelta = rep(-.2, 3), price_domain = "positive"),
       error = identity)
     expect_s3_class(domain_error, "antitrust_price_domain_error")
     expect_identical(domain_error$category, "positive_domain_violation")
     expect_lt(domain_error$minimum_rate, 0)
-    result <- simulate(fit, c("a", "a", "c"), mcDelta = rep(-.2, 3),
-      price_domain = "real")
+    result <- simulate(fit, c("a", "a", "c"), mcDelta = rep(-.2, 3))
     expect_true(any(result@pricePost < 0))
     expect_lt(max(abs(result@mcPost - result@pricePost -
       calcMargins(result, FALSE, level = TRUE))), 1e-6)
@@ -35,9 +34,9 @@ test_that("input Logit simulation requires an explicit real domain for signed ra
     ownerPre = c("a", "b", "c"), ownerPost = c("a", "a", "c"),
     priceOutside = 1, insideSize = 100, output = FALSE,
     mcDelta = rep(-.2, 3))
-  expect_s3_class(tryCatch(do.call(sim, direct_args), error = identity),
+  expect_s3_class(tryCatch(do.call(sim, c(direct_args, list(price_domain = "positive"))), error = identity),
                   "antitrust_price_domain_error")
-  direct <- do.call(sim, c(direct_args, list(price_domain = "real")))
+  direct <- do.call(sim, direct_args)
   expect_true(any(direct@pricePost < 0))
 })
 
@@ -59,11 +58,10 @@ test_that("signed input rates persist through sequential and resumed policies", 
   expect_true(any(final_result(path)@pricePost < 0))
   expect_equal(result_at(path, 2)@pricePre,
                result_at(path, 1)@pricePost)
-  resumed <- simulate(path, counterfactual(costs = rep(0, 3)),
-                      price_domain = "real")
+  resumed <- simulate(path, counterfactual(costs = rep(0, 3)))
   expect_true(any(final_result(resumed)@pricePost < 0))
   expect_s3_class(tryCatch(simulate(path,
-    counterfactual(costs = rep(0, 3))), error = identity),
+    counterfactual(costs = rep(0, 3)), price_domain = "positive"), error = identity),
     "antitrust_price_domain_error")
 })
 
@@ -113,11 +111,10 @@ test_that("nested Logit and BLP preserve input orientation and signed rates", {
     ownership <- if (fit@spec$demand == "blp")
       c("A", "A", "C") else c("A", "A", "C", "D")
     shock <- rep(-.2, length(ownership))
-    positive <- tryCatch(simulate(fit, ownership, mcDelta = shock),
+    positive <- tryCatch(simulate(fit, ownership, mcDelta = shock, price_domain = "positive"),
                          error = identity)
     expect_s3_class(positive, "antitrust_price_domain_error")
-    result <- simulate(fit, ownership, mcDelta = shock,
-                       price_domain = "real")
+    result <- simulate(fit, ownership, mcDelta = shock)
     expect_true(any(result@pricePost < 0))
     expect_lt(max(abs(result@mcPost - result@pricePost -
                       calcMargins(result, FALSE, level = TRUE))), 1e-6)
@@ -153,10 +150,9 @@ test_that("capacity Logit input rates satisfy level FOCs and capacity bounds", {
   expect_equal(unname(neutral@pricePost), prices, tolerance = 1e-7)
   ownership <- c("A", "A", "C")
   shock <- rep(-.2, 3)
-  expect_s3_class(tryCatch(simulate(fit, ownership, mcDelta = shock),
+  expect_s3_class(tryCatch(simulate(fit, ownership, mcDelta = shock, price_domain = "positive"),
                            error = identity), "antitrust_price_domain_error")
-  result <- simulate(fit, ownership, mcDelta = shock,
-                     price_domain = "real")
+  result <- simulate(fit, ownership, mcDelta = shock)
   expect_true(any(result@pricePost < 0))
   quantities <- calcQuantities(result, FALSE)
   capacities <- result@capacitiesPost
@@ -172,8 +168,7 @@ test_that("capacity Logit input rates satisfy level FOCs and capacity bounds", {
   expect_true(all(foc[!slack] <= 1e-6))
   binding <- suppressWarnings(simulate(fit, c("A", "B", "C"),
                       mcDelta = c(.1, -.2, -.2),
-                      capacitiesPost = c(41, 35, 20),
-                      price_domain = "real"))
+                      capacitiesPost = c(41, 35, 20)))
   expect_true(any(binding@pricePost < 0))
   binding_quantities <- calcQuantities(binding, FALSE)
   binding_shares <- calcShares(binding, FALSE, revenue = FALSE)
@@ -194,6 +189,11 @@ test_that("capacity Logit input rates satisfy level FOCs and capacity bounds", {
   resumed <- suppressWarnings(simulate(initial_path,
     counterfactual(costs = rep(-.2, 3)), price_domain = "real"))
   expect_true(any(final_result(resumed)@pricePost < 0))
+  legacy <- initial_path
+  legacy@diagnostics$price_domain <- NULL
+  legacy@diagnostics$fit@model@control.equ$price_domain <- "positive"
+  expect_error(simulate(legacy, counterfactual(costs = rep(-.2, 3))),
+               class = "antitrust_price_domain_error")
   zero <- fit@model
   zero@pricePre[1] <- 0
   expect_true(all(is.finite(calcMargins(zero, TRUE, level = TRUE))))
@@ -210,10 +210,9 @@ test_that("BLP conduct models retain finite negative input rates", {
     fit <- suppressWarnings(do.call(specify, args))
     owner <- c("A", "A", "C")
     shock <- rep(-.2, 3)
-    expect_s3_class(tryCatch(simulate(fit, owner, mcDelta = shock),
+    expect_s3_class(tryCatch(simulate(fit, owner, mcDelta = shock, price_domain = "positive"),
                              error = identity), "antitrust_price_domain_error")
-    result <- suppressWarnings(simulate(fit, owner, mcDelta = shock,
-                                        price_domain = "real"))
+    result <- suppressWarnings(simulate(fit, owner, mcDelta = shock))
     expect_true(any(result@pricePost < 0))
     expect_lt(max(abs(result@mcPost - result@pricePost -
                       calcMargins(result, FALSE, level = TRUE))), 1e-6)
@@ -221,4 +220,16 @@ test_that("BLP conduct models retain finite negative input rates", {
     zero@pricePre[1] <- 0
     expect_true(all(is.finite(calcMargins(zero, TRUE, level = TRUE))))
   }
+})
+
+test_that("a path retaining an explicit positive-rate restriction honors it on resume", {
+  fit <- specify("logit", "bertrand", prices = c(.2,.1,.3),
+    parameters = list(alpha = .8, meanval = log(c(.405,.315,.18)/.1) -
+      .8 * (c(.2,.1,.3) - 1)), ownerPre = letters[1:3], priceOutside = 1,
+    insideSize = 100, output = FALSE, baseline = "observed")
+  noop <- counterfactual(costs = rep(0,3))
+  path <- simulate(fit, add_step(noop, costs = rep(0,3)), price_domain = "positive")
+  merger <- counterfactual(ownership = c("a","a","c"), costs = rep(-.2,3))
+  expect_error(simulate(path, merger), class = "antitrust_price_domain_error")
+  expect_lt(min(final_result(simulate(path, merger, price_domain = "real"))@pricePost), 0)
 })

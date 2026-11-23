@@ -7,7 +7,15 @@
 \usage{
 simulate_steps(object, last_result, steps, ...)
 
-\S4method{simulate_steps}{AntitrustFit}(object, last_result, steps, cumulative_costs = NULL, ...)
+\S4method{simulate_steps}{AntitrustFit}(
+  object,
+  last_result,
+  steps,
+  cumulative_costs = NULL,
+  solver = NULL,
+  isMax = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{A fitted structural model, such as an `AntitrustFit`.}
@@ -20,6 +28,9 @@ simulate_steps(object, last_result, steps, ...)
 
 \item{cumulative_costs}{For `AntitrustFit`, the compounded cost shock
 carried over from the path's previous steps.}
+
+\item{solver, isMax}{Solver selection and maximum check carried forward
+when resuming an \code{AntitrustFit} path. See \code{\link{simulate}}.}
 }
 \value{
 A list whose `results` element is a list of legacy S4 results,
